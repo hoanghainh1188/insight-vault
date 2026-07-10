@@ -1,9 +1,15 @@
 node_modules/
 dist/
 build/
+out/
+.vite/
+coverage/
+test-results/
+playwright-report/
 .env
 .env.*
 *.log
+.DS_Store
 .claude/settings.local.json
 .claude.template-backup/
 

@@ -143,7 +143,8 @@ def check_glossary_duplicates() -> None:
         if not cells:
             continue
         term = cells[0]
-        if not term or term == "日本語":  # bỏ header
+        # Bỏ header và placeholder "—" (dự án không có nguồn tiếng Nhật → '—' được phép lặp).
+        if not term or term in ("日本語", "—"):
             continue
         if term in seen:
             err(f"[glossary] 日本語 '{term}' trùng ở dòng {seen[term]} và {i}")
