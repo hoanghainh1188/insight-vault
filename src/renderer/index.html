@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- CSP inject theo môi trường qua plugin trong electron.vite.config.ts:
+         dev nới ws/http localhost cho HMR; prod chặt (connect-src 'self') — Constitution I / R7. -->
+    <!--CSP-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InsightVault</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

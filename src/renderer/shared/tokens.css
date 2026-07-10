@@ -1,0 +1,47 @@
+/* Design tokens trích từ docs/03-ui/prototype.html (:root).
+   Font self-host (KHÔNG link Google Fonts CDN — Constitution I / R7). Bổ sung @font-face khi có file font. */
+:root {
+  --canvas: #f5f6f7;
+  --surface: #ffffff;
+  --surface-2: #fbfbfc;
+  --ink: #16191c;
+  --ink-soft: #5c626b;
+  --ink-faint: #8a9098;
+  --line: #e5e7ea;
+  --line-soft: #eef0f1;
+  --accent: #1e6b57;
+  --accent-soft: #e6f0ec;
+  --accent-ink: #12503f;
+  --local: #2fa36b;
+  --danger: #b4453c;
+  --warn-bg: #fbf1dc;
+  --warn-ink: #8a5a12;
+  --radius: 10px;
+  --radius-sm: 7px;
+  --shadow: 0 1px 2px rgba(16, 19, 22, 0.04), 0 8px 24px rgba(16, 19, 22, 0.06);
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  font-family: var(--font-sans);
+  background: var(--canvas);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

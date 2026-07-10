@@ -20,6 +20,20 @@
 #   (format tự chạy ở đây; lint/test/build chạy ở Test gate của /design-to-code.)
 # ─────────────────────────────────────────────────────────────────────────────
 #
-# MẶC ĐỊNH: no-op — không làm gì, thoát sạch, để template chưa cấu hình formatter
-# không bị lỗi hook. Xoá/thay dòng dưới khi đã điền formatter thật.
+# ─────────────────────────────────────────────────────────────────────────────
+# Đã cấu hình cho stack InsightVault (TS/React qua Prettier repo-local).
+# Chỉ format file mã nguồn TS/JS/TSX/CSS/JSON/MD; bỏ qua file khác. Không fail hook nếu
+# prettier chưa cài (|| true) để không chặn Edit/Write khi đang setup.
+FILE=$(cat | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+case "$FILE" in
+  *.ts|*.tsx|*.js|*.jsx|*.cjs|*.mjs|*.css|*.json|*.md)
+    [ -n "$FILE" ] && [ -f "$FILE" ] && npx --no-install prettier --write "$FILE" >/dev/null 2>&1 || true
+    ;;
+esac
+# Lint --fix cho file TS/JS (sau format). Không fail hook nếu eslint chưa cài / có lỗi (|| true).
+case "$FILE" in
+  *.ts|*.tsx|*.js|*.jsx|*.cjs|*.mjs)
+    [ -n "$FILE" ] && [ -f "$FILE" ] && npx --no-install eslint --fix "$FILE" >/dev/null 2>&1 || true
+    ;;
+esac
 exit 0

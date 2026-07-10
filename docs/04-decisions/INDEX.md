@@ -9,6 +9,8 @@ bảng này trước — nếu câu hỏi đã có ở đây, dùng lại quyế
 
 | Ngày | Quyết định | Feature | Thuật ngữ / chủ đề |
 |---|---|---|---|
+| 2026-07-11 | Data dir dùng app.getPath('userData') (sửa spec FR-011 cho khớp) → file 2026-07-11-data-dir-path.md | `001-app-shell` | data dir / lưu trữ cục bộ |
+| 2026-07-10 | App-shell clarify: router hash · frame OS + header in-app · 5 IPC channel · onboarding ở OS settings store → file 2026-07-10-app-shell-clarify.md | `001-app-shell` | app shell / IPC / onboarding / navigation |
 | 2026-07-10 | Tech stack & kiến trúc nền (Electron+React, SQLite+LanceDB, Ollama, bảo mật renderer, thứ tự pha) → file 2026-07-10-tech-stack.md | `_project` | stack / kiến trúc / RAG / trích dẫn |
 
 <!--
