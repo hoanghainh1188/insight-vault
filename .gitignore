@@ -4,6 +4,7 @@ build/
 .env
 .env.*
 *.log
+.DS_Store
 .claude/settings.local.json
 .claude.template-backup/
 

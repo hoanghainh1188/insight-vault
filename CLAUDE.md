@@ -1,11 +1,43 @@
 # Quy ước dự án cho AI agent
 
 ## Tổng quan
-<Điền: dự án làm gì, khách hàng là ai, ngôn ngữ tài liệu thiết kế gốc>
+**InsightVault** — ứng dụng desktop tổng hợp tri thức bằng AI **chạy cục bộ** (kiểu NotebookLM nhưng
+offline/local-first). Người dùng nạp tài liệu vào các "notebook", app xử lý & lập chỉ mục ngay trên máy,
+rồi hỏi đáp / tóm tắt bằng LLM local với **trích dẫn nguồn kiểm chứng được** (chip `[n]` → mở nguồn,
+cuộn tới đúng đoạn highlight). Có tùy chọn dùng AI online bằng API key của chính người dùng.
+
+- **Khách hàng / người dùng mục tiêu:** người xử lý nhiều tài liệu và coi trọng quyền riêng tư —
+  nhà nghiên cứu, luật sư, nhà báo, sinh viên, kỹ sư (dữ liệu nhạy cảm, không muốn tải lên server bên thứ ba).
+- **Ngôn ngữ tài liệu thiết kế gốc & UI:** tiếng Việt (i18n để sau).
+- **Nền tảng (đã chốt):** desktop **Electron**, chạy **macOS + Windows**. Cộng đồng trước (miễn phí),
+  freemium sau → kiến trúc "sẵn sàng thu phí" (tách tầng license/đồng bộ) nhưng **chưa xây** phần trả phí ở v1.
+- **3 điểm khác biệt bất biến (không được đánh mất):** Local-first (dữ liệu không rời máy ở chế độ mặc định) ·
+  Kiểm chứng được (mọi câu trả lời trích dẫn về đúng đoạn nguồn) · Offline & tự chủ (chạy không cần Internet).
+
+**Nguồn sự thật GỐC (không sửa tay):**
+- `docs/OVERVIEW.md` — brief sản phẩm cấp dự án (CÁI GÌ cần xây + ràng buộc bất biến).
+- `docs/03-ui/prototype.html` — wireframe định hướng: 5 màn (Notebooks · Workspace 3 cột · Thêm nguồn ·
+  Xem nguồn có highlight · Cài đặt). Chuẩn cho bố cục, luồng, văn phong UI.
 
 ## Tech stack
-<Điền khi bắt đầu code — mặc dù `impl-planner` của Spec Kit sẽ tự phát hiện, khai báo sẵn ở đây
-giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
+> Chốt qua ADR `docs/04-decisions/2026-07-10-tech-stack.md`. Sửa stack → cập nhật ADR đó, không sửa lén ở đây.
+
+- **Shell:** Electron + electron-vite · **UI:** React 18 + TypeScript + Vite
+- **State:** Zustand (client) + TanStack Query (bọc IPC như async source)
+- **Metadata:** SQLite (better-sqlite3, chạy ở main process)
+- **Vector store:** **LanceDB** (embedded, thư mục riêng trong data dir)
+- **LLM/embedding local:** **Ollama** (HTTP local) qua `ProviderRegistry` (online provider hoán đổi sau cùng interface)
+- **Trích dẫn/viewer:** pdf.js (text layer + toạ độ) để map chip `[n]` → trang/đoạn chính xác
+- **Parsing:** pdf.js/pdf-parse · mammoth (.docx) · Readability + turndown (URL)
+- **Secret (API key online):** keytar (OS keychain / Credential Manager) — không lưu plaintext
+- **Packaging:** electron-builder (dmg + nsis); code-sign/notarize + auto-update để pha sau
+
+**Ranh giới bảo mật (bất biến):** renderer `sandbox:true`, `contextIsolation:true`, `nodeIntegration:false`;
+mọi truy cập FS/DB/model/mạng nằm ở **main process**, expose qua `preload` contextBridge whitelisted.
+Mặc định **không có network egress**; chỉ khi bật provider online mới gọi ra ngoài + luôn hiện chỉ báo riêng tư.
+
+**Cô lập theo feature:** `src/renderer/features/<slug>/` + `src/main/services/<slug>/`; dùng chung ở
+`src/shared/` (types + IPC channel contract) và `src/renderer/shared/` (UI kit từ prototype).
 
 > Khi đã chốt stack: điền lệnh formatter vào `.claude/hooks/format.sh` để bật format-on-save
 > (PostToolUse hook chạy sau mỗi Edit/Write). Thứ tự chuẩn: format → lint → type check → build
@@ -51,9 +83,11 @@ Trình tự: design-intake → [handoff] specify → clarify → plan → tasks 
 Dừng xin xác nhận ở mọi checkpoint.
 
 ## Deploy
-<Điền phương thức deploy cụ thể của dự án — `/design-to-code` bước 14 sẽ đọc mục này.
-Ví dụ: `vercel --prod`, hoặc push lên branch trigger CI/CD, hoặc build container + đẩy registry.
-Nếu để trống, pipeline sẽ dừng và hỏi bạn trước khi deploy.>
+Đây là **app desktop Electron** — "deploy" = đóng gói bản cài, không phải push server.
+- **Build:** `npm run build` → `electron-builder` sinh `.dmg` (macOS) + `.exe`/NSIS (Windows).
+- **v1:** phát hành thủ công (đưa artifact lên GitHub Releases). Chưa bật code-sign/notarize và auto-update
+  (để pha sau — cần Apple Developer ID + Windows cert). Bước "deploy" v1 của `/design-to-code` = tạo bản
+  đóng gói local để kiểm thử, không đẩy đi đâu.
 
 ## Quy tắc bắt buộc
 1. Mọi mâu thuẫn giữa basic design / detail design / Figma phải được nêu vào `/speckit-clarify`,

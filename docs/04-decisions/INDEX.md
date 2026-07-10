@@ -9,7 +9,7 @@ bảng này trước — nếu câu hỏi đã có ở đây, dùng lại quyế
 
 | Ngày | Quyết định | Feature | Thuật ngữ / chủ đề |
 |---|---|---|---|
-| 2026-01-01 | [承認 = "approval", không phải "confirm"](2026-01-01-approval-vs-confirm.md) *(mẫu — xoá)* | `000-example-reservation` | 承認 / approval |
+| 2026-07-10 | Tech stack & kiến trúc nền (Electron+React, SQLite+LanceDB, Ollama, bảo mật renderer, thứ tự pha) → file 2026-07-10-tech-stack.md | `_project` | stack / kiến trúc / RAG / trích dẫn |
 
 <!--
 Ví dụ 1 dòng thật (xoá dòng mẫu ở trên khi bắt đầu dự án):
