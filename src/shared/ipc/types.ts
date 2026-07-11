@@ -23,3 +23,48 @@ export interface DataDirInfo {
   path: string;
   ready: boolean;
 }
+
+// ===== ai-runtime (007) — nguồn: specs/.../ai-runtime/data-model.md =====
+
+/** Một mô hình AI trên Ollama. `kind` suy đoán từ tên/metadata; UI lọc theo kind. */
+export interface Model {
+  name: string;
+  sizeBytes: number | null;
+  kind: "chat" | "embedding" | "unknown";
+}
+
+/** Lựa chọn mô hình của người dùng (lưu bền ở electron-store). null = chưa chọn. */
+export interface ModelSelection {
+  chatModel: string | null;
+  embeddingModel: string | null;
+}
+
+/** Trạng thái runtime AI cục bộ — nguồn cho onboarding & Cài đặt. Tách khỏi OnboardingState. */
+export interface RuntimeStatus {
+  /** Ollama phản hồi ping trong timeout. */
+  reachable: boolean;
+  /** reachable AND chat+embedding model đã chọn tồn tại trên máy. */
+  ollamaReady: boolean;
+  /** Lý do khi chưa sẵn sàng (không kết nối / chưa chọn model / model thiếu). */
+  reason: string | null;
+}
+
+/** Yêu cầu/kết quả chat & embedding (nội bộ main; KHÔNG log payload — Constitution III). */
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+export interface ChatRequest {
+  messages: ChatMessage[];
+  model?: string;
+}
+export interface ChatResult {
+  content: string;
+}
+export interface EmbedRequest {
+  text: string;
+  model?: string;
+}
+export interface EmbedResult {
+  vector: number[];
+}

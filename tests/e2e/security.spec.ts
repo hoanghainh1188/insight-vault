@@ -21,19 +21,24 @@ test("V4 — renderer không truy cập Node/FS trực tiếp", async () => {
   expect(hasNode).toBe(false);
 });
 
-test("V5 — window.api chỉ có 5 hàm whitelisted, không có invoke chung", async () => {
+test("V5 — window.api chỉ gồm hàm whitelisted (app-shell), không có invoke chung", async () => {
   const win = await app.firstWindow();
   const apiKeys = await win.evaluate(() =>
     Object.keys((window as unknown as { api: object }).api),
   );
-  expect(apiKeys.sort()).toEqual(
-    [
-      "getAppInfo",
-      "getDataDir",
-      "getOnboardingState",
-      "getPrivacyState",
-      "setOnboardingComplete",
-    ].sort(),
-  );
+  // 5 hàm app-shell phải có mặt (feature sau thêm hàm khác — kiểm tập chính xác ở ai-security.spec).
+  for (const fn of [
+    "getAppInfo",
+    "getDataDir",
+    "getOnboardingState",
+    "getPrivacyState",
+    "setOnboardingComplete",
+  ]) {
+    expect(apiKeys).toContain(fn);
+  }
+  // KHÔNG có API gọi kênh tuỳ ý.
   expect(apiKeys).not.toContain("invoke");
+  expect(
+    apiKeys.every((k) => /^(get|set|ai)/.test(k) || k.startsWith("ai")),
+  ).toBe(true);
 });

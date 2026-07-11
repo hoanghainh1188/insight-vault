@@ -1,14 +1,18 @@
 import type {
   AppInfo,
   DataDirInfo,
+  Model,
+  ModelSelection,
   OnboardingState,
   PrivacyState,
+  RuntimeStatus,
 } from "./types";
 
 /**
- * Whitelist đầy đủ 5 kênh IPC ở app-shell (Constitution III, clarify A4).
- * Đây là NGUỒN DUY NHẤT: main (register) + preload (expose) đều tham chiếu.
- * Feature sau THÊM kênh mới ở đây — không đổi nghĩa 5 kênh này.
+ * Whitelist đầy đủ các kênh IPC (Constitution III). NGUỒN DUY NHẤT: main (register) + preload (expose).
+ * Feature sau THÊM kênh mới ở đây — KHÔNG đổi nghĩa kênh cũ.
+ * - app:*  → 001-app-shell (5 kênh)
+ * - ai:*   → 007-ai-runtime (5 kênh)
  */
 export const CHANNELS = {
   getDataDir: "app:getDataDir",
@@ -16,6 +20,12 @@ export const CHANNELS = {
   getOnboardingState: "app:getOnboardingState",
   setOnboardingComplete: "app:setOnboardingComplete",
   getAppInfo: "app:getAppInfo",
+  // ai-runtime (007)
+  aiListModels: "ai:listModels",
+  aiTestConnection: "ai:testConnection",
+  aiGetSelectedModels: "ai:getSelectedModels",
+  aiSetSelectedModels: "ai:setSelectedModels",
+  aiGetRuntimeStatus: "ai:getRuntimeStatus",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -37,4 +47,9 @@ export interface ChannelResponse {
   [CHANNELS.getOnboardingState]: OnboardingState;
   [CHANNELS.setOnboardingComplete]: { completed: true };
   [CHANNELS.getAppInfo]: AppInfo;
+  [CHANNELS.aiListModels]: Model[];
+  [CHANNELS.aiTestConnection]: RuntimeStatus;
+  [CHANNELS.aiGetSelectedModels]: ModelSelection;
+  [CHANNELS.aiSetSelectedModels]: ModelSelection;
+  [CHANNELS.aiGetRuntimeStatus]: RuntimeStatus;
 }

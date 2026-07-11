@@ -36,4 +36,20 @@ describe("logging policy (FR-014)", () => {
     expect(redact(42)).toBe(42);
     expect(redact(null)).toBe(null);
   });
+
+  it("payload chat/embed (ai-runtime): che content trong messages + text", () => {
+    const chat = redact({
+      model: "qwen2.5:7b",
+      messages: [{ role: "user", content: "tài liệu mật" }],
+    }) as { model: string; messages: { content: string }[] };
+    expect(chat.model).toBe("qwen2.5:7b");
+    expect(chat.messages[0].content).toBe("[REDACTED]");
+
+    const embed = redact({
+      model: "nomic-embed-text",
+      text: "đoạn nhạy cảm",
+    }) as Record<string, unknown>;
+    expect(embed.model).toBe("nomic-embed-text");
+    expect(embed.text).toBe("[REDACTED]");
+  });
 });
