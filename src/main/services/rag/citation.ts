@@ -48,3 +48,20 @@ export function postprocessCitations(
     .replace(/ +([.,;:!?])/g, "$1");
   return { answer: cleaned, citations };
 }
+
+/**
+ * Citation từ TOÀN BỘ chunk đã truy hồi — dùng làm nguồn dự phòng khi model không chèn `[n]` nào nhưng
+ * vẫn trả lời từ ngữ cảnh (vd câu tóm tắt). Giữ tính kiểm chứng được: mọi câu trả lời grounded đều kèm
+ * nguồn để người dùng mở/đối chiếu (Constitution II).
+ */
+export function citationsFromMap(map: Map<number, RetrievedChunk>): Citation[] {
+  return [...map.values()]
+    .sort((a, b) => a.n - b.n)
+    .map((rc) => ({
+      n: rc.n,
+      chunkId: rc.chunk.id,
+      sourceId: rc.chunk.sourceId,
+      sourceTitle: rc.sourceTitle,
+      locator: rc.chunk.locator,
+    }));
+}

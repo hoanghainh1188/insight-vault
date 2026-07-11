@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { postprocessCitations } from "../../src/main/services/rag/citation";
+import {
+  postprocessCitations,
+  citationsFromMap,
+} from "../../src/main/services/rag/citation";
 import type { RetrievedChunk } from "../../src/main/services/rag/rag-types";
 
 function chunk(n: number): RetrievedChunk {
@@ -60,5 +63,16 @@ describe("postprocessCitations — CRUX Constitution II / SC-002", () => {
     const r = postprocessCitations("Bịa [1] [2].", new Map());
     expect(r.citations).toEqual([]);
     expect(r.answer).not.toMatch(/\[\d+\]/);
+  });
+});
+
+describe("citationsFromMap (nguồn dự phòng)", () => {
+  it("trả mọi chunk trong map, sắp theo n", () => {
+    const cs = citationsFromMap(mapOf(2, 1));
+    expect(cs.map((c) => c.n)).toEqual([1, 2]);
+    expect(cs[0]).toMatchObject({ n: 1, chunkId: "c1", sourceId: "s1" });
+  });
+  it("map rỗng → []", () => {
+    expect(citationsFromMap(new Map())).toEqual([]);
   });
 });

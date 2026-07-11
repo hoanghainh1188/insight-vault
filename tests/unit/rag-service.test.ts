@@ -82,25 +82,25 @@ describe("rag-service.ask", () => {
     expect(res.citations).toEqual([]);
   });
 
-  it("BLOCKING: grounded có context nhưng model trả lời KHÔNG citation → ép notFound (không hiển thị nội dung bịa)", async () => {
+  it("grounded có context, model trả lời thật nhưng KHÔNG chèn [n] (vd tóm tắt) → gắn NGUỒN ĐÃ TRUY HỒI làm citation (verifiable), KHÔNG ẩn", async () => {
     const svc = createRagService(
-      makeDeps({ chatReply: () => "Nội dung tự bịa không hề chèn chip nào." }),
+      makeDeps({ chatReply: () => "Tài liệu nói về A và B." }),
+    );
+    const res = await svc.ask(ask());
+    expect(res.notFound).toBe(false);
+    expect(res.answer).toContain("A và B"); // câu trả lời được hiển thị
+    // nguồn dự phòng = chunk đã truy hồi (a) → người dùng mở/đối chiếu được
+    expect(res.citations.map((c) => c.chunkId)).toEqual(["a"]);
+  });
+
+  it("grounded model tự nói 'không tìm thấy' (0 citation) → notFound", async () => {
+    const svc = createRagService(
+      makeDeps({ chatReply: () => "Rất tiếc, không tìm thấy thông tin này." }),
     );
     const res = await svc.ask(ask());
     expect(res.notFound).toBe(true);
     expect(res.answer).toBe("Không tìm thấy trong nguồn.");
     expect(res.citations).toEqual([]);
-    // nội dung bịa KHÔNG được hiển thị
-    expect(res.answer).not.toContain("tự bịa");
-  });
-
-  it("grounded chỉ chèn chip bịa [9] (bị gỡ hết) → notFound (không còn citation hợp lệ)", async () => {
-    const svc = createRagService(
-      makeDeps({ chatReply: () => "Bịa hết [9] [7]." }),
-    );
-    const res = await svc.ask(ask());
-    expect(res.notFound).toBe(true);
-    expect(res.answer).toBe("Không tìm thấy trong nguồn.");
   });
 
   it("mode lạ → ném (KHÔNG âm thầm hạ về open)", async () => {
