@@ -27,7 +27,7 @@ jobs:
       - name: Unit test + coverage (≥ 80% business logic — Constitution IV)
         run: npm test
 
-      - name: Build (electron-vite: main/preload/renderer)
+      - name: "Build (electron-vite: main/preload/renderer)"
         run: npm run build
 
   # NOTE: e2e (Playwright _electron) cần display → job riêng dùng xvfb, thêm sau. Chưa bắt buộc.
