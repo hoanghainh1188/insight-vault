@@ -15,7 +15,7 @@
   flex-direction: column;
   min-height: 0;
   z-index: 50;
-  animation: slidein 180ms var(--ease-out, ease);
+  animation: slidein var(--duration-normal) var(--ease-out-expo);
 }
 @keyframes slidein {
   from {
@@ -114,11 +114,11 @@
   word-break: break-word;
 }
 .vtext .hl {
-  background: var(--warn-bg);
+  background: var(--cite-bg);
   color: var(--ink);
   border-radius: 3px;
   padding: 1px 2px;
-  box-shadow: 0 0 0 1px var(--warn-ink) inset;
+  box-shadow: 0 0 0 1px var(--cite-line) inset;
 }
 .pagemark {
   display: block;

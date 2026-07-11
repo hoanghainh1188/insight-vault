@@ -52,6 +52,9 @@ export function MessageBubble({
       className={isUser ? "bubble user" : "bubble ai"}
       data-testid={`bubble-${message.role}`}
     >
+      <span className="who" data-testid="bubble-who">
+        {isUser ? "Bạn" : "InsightVault"}
+      </span>
       <p className="bubble-text">
         {isUser
           ? message.content

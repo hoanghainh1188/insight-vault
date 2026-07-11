@@ -29,25 +29,69 @@
 
 .bubble {
   max-width: 88%;
-  padding: 10px 14px;
-  border-radius: 14px;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.65;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+/* Nhãn người nói (023-ui-polish B) */
+.who {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-faint);
 }
 .bubble.user {
   align-self: flex-end;
+  align-items: flex-end;
+}
+.bubble.user .bubble-text {
   background: var(--accent);
   color: #fff;
+  padding: 9px 13px;
+  border-radius: 14px;
   border-bottom-right-radius: 4px;
 }
+/* Tin AI: KHÔNG nền bubble — chỉ văn bản dễ đọc (prototype). */
 .bubble.ai {
   align-self: flex-start;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-bottom-left-radius: 4px;
 }
 .bubble-text {
   white-space: pre-wrap;
+  margin: 0;
+}
+
+/* Skeleton khi chờ trả lời (023-ui-polish C) */
+.bubble-skeleton {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 70%;
+  padding: 4px 0;
+}
+.sk-line {
+  height: 11px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--line-soft) 25%,
+    var(--line) 50%,
+    var(--line-soft) 75%
+  );
+  background-size: 200% 100%;
+  animation: sk-shimmer var(--duration-normal) linear infinite;
+}
+.sk-line.short {
+  width: 55%;
+}
+@keyframes sk-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 .typing {
   color: var(--ink-faint);
@@ -84,18 +128,22 @@
   font-size: 10px;
   font-weight: 600;
   font-family: var(--font-mono);
-  color: var(--accent-ink);
-  background: var(--accent-soft);
-  border: 1px solid transparent;
+  color: var(--cite);
+  background: var(--cite-bg);
+  border: 1px solid var(--cite-line);
   border-radius: 4px;
   cursor: pointer;
   vertical-align: baseline;
   transition:
-    border-color 120ms ease,
-    background 120ms ease;
+    border-color var(--duration-fast) var(--ease-out-expo),
+    background var(--duration-fast) var(--ease-out-expo);
 }
 .cite:hover {
-  border-color: var(--accent);
+  border-color: var(--cite);
+}
+.cite:focus-visible {
+  outline: 2px solid var(--cite);
+  outline-offset: 1px;
 }
 
 .srcnote {
@@ -121,41 +169,49 @@
   flex-direction: column;
   gap: 10px;
 }
-.mode-toggle {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.mode-buttons {
-  display: flex;
-  gap: 6px;
-}
-.mode {
-  padding: 5px 12px;
+/* Segmented control (023-ui-polish B) — pill 2 đoạn, nền trượt bằng transform. */
+.segmode {
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--surface);
+}
+.seg {
+  position: relative;
+  z-index: 1;
+  padding: 4px 12px;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
   font-size: 12px;
+  color: var(--ink-soft);
   cursor: pointer;
-  transition:
-    background 120ms ease,
-    border-color 120ms ease;
+  transition: color var(--duration-fast) var(--ease-out-expo);
 }
-.mode:hover:not(:disabled) {
-  border-color: var(--accent);
+.seg.active {
+  background: var(--surface);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow);
 }
-.mode.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-.mode:disabled {
+.seg:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.seg:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .modehint {
   font-size: 11px;
+  line-height: 1.5;
   color: var(--ink-faint);
+  margin: 0;
+  /* Chiều cao cố định (2 dòng) → đổi chế độ KHÔNG làm nhảy layout composer. */
+  min-height: 33px;
 }
 
 .chat-block {
@@ -165,24 +221,77 @@
   border-radius: var(--radius-sm);
   padding: 10px 12px;
 }
-.composer-row {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
+
+/* Composer box (prototype .cbox): input trên, thanh công cụ dưới. */
+.cbox {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: box-shadow var(--duration-fast) var(--ease-out-expo);
+}
+.cbox:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .composer-input {
-  flex: 1;
+  width: 100%;
   resize: none;
-  padding: 9px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  padding: 11px 12px 4px;
+  border: 0;
+  background: transparent;
   font: inherit;
   font-size: 13px;
 }
 .composer-input:focus {
-  outline: 2px solid var(--accent-soft);
-  border-color: var(--accent);
+  outline: none;
 }
-.composer-input:disabled {
+.cbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 8px;
+}
+/* Chip mô hình — thông tin (không phải nút điều hướng): hiển thị model đang dùng. */
+.model-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--ink-soft);
   background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+  cursor: default;
+}
+.send-btn {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+.send-btn:hover:not(:disabled) {
+  background: var(--accent-ink);
+}
+.send-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.send-btn:disabled {
+  background: var(--line);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+.send-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
