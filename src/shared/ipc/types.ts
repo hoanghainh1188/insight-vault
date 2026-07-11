@@ -96,3 +96,69 @@ export interface SetColorInput {
   id: string;
   color: NotebookColor;
 }
+
+// ===== ingestion (011) — nguồn: specs/.../ingestion/data-model.md =====
+
+export type SourceKind = "pdf" | "docx" | "txt" | "md" | "url";
+
+/** Trạng thái vòng đời nguồn. Ánh xạ UI: ready→.stat ready; queued/processing/awaiting_embedding→.stat proc; error→.stat err. */
+export type SourceStatus =
+  "queued" | "processing" | "awaiting_embedding" | "ready" | "error";
+
+/** Vị trí gốc của một chunk trong nguồn — gắn NGAY lúc chunk (Constitution II). half-open [charStart, charEnd). */
+export interface Locator {
+  /** PDF: số trang 1-based; loại khác: null. */
+  page: number | null;
+  charStart: number;
+  charEnd: number;
+}
+
+/** Nguồn (metadata) — KHÔNG expose origin/content_hash toàn văn ra renderer. */
+export interface Source {
+  id: string;
+  notebookId: string;
+  kind: SourceKind;
+  title: string;
+  status: SourceStatus;
+  errorLabel: string | null;
+  pageCount: number | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Chunk (đoạn) — đơn vị embed & trích dẫn. */
+export interface Chunk {
+  id: string;
+  sourceId: string;
+  ordinal: number;
+  text: string;
+  locator: Locator;
+}
+
+export type AddSourceInput =
+  | { notebookId: string; kind: "url"; url: string }
+  | {
+      notebookId: string;
+      kind: Exclude<SourceKind, "url">;
+      filePath: string;
+    };
+
+export interface AddSourceResult {
+  source: Source;
+  /** true nếu trùng content_hash/URL trong cùng notebook (renderer hỏi xác nhận). */
+  duplicateWarning: boolean;
+}
+
+/** Bước xử lý hiện thời của pipeline (cho thanh tiến độ). */
+export type IngestStep =
+  "parse" | "clean" | "chunk" | "embed" | "store" | "done";
+
+/** Event push main→renderer khi trạng thái/tiến độ một nguồn đổi (kênh source:progress). */
+export interface SourceProgressEvent {
+  sourceId: string;
+  notebookId: string;
+  status: SourceStatus;
+  step: IngestStep;
+  progress: number; // 0..1
+  errorLabel?: string;
+}

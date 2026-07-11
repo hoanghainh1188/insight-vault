@@ -1,11 +1,16 @@
 import { join } from "node:path";
 import { app, BrowserWindow, dialog, session } from "electron";
 import Store from "electron-store";
+import { CHANNELS } from "@shared/ipc/channels";
+import type { SourceProgressEvent } from "@shared/ipc/types";
 import { ensureDataDir } from "./services/app-shell/data-dir";
 import { registerIpc } from "./ipc/register";
 import { openDatabase } from "./db/database";
 import { runMigrations } from "./db/migrations";
 import { createNotebookRepo } from "./services/notebooks/notebook-repo";
+import { createAiRuntime } from "./services/ai-runtime/ai-runtime";
+import { createIngestion } from "./services/ingestion/ingestion";
+import { setEgressActive } from "./services/app-shell/privacy-state";
 import { logEvent } from "./logging";
 
 // Hardening cấp session (Constitution I & III): từ chối mọi permission request (app-shell không cần
@@ -69,15 +74,48 @@ app.whenReady().then(async () => {
 
   const store = new Store();
 
-  // SQLite (009): mở DB trong data dir, chạy migration, tạo repo (CHỈ ở main — Constitution III).
+  // SQLite (009): mở DB trong data dir, chạy migration (nay tới v2 — bảng source/chunk), tạo repo.
   const db = openDatabase(join(dataDir.path, "insightvault.db"));
   runMigrations(db);
   const notebookRepo = createNotebookRepo(db);
 
-  registerIpc({ store, version: app.getVersion(), dataDir, notebookRepo });
+  // ai-runtime (007) — một instance dùng chung cho kênh ai:* và pipeline embed.
+  const aiRuntime = createAiRuntime(store);
+
+  // ingestion (011): LanceDB + pipeline. Progress push tới mọi cửa sổ qua source:progress.
+  const emitProgress = (e: SourceProgressEvent): void => {
+    for (const w of BrowserWindow.getAllWindows()) {
+      if (!w.isDestroyed()) w.webContents.send(CHANNELS.sourceProgress, e);
+    }
+  };
+  const ingestion = await createIngestion({
+    db,
+    dataDir: dataDir.path,
+    aiRuntime,
+    emit: emitProgress,
+    setOnline: (online) => setEgressActive(online), // bật chỉ báo online khi fetch URL (FR-019)
+  });
+
+  registerIpc({
+    store,
+    version: app.getVersion(),
+    dataDir,
+    notebookRepo,
+    sourceRepo: ingestion.sourceRepo,
+    pipeline: ingestion.pipeline,
+    vectorStore: ingestion.vectorStore,
+    aiRuntime,
+  });
 
   installSecurity();
   createWindow();
+
+  // Phục hồi trạng thái nguồn dở từ phiên trước:
+  // - queued/processing (kẹt do đóng/crash giữa chừng) → error retry được (B3).
+  // - awaiting_embedding → tự nhúng tiếp khi runtime AI sẵn sàng (US4, FR-009).
+  ingestion.pipeline.resumeInterrupted();
+  void ingestion.pipeline.resumeAwaiting();
+
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

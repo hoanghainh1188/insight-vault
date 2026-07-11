@@ -1,6 +1,7 @@
 import { ipcMain } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
 import type {
+  AddSourceInput,
   CreateNotebookInput,
   DataDirInfo,
   ModelSelection,
@@ -14,8 +15,11 @@ import {
   setOnboardingComplete,
   type StoreLike,
 } from "../services/app-shell/onboarding";
-import { createAiRuntime } from "../services/ai-runtime/ai-runtime";
+import type { AiRuntime } from "../services/ai-runtime/ai-runtime";
 import type { NotebookRepo } from "../services/notebooks/notebook-repo";
+import type { SourceRepo } from "../services/ingestion/source-repo";
+import type { IngestionPipeline } from "../services/ingestion/pipeline";
+import type { VectorStore } from "../services/ingestion/vector-store";
 import { logEvent } from "../logging";
 
 interface RegisterDeps {
@@ -23,6 +27,10 @@ interface RegisterDeps {
   version: string;
   dataDir: DataDirInfo;
   notebookRepo: NotebookRepo;
+  sourceRepo: SourceRepo;
+  pipeline: IngestionPipeline;
+  vectorStore: VectorStore;
+  aiRuntime: AiRuntime;
 }
 
 /**
@@ -35,6 +43,10 @@ export function registerIpc({
   version,
   dataDir,
   notebookRepo,
+  sourceRepo,
+  pipeline,
+  vectorStore,
+  aiRuntime,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -56,8 +68,8 @@ export function registerIpc({
   );
   safeHandle(CHANNELS.getAppInfo, () => buildAppInfo(version));
 
-  // ai-runtime (007) — Ollama gọi CHỈ ở đây (main); renderer chạm qua 5 kênh này.
-  const ai = createAiRuntime(store);
+  // ai-runtime (007) — Ollama gọi CHỈ ở đây (main); renderer chạm qua 5 kênh này. Cùng instance với pipeline.
+  const ai = aiRuntime;
   safeHandle(CHANNELS.aiListModels, () => ai.listModels());
   safeHandle(CHANNELS.aiTestConnection, () => ai.testConnection());
   safeHandle(CHANNELS.aiGetSelectedModels, () => ai.getSelectedModels());
@@ -77,9 +89,23 @@ export function registerIpc({
   safeHandle(CHANNELS.notebookSetColor, (input) =>
     notebookRepo.setColor(input as SetColorInput),
   );
-  safeHandle(CHANNELS.notebookDelete, (id) =>
-    notebookRepo.delete(id as string),
+  // Xoá notebook: dọn vector LanceDB theo notebook_id TRƯỚC (tránh mồ côi), rồi xoá SQLite (cascade
+  // source→chunk). Nhất quán 2 store (ADR lancedb-integration, FR-015).
+  safeHandle(CHANNELS.notebookDelete, async (id) => {
+    await vectorStore.deleteByNotebook(id as string);
+    return notebookRepo.delete(id as string);
+  });
+
+  // ingestion (011) — FS/parse/embed/LanceDB CHỈ ở main (Constitution III). KHÔNG log nội dung tài liệu.
+  safeHandle(CHANNELS.sourceAdd, (input) =>
+    pipeline.add(input as AddSourceInput),
   );
+  safeHandle(CHANNELS.sourceListByNotebook, (id) =>
+    sourceRepo.listByNotebook(id as string),
+  );
+  safeHandle(CHANNELS.sourceGet, (id) => sourceRepo.getById(id as string));
+  safeHandle(CHANNELS.sourceDelete, (id) => pipeline.remove(id as string));
+  safeHandle(CHANNELS.sourceRetry, (id) => pipeline.retry(id as string));
 
   logEvent("ipc.registered", { channels: Object.values(CHANNELS).length });
 }

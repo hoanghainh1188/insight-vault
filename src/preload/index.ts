@@ -1,6 +1,8 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import { CHANNELS } from "@shared/ipc/channels";
 import type {
+  AddSourceInput,
+  AddSourceResult,
   AppInfo,
   CreateNotebookInput,
   DataDirInfo,
@@ -11,6 +13,8 @@ import type {
   RenameNotebookInput,
   RuntimeStatus,
   SetColorInput,
+  Source,
+  SourceProgressEvent,
 } from "@shared/ipc/types";
 
 /**
@@ -50,6 +54,26 @@ const api = {
     ipcRenderer.invoke(CHANNELS.notebookSetColor, input),
   notebookDelete: (id: string): Promise<{ deleted: true }> =>
     ipcRenderer.invoke(CHANNELS.notebookDelete, id),
+  // ingestion (011) — 5 hàm invoke + 1 subscribe event tiến độ.
+  sourceAdd: (input: AddSourceInput): Promise<AddSourceResult> =>
+    ipcRenderer.invoke(CHANNELS.sourceAdd, input),
+  sourceListByNotebook: (notebookId: string): Promise<Source[]> =>
+    ipcRenderer.invoke(CHANNELS.sourceListByNotebook, notebookId),
+  sourceGet: (id: string): Promise<Source | null> =>
+    ipcRenderer.invoke(CHANNELS.sourceGet, id),
+  sourceDelete: (id: string): Promise<{ deleted: true }> =>
+    ipcRenderer.invoke(CHANNELS.sourceDelete, id),
+  sourceRetry: (id: string): Promise<Source> =>
+    ipcRenderer.invoke(CHANNELS.sourceRetry, id),
+  /** Đăng ký nhận tiến độ nạp nguồn (push từ main). Trả hàm huỷ đăng ký. */
+  onSourceProgress: (cb: (e: SourceProgressEvent) => void): (() => void) => {
+    const listener = (_e: unknown, payload: SourceProgressEvent): void =>
+      cb(payload);
+    ipcRenderer.on(CHANNELS.sourceProgress, listener);
+    return () => ipcRenderer.removeListener(CHANNELS.sourceProgress, listener);
+  },
+  /** Lấy đường dẫn tuyệt đối của một File (kéo-thả/chọn) để gửi cho main đọc (sandbox-safe). */
+  getFilePath: (file: File): string => webUtils.getPathForFile(file),
 };
 
 export type Api = typeof api;
