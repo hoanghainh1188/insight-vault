@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # Cổng chất lượng THẬT cho app (khác template-smoke-test chỉ kiểm cấu trúc template).
+  # Đặt job này ("build-test") làm required status check trong Ruleset của main.
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cài dependencies (từ lockfile)
+        run: npm ci
+
+      - name: Lint (prettier --check + eslint + tsc)
+        run: npm run lint
+
+      - name: Unit test + coverage (≥ 80% business logic — Constitution IV)
+        run: npm test
+
+      - name: Build (electron-vite: main/preload/renderer)
+        run: npm run build
+
+  # NOTE: e2e (Playwright _electron) cần display → job riêng dùng xvfb, thêm sau. Chưa bắt buộc.
