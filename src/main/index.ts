@@ -10,6 +10,7 @@ import { runMigrations } from "./db/migrations";
 import { createNotebookRepo } from "./services/notebooks/notebook-repo";
 import { createAiRuntime } from "./services/ai-runtime/ai-runtime";
 import { createIngestion } from "./services/ingestion/ingestion";
+import { createRagService } from "./services/rag/rag-service";
 import { setEgressActive } from "./services/app-shell/privacy-state";
 import { logEvent } from "./logging";
 
@@ -96,6 +97,17 @@ app.whenReady().then(async () => {
     setOnline: (online) => setEgressActive(online), // bật chỉ báo online khi fetch URL (FR-019)
   });
 
+  // rag-qa (013): hỏi đáp theo nguồn. embed/chat qua provider active (007); search/getChunks (011).
+  const ragService = createRagService({
+    embed: async (text) =>
+      (await aiRuntime.registry.getActive().embed({ text })).vector,
+    search: (v, nb, k) => ingestion.vectorStore.search(v, nb, k),
+    getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
+    sourceTitle: (sid) => ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
+    chat: async (messages) =>
+      (await aiRuntime.registry.getActive().chat({ messages })).content,
+  });
+
   registerIpc({
     store,
     version: app.getVersion(),
@@ -105,6 +117,7 @@ app.whenReady().then(async () => {
     pipeline: ingestion.pipeline,
     vectorStore: ingestion.vectorStore,
     aiRuntime,
+    ragService,
   });
 
   installSecurity();

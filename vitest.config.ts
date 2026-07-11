@@ -21,6 +21,7 @@ export default defineConfig({
         "src/shared/notebook-palette.ts",
         "src/renderer/features/notebooks/relative-time.ts",
         "src/renderer/features/sources/source-status.ts",
+        "src/renderer/features/rag-qa/citation-format.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.

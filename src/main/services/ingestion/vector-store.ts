@@ -15,11 +15,24 @@ export interface VectorHit {
   sourceId: string;
 }
 
+/** Kết quả tìm kiếm vector (013-rag-qa). `score` = khoảng cách (nhỏ = liên quan hơn). */
+export interface VectorSearchHit {
+  id: string; // = chunk.id
+  sourceId: string;
+  score: number;
+}
+
 export interface VectorStore {
   add(records: VectorRecord[]): Promise<void>;
   deleteBySource(sourceId: string): Promise<void>;
   deleteByNotebook(notebookId: string): Promise<void>;
   countBySource(sourceId: string): Promise<number>;
+  /** Tìm topK chunk gần nhất trong phạm vi notebook (013). Bảng chưa tồn tại → []. */
+  search(
+    queryVector: number[],
+    notebookId: string,
+    topK: number,
+  ): Promise<VectorSearchHit[]>;
   close(): Promise<void>;
 }
 
@@ -36,10 +49,16 @@ function toRow(r: VectorRecord) {
 }
 
 // Kiểu tối thiểu để không phụ thuộc chặt typings của LanceDB.
+interface LanceQuery {
+  where(predicate: string): LanceQuery;
+  limit(n: number): LanceQuery;
+  toArray(): Promise<Record<string, unknown>[]>;
+}
 interface LanceTable {
   add(data: unknown[]): Promise<unknown>;
   delete(predicate: string): Promise<unknown>;
   countRows(filter?: string): Promise<number>;
+  search(vector: number[]): LanceQuery;
 }
 interface LanceConn {
   tableNames(): Promise<string[]>;
@@ -91,6 +110,20 @@ export async function createLanceVectorStore(
       const t = await getTable();
       if (!t) return 0;
       return t.countRows(`source_id = '${q(sourceId)}'`);
+    },
+    async search(queryVector, notebookId, topK) {
+      const t = await getTable();
+      if (!t) return []; // chưa nạp nguồn nào
+      const rows = await t
+        .search(queryVector)
+        .where(`notebook_id = '${q(notebookId)}'`)
+        .limit(topK)
+        .toArray();
+      return rows.map((r) => ({
+        id: String(r["id"]),
+        sourceId: String(r["source_id"]),
+        score: Number(r["_distance"]),
+      }));
     },
     async close() {
       table = null;

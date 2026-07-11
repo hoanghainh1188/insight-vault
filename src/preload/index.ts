@@ -10,6 +10,8 @@ import type {
   ModelSelection,
   Notebook,
   OnboardingState,
+  RagAnswer,
+  RagAskInput,
   RenameNotebookInput,
   RuntimeStatus,
   SetColorInput,
@@ -74,6 +76,9 @@ const api = {
   },
   /** Lấy đường dẫn tuyệt đối của một File (kéo-thả/chọn) để gửi cho main đọc (sandbox-safe). */
   getFilePath: (file: File): string => webUtils.getPathForFile(file),
+  // rag-qa (013)
+  ragAsk: (input: RagAskInput): Promise<RagAnswer> =>
+    ipcRenderer.invoke(CHANNELS.ragAsk, input),
 };
 
 export type Api = typeof api;

@@ -5,6 +5,7 @@ import type {
   CreateNotebookInput,
   DataDirInfo,
   ModelSelection,
+  RagAskInput,
   RenameNotebookInput,
   SetColorInput,
 } from "@shared/ipc/types";
@@ -20,6 +21,7 @@ import type { NotebookRepo } from "../services/notebooks/notebook-repo";
 import type { SourceRepo } from "../services/ingestion/source-repo";
 import type { IngestionPipeline } from "../services/ingestion/pipeline";
 import type { VectorStore } from "../services/ingestion/vector-store";
+import type { RagService } from "../services/rag/rag-service";
 import { logEvent } from "../logging";
 
 interface RegisterDeps {
@@ -31,6 +33,7 @@ interface RegisterDeps {
   pipeline: IngestionPipeline;
   vectorStore: VectorStore;
   aiRuntime: AiRuntime;
+  ragService: RagService;
 }
 
 /**
@@ -47,6 +50,7 @@ export function registerIpc({
   pipeline,
   vectorStore,
   aiRuntime,
+  ragService,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -106,6 +110,9 @@ export function registerIpc({
   safeHandle(CHANNELS.sourceGet, (id) => sourceRepo.getById(id as string));
   safeHandle(CHANNELS.sourceDelete, (id) => pipeline.remove(id as string));
   safeHandle(CHANNELS.sourceRetry, (id) => pipeline.retry(id as string));
+
+  // rag-qa (013) — embed/search/chat CHỈ ở đây (main). KHÔNG log payload (câu hỏi/nội dung — Constitution III).
+  safeHandle(CHANNELS.ragAsk, (input) => ragService.ask(input as RagAskInput));
 
   logEvent("ipc.registered", { channels: Object.values(CHANNELS).length });
 }

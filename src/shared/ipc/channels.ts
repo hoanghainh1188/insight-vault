@@ -7,6 +7,7 @@ import type {
   Notebook,
   OnboardingState,
   PrivacyState,
+  RagAnswer,
   RuntimeStatus,
   Source,
 } from "./types";
@@ -45,6 +46,8 @@ export const CHANNELS = {
   sourceRetry: "source:retry",
   // ingestion (011) — 1 event push (main→renderer, KHÔNG phải invoke/ChannelResponse)
   sourceProgress: "source:progress",
+  // rag-qa (013) — hỏi đáp theo nguồn
+  ragAsk: "rag:ask",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -82,4 +85,6 @@ export interface ChannelResponse {
   [CHANNELS.sourceGet]: Source | null;
   [CHANNELS.sourceDelete]: { deleted: true };
   [CHANNELS.sourceRetry]: Source;
+  // rag-qa (013)
+  [CHANNELS.ragAsk]: RagAnswer;
 }
