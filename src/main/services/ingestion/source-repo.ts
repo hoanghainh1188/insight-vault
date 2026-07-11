@@ -90,6 +90,8 @@ export interface SourceRepo {
   setTitle(id: string, title: string): void;
   insertChunks(sourceId: string, drafts: ChunkDraft[]): string[];
   listChunks(sourceId: string): Chunk[];
+  /** Lấy nhiều chunk theo danh sách id bất kỳ (kết quả vector search), trả theo THỨ TỰ ids. */
+  getChunksByIds(ids: string[]): Chunk[];
   chunkIds(sourceId: string): string[];
   deleteChunks(sourceId: string): void;
   delete(id: string): { deleted: true };
@@ -222,6 +224,17 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
         .prepare("SELECT * FROM chunk WHERE source_id = ? ORDER BY ordinal ASC")
         .all(sourceId) as unknown as ChunkRow[];
       return rows.map(toChunk);
+    },
+
+    getChunksByIds(ids) {
+      if (ids.length === 0) return [];
+      const placeholders = ids.map(() => "?").join(",");
+      const rows = db
+        .prepare(`SELECT * FROM chunk WHERE id IN (${placeholders})`)
+        .all(...ids) as unknown as ChunkRow[];
+      const byId = new Map(rows.map((r) => [r.id, toChunk(r)]));
+      // Trả theo đúng thứ tự ids đầu vào (SQL IN không đảm bảo thứ tự); bỏ id không tồn tại.
+      return ids.map((id) => byId.get(id)).filter((c): c is Chunk => c != null);
     },
 
     chunkIds(sourceId) {

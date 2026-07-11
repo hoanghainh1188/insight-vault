@@ -26,6 +26,9 @@ function fakeVectorStore() {
       for (const v of rows.values()) if (v.sourceId === sid) c++;
       return c;
     },
+    async search() {
+      return []; // ingestion không dùng search (013 test riêng)
+    },
     async close() {},
   };
   return { store, rows };

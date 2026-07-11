@@ -50,3 +50,10 @@ Bổ sung ngay khi gặp thuật ngữ mới — không tự dịch rồi bỏ q
 | —      | Hàng đợi nạp nguồn (tuần tự 1 nguồn/lần)                     | ingestion queue                    | `queue.ts` (SerialQueue, FIFO)                                                                |
 | —      | Làm sạch văn bản (giữa parse và chunk)                       | text cleaning                      | `cleaning.ts`                                                                                 |
 | —      | Trích nội dung chính (URL→văn bản)                           | content extraction                 | `parsers/url.ts` (readability + turndown); phân biệt với `parse` chung                        |
+| —      | Truy hồi top-k (số chunk lấy ra mỗi câu hỏi)                 | top-k retrieval                    | `RETRIEVAL_TOP_K=6` + ngưỡng `RELEVANCE_MAX_DISTANCE` — 013 (ADR rag-retrieval-strategy)      |
+| —      | Ngữ cảnh (ghép các chunk trúng tuyển gửi cho LLM)            | context                            | `context-builder.ts`; ~6000 ký tự, đánh số [n], bỏ nguyên chunk — phân biệt context window    |
+| —      | Chỉ dẫn hệ thống (định hướng hành vi LLM theo chế độ)        | system prompt                      | `prompt.ts` (grounded/open); nội bộ main, không log                                           |
+| —      | Câu hỏi (người dùng nhập ở cột Chat)                        | question                           | `RagAskInput.question`; validate boundary ≤2000 ký tự — 013 |
+| —      | Câu trả lời (AI sinh, đã hậu kiểm chip)                     | answer                             | `RagAnswer.answer`; đã gỡ chip [n] lỗi (citation postprocess) |
+| —      | Cờ "không tìm thấy trong nguồn"                             | notFound                           | `RagAnswer.notFound`; true khi grounded thiếu căn cứ |
+| —      | Lượt hội thoại (in-memory phiên, multi-turn)                | turn (`RagTurn`)                   | `RagTurn{role,content}`; gửi tối đa MAX_HISTORY_TURNS gần nhất — không persist |

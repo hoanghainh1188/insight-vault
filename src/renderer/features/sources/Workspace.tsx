@@ -1,7 +1,8 @@
 import { Navigate, useParams } from "react-router-dom";
 import { SourceList } from "./SourceList";
+import { ChatColumn } from "../rag-qa/ChatColumn";
 
-// Workspace 3 cột (prototype S2). Feature 011 hiện thực cột NGUỒN; Chat (005) + Studio (007-ui) sau.
+// Workspace 3 cột (prototype S2). Cột NGUỒN (011) + Chat (013-rag-qa); Studio (007-ui) sau.
 export function Workspace(): JSX.Element {
   const { notebookId } = useParams<{ notebookId: string }>();
   if (!notebookId) return <Navigate to="/notebooks" replace />;
@@ -9,12 +10,7 @@ export function Workspace(): JSX.Element {
   return (
     <div className="workspace" data-testid="workspace">
       <SourceList notebookId={notebookId} />
-      <section className="chat-col" aria-label="Hỏi đáp">
-        <h2>Hỏi đáp</h2>
-        <p className="col-hint">
-          Trò chuyện theo nguồn sẽ có ở bước RAG (005).
-        </p>
-      </section>
+      <ChatColumn notebookId={notebookId} />
       <section className="studio-col" aria-label="Studio">
         <h2>Studio</h2>
         <p className="col-hint">Tóm tắt & ghi chú (bước sau).</p>

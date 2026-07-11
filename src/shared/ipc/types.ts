@@ -162,3 +162,38 @@ export interface SourceProgressEvent {
   progress: number; // 0..1
   errorLabel?: string;
 }
+
+// ===== rag-qa (013) — nguồn: specs/.../rag-qa/data-model.md =====
+
+/** Chế độ trả lời: theo nguồn (grounded, không bịa) / mở rộng (open, dùng thêm kiến thức chung). */
+export type RagMode = "grounded" | "open";
+
+/** Một lượt hội thoại (renderer giữ in-memory, gửi ~6 lượt gần nhất cho multi-turn). */
+export interface RagTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface RagAskInput {
+  notebookId: string;
+  question: string;
+  mode: RagMode;
+  history: RagTurn[];
+}
+
+/** Trích dẫn: số [n] trong câu trả lời → chunk/nguồn/vị trí thật (dữ liệu cho source-viewer 006). */
+export interface Citation {
+  n: number;
+  chunkId: string;
+  sourceId: string;
+  sourceTitle: string;
+  locator: Locator;
+}
+
+/** Kết quả hỏi đáp — answer đã hậu kiểm (gỡ chip lỗi), citations chỉ gồm [n] hợp lệ & thực xuất hiện. */
+export interface RagAnswer {
+  answer: string;
+  citations: Citation[];
+  notFound: boolean; // true khi grounded không đủ căn cứ
+  modeUsed: RagMode;
+}
