@@ -42,8 +42,17 @@ export function resolveBaseUrl(
 export interface OllamaClientOptions {
   fetchFn?: FetchFn;
   baseUrl?: string;
+  /** Timeout mặc định (ping/listModels — kiểm sẵn sàng, cần ngắn). */
   timeoutMs?: number;
+  /** Timeout cho chat (LLM sinh câu trả lời — cần dài). */
+  chatTimeoutMs?: number;
+  /** Timeout cho embed. */
+  embedTimeoutMs?: number;
 }
+
+// Sinh câu trả lời LLM có thể mất hàng chục giây (model local 7B+) → timeout dài hơn nhiều ping (issue #15).
+const DEFAULT_CHAT_TIMEOUT_MS = 120_000;
+const DEFAULT_EMBED_TIMEOUT_MS = 60_000;
 
 export interface OllamaClient {
   /** GET /api/tags → Model[]. Lỗi/không kết nối → [] (không throw). */
@@ -74,10 +83,16 @@ export function createOllamaClient(
   );
   if (warning) logEvent("ai.ollamaHost.rejected", { warning });
   const timeoutMs = opts.timeoutMs ?? 5000;
+  const chatTimeoutMs = opts.chatTimeoutMs ?? DEFAULT_CHAT_TIMEOUT_MS;
+  const embedTimeoutMs = opts.embedTimeoutMs ?? DEFAULT_EMBED_TIMEOUT_MS;
 
-  async function call(path: string, init?: RequestInit): Promise<Response> {
+  async function call(
+    path: string,
+    init?: RequestInit,
+    timeout: number = timeoutMs,
+  ): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeout);
     try {
       return await fetchFn(`${baseUrl}${path}`, {
         ...init,
@@ -114,26 +129,34 @@ export function createOllamaClient(
     },
 
     async chat(req: ChatRequest): Promise<ChatResult> {
-      const res = await call("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: req.model,
-          messages: req.messages,
-          stream: false,
-        }),
-      });
+      const res = await call(
+        "/api/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: req.model,
+            messages: req.messages,
+            stream: false,
+          }),
+        },
+        chatTimeoutMs,
+      );
       if (!res.ok) throw new Error(`Ollama chat lỗi: ${res.status}`);
       const data = (await res.json()) as { message?: { content?: string } };
       return { content: data.message?.content ?? "" };
     },
 
     async embed(req: EmbedRequest): Promise<EmbedResult> {
-      const res = await call("/api/embeddings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: req.model, prompt: req.text }),
-      });
+      const res = await call(
+        "/api/embeddings",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: req.model, prompt: req.text }),
+        },
+        embedTimeoutMs,
+      );
       if (!res.ok) throw new Error(`Ollama embed lỗi: ${res.status}`);
       const data = (await res.json()) as { embedding?: number[] };
       return { vector: data.embedding ?? [] };
