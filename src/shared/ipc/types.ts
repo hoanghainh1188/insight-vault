@@ -214,3 +214,25 @@ export interface SourceContent {
   text: string; // toàn văn đã-làm-sạch tái dựng (== T gốc lúc chunk)
   pageBreaks: PageBreak[]; // chỉ PDF; non-PDF: []
 }
+
+// ===== studio (021) — nguồn: specs/.../studio/data-model.md =====
+
+/** 4 loại bản tổng hợp Studio (khác nhau ở system prompt). */
+export type StudioKind = "summary" | "keyPoints" | "faq" | "outline";
+
+/** Kết quả tổng hợp Studio — content dạng text kèm chip [n]; citations đã hậu kiểm (Constitution II). */
+export interface StudioResult {
+  id: string;
+  notebookId: string;
+  kind: StudioKind;
+  content: string; // text kèm token [n]
+  citations: Citation[]; // đã hậu kiểm; rỗng chỉ khi content rỗng (không lưu bản rỗng)
+  createdAt: number;
+  truncated?: boolean; // true khi số chunk đưa vào context < tổng chunk notebook (chỉ tổng hợp phần đầu)
+}
+
+/** Input sinh 1 bản tổng hợp cho notebook theo loại. */
+export interface StudioGenerateInput {
+  notebookId: string;
+  kind: StudioKind;
+}

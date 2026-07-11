@@ -8,6 +8,7 @@ import type {
   RagAskInput,
   RenameNotebookInput,
   SetColorInput,
+  StudioGenerateInput,
 } from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
 import { buildAppInfo } from "../services/app-shell/app-info";
@@ -22,6 +23,7 @@ import type { SourceRepo } from "../services/ingestion/source-repo";
 import type { IngestionPipeline } from "../services/ingestion/pipeline";
 import type { VectorStore } from "../services/ingestion/vector-store";
 import type { RagService } from "../services/rag/rag-service";
+import type { StudioService } from "../services/studio/studio-service";
 import { getSourceContent } from "../services/source-viewer/source-content";
 import { logEvent } from "../logging";
 
@@ -35,6 +37,7 @@ interface RegisterDeps {
   vectorStore: VectorStore;
   aiRuntime: AiRuntime;
   ragService: RagService;
+  studioService: StudioService;
 }
 
 /**
@@ -52,6 +55,7 @@ export function registerIpc({
   vectorStore,
   aiRuntime,
   ragService,
+  studioService,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -118,6 +122,12 @@ export function registerIpc({
 
   // rag-qa (013) — embed/search/chat CHỈ ở đây (main). KHÔNG log payload (câu hỏi/nội dung — Constitution III).
   safeHandle(CHANNELS.ragAsk, (input) => ragService.ask(input as RagAskInput));
+
+  // studio (021) — tổng hợp toàn notebook (đọc chunk + chat CHỈ ở main). KHÔNG log content/citations.
+  safeHandle(CHANNELS.studioGenerate, (input) =>
+    studioService.generate(input as StudioGenerateInput),
+  );
+  safeHandle(CHANNELS.studioList, (id) => studioService.list(id as string));
 
   logEvent("ipc.registered", { channels: Object.values(CHANNELS).length });
 }

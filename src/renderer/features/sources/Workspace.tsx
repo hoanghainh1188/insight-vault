@@ -1,6 +1,7 @@
 import { Navigate, useParams } from "react-router-dom";
 import { SourceList } from "./SourceList";
 import { ChatColumn } from "../rag-qa/ChatColumn";
+import { StudioColumn } from "../studio/StudioColumn";
 import { SourceViewer } from "../source-viewer/SourceViewer";
 import { useSourceViewer } from "../source-viewer/useSourceViewer";
 
@@ -15,10 +16,7 @@ export function Workspace(): JSX.Element {
     <div className="workspace" data-testid="workspace">
       <SourceList notebookId={notebookId} onOpenSource={viewer.openSource} />
       <ChatColumn notebookId={notebookId} onCite={viewer.openCitation} />
-      <section className="studio-col" aria-label="Studio">
-        <h2>Studio</h2>
-        <p className="col-hint">Tóm tắt & ghi chú (bước sau).</p>
-      </section>
+      <StudioColumn notebookId={notebookId} onCite={viewer.openCitation} />
       <SourceViewer viewer={viewer} />
     </div>
   );

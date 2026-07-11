@@ -65,6 +65,28 @@ export const MIGRATIONS: Migration[] = [
       );
     },
   },
+  // 021-studio: bảng studio_result (bản tổng hợp Studio lưu bền). FK ON DELETE CASCADE (xoá notebook →
+  // xoá kết quả). UNIQUE(notebook_id, kind) → 1 bản mới nhất mỗi loại/notebook; regenerate = UPSERT.
+  {
+    version: 3,
+    up(db) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS studio_result (
+          id             TEXT PRIMARY KEY,
+          notebook_id    TEXT NOT NULL REFERENCES notebook(id) ON DELETE CASCADE,
+          kind           TEXT NOT NULL CHECK (kind IN ('summary','keyPoints','faq','outline')),
+          content        TEXT NOT NULL,
+          citations_json TEXT NOT NULL,
+          created_at     INTEGER NOT NULL,
+          updated_at     INTEGER NOT NULL,
+          UNIQUE (notebook_id, kind)
+        )
+      `);
+      db.exec(
+        "CREATE INDEX IF NOT EXISTS idx_studio_notebook ON studio_result(notebook_id)",
+      );
+    },
+  },
 ];
 
 export function getUserVersion(db: Db): number {

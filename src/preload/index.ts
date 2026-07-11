@@ -18,6 +18,8 @@ import type {
   Source,
   SourceContent,
   SourceProgressEvent,
+  StudioGenerateInput,
+  StudioResult,
 } from "@shared/ipc/types";
 
 /**
@@ -83,6 +85,11 @@ const api = {
   // rag-qa (013)
   ragAsk: (input: RagAskInput): Promise<RagAnswer> =>
     ipcRenderer.invoke(CHANNELS.ragAsk, input),
+  // studio (021) — sinh + đọc bản tổng hợp.
+  studioGenerate: (input: StudioGenerateInput): Promise<StudioResult> =>
+    ipcRenderer.invoke(CHANNELS.studioGenerate, input),
+  studioList: (notebookId: string): Promise<StudioResult[]> =>
+    ipcRenderer.invoke(CHANNELS.studioList, notebookId),
 };
 
 export type Api = typeof api;

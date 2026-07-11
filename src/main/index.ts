@@ -11,6 +11,8 @@ import { createNotebookRepo } from "./services/notebooks/notebook-repo";
 import { createAiRuntime } from "./services/ai-runtime/ai-runtime";
 import { createIngestion } from "./services/ingestion/ingestion";
 import { createRagService } from "./services/rag/rag-service";
+import { createStudioRepo } from "./services/studio/studio-repo";
+import { createStudioService } from "./services/studio/studio-service";
 import { setEgressActive } from "./services/app-shell/privacy-state";
 import { logEvent } from "./logging";
 
@@ -108,6 +110,16 @@ app.whenReady().then(async () => {
       (await aiRuntime.registry.getActive().chat({ messages })).content,
   });
 
+  // studio (021): tổng hợp toàn notebook. Gom chunk qua source-repo (011), chat qua provider active (007),
+  // lưu bền vào studio_result (migration #3). KHÔNG log nội dung.
+  const studioService = createStudioService({
+    listSources: (nb) => ingestion.sourceRepo.listByNotebook(nb),
+    listChunks: (sid) => ingestion.sourceRepo.listChunks(sid),
+    studioRepo: createStudioRepo(db),
+    chat: async (messages) =>
+      (await aiRuntime.registry.getActive().chat({ messages })).content,
+  });
+
   registerIpc({
     store,
     version: app.getVersion(),
@@ -118,6 +130,7 @@ app.whenReady().then(async () => {
     vectorStore: ingestion.vectorStore,
     aiRuntime,
     ragService,
+    studioService,
   });
 
   installSecurity();
