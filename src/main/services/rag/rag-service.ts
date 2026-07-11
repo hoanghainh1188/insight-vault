@@ -7,7 +7,7 @@ import {
 import { retrieve, type RetrievalDeps } from "./retrieval";
 import { buildContext } from "./context-builder";
 import { systemPromptFor } from "./prompt";
-import { postprocessCitations } from "./citation";
+import { citationsFromMap, postprocessCitations } from "./citation";
 import { MAX_HISTORY_TURNS, NOT_FOUND_ANSWER } from "./constants";
 
 // Điều phối hỏi đáp (rag:ask). DI: retrieval deps + chat. KHÔNG log câu hỏi/nội dung (Constitution III).
@@ -49,10 +49,20 @@ export function createRagService(deps: RagServiceDeps) {
       const raw = await deps.chat(messages);
       const { answer, citations } = postprocessCitations(raw, built.map);
 
-      // Constitution II / SC-003: grounded PHẢI có căn cứ. Câu trả lời không có citation hợp lệ nào
-      // (model bỏ qua chỉ dẫn / chỉ chèn chip bịa đã bị gỡ) → coi là "không tìm thấy", KHÔNG hiển thị
-      // nội dung có thể bịa. Không dựa vào string-match mong manh.
-      if (mode === "grounded" && citations.length === 0) {
+      if (mode === "open") {
+        return { answer, citations, notFound: false, modeUsed: "open" };
+      }
+
+      // Grounded — đảm bảo "luôn kèm nguồn / kiểm chứng được" (Constitution II):
+      // 1) có [n] hợp lệ → dùng trực tiếp (trích dẫn chính xác).
+      // 2) model tự báo không có / rỗng → notFound.
+      // 3) có nội dung thật nhưng model quên chèn [n] (vd tóm tắt) → gắn CÁC NGUỒN ĐÃ TRUY HỒI làm
+      //    citation để câu trả lời vẫn mở/đối chiếu được — KHÔNG ẩn (retrieval đã có căn cứ; context
+      //    đưa cho model CHỈ gồm các chunk này).
+      if (citations.length > 0) {
+        return { answer, citations, notFound: false, modeUsed: "grounded" };
+      }
+      if (answer.trim() === "" || /không tìm thấy/i.test(answer)) {
         return {
           answer: NOT_FOUND_ANSWER,
           citations: [],
@@ -60,8 +70,12 @@ export function createRagService(deps: RagServiceDeps) {
           modeUsed: "grounded",
         };
       }
-
-      return { answer, citations, notFound: false, modeUsed: mode };
+      return {
+        answer,
+        citations: citationsFromMap(built.map),
+        notFound: false,
+        modeUsed: "grounded",
+      };
     },
   };
 }
