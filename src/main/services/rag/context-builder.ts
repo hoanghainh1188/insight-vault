@@ -13,8 +13,15 @@ function block(n: number, sc: ScoredChunk): string {
   return `[${n}] (Nguồn: ${sc.sourceTitle}, trang ${pageLabel(sc.chunk.locator.page)})\n${sc.chunk.text}`;
 }
 
-/** `scored` đã sắp theo score tăng dần (liên quan nhất trước). */
-export function buildContext(scored: ScoredChunk[]): BuiltContext {
+/**
+ * `scored` đã sắp theo score tăng dần (liên quan nhất trước).
+ * `budget` mặc định `CONTEXT_CHAR_BUDGET` (rag hỏi-đáp). 021-studio truyền `STUDIO_CONTEXT_BUDGET` rộng hơn
+ * để tổng hợp toàn notebook — additive, KHÔNG đổi hành vi caller cũ.
+ */
+export function buildContext(
+  scored: ScoredChunk[],
+  budget: number = CONTEXT_CHAR_BUDGET,
+): BuiltContext {
   const map = new Map<number, RetrievedChunk>();
   const parts: string[] = [];
   let used = 0;
@@ -23,7 +30,7 @@ export function buildContext(scored: ScoredChunk[]): BuiltContext {
   for (const sc of scored) {
     const b = block(n + 1, sc);
     // Bỏ nguyên chunk nếu vượt ngân sách (nhưng luôn nhận chunk đầu tiên).
-    if (n > 0 && used + b.length + 2 > CONTEXT_CHAR_BUDGET) continue;
+    if (n > 0 && used + b.length + 2 > budget) continue;
     n += 1;
     map.set(n, { ...sc, n });
     parts.push(b);

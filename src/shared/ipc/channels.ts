@@ -11,6 +11,7 @@ import type {
   RuntimeStatus,
   Source,
   SourceContent,
+  StudioResult,
 } from "./types";
 
 /**
@@ -51,6 +52,9 @@ export const CHANNELS = {
   sourceProgress: "source:progress",
   // rag-qa (013) — hỏi đáp theo nguồn
   ragAsk: "rag:ask",
+  // studio (021) — tổng hợp tri thức từ notebook
+  studioGenerate: "studio:generate",
+  studioList: "studio:list",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -92,4 +96,7 @@ export interface ChannelResponse {
   [CHANNELS.sourceGetContent]: SourceContent | null;
   // rag-qa (013)
   [CHANNELS.ragAsk]: RagAnswer;
+  // studio (021)
+  [CHANNELS.studioGenerate]: StudioResult;
+  [CHANNELS.studioList]: StudioResult[];
 }

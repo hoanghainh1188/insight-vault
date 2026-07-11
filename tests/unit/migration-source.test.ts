@@ -33,9 +33,10 @@ describe("migration #2 — source/chunk", () => {
       "INSERT INTO notebook (id, name, color, created_at, updated_at) VALUES (?,?,?,?,?)",
     ).run("nb1", "Cũ", "#4F46E5", 1, 1);
 
-    // Nâng cấp toàn bộ → v2.
+    // Nâng cấp toàn bộ → version mới nhất (không hardcode: feature sau thêm migration).
     runMigrations(db);
-    expect(getUserVersion(db)).toBe(2);
+    const latest = Math.max(...MIGRATIONS.map((m) => m.version));
+    expect(getUserVersion(db)).toBe(latest);
     const names = tableNames(db);
     expect(names).toContain("source");
     expect(names).toContain("chunk");
