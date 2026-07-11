@@ -3,6 +3,7 @@ import type {
   DataDirInfo,
   Model,
   ModelSelection,
+  Notebook,
   OnboardingState,
   PrivacyState,
   RuntimeStatus,
@@ -26,6 +27,12 @@ export const CHANNELS = {
   aiGetSelectedModels: "ai:getSelectedModels",
   aiSetSelectedModels: "ai:setSelectedModels",
   aiGetRuntimeStatus: "ai:getRuntimeStatus",
+  // notebooks (009)
+  notebookList: "notebook:list",
+  notebookCreate: "notebook:create",
+  notebookRename: "notebook:rename",
+  notebookSetColor: "notebook:setColor",
+  notebookDelete: "notebook:delete",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -52,4 +59,9 @@ export interface ChannelResponse {
   [CHANNELS.aiGetSelectedModels]: ModelSelection;
   [CHANNELS.aiSetSelectedModels]: ModelSelection;
   [CHANNELS.aiGetRuntimeStatus]: RuntimeStatus;
+  [CHANNELS.notebookList]: Notebook[];
+  [CHANNELS.notebookCreate]: Notebook;
+  [CHANNELS.notebookRename]: Notebook;
+  [CHANNELS.notebookSetColor]: Notebook;
+  [CHANNELS.notebookDelete]: { deleted: true };
 }

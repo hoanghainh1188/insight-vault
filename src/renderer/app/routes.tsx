@@ -1,9 +1,7 @@
 import { createHashRouter, Navigate } from "react-router-dom";
 import { App } from "./App";
-import {
-  NotebooksPlaceholder,
-  WorkspacePlaceholder,
-} from "../features/app-shell/placeholders";
+import { WorkspacePlaceholder } from "../features/app-shell/placeholders";
+import { NotebooksGrid } from "../features/notebooks/NotebooksGrid";
 import { SettingsAiSection } from "../features/ai-runtime/SettingsAiSection";
 
 // HashRouter (clarify A2) — route phản ánh khu vực, deep-link được sau. Mặc định /notebooks (A6).
@@ -13,7 +11,7 @@ export const router = createHashRouter([
     element: <App />,
     children: [
       { index: true, element: <Navigate to="/notebooks" replace /> },
-      { path: "notebooks", element: <NotebooksPlaceholder /> },
+      { path: "notebooks", element: <NotebooksGrid /> },
       { path: "workspace", element: <WorkspacePlaceholder /> },
       {
         path: "settings",

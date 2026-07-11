@@ -1,6 +1,12 @@
 import { ipcMain } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
-import type { DataDirInfo, ModelSelection } from "@shared/ipc/types";
+import type {
+  CreateNotebookInput,
+  DataDirInfo,
+  ModelSelection,
+  RenameNotebookInput,
+  SetColorInput,
+} from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
 import { buildAppInfo } from "../services/app-shell/app-info";
 import {
@@ -9,12 +15,14 @@ import {
   type StoreLike,
 } from "../services/app-shell/onboarding";
 import { createAiRuntime } from "../services/ai-runtime/ai-runtime";
+import type { NotebookRepo } from "../services/notebooks/notebook-repo";
 import { logEvent } from "../logging";
 
 interface RegisterDeps {
   store: StoreLike;
   version: string;
   dataDir: DataDirInfo;
+  notebookRepo: NotebookRepo;
 }
 
 /**
@@ -22,7 +30,12 @@ interface RegisterDeps {
  * KHÔNG có handler catch-all: renderer gọi kênh ngoài danh sách ⇒ không có handler ⇒ Promise reject,
  * không side effect. `safeHandle` chặn cứng nếu ai đó lỡ đăng ký tên ngoài whitelist.
  */
-export function registerIpc({ store, version, dataDir }: RegisterDeps): void {
+export function registerIpc({
+  store,
+  version,
+  dataDir,
+  notebookRepo,
+}: RegisterDeps): void {
   const safeHandle = (
     channel: string,
     fn: (...a: unknown[]) => unknown,
@@ -52,6 +65,21 @@ export function registerIpc({ store, version, dataDir }: RegisterDeps): void {
     ai.setSelectedModels(sel as ModelSelection),
   );
   safeHandle(CHANNELS.aiGetRuntimeStatus, () => ai.getRuntimeStatus());
+
+  // notebooks (009) — SQLite gọi CHỈ ở đây (main, qua repo). KHÔNG log tên notebook (args không vào logEvent).
+  safeHandle(CHANNELS.notebookList, () => notebookRepo.list());
+  safeHandle(CHANNELS.notebookCreate, (input) =>
+    notebookRepo.create(input as CreateNotebookInput),
+  );
+  safeHandle(CHANNELS.notebookRename, (input) =>
+    notebookRepo.rename(input as RenameNotebookInput),
+  );
+  safeHandle(CHANNELS.notebookSetColor, (input) =>
+    notebookRepo.setColor(input as SetColorInput),
+  );
+  safeHandle(CHANNELS.notebookDelete, (id) =>
+    notebookRepo.delete(id as string),
+  );
 
   logEvent("ipc.registered", { channels: Object.values(CHANNELS).length });
 }
