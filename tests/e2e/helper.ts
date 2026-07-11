@@ -10,10 +10,18 @@ import { tmpdir } from "node:os";
 export const MAIN = join(process.cwd(), "out/main/index.js");
 
 /** Launch app với userData TẠM (cô lập trạng thái, không đụng store thật của người dùng). */
-export async function launchFresh(): Promise<ElectronApplication> {
+export async function launchFresh(
+  env?: Record<string, string>,
+): Promise<ElectronApplication> {
   const userData = await mkdtemp(join(tmpdir(), "iv-e2e-"));
-  return electron.launch({ args: [MAIN, `--user-data-dir=${userData}`] });
+  return electron.launch({
+    args: [MAIN, `--user-data-dir=${userData}`],
+    env: { ...process.env, ...(env ?? {}) } as Record<string, string>,
+  });
 }
+
+/** OLLAMA_HOST trỏ cổng chắc chắn không có service → ping fail → ollamaReady=false (tất định). */
+export const UNREACHABLE_OLLAMA = { OLLAMA_HOST: "http://127.0.0.1:1" };
 
 /** Đóng onboarding modal lần đầu (chờ nó xuất hiện do IPC async, rồi bấm "Bắt đầu"). */
 export async function dismissOnboarding(win: Page): Promise<void> {

@@ -18,6 +18,8 @@ export default defineConfig({
         "src/main/logging.ts",
         "src/shared/ipc/**/*.ts",
       ],
+      // Composition roots (wiring) — phủ bởi e2e/integration, không phải business logic thuần.
+      exclude: ["src/main/services/ai-runtime/ai-runtime.ts"],
       thresholds: {
         statements: 80,
         branches: 80,

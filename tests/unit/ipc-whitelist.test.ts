@@ -5,13 +5,23 @@ import {
   isWhitelisted,
 } from "../../src/shared/ipc/channels";
 
+const APP_CHANNELS = [
+  "app:getDataDir",
+  "app:getPrivacyState",
+  "app:getOnboardingState",
+  "app:setOnboardingComplete",
+  "app:getAppInfo",
+];
+
 describe("ipc whitelist", () => {
-  it("đúng 5 kênh whitelisted", () => {
-    expect(WHITELISTED_CHANNELS.size).toBe(5);
-    expect(Object.values(CHANNELS)).toHaveLength(5);
+  it("5 kênh app-shell đều whitelisted (feature sau thêm kênh — không cứng tổng số)", () => {
+    for (const ch of APP_CHANNELS) expect(isWhitelisted(ch)).toBe(true);
+    expect(WHITELISTED_CHANNELS.size).toBeGreaterThanOrEqual(
+      APP_CHANNELS.length,
+    );
   });
 
-  it("cả 5 kênh app-shell đều whitelisted", () => {
+  it("mọi kênh trong CHANNELS đều whitelisted (nguồn duy nhất)", () => {
     for (const ch of Object.values(CHANNELS)) {
       expect(isWhitelisted(ch)).toBe(true);
     }

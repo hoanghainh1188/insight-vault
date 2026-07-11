@@ -3,8 +3,8 @@ import { App } from "./App";
 import {
   NotebooksPlaceholder,
   WorkspacePlaceholder,
-  SettingsPlaceholder,
 } from "../features/app-shell/placeholders";
+import { SettingsAiSection } from "../features/ai-runtime/SettingsAiSection";
 
 // HashRouter (clarify A2) — route phản ánh khu vực, deep-link được sau. Mặc định /notebooks (A6).
 export const router = createHashRouter([
@@ -15,7 +15,15 @@ export const router = createHashRouter([
       { index: true, element: <Navigate to="/notebooks" replace /> },
       { path: "notebooks", element: <NotebooksPlaceholder /> },
       { path: "workspace", element: <WorkspacePlaceholder /> },
-      { path: "settings", element: <SettingsPlaceholder /> },
+      {
+        path: "settings",
+        element: (
+          <section className="settings-page" data-testid="placeholder-settings">
+            <h2>Cài đặt</h2>
+            <SettingsAiSection />
+          </section>
+        ),
+      },
     ],
   },
 ]);
