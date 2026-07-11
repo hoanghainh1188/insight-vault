@@ -6,6 +6,7 @@ import "./shared/tokens.css";
 import "./app/app.css";
 import "./features/sources/sources.css";
 import "./features/rag-qa/rag-qa.css";
+import "./features/source-viewer/source-viewer.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

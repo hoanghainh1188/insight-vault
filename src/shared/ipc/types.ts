@@ -197,3 +197,20 @@ export interface RagAnswer {
   notFound: boolean; // true khi grounded không đủ căn cứ
   modeUsed: RagMode;
 }
+
+// ===== source-viewer (019) — nguồn: specs/.../source-viewer/data-model.md =====
+
+/** Mốc trang PDF: offset ký tự toàn cục nơi mỗi trang bắt đầu trong `SourceContent.text`. */
+export interface PageBreak {
+  page: number; // 1-based
+  offset: number; // charStart của trang trong text
+}
+
+/** Nội dung nguồn để hiển thị ở viewer — tái dựng runtime từ chunk, không lưu bền. */
+export interface SourceContent {
+  kind: SourceKind;
+  title: string;
+  pageCount: number | null; // PDF: số trang; khác: null
+  text: string; // toàn văn đã-làm-sạch tái dựng (== T gốc lúc chunk)
+  pageBreaks: PageBreak[]; // chỉ PDF; non-PDF: []
+}

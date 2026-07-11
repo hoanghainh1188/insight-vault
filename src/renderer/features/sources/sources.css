@@ -248,3 +248,18 @@
   cursor: pointer;
   font-size: 13px;
 }
+
+/* Tên nguồn bấm được → mở trình xem nguồn (019) */
+.src-title-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  font: inherit;
+}
+.src-title-btn:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}

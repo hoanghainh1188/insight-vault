@@ -7,8 +7,10 @@ import { AddSourceModal } from "./AddSourceModal";
 // Cột "Nguồn" của Workspace (prototype S2): header tổng hợp + nút thêm + danh sách nguồn + modal.
 export function SourceList({
   notebookId,
+  onOpenSource,
 }: {
   notebookId: string;
+  onOpenSource?: (sourceId: string) => void; // 019: mở trình xem nguồn
 }): JSX.Element {
   const { sources, loading, add, remove, retry } = useSources(notebookId);
   const [showAdd, setShowAdd] = useState(false);
@@ -46,6 +48,7 @@ export function SourceList({
               source={s}
               onRetry={retry}
               onDelete={remove}
+              onOpen={onOpenSource}
             />
           ))}
         </ul>

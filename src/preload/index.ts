@@ -16,6 +16,7 @@ import type {
   RuntimeStatus,
   SetColorInput,
   Source,
+  SourceContent,
   SourceProgressEvent,
 } from "@shared/ipc/types";
 
@@ -67,6 +68,9 @@ const api = {
     ipcRenderer.invoke(CHANNELS.sourceDelete, id),
   sourceRetry: (id: string): Promise<Source> =>
     ipcRenderer.invoke(CHANNELS.sourceRetry, id),
+  // source-viewer (019)
+  sourceGetContent: (id: string): Promise<SourceContent | null> =>
+    ipcRenderer.invoke(CHANNELS.sourceGetContent, id),
   /** Đăng ký nhận tiến độ nạp nguồn (push từ main). Trả hàm huỷ đăng ký. */
   onSourceProgress: (cb: (e: SourceProgressEvent) => void): (() => void) => {
     const listener = (_e: unknown, payload: SourceProgressEvent): void =>

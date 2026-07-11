@@ -22,6 +22,7 @@ import type { SourceRepo } from "../services/ingestion/source-repo";
 import type { IngestionPipeline } from "../services/ingestion/pipeline";
 import type { VectorStore } from "../services/ingestion/vector-store";
 import type { RagService } from "../services/rag/rag-service";
+import { getSourceContent } from "../services/source-viewer/source-content";
 import { logEvent } from "../logging";
 
 interface RegisterDeps {
@@ -110,6 +111,10 @@ export function registerIpc({
   safeHandle(CHANNELS.sourceGet, (id) => sourceRepo.getById(id as string));
   safeHandle(CHANNELS.sourceDelete, (id) => pipeline.remove(id as string));
   safeHandle(CHANNELS.sourceRetry, (id) => pipeline.retry(id as string));
+  // source-viewer (019) — tái dựng toàn văn từ chunk đã lưu để hiển thị. CHỈ đọc; KHÔNG log content.
+  safeHandle(CHANNELS.sourceGetContent, (id) =>
+    getSourceContent(sourceRepo, id as string),
+  );
 
   // rag-qa (013) — embed/search/chat CHỈ ở đây (main). KHÔNG log payload (câu hỏi/nội dung — Constitution III).
   safeHandle(CHANNELS.ragAsk, (input) => ragService.ask(input as RagAskInput));

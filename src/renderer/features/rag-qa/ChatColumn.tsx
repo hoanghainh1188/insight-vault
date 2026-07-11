@@ -1,13 +1,17 @@
 import { useState } from "react";
+import type { Citation } from "@shared/ipc/types";
 import { useChat } from "./useChat";
 import { MessageBubble } from "./MessageBubble";
 import { ModeToggle } from "./ModeToggle";
 
 // Cột Chat của Workspace (prototype S2 cột giữa). Thay placeholder do 013-rag-qa.
+// `onCite` (019): bấm chip [n] → mở trình xem nguồn (Workspace truyền xuống).
 export function ChatColumn({
   notebookId,
+  onCite,
 }: {
   notebookId: string;
+  onCite?: (c: Citation) => void;
 }): JSX.Element {
   const {
     messages,
@@ -52,7 +56,7 @@ export function ChatColumn({
           </p>
         )}
         {messages.map((m, i) => (
-          <MessageBubble key={i} message={m} />
+          <MessageBubble key={i} message={m} onCite={onCite} />
         ))}
         {loading && (
           <div className="bubble ai" data-testid="chat-loading">
