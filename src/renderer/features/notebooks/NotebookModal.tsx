@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { NotebookColor } from "@shared/ipc/types";
 import { PALETTE, DEFAULT_COLOR } from "@shared/notebook-palette";
+import { useModalA11y } from "../../shared/useModalA11y";
+import { IconClose } from "../../shared/icons";
 
 // Modal tạo/sửa notebook (A8): nhập tên + chọn màu từ palette. onSubmit ném lỗi → hiện message.
 export interface NotebookModalProps {
@@ -22,6 +24,8 @@ export function NotebookModal({
   const [color, setColor] = useState<NotebookColor>(initialColor);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalA11y({ active: true, onClose, containerRef: modalRef });
 
   const submit = async (): Promise<void> => {
     setBusy(true);
@@ -43,7 +47,16 @@ export function NotebookModal({
       aria-modal="true"
       data-testid="notebook-modal"
     >
-      <div className="nb-modal">
+      <div className="nb-modal" ref={modalRef}>
+        <button
+          type="button"
+          className="modal-x"
+          onClick={onClose}
+          aria-label="Đóng"
+          data-testid="modal-close"
+        >
+          <IconClose size={16} />
+        </button>
         <h3>{mode === "create" ? "Notebook mới" : "Sửa notebook"}</h3>
         <label className="nb-field-label" htmlFor="nb-name">
           Tên

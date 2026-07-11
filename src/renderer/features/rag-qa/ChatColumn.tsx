@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Citation } from "@shared/ipc/types";
 import { useChat } from "./useChat";
 import { MessageBubble } from "./MessageBubble";
-import { ModeToggle } from "./ModeToggle";
+import { ModeToggle, MODE_HINTS } from "./ModeToggle";
+import { IconSend } from "../../shared/icons";
 
-// Cột Chat của Workspace (prototype S2 cột giữa). Thay placeholder do 013-rag-qa.
-// `onCite` (019): bấm chip [n] → mở trình xem nguồn (Workspace truyền xuống).
+// Cột Chat của Workspace (prototype S2 cột giữa). 013-rag-qa + đánh bóng 023-ui-polish (composer .cbox +
+// model chip + nút gửi icon + skeleton). `onCite` (019): bấm chip [n] → mở trình xem nguồn.
+// Model chip CHỈ hiển thị (đọc aiGetSelectedModels) — KHÔNG đổi logic gửi (useChat/send giữ nguyên).
 export function ChatColumn({
   notebookId,
   onCite,
@@ -25,6 +27,14 @@ export function ChatColumn({
     send,
   } = useChat(notebookId);
   const [draft, setDraft] = useState("");
+  const [chatModel, setChatModel] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.api
+      .aiGetSelectedModels()
+      .then((s) => setChatModel(s.chatModel))
+      .catch(() => setChatModel(null));
+  }, [runtimeReady]);
 
   const submit = (): void => {
     if (!canSend || draft.trim() === "") return;
@@ -59,8 +69,13 @@ export function ChatColumn({
           <MessageBubble key={i} message={m} onCite={onCite} />
         ))}
         {loading && (
-          <div className="bubble ai" data-testid="chat-loading">
-            <span className="typing">Đang trả lời…</span>
+          <div
+            className="bubble-skeleton"
+            data-testid="chat-skeleton"
+            aria-hidden="true"
+          >
+            <span className="sk-line" />
+            <span className="sk-line short" />
           </div>
         )}
       </div>
@@ -72,39 +87,54 @@ export function ChatColumn({
       )}
 
       <div className="chat-composer">
-        <ModeToggle mode={mode} onChange={setMode} disabled={loading} />
         {blockReason ? (
           <p className="chat-block" data-testid="chat-block">
             {blockReason}
           </p>
         ) : (
-          <div className="composer-row">
-            <textarea
-              className="composer-input"
-              placeholder="Nhập câu hỏi…"
-              value={draft}
-              maxLength={2000}
-              rows={2}
-              disabled={!canSend}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  submit();
-                }
-              }}
-              data-testid="chat-input"
-            />
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={submit}
-              disabled={!canSend || draft.trim() === ""}
-              data-testid="chat-send"
-            >
-              Gửi
-            </button>
-          </div>
+          <>
+            <div className="cbox">
+              <textarea
+                className="composer-input"
+                placeholder="Nhập câu hỏi…"
+                value={draft}
+                maxLength={2000}
+                rows={2}
+                disabled={!canSend}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    submit();
+                  }
+                }}
+                data-testid="chat-input"
+              />
+              <div className="cbar">
+                <ModeToggle mode={mode} onChange={setMode} disabled={loading} />
+                <span
+                  className="model-chip"
+                  title="Mô hình đang dùng — đổi ở mục Cài đặt"
+                  data-testid="composer-model"
+                >
+                  Local · {chatModel ?? "chưa chọn"}
+                </span>
+                <button
+                  type="button"
+                  className="send-btn"
+                  onClick={submit}
+                  disabled={!canSend || draft.trim() === ""}
+                  aria-label="Gửi"
+                  data-testid="chat-send"
+                >
+                  <IconSend size={16} />
+                </button>
+              </div>
+            </div>
+            <p className="modehint" data-testid="mode-hint">
+              {MODE_HINTS[mode]}
+            </p>
+          </>
         )}
       </div>
     </section>

@@ -32,8 +32,8 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition:
-    border-color 120ms ease,
-    background 120ms ease;
+    border-color var(--duration-fast) var(--ease-out-expo),
+    background var(--duration-fast) var(--ease-out-expo);
 }
 .studio-btn:hover:not(:disabled) {
   border-color: var(--accent);

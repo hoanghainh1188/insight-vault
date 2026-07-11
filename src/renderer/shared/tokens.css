@@ -16,11 +16,38 @@
   --danger: #b4453c;
   --warn-bg: #fbf1dc;
   --warn-ink: #8a5a12;
+  /* Citation — bảng màu trích dẫn semantic riêng (023-ui-polish, giá trị từ prototype :root).
+     Chip [n] + highlight dùng bảng này, KHÔNG dùng --accent (tránh lẫn nút thường → củng cố
+     "kiểm chứng được"). Tương phản --cite trên --cite-bg ≈ 6.7:1 (đạt ≥4.5:1). */
+  --cite: #9a6510;
+  --cite-bg: #fcefcf;
+  --cite-line: #e8c878;
+  /* Màu viền/nền phụ trước đây hardcode rải rác → token semantic (giá trị giữ nguyên). */
+  --accent-line: #d3e6df;
+  --warn-line: #ead9ae;
+  --warn-strong: #d99a2b;
+  --danger-line: #e6c2bd;
+  --danger-bg: #fbeae8;
   --radius: 10px;
   --radius-sm: 7px;
   --shadow: 0 1px 2px rgba(16, 19, 22, 0.04), 0 8px 24px rgba(16, 19, 22, 0.06);
+  /* Motion — chuẩn hoá thời lượng/nhịp (thay .12s/.15s/120ms rải rác). Compositor-friendly. */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Tôn trọng thiết lập giảm chuyển động của HĐH (FR-012) — tắt transition/animation toàn cục. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 * {

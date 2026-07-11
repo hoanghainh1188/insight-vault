@@ -5,6 +5,7 @@ import { useNotebooks } from "./useNotebooks";
 import { NotebookCard } from "./NotebookCard";
 import { NotebookModal } from "./NotebookModal";
 import { DeleteConfirm } from "./DeleteConfirm";
+import { IconSearch, IconPlus } from "../../shared/icons";
 
 type ModalState =
   { kind: "create" } | { kind: "edit"; notebook: Notebook } | null;
@@ -35,43 +36,73 @@ export function NotebooksGrid(): JSX.Element {
             Mỗi notebook là một không gian riêng cho một chủ đề nghiên cứu
           </p>
         </div>
-        <input
-          className="nb-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Tìm notebook…"
-          data-testid="notebook-search"
-        />
+        <div className="nb-search">
+          <IconSearch size={16} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tìm notebook…"
+            aria-label="Tìm notebook"
+            data-testid="notebook-search"
+          />
+        </div>
         <button
           type="button"
           className="btn-primary-sm"
           onClick={() => setModal({ kind: "create" })}
           data-testid="notebook-new"
         >
+          <IconPlus size={15} />
           Notebook mới
         </button>
       </div>
 
-      <div className="nb-grid">
-        {filtered.map((n) => (
-          <NotebookCard
-            key={n.id}
-            notebook={n}
-            now={now}
-            onOpen={() => navigate(`/workspace/${n.id}`)}
-            onEdit={() => setModal({ kind: "edit", notebook: n })}
-            onDelete={() => setPendingDelete(n)}
-          />
-        ))}
-        <button
-          type="button"
-          className="nb-card-new"
-          onClick={() => setModal({ kind: "create" })}
-          data-testid="notebook-create-card"
-        >
-          + Tạo notebook mới
-        </button>
-      </div>
+      {notebooks.length === 0 ? (
+        <div className="nb-empty" data-testid="notebooks-empty">
+          <p className="nb-empty-title">Chưa có notebook nào</p>
+          <p className="nb-empty-sub">
+            Tạo notebook đầu tiên để bắt đầu nạp nguồn và hỏi đáp.
+          </p>
+          <button
+            type="button"
+            className="btn-primary-sm"
+            onClick={() => setModal({ kind: "create" })}
+            data-testid="notebook-create-card"
+          >
+            <IconPlus size={15} />
+            Tạo notebook mới
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="nb-empty" data-testid="notebooks-no-result">
+          <p className="nb-empty-title">Không tìm thấy notebook</p>
+          <p className="nb-empty-sub">
+            Không có notebook nào khớp “{query}”. Thử từ khoá khác.
+          </p>
+        </div>
+      ) : (
+        <div className="nb-grid">
+          {filtered.map((n) => (
+            <NotebookCard
+              key={n.id}
+              notebook={n}
+              now={now}
+              onOpen={() => navigate(`/workspace/${n.id}`)}
+              onEdit={() => setModal({ kind: "edit", notebook: n })}
+              onDelete={() => setPendingDelete(n)}
+            />
+          ))}
+          <button
+            type="button"
+            className="nb-card-new"
+            onClick={() => setModal({ kind: "create" })}
+            data-testid="notebook-create-card"
+          >
+            <IconPlus size={22} />
+            Tạo notebook mới
+          </button>
+        </div>
+      )}
 
       {modal?.kind === "create" && (
         <NotebookModal

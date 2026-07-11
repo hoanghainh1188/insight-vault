@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import type { AddSourceInput, SourceKind } from "@shared/ipc/types";
+import { useModalA11y } from "../../shared/useModalA11y";
+import { IconClose } from "../../shared/icons";
 
 const FILE_EXT: Record<string, Exclude<SourceKind, "url">> = {
   pdf: "pdf",
@@ -31,6 +33,8 @@ export function AddSourceModal({
   const [notice, setNotice] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalA11y({ active: true, onClose, containerRef: modalRef });
 
   const addFiles = async (files: FileList | File[]): Promise<void> => {
     setError(null);
@@ -82,10 +86,21 @@ export function AddSourceModal({
     >
       <div
         className="modal add-source"
+        ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-label="Thêm nguồn"
       >
+        <button
+          type="button"
+          className="modal-x"
+          onClick={onClose}
+          aria-label="Đóng"
+          data-testid="modal-close"
+        >
+          <IconClose size={16} />
+        </button>
         <h3>Thêm nguồn</h3>
 
         <div className="types" role="tablist">

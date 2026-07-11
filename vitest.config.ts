@@ -25,6 +25,7 @@ export default defineConfig({
         "src/renderer/features/source-viewer/highlight.ts",
         "src/main/services/studio/studio-repo.ts",
         "src/main/services/studio/prompt.ts",
+        "src/renderer/shared/useModalA11y.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.

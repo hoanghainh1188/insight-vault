@@ -32,7 +32,7 @@
   font-size: 11.5px;
   color: var(--accent-ink);
   background: var(--accent-soft);
-  border: 1px solid #d3e6df;
+  border: 1px solid var(--accent-line);
   padding: 4px 10px;
   border-radius: 100px;
 }
@@ -46,10 +46,10 @@
 .privacy-badge.online {
   color: var(--warn-ink);
   background: var(--warn-bg);
-  border-color: #ead9ae;
+  border-color: var(--warn-line);
 }
 .privacy-badge.online .dot {
-  background: #d99a2b;
+  background: var(--warn-strong);
 }
 
 .app-body {
@@ -58,14 +58,15 @@
   min-height: 0;
 }
 
-/* Nav rail */
+/* Nav rail — rail dọc 60px icon-only (023-ui-polish). Cài đặt đẩy đáy bằng .nav-spacer. */
 .nav-rail {
-  width: 168px;
-  flex: 0 0 168px;
+  width: 60px;
+  flex: 0 0 60px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 14px 10px;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
   background: var(--surface-2);
   border-right: 1px solid var(--line);
 }
@@ -78,18 +79,29 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  margin-bottom: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.nav-spacer {
+  flex: 1 1 auto;
 }
 .nav-item {
-  padding: 9px 12px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
   border-radius: var(--radius-sm);
   color: var(--ink-soft);
   text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 500;
   transition:
-    background 0.12s,
-    color 0.12s;
+    background var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo);
 }
 .nav-item:hover {
   background: var(--line-soft);
@@ -97,7 +109,11 @@
 }
 .nav-item.active {
   background: var(--accent-soft);
-  color: var(--accent-ink);
+  color: var(--accent);
+}
+.nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .app-content {
@@ -213,7 +229,7 @@
   font-size: 12px;
   color: var(--warn-ink);
   background: var(--warn-bg);
-  border: 1px solid #ead9ae;
+  border: 1px solid var(--warn-line);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   margin: 8px 0;
@@ -275,7 +291,7 @@
   gap: 12px;
   padding: 10px 16px;
   background: var(--warn-bg);
-  border-bottom: 1px solid #ead9ae;
+  border-bottom: 1px solid var(--warn-line);
   color: var(--warn-ink);
   font-size: 12.5px;
 }
@@ -310,14 +326,36 @@
 .nb-search {
   margin-left: auto;
   width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 8px 11px;
+  padding: 0 11px;
+  background: var(--surface-2);
+  color: var(--ink-faint);
+}
+.nb-search:focus-within {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.nb-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
   font: inherit;
   font-size: 13px;
-  background: var(--surface-2);
+  color: var(--ink);
+}
+.nb-search input:focus {
+  outline: none;
 }
 .btn-primary-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 1px solid var(--accent);
   background: var(--accent);
   color: #fff;
@@ -327,6 +365,71 @@
   padding: 7px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out-expo);
+}
+.btn-primary-sm:hover {
+  background: var(--accent-ink);
+}
+
+/* Empty / no-result state màn Notebooks (023-ui-polish C) */
+.nb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 64px 24px;
+  color: var(--ink-soft);
+}
+.nb-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.nb-empty-sub {
+  font-size: 13px;
+  color: var(--ink-faint);
+  max-width: 360px;
+}
+.nb-empty .btn-primary-sm {
+  margin-top: 6px;
+}
+
+/* Nút đóng X góc modal (023-ui-polish C) */
+.modal-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo);
+}
+.modal-x:hover {
+  background: var(--line-soft);
+  color: var(--ink);
+}
+.modal-x:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Trạng thái focus bàn phím chung (023-ui-polish C / FR-009) */
+.btn-primary-sm:focus-visible,
+.btn-sm:focus-visible,
+.btn-primary:focus-visible,
+.nb-card-new:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .btn-primary-sm:hover {
   background: var(--accent-ink);
@@ -409,7 +512,7 @@
 }
 .nb-icon-btn.danger {
   color: var(--danger);
-  border-color: #e6c2bd;
+  border-color: var(--danger-line);
 }
 .nb-card-new {
   border: 1.5px dashed var(--line);
@@ -437,6 +540,7 @@
   z-index: 60;
 }
 .nb-modal {
+  position: relative;
   width: 440px;
   max-width: 92%;
   background: #fff;
@@ -486,8 +590,8 @@
   margin-top: 10px;
   font-size: 12px;
   color: var(--danger);
-  background: #fbeae8;
-  border: 1px solid #e6c2bd;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-line);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
 }
