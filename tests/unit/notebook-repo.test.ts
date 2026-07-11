@@ -64,4 +64,19 @@ describe("notebook-repo", () => {
       /không tồn tại/,
     );
   });
+
+  it("sourceCount đếm THẬT từ bảng source (011-ingestion)", () => {
+    const db = openDatabase(":memory:");
+    runMigrations(db);
+    const r = createNotebookRepo(db);
+    const nb = r.create({ name: "A", color: C0 });
+    expect(r.list()[0].sourceCount).toBe(0);
+    db.prepare(
+      "INSERT INTO source (id, notebook_id, kind, title, origin, status, content_hash, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+    ).run("s1", nb.id, "txt", "t", "/p", "ready", "h", 1, 1);
+    db.prepare(
+      "INSERT INTO source (id, notebook_id, kind, title, origin, status, content_hash, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+    ).run("s2", nb.id, "url", "u", "http://x", "queued", "h2", 1, 1);
+    expect(r.list()[0].sourceCount).toBe(2);
+  });
 });

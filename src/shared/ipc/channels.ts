@@ -1,4 +1,5 @@
 import type {
+  AddSourceResult,
   AppInfo,
   DataDirInfo,
   Model,
@@ -7,13 +8,16 @@ import type {
   OnboardingState,
   PrivacyState,
   RuntimeStatus,
+  Source,
 } from "./types";
 
 /**
  * Whitelist đầy đủ các kênh IPC (Constitution III). NGUỒN DUY NHẤT: main (register) + preload (expose).
  * Feature sau THÊM kênh mới ở đây — KHÔNG đổi nghĩa kênh cũ.
- * - app:*  → 001-app-shell (5 kênh)
- * - ai:*   → 007-ai-runtime (5 kênh)
+ * - app:*    → 001-app-shell (5 kênh)
+ * - ai:*     → 007-ai-runtime (5 kênh)
+ * - notebook:* → 009-notebooks (5 kênh)
+ * - source:* → 011-ingestion (5 invoke + 1 event push)
  */
 export const CHANNELS = {
   getDataDir: "app:getDataDir",
@@ -33,6 +37,14 @@ export const CHANNELS = {
   notebookRename: "notebook:rename",
   notebookSetColor: "notebook:setColor",
   notebookDelete: "notebook:delete",
+  // ingestion (011) — 5 invoke
+  sourceAdd: "source:add",
+  sourceListByNotebook: "source:listByNotebook",
+  sourceGet: "source:get",
+  sourceDelete: "source:delete",
+  sourceRetry: "source:retry",
+  // ingestion (011) — 1 event push (main→renderer, KHÔNG phải invoke/ChannelResponse)
+  sourceProgress: "source:progress",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -64,4 +76,10 @@ export interface ChannelResponse {
   [CHANNELS.notebookRename]: Notebook;
   [CHANNELS.notebookSetColor]: Notebook;
   [CHANNELS.notebookDelete]: { deleted: true };
+  // ingestion (011) — chỉ 5 kênh invoke (source:progress là event push, không vào đây).
+  [CHANNELS.sourceAdd]: AddSourceResult;
+  [CHANNELS.sourceListByNotebook]: Source[];
+  [CHANNELS.sourceGet]: Source | null;
+  [CHANNELS.sourceDelete]: { deleted: true };
+  [CHANNELS.sourceRetry]: Source;
 }

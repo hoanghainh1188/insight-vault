@@ -58,7 +58,7 @@ export function NotebooksGrid(): JSX.Element {
             key={n.id}
             notebook={n}
             now={now}
-            onOpen={() => navigate("/workspace")}
+            onOpen={() => navigate(`/workspace/${n.id}`)}
             onEdit={() => setModal({ kind: "edit", notebook: n })}
             onDelete={() => setPendingDelete(n)}
           />

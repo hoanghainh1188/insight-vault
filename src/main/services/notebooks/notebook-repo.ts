@@ -20,6 +20,7 @@ interface Row {
   color: string;
   created_at: number;
   updated_at: number;
+  source_count: number;
 }
 
 function toNotebook(r: Row): Notebook {
@@ -29,9 +30,15 @@ function toNotebook(r: Row): Notebook {
     color: r.color,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
-    sourceCount: 0, // chưa có source tới 004 (A4)
+    sourceCount: r.source_count ?? 0, // đếm thật từ bảng source (011-ingestion)
   };
 }
+
+// Cột đếm nguồn thật (correlated subquery) — dùng chung cho list/getById.
+const SELECT_NOTEBOOK = `
+  SELECT n.*,
+         (SELECT COUNT(*) FROM source s WHERE s.notebook_id = n.id) AS source_count
+  FROM notebook n`;
 
 export interface NotebookRepo {
   list(): Notebook[];
@@ -47,7 +54,7 @@ export function createNotebookRepo(db: Db, deps: RepoDeps = {}): NotebookRepo {
 
   const getById = (id: string): Notebook => {
     const row = db
-      .prepare("SELECT * FROM notebook WHERE id = ?")
+      .prepare(`${SELECT_NOTEBOOK} WHERE n.id = ?`)
       .get(id) as unknown as Row | undefined;
     if (!row) throw new Error("Notebook không tồn tại.");
     return toNotebook(row);
@@ -56,7 +63,7 @@ export function createNotebookRepo(db: Db, deps: RepoDeps = {}): NotebookRepo {
   return {
     list() {
       const rows = db
-        .prepare("SELECT * FROM notebook ORDER BY updated_at DESC")
+        .prepare(`${SELECT_NOTEBOOK} ORDER BY n.updated_at DESC`)
         .all() as unknown as Row[];
       return rows.map(toNotebook);
     },

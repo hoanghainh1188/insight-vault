@@ -13,8 +13,17 @@ export function labelForMode(mode: PrivacyState["mode"]): string {
   return LABELS[mode];
 }
 
-/** Trạng thái riêng tư hiện tại. v1 cố định 'local' (FR-002, SC-002). */
+// Đếm số hoạt động egress đang diễn ra (vd fetch URL — 011-ingestion, FR-019). >0 → 'online'.
+// Local-first: mặc định 0 ⇒ 'local'. Chỉ bật khi có dữ liệu THẬT rời máy do người dùng chủ động.
+let egressDepth = 0;
+
+/** Bật/tắt chỉ báo online khi có egress (fetch URL). Dùng refcount để chồng nhiều hoạt động an toàn. */
+export function setEgressActive(active: boolean): void {
+  egressDepth = active ? egressDepth + 1 : Math.max(0, egressDepth - 1);
+}
+
+/** Trạng thái riêng tư hiện tại (FR-019): 'online' khi đang có egress, ngược lại 'local'. */
 export function getPrivacyState(): PrivacyState {
-  const mode: PrivacyState["mode"] = "local";
+  const mode: PrivacyState["mode"] = egressDepth > 0 ? "online" : "local";
   return { mode, label: labelForMode(mode) };
 }

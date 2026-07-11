@@ -20,9 +20,20 @@ export default defineConfig({
         "src/shared/ipc/**/*.ts",
         "src/shared/notebook-palette.ts",
         "src/renderer/features/notebooks/relative-time.ts",
+        "src/renderer/features/sources/source-status.ts",
       ],
-      // Composition roots (wiring) — phủ bởi e2e/integration, không phải business logic thuần.
-      exclude: ["src/main/services/ai-runtime/ai-runtime.ts"],
+      // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
+      // không phải business logic thuần. Loại khỏi ngưỡng coverage.
+      // Chỉ loại các adapter I/O native / composition root (không test được thuần). pipeline.ts GIỮ
+      // trong ngưỡng vì chứa business logic (cancel/resume/error-by-step) đã phủ test bằng DI.
+      exclude: [
+        "src/main/services/ai-runtime/ai-runtime.ts",
+        "src/main/services/ingestion/ingestion.ts",
+        "src/main/services/ingestion/vector-store.ts",
+        "src/main/services/ingestion/parsers/pdf.ts",
+        "src/main/services/ingestion/parsers/docx.ts",
+        "src/main/services/ingestion/parsers/url.ts",
+      ],
       thresholds: {
         statements: 80,
         branches: 80,
