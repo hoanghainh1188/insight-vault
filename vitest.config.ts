@@ -22,6 +22,7 @@ export default defineConfig({
         "src/renderer/features/notebooks/relative-time.ts",
         "src/renderer/features/sources/source-status.ts",
         "src/renderer/features/rag-qa/citation-format.ts",
+        "src/renderer/features/source-viewer/highlight.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -34,6 +35,7 @@ export default defineConfig({
         "src/main/services/ingestion/parsers/pdf.ts",
         "src/main/services/ingestion/parsers/docx.ts",
         "src/main/services/ingestion/parsers/url.ts",
+        "src/main/services/source-viewer/source-content.ts",
       ],
       thresholds: {
         statements: 80,

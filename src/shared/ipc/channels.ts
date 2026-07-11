@@ -10,6 +10,7 @@ import type {
   RagAnswer,
   RuntimeStatus,
   Source,
+  SourceContent,
 } from "./types";
 
 /**
@@ -44,6 +45,8 @@ export const CHANNELS = {
   sourceGet: "source:get",
   sourceDelete: "source:delete",
   sourceRetry: "source:retry",
+  // source-viewer (019) — lấy toàn văn nguồn để hiển thị + highlight
+  sourceGetContent: "source:getContent",
   // ingestion (011) — 1 event push (main→renderer, KHÔNG phải invoke/ChannelResponse)
   sourceProgress: "source:progress",
   // rag-qa (013) — hỏi đáp theo nguồn
@@ -85,6 +88,8 @@ export interface ChannelResponse {
   [CHANNELS.sourceGet]: Source | null;
   [CHANNELS.sourceDelete]: { deleted: true };
   [CHANNELS.sourceRetry]: Source;
+  // source-viewer (019)
+  [CHANNELS.sourceGetContent]: SourceContent | null;
   // rag-qa (013)
   [CHANNELS.ragAsk]: RagAnswer;
 }

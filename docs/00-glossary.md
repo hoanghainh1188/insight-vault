@@ -57,3 +57,7 @@ Bổ sung ngay khi gặp thuật ngữ mới — không tự dịch rồi bỏ q
 | —      | Câu trả lời (AI sinh, đã hậu kiểm chip)                     | answer                             | `RagAnswer.answer`; đã gỡ chip [n] lỗi (citation postprocess) |
 | —      | Cờ "không tìm thấy trong nguồn"                             | notFound                           | `RagAnswer.notFound`; true khi grounded thiếu căn cứ |
 | —      | Lượt hội thoại (in-memory phiên, multi-turn)                | turn (`RagTurn`)                   | `RagTurn{role,content}`; gửi tối đa MAX_HISTORY_TURNS gần nhất — không persist |
+| —      | Trình xem nguồn (overlay bấm chip [n] → mở nguồn + highlight)| source viewer                      | `features/source-viewer/`; tái dựng toàn văn từ chunk, highlight offset toàn cục — 019 |
+| —      | Đoạn được tô nổi bật trong viewer                           | highlight                          | `highlight.ts` `buildSegments`; đoạn [charStart,charEnd) của chunk trích dẫn |
+| —      | Nội dung nguồn để hiển thị (dựng runtime từ chunk)          | SourceContent                      | `{kind,title,pageCount,text,pageBreaks}`; payload kênh `source:getContent` — 019 |
+| —      | Mốc trang (PDF, offset ký tự nơi trang bắt đầu)             | page break (`PageBreak`)           | `{page,offset}`; `derivePageBreaks` — chỉ PDF |
