@@ -25,7 +25,10 @@ export default defineConfig({
         "src/renderer/features/source-viewer/highlight.ts",
         "src/main/services/studio/studio-repo.ts",
         "src/main/services/studio/prompt.ts",
+        "src/main/services/studio/export-name.ts",
         "src/renderer/shared/useModalA11y.ts",
+        "src/renderer/shared/lastNotebook.ts",
+        "src/renderer/features/sources/useColumnWidths.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -40,6 +43,7 @@ export default defineConfig({
         "src/main/services/ingestion/parsers/url.ts",
         "src/main/services/source-viewer/source-content.ts",
         "src/main/services/studio/studio-service.ts",
+        "src/main/services/studio/export.ts",
       ],
       thresholds: {
         statements: 80,

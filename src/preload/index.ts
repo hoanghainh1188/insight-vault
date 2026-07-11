@@ -20,6 +20,8 @@ import type {
   SourceProgressEvent,
   StudioGenerateInput,
   StudioResult,
+  StudioExportInput,
+  StudioExportResult,
 } from "@shared/ipc/types";
 
 /**
@@ -90,6 +92,8 @@ const api = {
     ipcRenderer.invoke(CHANNELS.studioGenerate, input),
   studioList: (notebookId: string): Promise<StudioResult[]> =>
     ipcRenderer.invoke(CHANNELS.studioList, notebookId),
+  studioExport: (input: StudioExportInput): Promise<StudioExportResult> =>
+    ipcRenderer.invoke(CHANNELS.studioExport, input),
 };
 
 export type Api = typeof api;

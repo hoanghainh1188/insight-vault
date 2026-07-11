@@ -12,6 +12,7 @@ import type {
   Source,
   SourceContent,
   StudioResult,
+  StudioExportResult,
 } from "./types";
 
 /**
@@ -55,6 +56,8 @@ export const CHANNELS = {
   // studio (021) — tổng hợp tri thức từ notebook
   studioGenerate: "studio:generate",
   studioList: "studio:list",
+  // studio export (025) — xuất kết quả ra tệp .md
+  studioExport: "studio:export",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -99,4 +102,6 @@ export interface ChannelResponse {
   // studio (021)
   [CHANNELS.studioGenerate]: StudioResult;
   [CHANNELS.studioList]: StudioResult[];
+  // studio export (025)
+  [CHANNELS.studioExport]: StudioExportResult;
 }

@@ -31,22 +31,26 @@ function isStudioKind(k: string): k is (typeof STUDIO_KINDS)[number] {
 
 export function createStudioService(deps: StudioServiceDeps) {
   async function generate(input: StudioGenerateInput): Promise<StudioResult> {
-    const { notebookId, kind } = input;
+    const { notebookId, kind, sourceId } = input;
     if (!notebookId || !isStudioKind(kind)) {
       throw new Error("Yêu cầu Studio không hợp lệ.");
     }
 
     // Gom chunk theo thứ tự source.created_at (listByNotebook đã ORDER) → chunk.ordinal (listChunks ORDER).
+    // sourceId (025): lọc CHỈ nguồn đó (phải ready + thuộc notebook); bỏ trống → toàn bộ nguồn ready.
     const scored: ScoredChunk[] = [];
     for (const src of deps.listSources(notebookId)) {
       if (src.status !== "ready") continue;
+      if (sourceId && src.id !== sourceId) continue;
       for (const chunk of deps.listChunks(src.id)) {
         scored.push({ chunk, sourceTitle: src.title, score: 0 });
       }
     }
     if (scored.length === 0) {
       throw new Error(
-        "Chưa có nguồn sẵn sàng để tạo Studio. Hãy nạp nguồn trước.",
+        sourceId
+          ? "Nguồn đã chọn chưa sẵn sàng. Chờ lập chỉ mục xong rồi thử lại."
+          : "Chưa có nguồn sẵn sàng để tạo Studio. Hãy nạp nguồn trước.",
       );
     }
 
