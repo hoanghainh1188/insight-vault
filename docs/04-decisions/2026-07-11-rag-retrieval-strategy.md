@@ -15,8 +15,11 @@
 - **top-k = 6** chunk/câu hỏi (hằng số `RETRIEVAL_TOP_K`).
 - `VectorStore.search(queryVector, notebookId, topK)` → `VectorSearchHit[] { id, sourceId, score }`, sắp
   theo `score` tăng dần (khoảng cách nhỏ = liên quan hơn). Lọc theo `notebook_id` (đã có cột ở LanceDB).
-- **Ngưỡng liên quan** `RELEVANCE_MAX_DISTANCE` (hằng số, tinh chỉnh theo model embedding): hit vượt ngưỡng
-  bị loại. Nếu sau lọc còn 0 hit → coi như "không có căn cứ trong nguồn".
+- **Khoảng cách = COSINE** (`.distanceType("cosine")`, bị chặn [0,2]) — KHÔNG dùng L2 mặc định của LanceDB
+  vì vector embedding (vd `nomic-embed-text`) không chuẩn hoá → L2 không có ngưỡng ổn định (sửa issue #15).
+- **Ngưỡng liên quan** `RELEVANCE_MAX_DISTANCE = 0.75` (cosine distance ⇔ cosine similarity ≥ 0.25): hit
+  vượt ngưỡng bị loại. Đặt LỎNG để nội dung thật lọt; tính "không bịa" dựa thêm grounded prompt + ép
+  `notFound` khi câu trả lời không có citation hợp lệ nào (mục 4). Nếu sau lọc còn 0 hit → "không tìm thấy".
 - Chỉ truy hồi chunk thuộc source `ready` (nguồn chưa nhúng xong không có vector → tự nhiên không xuất hiện).
 
 ### 2. Ghép context

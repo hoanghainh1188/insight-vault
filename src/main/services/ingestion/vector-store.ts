@@ -52,6 +52,7 @@ function toRow(r: VectorRecord) {
 interface LanceQuery {
   where(predicate: string): LanceQuery;
   limit(n: number): LanceQuery;
+  distanceType(t: string): LanceQuery;
   toArray(): Promise<Record<string, unknown>[]>;
 }
 interface LanceTable {
@@ -114,8 +115,11 @@ export async function createLanceVectorStore(
     async search(queryVector, notebookId, topK) {
       const t = await getTable();
       if (!t) return []; // chưa nạp nguồn nào
+      // Cosine distance (bị chặn [0,2], chuẩn cho text embedding) thay vì L2 mặc định — vector
+      // embedding (vd nomic-embed-text) KHÔNG chuẩn hoá nên L2 không có ngưỡng ổn định (issue #15).
       const rows = await t
         .search(queryVector)
+        .distanceType("cosine")
         .where(`notebook_id = '${q(notebookId)}'`)
         .limit(topK)
         .toArray();
