@@ -15,8 +15,11 @@ export default defineConfig({
       reporter: ["text", "html"],
       include: [
         "src/main/services/**/*.ts",
+        "src/main/db/**/*.ts",
         "src/main/logging.ts",
         "src/shared/ipc/**/*.ts",
+        "src/shared/notebook-palette.ts",
+        "src/renderer/features/notebooks/relative-time.ts",
       ],
       // Composition roots (wiring) — phủ bởi e2e/integration, không phải business logic thuần.
       exclude: ["src/main/services/ai-runtime/ai-runtime.ts"],

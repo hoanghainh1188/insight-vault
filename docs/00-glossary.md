@@ -37,4 +37,9 @@ Bổ sung ngay khi gặp thuật ngữ mới — không tự dịch rồi bỏ q
 | —      | Trạng thái runtime AI                                        | RuntimeStatus                      | `{ reachable, ollamaReady, reason }`; `ollamaReady` tách khỏi `OnboardingState.completed` |
 | —      | Kiểm tra kết nối                                             | connection test                    | `LLMProvider.test()` · kênh `ai:testConnection` · nút "Kiểm tra kết nối"                  |
 | —      | Onboarding runtime AI (banner khi Ollama chưa sẵn sàng)      | runtime onboarding                 | Component `RuntimeOnboarding`; KHÁC `first-run onboarding` (màn chào 001)                 |
+| —      | Màu notebook                                                 | notebook color (field `color`)     | Hex thuộc palette cố định — 009                                                           |
+| —      | Bảng màu cố định (chọn màu notebook)                         | color palette                      | `src/shared/notebook-palette.ts` (`PALETTE`) — nguồn validate `color`                     |
+| —      | Siêu dữ liệu notebook (bản ghi SQLite)                       | notebook metadata                  | Bảng `notebook(id,name,color,created_at,updated_at)` — schema SQLite đầu tiên             |
+| —      | Tìm kiếm notebook theo tên                                   | notebook search                    | Lọc client-side từ `notebook:list` (không kênh riêng)                                     |
+| —      | Runner nâng cấp schema SQLite                                | migration (schema)                 | `PRAGMA user_version`, append-only (ADR 2026-07-11-sqlite-migrations)                     |
 | —      | Bóc băng (âm thanh→văn bản)                                  | transcription                      | Pha 2                                                                                     |

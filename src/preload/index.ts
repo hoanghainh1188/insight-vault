@@ -2,11 +2,15 @@ import { contextBridge, ipcRenderer } from "electron";
 import { CHANNELS } from "@shared/ipc/channels";
 import type {
   AppInfo,
+  CreateNotebookInput,
   DataDirInfo,
   Model,
   ModelSelection,
+  Notebook,
   OnboardingState,
+  RenameNotebookInput,
   RuntimeStatus,
+  SetColorInput,
 } from "@shared/ipc/types";
 
 /**
@@ -35,6 +39,17 @@ const api = {
     ipcRenderer.invoke(CHANNELS.aiSetSelectedModels, sel),
   aiGetRuntimeStatus: (): Promise<RuntimeStatus> =>
     ipcRenderer.invoke(CHANNELS.aiGetRuntimeStatus),
+  // notebooks (009)
+  notebookList: (): Promise<Notebook[]> =>
+    ipcRenderer.invoke(CHANNELS.notebookList),
+  notebookCreate: (input: CreateNotebookInput): Promise<Notebook> =>
+    ipcRenderer.invoke(CHANNELS.notebookCreate, input),
+  notebookRename: (input: RenameNotebookInput): Promise<Notebook> =>
+    ipcRenderer.invoke(CHANNELS.notebookRename, input),
+  notebookSetColor: (input: SetColorInput): Promise<Notebook> =>
+    ipcRenderer.invoke(CHANNELS.notebookSetColor, input),
+  notebookDelete: (id: string): Promise<{ deleted: true }> =>
+    ipcRenderer.invoke(CHANNELS.notebookDelete, id),
 };
 
 export type Api = typeof api;

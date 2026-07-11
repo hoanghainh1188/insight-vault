@@ -14,9 +14,11 @@ const AI_CHANNELS = [
 ];
 
 describe("ai IPC whitelist", () => {
-  it("tổng whitelist = 10 (5 app + 5 ai)", () => {
-    expect(WHITELISTED_CHANNELS.size).toBe(10);
-    expect(Object.values(CHANNELS)).toHaveLength(10);
+  it("có ≥ 10 kênh (5 app + 5 ai; feature sau thêm — không cứng tổng)", () => {
+    expect(WHITELISTED_CHANNELS.size).toBeGreaterThanOrEqual(10);
+    expect(new Set(Object.values(CHANNELS)).size).toBe(
+      Object.values(CHANNELS).length,
+    );
   });
 
   it("5 kênh ai:* đều whitelisted", () => {

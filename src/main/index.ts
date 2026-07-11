@@ -3,6 +3,9 @@ import { app, BrowserWindow, dialog, session } from "electron";
 import Store from "electron-store";
 import { ensureDataDir } from "./services/app-shell/data-dir";
 import { registerIpc } from "./ipc/register";
+import { openDatabase } from "./db/database";
+import { runMigrations } from "./db/migrations";
+import { createNotebookRepo } from "./services/notebooks/notebook-repo";
 import { logEvent } from "./logging";
 
 // Hardening cấp session (Constitution I & III): từ chối mọi permission request (app-shell không cần
@@ -65,7 +68,13 @@ app.whenReady().then(async () => {
   }
 
   const store = new Store();
-  registerIpc({ store, version: app.getVersion(), dataDir });
+
+  // SQLite (009): mở DB trong data dir, chạy migration, tạo repo (CHỈ ở main — Constitution III).
+  const db = openDatabase(join(dataDir.path, "insightvault.db"));
+  runMigrations(db);
+  const notebookRepo = createNotebookRepo(db);
+
+  registerIpc({ store, version: app.getVersion(), dataDir, notebookRepo });
 
   installSecurity();
   createWindow();

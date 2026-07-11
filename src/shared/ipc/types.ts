@@ -68,3 +68,31 @@ export interface EmbedRequest {
 export interface EmbedResult {
   vector: number[];
 }
+
+// ===== notebooks (009) — nguồn: specs/.../notebooks/data-model.md =====
+
+/** Màu notebook — hex thuộc palette cố định. */
+export type NotebookColor = string;
+
+/** Notebook (metadata). `sourceCount` = 0 ở feature này (source thuộc 004). */
+export interface Notebook {
+  id: string;
+  name: string;
+  color: NotebookColor;
+  createdAt: number;
+  updatedAt: number;
+  sourceCount: number;
+}
+
+export interface CreateNotebookInput {
+  name: string;
+  color: NotebookColor;
+}
+export interface RenameNotebookInput {
+  id: string;
+  name: string;
+}
+export interface SetColorInput {
+  id: string;
+  color: NotebookColor;
+}
