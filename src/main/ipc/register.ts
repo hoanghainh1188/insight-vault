@@ -14,6 +14,8 @@ import type {
   StudioGenerateInput,
 } from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
+import { computeStorageInfo } from "../services/app-shell/storage-info";
+import { createFsOps } from "../services/app-shell/storage-fs";
 import { buildAppInfo } from "../services/app-shell/app-info";
 import {
   getOnboardingState,
@@ -77,6 +79,10 @@ export function registerIpc({
 
   // app-shell (001)
   safeHandle(CHANNELS.getDataDir, () => dataDir);
+  // 037: thông tin lưu trữ (chỉ đọc kích thước thư mục dữ liệu + dung lượng ổ; KHÔNG log nội dung).
+  safeHandle(CHANNELS.getStorageInfo, () =>
+    computeStorageInfo(dataDir.path, createFsOps()),
+  );
   safeHandle(CHANNELS.getPrivacyState, () => getPrivacyState());
   safeHandle(CHANNELS.getOnboardingState, () => getOnboardingState(store));
   safeHandle(CHANNELS.setOnboardingComplete, () =>

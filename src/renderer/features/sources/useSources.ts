@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import type { AddSourceInput, Source } from "@shared/ipc/types";
+import type { AddSourceInput, IngestStep, Source } from "@shared/ipc/types";
+
+/** Tiến độ realtime của 1 nguồn đang xử lý (037). */
+export interface SourceProgress {
+  step: IngestStep;
+  progress: number; // 0..1
+}
 
 function message(e: unknown): string {
   return e instanceof Error ? e.message : "Đã xảy ra lỗi.";
@@ -10,6 +16,9 @@ function message(e: unknown): string {
 export function useSources(notebookId: string) {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
+  // Tiến độ realtime theo sourceId (037) — tái dùng SourceProgressEvent{step,progress} (011). Xoá khi nguồn
+  // đạt trạng thái cuối (ready/error) → thanh tiến độ biến mất.
+  const [progress, setProgress] = useState<Record<string, SourceProgress>>({});
 
   const reload = useCallback(() => {
     window.api
@@ -23,7 +32,17 @@ export function useSources(notebookId: string) {
 
   useEffect(() => {
     const off = window.api.onSourceProgress((e) => {
-      if (e.notebookId === notebookId) reload();
+      if (e.notebookId !== notebookId) return;
+      setProgress((prev) => {
+        const next = { ...prev };
+        if (e.status === "ready" || e.status === "error") {
+          delete next[e.sourceId];
+        } else {
+          next[e.sourceId] = { step: e.step, progress: e.progress };
+        }
+        return next;
+      });
+      reload();
     });
     return off;
   }, [notebookId, reload]);
@@ -63,5 +82,5 @@ export function useSources(notebookId: string) {
     [reload],
   );
 
-  return { sources, loading, reload, add, remove, retry };
+  return { sources, loading, progress, reload, add, remove, retry };
 }

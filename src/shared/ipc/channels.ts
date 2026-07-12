@@ -8,6 +8,7 @@ import type {
   OnboardingState,
   OnlineState,
   PrivacyState,
+  StorageInfo,
   RagAnswer,
   RuntimeStatus,
   Source,
@@ -27,6 +28,7 @@ import type {
  */
 export const CHANNELS = {
   getDataDir: "app:getDataDir",
+  getStorageInfo: "app:getStorageInfo",
   getPrivacyState: "app:getPrivacyState",
   getOnboardingState: "app:getOnboardingState",
   setOnboardingComplete: "app:setOnboardingComplete",
@@ -87,6 +89,7 @@ export function isWhitelisted(channel: string): channel is ChannelName {
 /** Bản đồ kiểu response theo kênh — dùng cho type-safety ở preload/renderer. */
 export interface ChannelResponse {
   [CHANNELS.getDataDir]: DataDirInfo;
+  [CHANNELS.getStorageInfo]: StorageInfo;
   [CHANNELS.getPrivacyState]: PrivacyState;
   [CHANNELS.getOnboardingState]: OnboardingState;
   [CHANNELS.setOnboardingComplete]: { completed: true };

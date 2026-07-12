@@ -12,7 +12,8 @@ export function SourceList({
   notebookId: string;
   onOpenSource?: (sourceId: string) => void; // 019: mở trình xem nguồn
 }): JSX.Element {
-  const { sources, loading, add, remove, retry } = useSources(notebookId);
+  const { sources, loading, progress, add, remove, retry } =
+    useSources(notebookId);
   const [showAdd, setShowAdd] = useState(false);
 
   return (
@@ -35,7 +36,21 @@ export function SourceList({
       </header>
 
       {loading ? (
-        <p className="src-empty">Đang tải…</p>
+        <ul
+          className="srclist"
+          data-testid="source-skeleton"
+          aria-hidden="true"
+        >
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="src src-skel">
+              <span className="src-icon skel-box" />
+              <div className="src-main">
+                <span className="skel-line" />
+                <span className="skel-line short" />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : sources.length === 0 ? (
         <p className="src-empty" data-testid="source-empty">
           Chưa có nguồn. Bấm “Thêm nguồn” để nạp tài liệu.
@@ -46,6 +61,7 @@ export function SourceList({
             <SourceItem
               key={s.id}
               source={s}
+              progress={progress[s.id]}
               onRetry={retry}
               onDelete={remove}
               onOpen={onOpenSource}

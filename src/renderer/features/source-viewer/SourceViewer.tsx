@@ -144,6 +144,11 @@ export function SourceViewer({
                     className="hl"
                     ref={i === firstHlIndex ? hlRef : undefined}
                   >
+                    {i === firstHlIndex && citation && (
+                      <span className="hltag" data-testid="viewer-hltag">
+                        [{citation.n}]
+                      </span>
+                    )}
                     {s.text}
                   </mark>
                 ) : (
