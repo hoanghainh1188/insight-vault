@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Notebook } from "@shared/ipc/types";
 import { useNotebooks } from "./useNotebooks";
 import { NotebookCard } from "./NotebookCard";
@@ -18,7 +18,16 @@ export function NotebooksGrid(): JSX.Element {
   const [pendingDelete, setPendingDelete] = useState<Notebook | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchRef = useRef<HTMLInputElement>(null);
   const now = Date.now();
+
+  // Phím tắt (043): Cmd+N → mở modal tạo; Cmd+K → focus ô tìm (ý định qua navigation state).
+  useEffect(() => {
+    const s = (location.state as { shortcut?: string } | null)?.shortcut;
+    if (s === "create") setModal({ kind: "create" });
+    else if (s === "focus") searchRef.current?.focus();
+  }, [location.state]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -39,9 +48,10 @@ export function NotebooksGrid(): JSX.Element {
         <div className="nb-search">
           <IconSearch size={16} />
           <input
+            ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm notebook…"
+            placeholder="Tìm notebook… (⌘K)"
             aria-label="Tìm notebook"
             data-testid="notebook-search"
           />
