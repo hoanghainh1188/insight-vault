@@ -26,6 +26,15 @@ export function MessageBubble({
       </span>
       {isUser ? (
         <p className="bubble-text">{message.content}</p>
+      ) : message.streaming ? (
+        // 039: đang stream → text thô + con trỏ (chip [n] chỉ xuất hiện sau khi hậu kiểm toàn văn).
+        <p
+          className="bubble-text bubble-streaming"
+          data-testid="bubble-streaming"
+        >
+          {message.content}
+          <span className="stream-caret" aria-hidden="true" />
+        </p>
       ) : (
         <div className="bubble-text">
           <MarkdownContent

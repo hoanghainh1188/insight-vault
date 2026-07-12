@@ -64,6 +64,10 @@ export const CHANNELS = {
   sourceProgress: "source:progress",
   // rag-qa (013) — hỏi đáp theo nguồn
   ragAsk: "rag:ask",
+  // streaming (039) — Chat trả lời chạy dần
+  ragAskStream: "rag:askStream",
+  ragStreamToken: "rag:streamToken", // event push main→renderer (KHÔNG vào ChannelResponse)
+  ragStop: "rag:stop",
   // chat-history (027) — lưu/nạp/xoá lịch sử hội thoại theo notebook
   chatHistory: "chat:history",
   chatClear: "chat:clear",
@@ -121,6 +125,9 @@ export interface ChannelResponse {
   [CHANNELS.sourceGetContent]: SourceContent | null;
   // rag-qa (013)
   [CHANNELS.ragAsk]: RagAnswer;
+  // streaming (039) — ragStreamToken là event push, không vào đây
+  [CHANNELS.ragAskStream]: RagAnswer;
+  [CHANNELS.ragStop]: { stopped: true };
   // studio (021)
   [CHANNELS.studioGenerate]: StudioResult;
   [CHANNELS.studioList]: StudioResult[];

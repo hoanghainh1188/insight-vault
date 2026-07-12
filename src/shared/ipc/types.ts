@@ -247,6 +247,19 @@ export interface RagAnswer {
   modeUsed: RagMode;
 }
 
+// ===== streaming (039) — Chat trả lời chạy dần =====
+
+/** Input rag:askStream = RagAskInput + streamId (renderer sinh, để tương quan token + huỷ). */
+export interface RagAskStreamInput extends RagAskInput {
+  streamId: string;
+}
+
+/** Sự kiện token đẩy từ main → renderer trong lúc stream (push, không phải invoke/response). */
+export interface RagStreamTokenEvent {
+  streamId: string;
+  delta: string;
+}
+
 /** Một tin trong lịch sử hội thoại đã lưu bền theo notebook (027-chat-history). */
 export interface StoredChatMessage {
   role: "user" | "assistant";

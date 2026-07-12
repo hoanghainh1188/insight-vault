@@ -25,8 +25,10 @@ describe("OllamaProvider", () => {
     const p = new OllamaProvider(client, () => sel());
     const res = await p.chat({ messages: [{ role: "user", content: "hi" }] });
     expect(res.content).toBe("trả lời");
+    // 039: chat nhận thêm opts (undefined khi không stream).
     expect(client.chat).toHaveBeenCalledWith(
       expect.objectContaining({ model: "qwen2.5:7b" }),
+      undefined,
     );
   });
 

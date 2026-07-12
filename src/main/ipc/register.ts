@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from "electron";
+import { app, ipcMain, BrowserWindow } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
 import type {
   AddSourceInput,
@@ -7,6 +7,8 @@ import type {
   ModelSelection,
   OnlineProviderId,
   RagAskInput,
+  RagAskStreamInput,
+  RagStreamTokenEvent,
   RenameNotebookInput,
   SetColorInput,
   SetProviderKeyInput,
@@ -154,6 +156,42 @@ export function registerIpc({
 
   // rag-qa (013) — embed/search/chat CHỈ ở đây (main). KHÔNG log payload (câu hỏi/nội dung — Constitution III).
   safeHandle(CHANNELS.ragAsk, (input) => ragService.ask(input as RagAskInput));
+
+  // streaming (039) — Chat trả lời chạy dần. Token đẩy qua rag:streamToken (webContents.send); huỷ qua
+  // rag:stop (AbortController theo streamId). KHÔNG log token/nội dung.
+  const streamControllers = new Map<string, AbortController>();
+  const emitToken = (e: RagStreamTokenEvent): void => {
+    for (const w of BrowserWindow.getAllWindows()) {
+      if (!w.isDestroyed()) w.webContents.send(CHANNELS.ragStreamToken, e);
+    }
+  };
+  safeHandle(CHANNELS.ragAskStream, async (input) => {
+    const streamId = (input as { streamId?: unknown }).streamId;
+    if (typeof streamId !== "string" || streamId === "") {
+      throw new Error("streamId không hợp lệ.");
+    }
+    const controller = new AbortController();
+    streamControllers.set(streamId, controller);
+    try {
+      return await ragService.askStream(input as RagAskStreamInput, {
+        onToken: (delta) => emitToken({ streamId, delta }),
+        signal: controller.signal,
+      });
+    } finally {
+      streamControllers.delete(streamId);
+    }
+  });
+  safeHandle(CHANNELS.ragStop, (streamId) => {
+    const c = streamControllers.get(streamId as string);
+    if (c) c.abort();
+    return { stopped: true } as const;
+  });
+  // Đóng hết cửa sổ (macOS: app còn chạy nền) → huỷ mọi stream đang chạy để KHÔNG egress ngầm ngoài tầm
+  // quan sát của người dùng (Constitution I — chỉ báo khớp hành vi). Nút Dừng nằm ở renderer đã đóng.
+  app.on("window-all-closed", () => {
+    for (const c of streamControllers.values()) c.abort();
+    streamControllers.clear();
+  });
 
   // chat-history (027) — nạp/xoá lịch sử hội thoại. Đọc/ghi DB CHỈ ở main. KHÔNG log nội dung.
   const notebookIdOf = (input: unknown): string => {

@@ -17,6 +17,12 @@ describe("rag IPC whitelist", () => {
     expect(isWhitelisted("rag:ask")).toBe(true);
   });
 
+  it("streaming (039): rag:askStream, rag:streamToken, rag:stop whitelisted", () => {
+    expect(isWhitelisted("rag:askStream")).toBe(true);
+    expect(isWhitelisted("rag:streamToken")).toBe(true);
+    expect(isWhitelisted("rag:stop")).toBe(true);
+  });
+
   it("kênh rag:* ngoài danh sách bị từ chối", () => {
     expect(isWhitelisted("rag:eval")).toBe(false);
     expect(isWhitelisted("rag:rawQuery")).toBe(false);

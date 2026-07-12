@@ -319,3 +319,41 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Nút Dừng khi đang stream (039) */
+.stop-btn {
+  background: var(--danger);
+}
+.stop-btn:hover:not(:disabled) {
+  background: #93362e;
+}
+.stop-square {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: #fff;
+}
+
+/* Con trỏ nhấp nháy khi đang stream token (039) */
+.bubble-streaming {
+  white-space: pre-wrap;
+}
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  animation: stream-blink 1s steps(2, start) infinite;
+}
+@keyframes stream-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stream-caret {
+    animation: none;
+  }
+}

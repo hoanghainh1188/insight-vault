@@ -33,6 +33,7 @@ export default defineConfig({
         "src/renderer/features/sources/useColumnWidths.ts",
         "src/renderer/shared/format-bytes.ts",
         "src/main/services/app-shell/storage-info.ts",
+        "src/main/services/ai-runtime/online/stream-parse.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.

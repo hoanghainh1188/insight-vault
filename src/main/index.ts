@@ -114,6 +114,9 @@ app.whenReady().then(async () => {
     sourceTitle: (sid) => ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
     chat: async (messages) =>
       (await aiRuntime.registry.getActive().chat({ messages })).content,
+    // Streaming (039): cùng provider active, truyền onToken/signal xuống chat.
+    chatStream: async (messages, opts) =>
+      (await aiRuntime.registry.getActive().chat({ messages }, opts)).content,
     saveTurn: (nb, userContent, assistant) =>
       chatRepo.saveTurn(nb, userContent, assistant),
   });

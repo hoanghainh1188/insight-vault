@@ -107,6 +107,23 @@ const api = {
   // rag-qa (013)
   ragAsk: (input: RagAskInput): Promise<RagAnswer> =>
     ipcRenderer.invoke(CHANNELS.ragAsk, input),
+  // streaming (039) — Chat chạy dần. ragAskStream resolve = RagAnswer cuối; token qua onRagStreamToken.
+  ragAskStream: (
+    input: import("@shared/ipc/types").RagAskStreamInput,
+  ): Promise<RagAnswer> => ipcRenderer.invoke(CHANNELS.ragAskStream, input),
+  ragStop: (streamId: string): Promise<{ stopped: true }> =>
+    ipcRenderer.invoke(CHANNELS.ragStop, streamId),
+  /** Đăng ký nhận token stream (push từ main). Trả hàm huỷ đăng ký. */
+  onRagStreamToken: (
+    cb: (e: import("@shared/ipc/types").RagStreamTokenEvent) => void,
+  ): (() => void) => {
+    const listener = (
+      _e: unknown,
+      payload: import("@shared/ipc/types").RagStreamTokenEvent,
+    ): void => cb(payload);
+    ipcRenderer.on(CHANNELS.ragStreamToken, listener);
+    return () => ipcRenderer.removeListener(CHANNELS.ragStreamToken, listener);
+  },
   // chat-history (027) — nạp/xoá lịch sử hội thoại.
   chatHistory: (notebookId: string): Promise<StoredChatMessage[]> =>
     ipcRenderer.invoke(CHANNELS.chatHistory, { notebookId }),
