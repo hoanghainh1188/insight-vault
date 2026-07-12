@@ -8,10 +8,13 @@ import type { Plugin } from "vite";
 // - dev: nới ws/http localhost cho HMR Vite.
 // - prod: chặt — không network client-side (mọi network đi qua main qua IPC).
 function cspPlugin(): Plugin {
+  // media-src iv-media: → cho <audio> phát file audio gốc qua giao thức main (049). Chỉ media-src (thẻ
+  // <audio> nằm dưới media-src, KHÔNG phải connect-src) — renderer không fetch("iv-media://") ở đâu nên
+  // giữ connect-src tối thiểu (Constitution I / web/security.md: CSP tối thiểu cần thiết).
   const DEV =
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* http://localhost:*; img-src 'self' data:; font-src 'self'";
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* http://localhost:*; media-src 'self' iv-media:; img-src 'self' data:; font-src 'self'";
   const PROD =
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'";
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; media-src 'self' iv-media:; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'";
   return {
     name: "insightvault-csp",
     transformIndexHtml(html, ctx) {
