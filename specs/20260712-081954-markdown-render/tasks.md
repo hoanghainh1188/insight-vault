@@ -18,7 +18,7 @@
 
 ## Phase 2: Foundational (parser — CHẶN US)
 
-- [x] T002 [P] `tests/unit/markdown-parse.test.ts` — `parseMarkdown`: heading #/##/###; **đậm**/_nghiêng_/`code`; danh sách -/1.; khối code ``` (giữ literal, KHÔNG parse chip bên trong); đoạn/xuống dòng; chip `[n]` là inline `cite` (ngoài code) NHƯNG literal trong code; HTML thô `<script>` → text (không token đặc biệt); link `[t](u)` → inline `link` text (RED).
+- [x] T002 [P] `tests/unit/markdown-parse.test.ts` — `parseMarkdown`: heading #/##/###; **đậm**/_nghiêng_/`code`; danh sách -/1.; khối code ``` (giữ literal, KHÔNG parse chip bên trong); đoạn/xuống dòng; chip `[n]` là inline `cite` (ngoài code) NHƯNG literal trong code; HTML thô `<script>` → text (không token đặc biệt); link `[t](https://…)` → inline `link` text (RED).
 - [x] T003 [US1] Viết `src/renderer/shared/markdown/parse.ts` (THUẦN): `parseMarkdown(text): Block[]` + inline tokenizer → T002 GREEN.
 
 **Checkpoint**: parser đúng + an toàn.

@@ -16,7 +16,7 @@ tay xử lý xuống dòng/biên không đúng CommonMark._)_
 **3. Chip `[n]` tokenize ở lớp INLINE** (cùng chỗ đậm/nghiêng/code) → chip `<button className="cite">` giữ
 `onCite`. `[n]` trong khối code / code inline → giữ LITERAL (không thành chip).
 
-**4. Link `[text](url)` / URL trần → render TEXT** (styled), KHÔNG điều hướng ra ngoài (Constitution I
+**4. Link `[text](https://…)` / URL trần → render TEXT** (styled), KHÔNG điều hướng ra ngoài (Constitution I
 local-first — tránh egress từ nội dung do model sinh).
 
 **5. An toàn:** chỉ React node, KHÔNG `innerHTML`. Không animation mới.

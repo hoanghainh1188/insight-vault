@@ -37,7 +37,7 @@ Khuyến nghị vậy.
 **#3 Chip `[n]` trong markdown.** Tokenize `[n]` ở lớp INLINE (cùng chỗ xử lý đậm/nghiêng/code) → chip là
 `<button className="cite">`; `[n]` trong khối code KHÔNG thành chip (giữ literal). → Khuyến nghị.
 
-**#4 Link.** Markdown link `[text](url)` → render **text** (styled, KHÔNG điều hướng ra ngoài — Constitution I
+**#4 Link.** Markdown link `[text](https://…)` → render **text** (styled, KHÔNG điều hướng ra ngoài — Constitution I
 local-first). URL trần → render text. → Khuyến nghị (không mở link ngoài).
 
 **#5 reduced-motion / an toàn.** Không animation mới. KHÔNG `dangerouslySetInnerHTML`/`innerHTML` — chỉ React

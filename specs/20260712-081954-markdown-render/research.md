@@ -10,7 +10,7 @@
   - Danh sách `- `/`* ` → `BulletList{items: Inline[][]}`; `1. ` → `OrderedList`.
   - Dòng trống ngăn đoạn; còn lại gộp thành `Paragraph{inline}`.
 - Inline parse (trong heading/para/list item, KHÔNG trong code block): tokenize theo thứ tự an toàn →
-  `code` (`` `x` ``), `bold` (`**x**`), `italic` (`*x*`), `cite` (`[n]`), `link` (`[text](url)` → text),
+  `code` (`` `x` ``), `bold` (`**x**`), `italic` (`*x*`), `cite` (`[n]`), `link` (`[text](https://…)` → text),
   `text`. Trả `Inline[]` (kiểu rời rạc, KHÔNG chuỗi HTML).
 - **Rationale**: thuần (string → cấu trúc) → test tất định. Chip `[n]` là 1 loại inline token → chỉ sinh
   trong ngữ cảnh không-code (FR-004). KHÔNG regex sinh HTML → không XSS.
