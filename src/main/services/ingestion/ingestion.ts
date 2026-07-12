@@ -36,7 +36,10 @@ export async function createIngestion(opts: {
   const pipeline = createIngestionPipeline({
     sourceRepo,
     vectorStore,
-    getProvider: () => opts.aiRuntime.registry.getActive(),
+    // Embedding lúc nạp nguồn LUÔN dùng Ollama local (031, FR-005 / quyết định #1) — KHÔNG qua
+    // registry.getActive() (đổi theo provider chat online). Trộn embedding khác nhà cung cấp sẽ phá vector
+    // index + rò rỉ corpus ra ngoài nếu provider online implement embed. embedLocal buộc cứng về Ollama.
+    getProvider: () => ({ embed: opts.aiRuntime.embedLocal }),
     isRuntimeReady: async () =>
       (await opts.aiRuntime.getRuntimeStatus()).ollamaReady,
     readFile: async (p) => new Uint8Array(await readFile(p)),

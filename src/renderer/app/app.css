@@ -224,6 +224,96 @@
 .btn-sm:hover {
   background: var(--surface-2);
 }
+.btn-sm.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-sm.btn-primary:hover {
+  background: var(--accent-ink);
+}
+.btn-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* AI online (031) */
+.settings-ai-online {
+  margin-top: 16px;
+}
+.ai-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-line);
+}
+.online-row {
+  border-top: 1px solid var(--line-soft);
+  padding: 12px 0;
+}
+.online-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.online-row-head strong {
+  font-size: 13px;
+}
+.online-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.online-row-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 9px;
+}
+.online-key-input,
+.online-model {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.online-key-input input,
+.online-model input,
+.online-model select {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+}
+.online-key-input input {
+  width: 190px;
+}
+.online-test-msg {
+  font-size: 11px;
+  color: var(--ink-soft);
+  align-self: center;
+}
+.online-confirm {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--warn-line);
+  background: var(--warn-bg);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.online-confirm p {
+  margin: 0 0 10px;
+}
+.online-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
 .ai-note,
 .model-hint {
   font-size: 12px;

@@ -17,13 +17,23 @@ export function labelForMode(mode: PrivacyState["mode"]): string {
 // Local-first: mặc định 0 ⇒ 'local'. Chỉ bật khi có dữ liệu THẬT rời máy do người dùng chủ động.
 let egressDepth = 0;
 
+// Có provider AI online đang active không (031). true → badge 'online' kể cả khi không có egress tức thời
+// (Constitution I: chỉ báo phải phản ánh đúng việc dữ liệu SẼ gửi ra ngoài khi hỏi/tổng hợp).
+let onlineProviderActive = false;
+
 /** Bật/tắt chỉ báo online khi có egress (fetch URL). Dùng refcount để chồng nhiều hoạt động an toàn. */
 export function setEgressActive(active: boolean): void {
   egressDepth = active ? egressDepth + 1 : Math.max(0, egressDepth - 1);
 }
 
-/** Trạng thái riêng tư hiện tại (FR-019): 'online' khi đang có egress, ngược lại 'local'. */
+/** Đặt cờ có provider AI online đang active (031) — nguồn cho badge 'online'. */
+export function setOnlineProviderActive(active: boolean): void {
+  onlineProviderActive = active;
+}
+
+/** Trạng thái riêng tư hiện tại (FR-019 + 031): 'online' khi có egress HOẶC provider online active. */
 export function getPrivacyState(): PrivacyState {
-  const mode: PrivacyState["mode"] = egressDepth > 0 ? "online" : "local";
+  const mode: PrivacyState["mode"] =
+    egressDepth > 0 || onlineProviderActive ? "online" : "local";
   return { mode, label: labelForMode(mode) };
 }

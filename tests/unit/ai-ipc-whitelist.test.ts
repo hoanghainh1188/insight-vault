@@ -25,6 +25,19 @@ describe("ai IPC whitelist", () => {
     for (const ch of AI_CHANNELS) expect(isWhitelisted(ch)).toBe(true);
   });
 
+  it("6 kênh online-provider (031) đều whitelisted", () => {
+    for (const ch of [
+      "ai:getOnlineState",
+      "ai:setProviderKey",
+      "ai:deleteProviderKey",
+      "ai:setProviderModel",
+      "ai:setActiveProvider",
+      "ai:testProvider",
+    ]) {
+      expect(isWhitelisted(ch)).toBe(true);
+    }
+  });
+
   it("kênh ai:* ngoài danh sách bị từ chối", () => {
     expect(isWhitelisted("ai:pullModel")).toBe(false);
     expect(isWhitelisted("ai:deleteModel")).toBe(false);

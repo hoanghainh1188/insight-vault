@@ -1,11 +1,22 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import {
   getPrivacyState,
   labelForMode,
+  setOnlineProviderActive,
 } from "../../src/main/services/app-shell/privacy-state";
 
 describe("privacy-state", () => {
-  it("v1 luôn ở chế độ local", () => {
+  afterEach(() => setOnlineProviderActive(false)); // reset singleton
+
+  it("mặc định ở chế độ local", () => {
+    expect(getPrivacyState().mode).toBe("local");
+  });
+
+  it("provider online active → mode online (031)", () => {
+    setOnlineProviderActive(true);
+    expect(getPrivacyState().mode).toBe("online");
+    expect(getPrivacyState().label).toContain("online");
+    setOnlineProviderActive(false);
     expect(getPrivacyState().mode).toBe("local");
   });
 

@@ -5,9 +5,12 @@ import type {
   CreateNotebookInput,
   DataDirInfo,
   ModelSelection,
+  OnlineProviderId,
   RagAskInput,
   RenameNotebookInput,
   SetColorInput,
+  SetProviderKeyInput,
+  SetProviderModelInput,
   StudioGenerateInput,
 } from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
@@ -90,6 +93,25 @@ export function registerIpc({
     ai.setSelectedModels(sel as ModelSelection),
   );
   safeHandle(CHANNELS.aiGetRuntimeStatus, () => ai.getRuntimeStatus());
+
+  // online-provider (031) — network + keytar CHỈ ở main; renderer qua 6 kênh này. KHÔNG log key/nội dung.
+  // Validate boundary trong online-runtime (id whitelist, key/model). Trả OnlineState (không chứa key).
+  safeHandle(CHANNELS.aiGetOnlineState, () => ai.online.getOnlineState());
+  safeHandle(CHANNELS.aiSetProviderKey, (input) =>
+    ai.online.setProviderKey(input as SetProviderKeyInput),
+  );
+  safeHandle(CHANNELS.aiDeleteProviderKey, (id) =>
+    ai.online.deleteProviderKey(id as OnlineProviderId),
+  );
+  safeHandle(CHANNELS.aiSetProviderModel, (input) =>
+    ai.online.setProviderModel(input as SetProviderModelInput),
+  );
+  safeHandle(CHANNELS.aiSetActiveProvider, (id) =>
+    ai.online.setActiveProvider(id as OnlineProviderId | null),
+  );
+  safeHandle(CHANNELS.aiTestProvider, (id) =>
+    ai.online.testProvider(id as OnlineProviderId),
+  );
 
   // notebooks (009) — SQLite gọi CHỈ ở đây (main, qua repo). KHÔNG log tên notebook (args không vào logEvent).
   safeHandle(CHANNELS.notebookList, () => notebookRepo.list());

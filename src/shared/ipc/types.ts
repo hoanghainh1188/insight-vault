@@ -69,6 +69,45 @@ export interface EmbedResult {
   vector: number[];
 }
 
+// ===== online-provider (031) — AI online tùy chọn (Claude/Gemini/OpenAI) =====
+
+/** Định danh 3 nhà cung cấp AI online hỗ trợ. */
+export type OnlineProviderId = "anthropic" | "gemini" | "openai";
+
+/** View 1 provider online cho renderer — KHÔNG bao giờ chứa API key (chỉ hasKey). */
+export interface OnlineProviderView {
+  id: OnlineProviderId;
+  /** Nhãn hiển thị (VD "Claude (Anthropic)"). */
+  label: string;
+  /** Đã lưu API key trong keychain chưa (suy từ keytar, không lộ key). */
+  hasKey: boolean;
+  /** Model đang chọn cho provider này (null = chưa chọn). */
+  model: string | null;
+  /** Danh sách model preset gợi ý cho provider này. */
+  presets: string[];
+  /** Provider này có đang là active (nguồn AI đang dùng) không. */
+  active: boolean;
+}
+
+/** Trạng thái toàn bộ khu vực "AI online" cho renderer. */
+export interface OnlineState {
+  providers: OnlineProviderView[];
+  /** Provider online đang active; null = đang dùng local Ollama. */
+  activeOnlineId: OnlineProviderId | null;
+}
+
+/** Input đặt API key cho 1 provider (key CHỈ đi tới main, lưu keytar, không log). */
+export interface SetProviderKeyInput {
+  id: OnlineProviderId;
+  apiKey: string;
+}
+
+/** Input đặt model đã chọn cho 1 provider. */
+export interface SetProviderModelInput {
+  id: OnlineProviderId;
+  model: string | null;
+}
+
 // ===== notebooks (009) — nguồn: specs/.../notebooks/data-model.md =====
 
 /** Màu notebook — hex thuộc palette cố định. */

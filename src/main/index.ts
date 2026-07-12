@@ -106,8 +106,9 @@ app.whenReady().then(async () => {
   // rag-qa (013): hỏi đáp theo nguồn. embed/chat qua provider active (007); search/getChunks (011).
   // 027: persist mỗi lượt qua chatRepo.saveTurn (best-effort, không log nội dung).
   const ragService = createRagService({
-    embed: async (text) =>
-      (await aiRuntime.registry.getActive().embed({ text })).vector,
+    // Embedding LUÔN dùng Ollama local (031, quyết định #1) — nhất quán vector index bất kể provider
+    // chat online đang active. Chat mới đi qua provider active (getActive).
+    embed: async (text) => (await aiRuntime.embedLocal({ text })).vector,
     search: (v, nb, k) => ingestion.vectorStore.search(v, nb, k),
     getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
     sourceTitle: (sid) => ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
