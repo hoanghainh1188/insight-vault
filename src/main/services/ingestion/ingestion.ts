@@ -9,7 +9,9 @@ import { createIngestionPipeline, type IngestionPipeline } from "./pipeline";
 import { parseText } from "./parsers/text";
 import { parsePdf } from "./parsers/pdf";
 import { parseDocx } from "./parsers/docx";
+import { parseAudio } from "./parsers/audio";
 import { fetchAndParseUrl } from "./parsers/url";
+import { createTranscriber } from "./audio/transcribe";
 
 // Ghép domain ingestion ở main: source-repo (SQLite) + vector-store (LanceDB) + pipeline (parse/chunk/
 // embed). Composition root — loại khỏi ngưỡng coverage (như ai-runtime.ts). Business logic thuần đã
@@ -32,6 +34,13 @@ export async function createIngestion(opts: {
   const vectorStore = await createLanceVectorStore(
     join(opts.dataDir, "vectors"),
   );
+  // 045: Whisper (transformers.js) — model tải về data dir (một lần, sau chạy offline). Lazy: chỉ tải
+  // khi nạp audio đầu tiên.
+  const transcriber = createTranscriber({
+    cacheDir: join(opts.dataDir, "models"),
+    // Báo egress khi tải model Whisper lần đầu (badge riêng tư khớp hành vi — Constitution I).
+    setOnline: opts.setOnline,
+  });
 
   const pipeline = createIngestionPipeline({
     sourceRepo,
@@ -43,9 +52,10 @@ export async function createIngestion(opts: {
     isRuntimeReady: async () =>
       (await opts.aiRuntime.getRuntimeStatus()).ollamaReady,
     readFile: async (p) => new Uint8Array(await readFile(p)),
-    parseFile: async (kind, bytes) => {
+    parseFile: async (kind, bytes, onProgress) => {
       if (kind === "pdf") return parsePdf(bytes);
       if (kind === "docx") return parseDocx(Buffer.from(bytes));
+      if (kind === "audio") return parseAudio(bytes, transcriber, onProgress);
       return parseText(new TextDecoder().decode(bytes)); // txt/md
     },
     parseUrl: (url) => fetchAndParseUrl(url),

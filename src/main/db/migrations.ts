@@ -108,6 +108,53 @@ export const MIGRATIONS: Migration[] = [
       );
     },
   },
+  // 045-audio-transcribe (Pha 2a): (a) chunk thêm t_start/t_end (giây) cho locator audio; (b) source.kind
+  // BỎ CHECK cứng để nhận 'audio' (và video/ảnh sau) — validate loại ở app boundary (detectKindFromPath +
+  // SourceKind). Tái tạo bảng source cần né cascade xoá chunk (FK ON): backup chunk → recreate → restore.
+  {
+    version: 5,
+    up(db) {
+      db.exec("ALTER TABLE chunk ADD COLUMN t_start REAL");
+      db.exec("ALTER TABLE chunk ADD COLUMN t_end REAL");
+      // Backup chunk (bảng thường, không FK → không bị cascade khi DROP source).
+      db.exec(
+        `CREATE TABLE chunk_bak_045 AS
+           SELECT id, source_id, ordinal, text, page, char_start, char_end FROM chunk`,
+      );
+      // source mới — KHÔNG còn CHECK kind (validate ở app). Cột giữ nguyên thứ tự để INSERT SELECT *.
+      db.exec(`
+        CREATE TABLE source_new (
+          id           TEXT PRIMARY KEY,
+          notebook_id  TEXT NOT NULL REFERENCES notebook(id) ON DELETE CASCADE,
+          kind         TEXT NOT NULL,
+          title        TEXT NOT NULL,
+          origin       TEXT NOT NULL,
+          status       TEXT NOT NULL CHECK (status IN ('queued','processing','awaiting_embedding','ready','error')),
+          error_label  TEXT,
+          page_count   INTEGER,
+          content_hash TEXT NOT NULL,
+          created_at   INTEGER NOT NULL,
+          updated_at   INTEGER NOT NULL
+        )
+      `);
+      db.exec("INSERT INTO source_new SELECT * FROM source");
+      db.exec("DROP TABLE source"); // implicit DELETE → cascade xoá chunk (đã backup)
+      db.exec("ALTER TABLE source_new RENAME TO source");
+      // Khôi phục chunk từ backup (giữ id → vector LanceDB vẫn khớp).
+      db.exec(
+        `INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end)
+           SELECT id, source_id, ordinal, text, page, char_start, char_end FROM chunk_bak_045`,
+      );
+      db.exec("DROP TABLE chunk_bak_045");
+      // Tái tạo index của source (mất khi DROP).
+      db.exec(
+        "CREATE INDEX IF NOT EXISTS idx_source_notebook ON source(notebook_id)",
+      );
+      db.exec(
+        "CREATE INDEX IF NOT EXISTS idx_source_hash ON source(notebook_id, content_hash)",
+      );
+    },
+  },
 ];
 
 export function getUserVersion(db: Db): number {

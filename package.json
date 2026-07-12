@@ -20,10 +20,12 @@
     "dist:win": "electron-vite build && electron-builder --win nsis --publish never"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@lancedb/lancedb": "^0.31.0",
     "@mozilla/readability": "^0.6.0",
     "@tanstack/react-query": "^5.59.0",
     "apache-arrow": "18.1.0",
+    "audio-decode": "^3.11.2",
     "electron-store": "^8.2.0",
     "jsdom": "^29.1.1",
     "keytar": "^7.9.0",

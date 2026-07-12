@@ -13,6 +13,7 @@ import type { ParseResult } from "./parsers";
 import { detectKindFromPath, titleFromPath } from "./parsers";
 import { cleanText } from "./cleaning";
 import { chunkPages, type PageText } from "./chunker";
+import { timeForCharRange } from "./audio/audio-transcript";
 import { embedTexts } from "./embed";
 import { errorLabelForStep } from "./status";
 import { SizeLimitError, assertWithinLimit } from "./size-limits";
@@ -31,6 +32,8 @@ export interface PipelineDeps {
   parseFile: (
     kind: Exclude<SourceKind, "url">,
     bytes: Uint8Array,
+    /** 045: tiến độ phụ bước parse (audio transcribe/tải model dài) — 0..1. */
+    onProgress?: (frac: number) => void,
   ) => Promise<ParseResult>;
   parseUrl?: (url: string) => Promise<ParseResult>;
   setOnline?: (online: boolean) => void;
@@ -85,6 +88,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     pages: PageText[];
     pageCount: number | null;
     title?: string;
+    timeMap?: ParseResult["timeMap"];
   }> => {
     let result: ParseResult;
     try {
@@ -99,7 +103,11 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       } else {
         const bytes = await deps.readFile(sourceOrigin(src));
         assertWithinLimit(src.kind, bytes.byteLength);
-        result = await deps.parseFile(src.kind, bytes);
+        // Audio (045): transcribe/tải model dài → báo tiến độ phụ trong bước parse (0.1→0.25).
+        result = await deps.parseFile(src.kind, bytes, (frac) => {
+          const s = reload(src.id);
+          if (s) send(s, "parse", 0.1 + Math.max(0, Math.min(1, frac)) * 0.15);
+        });
       }
     } catch (e) {
       if (e instanceof SizeLimitError) throw new StepError("parse", e.label);
@@ -111,7 +119,12 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     if (cleaned.length === 0) {
       throw new StepError("parse", errorLabelForStep("parse", src.kind));
     }
-    return { pages: cleaned, pageCount: result.pageCount, title: result.title };
+    return {
+      pages: cleaned,
+      pageCount: result.pageCount,
+      title: result.title,
+      timeMap: result.timeMap,
+    };
   };
 
   // origin (đường dẫn/URL) KHÔNG nằm trong Source (không lộ renderer). Cache RAM cho phiên hiện tại,
@@ -186,7 +199,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     src = reload(id)!;
     send(src, "parse", 0.1);
     try {
-      const { pages, pageCount, title } = await parseAndClean(src);
+      const { pages, pageCount, title, timeMap } = await parseAndClean(src);
       if (signal.cancelled) return;
       if (pageCount != null) sourceRepo.setPageCount(id, pageCount);
       if (title && src.kind === "url") {
@@ -194,8 +207,24 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       }
       send(reload(id)!, "clean", 0.3);
       const drafts = chunkPages(pages);
+      // Audio (045): gắn tStart/tEnd cho mỗi chunk từ timeMap (theo char-range của chunk).
+      const withTime = timeMap
+        ? drafts.map((d) => {
+            const t = timeForCharRange(
+              timeMap,
+              d.locator.charStart,
+              d.locator.charEnd,
+            );
+            return t
+              ? {
+                  ...d,
+                  locator: { ...d.locator, tStart: t.tStart, tEnd: t.tEnd },
+                }
+              : d;
+          })
+        : drafts;
       sourceRepo.deleteChunks(id); // sạch trước khi ghi (retry an toàn)
-      sourceRepo.insertChunks(id, drafts);
+      sourceRepo.insertChunks(id, withTime);
       send(reload(id)!, "chunk", 0.4);
       if (signal.cancelled) return;
       const embedded = await embedAndStore(reload(id)!, signal);

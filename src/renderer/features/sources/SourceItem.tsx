@@ -8,10 +8,12 @@ const KIND_ICON: Record<Source["kind"], string> = {
   txt: "TXT",
   md: "MD",
   url: "WEB",
+  audio: "AUD",
 };
 
 function subLabel(s: Source): string {
   if (s.kind === "url") return "Web";
+  if (s.kind === "audio") return "Âm thanh";
   if (s.kind === "pdf" && s.pageCount) return `PDF · ${s.pageCount} trang`;
   return KIND_ICON[s.kind];
 }

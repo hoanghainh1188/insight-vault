@@ -9,6 +9,11 @@ const FILE_EXT: Record<string, Exclude<SourceKind, "url">> = {
   txt: "txt",
   md: "md",
   markdown: "md",
+  // 045 (Pha 2a): audio — bóc băng cục bộ bằng Whisper.
+  wav: "audio",
+  mp3: "audio",
+  flac: "audio",
+  ogg: "audio",
 };
 
 function kindOf(name: string): Exclude<SourceKind, "url"> | null {
@@ -56,7 +61,7 @@ export function AddSourceModal({
     }
     if (rejected.length)
       setError(
-        `Không hỗ trợ: ${rejected.join(", ")} (chỉ PDF/.docx/.txt/.md).`,
+        `Không hỗ trợ: ${rejected.join(", ")} (PDF/.docx/.txt/.md/.wav/.mp3/.flac/.ogg).`,
       );
     else if (dup) setNotice("Một nguồn có thể đã tồn tại trong notebook.");
     else onClose();
@@ -120,19 +125,21 @@ export function AddSourceModal({
           >
             URL
           </button>
+          {/* 045: audio nhập qua tab "Tệp" (kéo-thả .mp3/.wav…). Tab "Video" (2b) + "Hình ảnh" (2c) còn hoãn. */}
           <button
             type="button"
             className="type"
             disabled
-            title="Sắp có ở Pha 2"
+            title="Sắp có ở Pha 2b (audio đã hỗ trợ — kéo tệp vào tab Tệp)"
+            data-testid="tab-video"
           >
-            Audio/Video
+            Video
           </button>
           <button
             type="button"
             className="type"
             disabled
-            title="Sắp có ở Pha 2"
+            title="Sắp có ở Pha 2c"
           >
             Hình ảnh
           </button>
@@ -156,13 +163,14 @@ export function AddSourceModal({
           >
             <p>Kéo-thả tệp vào đây hoặc bấm để chọn</p>
             <p className="hint">
-              Tệp được xử lý ngay trên máy bạn · PDF/.docx/.txt/.md
+              Xử lý ngay trên máy · PDF/.docx/.txt/.md · audio
+              .wav/.mp3/.flac/.ogg (tự bóc băng)
             </p>
             <input
               ref={fileInput}
               type="file"
               multiple
-              accept=".pdf,.docx,.txt,.md"
+              accept=".pdf,.docx,.txt,.md,.wav,.mp3,.flac,.ogg"
               hidden
               onChange={(e) => {
                 if (e.target.files) void addFiles(e.target.files);

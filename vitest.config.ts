@@ -35,6 +35,8 @@ export default defineConfig({
         "src/main/services/app-shell/storage-info.ts",
         "src/main/services/ai-runtime/online/stream-parse.ts",
         "src/renderer/shared/shortcuts.ts",
+        "src/main/services/ingestion/audio/resample.ts",
+        "src/main/services/ingestion/audio/audio-transcript.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -55,6 +57,11 @@ export default defineConfig({
         "src/main/services/ai-runtime/online/online-http.ts",
         "src/main/services/ai-runtime/online/keytar-loader.ts",
         "src/main/services/app-shell/storage-fs.ts",
+        // 045 audio: adapter I/O (giải mã audio-decode + transformers.js Whisper + wiring parser) — phủ
+        // bởi hàm thuần resample/audio-transcript + thủ công. Loại khỏi ngưỡng.
+        "src/main/services/ingestion/audio/decode.ts",
+        "src/main/services/ingestion/audio/transcribe.ts",
+        "src/main/services/ingestion/parsers/audio.ts",
       ],
       thresholds: {
         statements: 80,

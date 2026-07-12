@@ -12,10 +12,15 @@ describe("parsers/index", () => {
     expect(detectKindFromPath("c.txt")).toBe("txt");
     expect(detectKindFromPath("d.md")).toBe("md");
     expect(detectKindFromPath("e.markdown")).toBe("md");
+    // 045: audio
+    expect(detectKindFromPath("r.mp3")).toBe("audio");
+    expect(detectKindFromPath("s.WAV")).toBe("audio");
+    expect(detectKindFromPath("t.flac")).toBe("audio");
   });
 
   it("đuôi không hỗ trợ → ném", () => {
-    expect(() => detectKindFromPath("x.mp3")).toThrow(/không hỗ trợ/);
+    expect(() => detectKindFromPath("x.png")).toThrow(/không hỗ trợ/);
+    expect(() => detectKindFromPath("v.mp4")).toThrow(/không hỗ trợ/); // video → 2b
     expect(() => detectKindFromPath("noext")).toThrow();
   });
 
