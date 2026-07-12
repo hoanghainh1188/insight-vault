@@ -1,5 +1,6 @@
 import { join } from "node:path";
-import { app, BrowserWindow, dialog, session } from "electron";
+import { existsSync } from "node:fs";
+import { app, BrowserWindow, dialog, nativeImage, session } from "electron";
 import Store from "electron-store";
 import { CHANNELS } from "@shared/ipc/channels";
 import type { SourceProgressEvent } from "@shared/ipc/types";
@@ -26,13 +27,26 @@ function installSecurity(): void {
   ses.setDevicePermissionHandler(() => false);
 }
 
+// Icon runtime (041/045): dock macOS lúc DEV + window/taskbar Windows/Linux đều dùng icon Electron mặc định
+// nếu không set (bản đóng gói mac dùng .icns từ bundle; win dùng .ico của exe). Tìm build/icon.png ở dev
+// (app root) hoặc resources (đóng gói, qua extraResources). Trả null nếu không có → giữ mặc định.
+function resolveIconPath(): string | null {
+  const candidates = [
+    join(app.getAppPath(), "build", "icon.png"),
+    join(process.resourcesPath, "icon.png"),
+  ];
+  return candidates.find((p) => existsSync(p)) ?? null;
+}
+
 function createWindow(): void {
+  const iconPath = resolveIconPath();
   const win = new BrowserWindow({
     width: 1120,
     height: 720,
     minWidth: 720,
     minHeight: 480,
     show: false,
+    ...(iconPath ? { icon: iconPath } : {}), // Windows/Linux taskbar + window
     // Frame OS mặc định (clarify A3) — nút minimize/maximize/close native.
     webPreferences: {
       preload: join(__dirname, "../preload/index.cjs"),
@@ -64,6 +78,12 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  // Icon dock macOS: bản đóng gói lấy từ bundle .icns; khi DEV thì phải set thủ công (nếu không → icon
+  // Electron mặc định). Không lỗi nếu thiếu file/không phải macOS.
+  if (process.platform === "darwin" && app.dock) {
+    const ic = resolveIconPath();
+    if (ic) app.dock.setIcon(nativeImage.createFromPath(ic));
+  }
   // Đảm bảo data dir tồn tại (FR-011/012). userData = chuẩn OS (F1).
   const dataDir = await ensureDataDir(app.getPath("userData"));
   if (!dataDir.ready) {

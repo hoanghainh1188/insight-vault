@@ -12,6 +12,11 @@ directories:
   output: release
   buildResources: build
 
+# Đưa icon.png vào resources để main set được BrowserWindow/dock icon lúc chạy (ngoài .icns/.ico của bundle).
+extraResources:
+  - from: build/icon.png
+    to: icon.png
+
 # electron-vite xuất ra out/; production deps trong node_modules tự được gộp theo `dependencies`.
 files:
   - out/**/*
