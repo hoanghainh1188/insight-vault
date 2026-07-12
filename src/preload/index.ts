@@ -10,11 +10,15 @@ import type {
   ModelSelection,
   Notebook,
   OnboardingState,
+  OnlineProviderId,
+  OnlineState,
   RagAnswer,
   RagAskInput,
   RenameNotebookInput,
   RuntimeStatus,
   SetColorInput,
+  SetProviderKeyInput,
+  SetProviderModelInput,
   Source,
   SourceContent,
   SourceProgressEvent,
@@ -51,6 +55,19 @@ const api = {
     ipcRenderer.invoke(CHANNELS.aiSetSelectedModels, sel),
   aiGetRuntimeStatus: (): Promise<RuntimeStatus> =>
     ipcRenderer.invoke(CHANNELS.aiGetRuntimeStatus),
+  // online-provider (031) — AI online tùy chọn (Claude/Gemini/OpenAI). Key CHỈ đi tới main (keytar).
+  aiGetOnlineState: (): Promise<OnlineState> =>
+    ipcRenderer.invoke(CHANNELS.aiGetOnlineState),
+  aiSetProviderKey: (input: SetProviderKeyInput): Promise<OnlineState> =>
+    ipcRenderer.invoke(CHANNELS.aiSetProviderKey, input),
+  aiDeleteProviderKey: (id: OnlineProviderId): Promise<OnlineState> =>
+    ipcRenderer.invoke(CHANNELS.aiDeleteProviderKey, id),
+  aiSetProviderModel: (input: SetProviderModelInput): Promise<OnlineState> =>
+    ipcRenderer.invoke(CHANNELS.aiSetProviderModel, input),
+  aiSetActiveProvider: (id: OnlineProviderId | null): Promise<OnlineState> =>
+    ipcRenderer.invoke(CHANNELS.aiSetActiveProvider, id),
+  aiTestProvider: (id: OnlineProviderId): Promise<RuntimeStatus> =>
+    ipcRenderer.invoke(CHANNELS.aiTestProvider, id),
   // notebooks (009)
   notebookList: (): Promise<Notebook[]> =>
     ipcRenderer.invoke(CHANNELS.notebookList),

@@ -6,6 +6,7 @@ import type {
   ModelSelection,
   Notebook,
   OnboardingState,
+  OnlineState,
   PrivacyState,
   RagAnswer,
   RuntimeStatus,
@@ -36,6 +37,13 @@ export const CHANNELS = {
   aiGetSelectedModels: "ai:getSelectedModels",
   aiSetSelectedModels: "ai:setSelectedModels",
   aiGetRuntimeStatus: "ai:getRuntimeStatus",
+  // online-provider (031) — AI online tùy chọn (Claude/Gemini/OpenAI)
+  aiGetOnlineState: "ai:getOnlineState",
+  aiSetProviderKey: "ai:setProviderKey",
+  aiDeleteProviderKey: "ai:deleteProviderKey",
+  aiSetProviderModel: "ai:setProviderModel",
+  aiSetActiveProvider: "ai:setActiveProvider",
+  aiTestProvider: "ai:testProvider",
   // notebooks (009)
   notebookList: "notebook:list",
   notebookCreate: "notebook:create",
@@ -88,6 +96,13 @@ export interface ChannelResponse {
   [CHANNELS.aiGetSelectedModels]: ModelSelection;
   [CHANNELS.aiSetSelectedModels]: ModelSelection;
   [CHANNELS.aiGetRuntimeStatus]: RuntimeStatus;
+  // online-provider (031)
+  [CHANNELS.aiGetOnlineState]: OnlineState;
+  [CHANNELS.aiSetProviderKey]: OnlineState;
+  [CHANNELS.aiDeleteProviderKey]: OnlineState;
+  [CHANNELS.aiSetProviderModel]: OnlineState;
+  [CHANNELS.aiSetActiveProvider]: OnlineState;
+  [CHANNELS.aiTestProvider]: RuntimeStatus;
   [CHANNELS.notebookList]: Notebook[];
   [CHANNELS.notebookCreate]: Notebook;
   [CHANNELS.notebookRename]: Notebook;

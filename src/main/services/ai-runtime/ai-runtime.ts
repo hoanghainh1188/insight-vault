@@ -1,4 +1,10 @@
-import type { Model, ModelSelection, RuntimeStatus } from "@shared/ipc/types";
+import type {
+  EmbedRequest,
+  EmbedResult,
+  Model,
+  ModelSelection,
+  RuntimeStatus,
+} from "@shared/ipc/types";
 import { createOllamaClient } from "./ollama-client";
 import { OllamaProvider } from "./ollama-provider";
 import { ProviderRegistry } from "./registry";
@@ -8,22 +14,43 @@ import {
   type StoreLike,
 } from "./model-selection";
 import { computeRuntimeStatus } from "./runtime-status";
+import { createSecretStore } from "./online/secret-store";
+import { loadKeytar } from "./online/keytar-loader";
+import {
+  createOnlineRuntime,
+  type OnlineRuntime,
+} from "./online/online-runtime";
+import { setOnlineProviderActive } from "../app-shell/privacy-state";
 
-// Ghép runtime AI ở main: Ollama client + registry(OllamaProvider) + model-selection.
-// Đây là bề mặt mà IPC handler gọi (renderer chỉ chạm qua 5 kênh ai:* whitelisted).
+// Ghép runtime AI ở main: Ollama client + registry + model-selection + 3 provider online (031).
+// Đây là bề mặt mà IPC handler gọi (renderer chỉ chạm qua kênh ai:* whitelisted).
 export interface AiRuntime {
   listModels(): Promise<Model[]>;
   testConnection(): Promise<RuntimeStatus>;
   getSelectedModels(): ModelSelection;
   setSelectedModels(sel: ModelSelection): ModelSelection;
   getRuntimeStatus(): Promise<RuntimeStatus>;
+  /** Embedding LUÔN dùng Ollama local (031, quyết định #1) — độc lập provider chat active. */
+  embedLocal(req: EmbedRequest): Promise<EmbedResult>;
   registry: ProviderRegistry;
+  online: OnlineRuntime;
 }
 
 export function createAiRuntime(store: StoreLike): AiRuntime {
   const client = createOllamaClient();
   const registry = new ProviderRegistry();
-  registry.register(new OllamaProvider(client, () => getSelectedModels(store)));
+  const ollama = new OllamaProvider(client, () => getSelectedModels(store));
+  registry.register(ollama); // active mặc định = ollama (local-first).
+
+  const online = createOnlineRuntime({
+    store,
+    secretStore: createSecretStore(loadKeytar()),
+    registry,
+    fetchFn: fetch,
+    onActiveChange: setOnlineProviderActive,
+  });
+  // Khôi phục provider active đã lưu (nếu có key) — best-effort, không chặn khởi động.
+  void online.syncActiveFromConfig();
 
   return {
     listModels: () => client.listModels(),
@@ -33,6 +60,8 @@ export function createAiRuntime(store: StoreLike): AiRuntime {
     setSelectedModels: (sel) => setSelectedModels(store, sel),
     getRuntimeStatus: () =>
       computeRuntimeStatus(client, getSelectedModels(store)),
+    embedLocal: (req) => ollama.embed(req),
     registry,
+    online,
   };
 }

@@ -46,6 +46,10 @@ export default defineConfig({
         "src/main/services/source-viewer/source-content.ts",
         "src/main/services/studio/studio-service.ts",
         "src/main/services/studio/export.ts",
+        // online-provider (031): adapter I/O HTTP + native keytar loader — phủ qua provider tests (fetch giả)
+        // + e2e/thủ công, không phải logic thuần đo ngưỡng.
+        "src/main/services/ai-runtime/online/online-http.ts",
+        "src/main/services/ai-runtime/online/keytar-loader.ts",
       ],
       thresholds: {
         statements: 80,
