@@ -350,6 +350,50 @@
   color: var(--ink-soft);
   margin: 0;
 }
+
+/* Bảng phím tắt (043) */
+.shortcuts-modal {
+  max-width: 440px;
+}
+.shortcuts-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.shortcuts-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 8px;
+  border-radius: var(--radius-sm);
+}
+.shortcuts-list li:hover {
+  background: var(--surface-2);
+}
+.shortcut-keys {
+  display: inline-flex;
+  gap: 4px;
+  flex: 0 0 108px;
+}
+.shortcut-keys kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  min-width: 22px;
+  text-align: center;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  color: var(--ink);
+}
+.shortcut-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
 .ai-note,
 .model-hint {
   font-size: 12px;
