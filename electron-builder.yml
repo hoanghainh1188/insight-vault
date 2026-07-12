@@ -1,0 +1,45 @@
+# Cấu hình đóng gói InsightVault (v0.1 pre-release). CHƯA code-sign/notarize/auto-update (pha sau — cần
+# Apple Developer ID + Windows cert). Native module (@lancedb/lancedb, keytar) dùng prebuilt N-API
+# (ABI ổn định qua Node/Electron) → npmRebuild:false, chỉ unpack .node khỏi asar.
+appId: com.insightvault.app
+productName: InsightVault
+copyright: © 2026 hoanghainh1188
+
+# N-API prebuilt → KHÔNG rebuild (tránh cần Rust/toolchain build lại @lancedb trên CI).
+npmRebuild: false
+
+directories:
+  output: release
+  buildResources: build
+
+# electron-vite xuất ra out/; production deps trong node_modules tự được gộp theo `dependencies`.
+files:
+  - out/**/*
+  - package.json
+
+# Binary native phải nằm NGOÀI asar để load được lúc chạy.
+asarUnpack:
+  - "**/*.node"
+  - node_modules/@lancedb/**
+  - node_modules/keytar/**
+
+mac:
+  target:
+    - dmg
+  category: public.app-category.productivity
+  # v0.1: KHÔNG ký (unsigned) — người dùng mở lần đầu qua chuột phải → Open.
+  identity: null
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+dmg:
+  writeUpdateInfo: false
+
+win:
+  target:
+    - nsis
+  artifactName: ${productName}-${version}-Setup.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true

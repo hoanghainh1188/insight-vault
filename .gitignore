@@ -20,3 +20,6 @@ playwright-report/
 # - .specify/          (constitution + template)
 # - .claude/agents/    (subagent config)
 # - .claude/commands/  (slash command)
+
+# electron-builder output
+release/
