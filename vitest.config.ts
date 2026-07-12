@@ -37,6 +37,7 @@ export default defineConfig({
         "src/renderer/shared/shortcuts.ts",
         "src/main/services/ingestion/audio/resample.ts",
         "src/main/services/ingestion/audio/audio-transcript.ts",
+        "src/main/services/source-viewer/media-range.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -62,6 +63,9 @@ export default defineConfig({
         "src/main/services/ingestion/audio/decode.ts",
         "src/main/services/ingestion/audio/transcribe.ts",
         "src/main/services/ingestion/parsers/audio.ts",
+        // 049 audio-player: handler stream file gốc qua giao thức iv-media:// (node:fs + electron
+        // protocol). Hàm thuần tách ở media-range.ts (đã tính coverage). Loại wiring I/O.
+        "src/main/services/source-viewer/media-serve.ts",
       ],
       thresholds: {
         statements: 80,

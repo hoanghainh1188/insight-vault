@@ -1,6 +1,13 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
-import { app, BrowserWindow, dialog, nativeImage, session } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  nativeImage,
+  protocol,
+  session,
+} from "electron";
 import Store from "electron-store";
 import { CHANNELS } from "@shared/ipc/channels";
 import type { SourceProgressEvent } from "@shared/ipc/types";
@@ -16,7 +23,14 @@ import { createChatRepo } from "./services/rag/chat-repo";
 import { createStudioRepo } from "./services/studio/studio-repo";
 import { createStudioService } from "./services/studio/studio-service";
 import { setEgressActive } from "./services/app-shell/privacy-state";
+import { createMediaHandler } from "./services/source-viewer/media-serve";
 import { logEvent } from "./logging";
+
+// 049: đăng ký scheme iv-media:// là privileged (stream + fetch API) TRƯỚC khi app ready — cho <audio> phát
+// file audio gốc qua main (renderer sandbox không đọc FS). Handler đăng ký ở whenReady (cần sourceRepo).
+protocol.registerSchemesAsPrivileged([
+  { scheme: "iv-media", privileges: { stream: true, supportFetchAPI: true } },
+]);
 
 // Hardening cấp session (Constitution I & III): từ chối mọi permission request (app-shell không cần
 // camera/mic/geo/…); chặn mở device (USB/HID/serial). Local-first: không có bề mặt xin quyền nào.
@@ -119,6 +133,10 @@ app.whenReady().then(async () => {
     emit: emitProgress,
     setOnline: (online) => setEgressActive(online), // bật chỉ báo online khi fetch URL (FR-019)
   });
+
+  // 049 (2a-player): phục vụ file audio gốc cho <audio> qua iv-media:// (đọc file CHỈ main, tra sourceId→
+  // path từ DB, chỉ nguồn kind=audio). Local: không egress.
+  protocol.handle("iv-media", createMediaHandler(ingestion.sourceRepo));
 
   // chat-history (027): lưu bền hội thoại theo notebook (migration #4).
   const chatRepo = createChatRepo(db);

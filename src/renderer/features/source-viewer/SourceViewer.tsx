@@ -14,7 +14,9 @@ export function SourceViewer({
   const hlRef = useRef<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Map<number, HTMLElement>>(new Map());
+  const audioRef = useRef<HTMLAudioElement | null>(null); // 049
   const [currentPage, setCurrentPage] = useState(1);
+  const [audioError, setAudioError] = useState(false); // 049: file gốc mất/không phát được
 
   const citation = target?.citation ?? null;
   const segments = useMemo(() => {
@@ -34,7 +36,10 @@ export function SourceViewer({
   const firstHlIndex = segments.findIndex((s) => s.kind === "highlight");
   const isPdf =
     (content?.kind === "pdf" && content.pageBreaks.length > 0) || false;
+  const isAudio = content?.kind === "audio"; // 049
   const pageCount = content?.pageCount ?? 0;
+  // Seek theo trích dẫn audio: tStart (giây) từ locator (045 lưu sẵn). undefined nếu mở nguồn trực tiếp.
+  const tStart = citation?.locator.tStart;
 
   // Auto-scroll: tới đoạn highlight (nếu có), ngược lại lên đầu. Đặt trang hiện tại theo trích dẫn.
   useEffect(() => {
@@ -43,6 +48,28 @@ export function SourceViewer({
     if (hlRef.current) hlRef.current.scrollIntoView({ block: "center" });
     else if (bodyRef.current) bodyRef.current.scrollTop = 0;
   }, [segments, citation]);
+
+  // 049: đổi nguồn → reset cờ lỗi audio (thử phát lại nguồn mới).
+  useEffect(() => {
+    setAudioError(false);
+  }, [target?.sourceId]);
+
+  // 049: seek player tới tStart của trích dẫn + tự phát. Chờ loadedmetadata nếu chưa sẵn (đổi src/nguồn).
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a || tStart == null) return;
+    const seek = (): void => {
+      a.currentTime = tStart;
+      void a.play().catch(() => {}); // autoplay có thể bị chặn — bỏ qua, người dùng tự bấm.
+    };
+    if (a.readyState >= 1)
+      seek(); // HAVE_METADATA
+    else {
+      a.addEventListener("loadedmetadata", seek, { once: true });
+      return () => a.removeEventListener("loadedmetadata", seek);
+    }
+    return undefined;
+  }, [tStart, target?.sourceId]);
 
   const goToPage = (p: number): void => {
     if (p < 1 || p > pageCount) return;
@@ -121,6 +148,24 @@ export function SourceViewer({
           <p className="viewer-msg" data-testid="viewer-missing">
             Nguồn không còn tồn tại.
           </p>
+        )}
+        {!loading && !missing && content && isAudio && target && (
+          <div className="vaudio" data-testid="viewer-audio-player">
+            <audio
+              ref={audioRef}
+              controls
+              preload="metadata"
+              className="vaudio-el"
+              src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
+              onError={() => setAudioError(true)}
+            />
+            {audioError && (
+              <p className="vaudio-err" data-testid="viewer-audio-error">
+                Không phát được file âm thanh gốc (có thể đã bị xoá hoặc di
+                chuyển). Bản bóc băng bên dưới vẫn xem được.
+              </p>
+            )}
+          </div>
         )}
         {!loading && !missing && content && (
           <div className="vtext">
