@@ -1,40 +1,10 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type { Citation, StudioResult } from "@shared/ipc/types";
 import { formatCitationLabel } from "../rag-qa/citation-format";
+import { MarkdownContent } from "../../shared/markdown/MarkdownContent";
 
-// Card kết quả Studio. Render text + chip [n] AN TOÀN (React text node, KHÔNG innerHTML — Constitution III /
-// FR-015), giống MessageBubble. Bấm chip → onCite (mở Source Viewer 019). Ghi chú khi truncated.
-
-const CHIP_RE = /(\[\d+\])/g;
-
-function renderWithChips(
-  text: string,
-  citeByN: Map<number, Citation>,
-  onCite?: (c: Citation) => void,
-): ReactNode[] {
-  return text.split(CHIP_RE).map((part, i) => {
-    const m = part.match(/^\[(\d+)\]$/);
-    if (m) {
-      const n = Number(m[1]);
-      const c = citeByN.get(n);
-      if (c) {
-        return (
-          <button
-            key={i}
-            type="button"
-            className="cite"
-            title={formatCitationLabel(c)}
-            onClick={() => onCite?.(c)}
-            data-testid={`studio-cite-${n}`}
-          >
-            {n}
-          </button>
-        );
-      }
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
+// Card kết quả Studio. Render MARKDOWN an toàn + chip [n] (029, React node — KHÔNG innerHTML). Bấm chip →
+// onCite (mở Source Viewer 019). Ghi chú khi truncated.
 
 const KIND_LABEL: Record<StudioResult["kind"], string> = {
   summary: "Tóm tắt tài liệu",
@@ -127,9 +97,13 @@ export function StudioResultCard({
           {notice}
         </p>
       )}
-      <p className="studio-card-body">
-        {renderWithChips(result.content, citeByN, onCite)}
-      </p>
+      <div className="studio-card-body">
+        <MarkdownContent
+          content={result.content}
+          citeByN={citeByN}
+          onCite={onCite}
+        />
+      </div>
       {result.truncated && (
         <p className="studio-truncated" data-testid="studio-truncated">
           Dựa trên phần đầu tài liệu (nội dung dài đã được rút gọn theo giới

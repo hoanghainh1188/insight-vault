@@ -1,0 +1,135 @@
+/* Markdown render (029) — style cho phần tử do MarkdownContent dựng. Dùng token tokens.css. */
+
+.md {
+  white-space: normal;
+  line-height: 1.62;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md > :last-child {
+  margin-bottom: 0;
+}
+
+.md-p {
+  margin: 0 0 10px;
+}
+
+.md-h1,
+.md-h2,
+.md-h3 {
+  font-weight: 680;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.md-h1 {
+  font-size: 17px;
+  margin: 16px 0 8px;
+}
+.md-h2 {
+  font-size: 15px;
+  margin: 14px 0 6px;
+}
+.md-h3 {
+  font-size: 13.5px;
+  margin: 12px 0 5px;
+  color: var(--ink-soft);
+  text-transform: none;
+}
+
+.md-ul,
+.md-ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+.md-ul {
+  list-style-type: disc;
+}
+.md-ol {
+  list-style-type: decimal;
+}
+.md-ul li,
+.md-ol li {
+  margin: 4px 0;
+  padding-left: 3px;
+  line-height: 1.55;
+}
+.md-ul li::marker,
+.md-ol li::marker {
+  color: var(--ink-faint);
+}
+
+/* Mã nội dòng: mọi <code> KHÔNG nằm trong <pre> (react-markdown không gắn class). */
+.md :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--line-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.5px 5px;
+}
+
+.md-pre {
+  margin: 0 0 10px;
+  padding: 11px 13px;
+  background: var(--ink);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+}
+.md-pre code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: #e6e8ea;
+  white-space: pre;
+}
+
+/* GFM: bảng — gọn, có đường kẻ nhẹ, cuộn ngang khi tràn. */
+.md table {
+  border-collapse: collapse;
+  margin: 0 0 10px;
+  display: block;
+  overflow-x: auto;
+  font-size: 0.95em;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 5px 9px;
+  text-align: left;
+}
+.md th {
+  background: var(--surface-2);
+  font-weight: 650;
+}
+
+/* Trích dẫn khối */
+.md blockquote {
+  margin: 0 0 10px;
+  padding: 2px 0 2px 12px;
+  border-left: 3px solid var(--line);
+  color: var(--ink-soft);
+}
+
+/* Đường kẻ ngang */
+.md hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 14px 0;
+}
+
+.md-link {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.md-truncated {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-style: italic;
+}

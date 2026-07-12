@@ -1,5 +1,5 @@
 import type { RagMode, RagTurn } from "@shared/ipc/types";
-import { MAX_QUESTION_LEN } from "./constants";
+import { MAX_QUESTION_LEN, MAX_HISTORY_CONTENT_LEN } from "./constants";
 
 // Validate input rag:ask ở boundary (FR-013, Constitution III "validate at boundaries"). Hàm THUẦN.
 
@@ -39,7 +39,7 @@ export function validateHistory(raw: unknown): RagTurn[] {
     if (
       (role !== "user" && role !== "assistant") ||
       typeof content !== "string" ||
-      content.length > MAX_QUESTION_LEN
+      content.length > MAX_HISTORY_CONTENT_LEN
     ) {
       throw new Error("Lịch sử hội thoại không hợp lệ.");
     }

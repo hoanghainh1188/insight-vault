@@ -1,41 +1,10 @@
-import type { ReactNode } from "react";
 import type { Citation } from "@shared/ipc/types";
 import { formatCitationLabel } from "./citation-format";
+import { MarkdownContent } from "../../shared/markdown/MarkdownContent";
 import type { ChatMessage } from "./useChat";
 
-// Bong bóng hội thoại (prototype S2). Trả lời AI: render chip [n] (nút .cite) tại chỗ + dòng "Nguồn:".
-// Bấm chip → 006-source-viewer sẽ mở nguồn; feature này chỉ cung cấp mapping (onCite optional).
-
-const CHIP_RE = /(\[\d+\])/g;
-
-function renderWithChips(
-  text: string,
-  citeByN: Map<number, Citation>,
-  onCite?: (c: Citation) => void,
-): ReactNode[] {
-  return text.split(CHIP_RE).map((part, i) => {
-    const m = part.match(/^\[(\d+)\]$/);
-    if (m) {
-      const n = Number(m[1]);
-      const c = citeByN.get(n);
-      if (c) {
-        return (
-          <button
-            key={i}
-            type="button"
-            className="cite"
-            title={formatCitationLabel(c)}
-            onClick={() => onCite?.(c)}
-            data-testid={`cite-${n}`}
-          >
-            {n}
-          </button>
-        );
-      }
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
+// Bong bóng hội thoại (prototype S2). Trả lời AI: render MARKDOWN an toàn + chip [n] (029). Tin người dùng
+// giữ text thuần. Bấm chip → mở Source Viewer (019). onCite optional.
 
 export function MessageBubble({
   message,
@@ -55,11 +24,17 @@ export function MessageBubble({
       <span className="who" data-testid="bubble-who">
         {isUser ? "Bạn" : "InsightVault"}
       </span>
-      <p className="bubble-text">
-        {isUser
-          ? message.content
-          : renderWithChips(message.content, citeByN, onCite)}
-      </p>
+      {isUser ? (
+        <p className="bubble-text">{message.content}</p>
+      ) : (
+        <div className="bubble-text">
+          <MarkdownContent
+            content={message.content}
+            citeByN={citeByN}
+            onCite={onCite}
+          />
+        </div>
+      )}
       {!isUser && message.citations && message.citations.length > 0 && (
         <div className="srcnote" data-testid="srcnote">
           <span className="srcnote-label">Nguồn:</span>
