@@ -1,5 +1,6 @@
 import type { SourceKind } from "@shared/ipc/types";
 import type { PageText } from "../chunker";
+import type { TimeMapEntry } from "../audio/audio-transcript";
 
 // Kết quả parse chuẩn hoá cho mọi loại nguồn. Pipeline sẽ làm sạch từng page rồi chunk.
 export interface ParseResult {
@@ -9,6 +10,8 @@ export interface ParseResult {
   pageCount: number | null;
   /** Văn bản theo trang (PDF nhiều trang; loại khác 1 phần tử page=null). */
   pages: PageText[];
+  /** Audio (045): map char↔time để gắn tStart/tEnd cho chunk sau khi chunk theo char. */
+  timeMap?: TimeMapEntry[];
 }
 
 const EXT_KIND: Record<string, SourceKind> = {
@@ -17,6 +20,11 @@ const EXT_KIND: Record<string, SourceKind> = {
   txt: "txt",
   md: "md",
   markdown: "md",
+  // audio (045, Pha 2a) — wav/mp3/flac/ogg (m4a/aac cần ffmpeg → 2b)
+  wav: "audio",
+  mp3: "audio",
+  flac: "audio",
+  ogg: "audio",
 };
 
 /** Suy loại nguồn từ đuôi tệp (thuần, unit-test được). Ném nếu không hỗ trợ. */

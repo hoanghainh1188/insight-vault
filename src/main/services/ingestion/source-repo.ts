@@ -37,6 +37,8 @@ interface ChunkRow {
   page: number | null;
   char_start: number;
   char_end: number;
+  t_start: number | null; // 045 — audio timestamp (giây); null cho loại khác
+  t_end: number | null;
 }
 
 function toSource(r: SourceRow): Source {
@@ -59,7 +61,15 @@ function toChunk(r: ChunkRow): Chunk {
     sourceId: r.source_id,
     ordinal: r.ordinal,
     text: r.text,
-    locator: { page: r.page, charStart: r.char_start, charEnd: r.char_end },
+    locator: {
+      page: r.page,
+      charStart: r.char_start,
+      charEnd: r.char_end,
+      // 045: chỉ gắn timestamp khi có (audio) — giữ locator gọn cho loại khác.
+      ...(r.t_start != null
+        ? { tStart: r.t_start, tEnd: r.t_end ?? r.t_start }
+        : {}),
+    },
   };
 }
 
@@ -194,7 +204,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
     insertChunks(sourceId, drafts) {
       const ids: string[] = [];
       const stmt = db.prepare(
-        "INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end, t_start, t_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       );
       db.exec("BEGIN");
       try {
@@ -209,6 +219,8 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
             d.locator.page,
             d.locator.charStart,
             d.locator.charEnd,
+            d.locator.tStart ?? null,
+            d.locator.tEnd ?? null,
           );
         }
         db.exec("COMMIT");

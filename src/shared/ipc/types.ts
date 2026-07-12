@@ -148,7 +148,7 @@ export interface SetColorInput {
 
 // ===== ingestion (011) — nguồn: specs/.../ingestion/data-model.md =====
 
-export type SourceKind = "pdf" | "docx" | "txt" | "md" | "url";
+export type SourceKind = "pdf" | "docx" | "txt" | "md" | "url" | "audio";
 
 /** Trạng thái vòng đời nguồn. Ánh xạ UI: ready→.stat ready; queued/processing/awaiting_embedding→.stat proc; error→.stat err. */
 export type SourceStatus =
@@ -160,6 +160,9 @@ export interface Locator {
   page: number | null;
   charStart: number;
   charEnd: number;
+  /** Audio (045): mốc thời gian (giây) của đoạn được trích dẫn — cho player seek (2a-player). */
+  tStart?: number;
+  tEnd?: number;
 }
 
 /** Nguồn (metadata) — KHÔNG expose origin/content_hash toàn văn ra renderer. */

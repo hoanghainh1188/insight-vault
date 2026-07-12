@@ -100,7 +100,7 @@ test("whitelist: renderer chỉ có hàm source:* whitelisted, không invoke kê
   expect(keys).not.toContain("invoke");
 });
 
-test("UI: mở Workspace → cột Nguồn + modal Thêm nguồn (Audio/Video vô hiệu)", async () => {
+test("UI: mở Workspace → cột Nguồn + modal Thêm nguồn (Video/Hình ảnh vô hiệu)", async () => {
   const win = await app.firstWindow();
   const nbId = await win.evaluate(async () => {
     const nb = await window.api.notebookCreate({
@@ -118,6 +118,7 @@ test("UI: mở Workspace → cột Nguồn + modal Thêm nguồn (Audio/Video v�
   await expect(win.getByTestId("add-source-modal")).toBeVisible();
   await expect(win.getByTestId("tab-file")).toBeVisible();
   await expect(win.getByTestId("tab-url")).toBeVisible();
-  // Audio/Video là nút disabled (FR-003)
-  await expect(win.getByRole("button", { name: "Audio/Video" })).toBeDisabled();
+  // 045: audio nhập qua tab Tệp; tab "Video" (2b) + "Hình ảnh" (2c) còn disabled.
+  await expect(win.getByTestId("tab-video")).toBeDisabled();
+  await expect(win.getByRole("button", { name: "Hình ảnh" })).toBeDisabled();
 });

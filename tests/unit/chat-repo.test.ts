@@ -32,9 +32,9 @@ const cites: Citation[] = [
 ];
 
 describe("chat-repo (027)", () => {
-  it("migration #4 nâng user_version lên 4", () => {
+  it("migration #4 (chat_message) đã áp — user_version ≥ 4", () => {
     const { db } = setup();
-    expect(getUserVersion(db)).toBe(4);
+    expect(getUserVersion(db)).toBeGreaterThanOrEqual(4);
   });
 
   it("saveTurn ghi 2 hàng (user trước assistant); listByNotebook đúng thứ tự + khứ hồi citations/notFound", () => {
