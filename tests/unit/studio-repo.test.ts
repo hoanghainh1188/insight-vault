@@ -33,12 +33,18 @@ const cites: Citation[] = [
 ];
 
 describe("studio-repo", () => {
-  it("migration #3 nâng user_version lên 3", () => {
+  it("migration #3 đã áp (bảng studio_result tồn tại; user_version ≥ 3)", () => {
     const { db } = setup();
     const row = db.prepare("PRAGMA user_version").get() as {
       user_version: number;
     };
-    expect(row.user_version).toBe(3);
+    expect(row.user_version).toBeGreaterThanOrEqual(3);
+    const tbl = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='studio_result'",
+      )
+      .get();
+    expect(tbl).toBeTruthy();
   });
 
   it("upsert tạo mới rồi ghi đè cùng (notebook,kind) — chỉ 1 hàng", () => {

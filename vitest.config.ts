@@ -26,6 +26,7 @@ export default defineConfig({
         "src/main/services/studio/studio-repo.ts",
         "src/main/services/studio/prompt.ts",
         "src/main/services/studio/export-name.ts",
+        "src/main/services/rag/chat-repo.ts",
         "src/renderer/shared/useModalA11y.ts",
         "src/renderer/shared/lastNotebook.ts",
         "src/renderer/features/sources/useColumnWidths.ts",

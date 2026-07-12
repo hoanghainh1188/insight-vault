@@ -11,6 +11,7 @@ import { createNotebookRepo } from "./services/notebooks/notebook-repo";
 import { createAiRuntime } from "./services/ai-runtime/ai-runtime";
 import { createIngestion } from "./services/ingestion/ingestion";
 import { createRagService } from "./services/rag/rag-service";
+import { createChatRepo } from "./services/rag/chat-repo";
 import { createStudioRepo } from "./services/studio/studio-repo";
 import { createStudioService } from "./services/studio/studio-service";
 import { setEgressActive } from "./services/app-shell/privacy-state";
@@ -99,7 +100,11 @@ app.whenReady().then(async () => {
     setOnline: (online) => setEgressActive(online), // bật chỉ báo online khi fetch URL (FR-019)
   });
 
+  // chat-history (027): lưu bền hội thoại theo notebook (migration #4).
+  const chatRepo = createChatRepo(db);
+
   // rag-qa (013): hỏi đáp theo nguồn. embed/chat qua provider active (007); search/getChunks (011).
+  // 027: persist mỗi lượt qua chatRepo.saveTurn (best-effort, không log nội dung).
   const ragService = createRagService({
     embed: async (text) =>
       (await aiRuntime.registry.getActive().embed({ text })).vector,
@@ -108,6 +113,8 @@ app.whenReady().then(async () => {
     sourceTitle: (sid) => ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
     chat: async (messages) =>
       (await aiRuntime.registry.getActive().chat({ messages })).content,
+    saveTurn: (nb, userContent, assistant) =>
+      chatRepo.saveTurn(nb, userContent, assistant),
   });
 
   // studio (021): tổng hợp toàn notebook. Gom chunk qua source-repo (011), chat qua provider active (007),
@@ -130,6 +137,7 @@ app.whenReady().then(async () => {
     vectorStore: ingestion.vectorStore,
     aiRuntime,
     ragService,
+    chatRepo,
     studioService,
   });
 

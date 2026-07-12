@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Citation, RagMode, RagTurn } from "@shared/ipc/types";
 
-// Hook cột Chat: hội thoại IN-MEMORY phiên (không persist — A8) + gọi ragAsk + kiểm runtime/nguồn ready.
-// Multi-turn: gửi toàn bộ lịch sử hiện có làm history (main tự cắt MAX_HISTORY_TURNS).
+// Hook cột Chat: nạp lịch sử hội thoại đã lưu theo notebook (027-chat-history) + gọi ragAsk (main tự persist
+// mỗi lượt) + kiểm runtime/nguồn ready. Multi-turn: gửi lịch sử hiện có làm history (main cắt MAX_HISTORY_TURNS).
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -19,10 +19,37 @@ export function useChat(notebookId: string) {
   const [runtimeReady, setRuntimeReady] = useState<boolean | null>(null);
   const [hasReadySources, setHasReadySources] = useState(false);
 
-  // Đổi notebook → reset hội thoại (không persist).
+  // Đổi notebook → nạp lịch sử đã lưu (027-chat-history) thay vì reset rỗng.
   useEffect(() => {
-    setMessages([]);
+    let cancelled = false;
     setError(null);
+    setMessages([]);
+    window.api
+      .chatHistory(notebookId)
+      .then((list) => {
+        if (cancelled) return;
+        setMessages(
+          list.map((m) => ({
+            role: m.role,
+            content: m.content,
+            citations: m.citations,
+            notFound: m.notFound,
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setMessages([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [notebookId]);
+
+  const clearHistory = useCallback(() => {
+    window.api
+      .chatClear(notebookId)
+      .then(() => setMessages([]))
+      .catch(() => setError("Không xoá được hội thoại."));
   }, [notebookId]);
 
   const refreshReadiness = useCallback(() => {
@@ -96,5 +123,6 @@ export function useChat(notebookId: string) {
     hasReadySources,
     canSend,
     send,
+    clearHistory,
   };
 }

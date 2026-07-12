@@ -23,6 +23,7 @@ import type { SourceRepo } from "../services/ingestion/source-repo";
 import type { IngestionPipeline } from "../services/ingestion/pipeline";
 import type { VectorStore } from "../services/ingestion/vector-store";
 import type { RagService } from "../services/rag/rag-service";
+import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
 import { exportMarkdown } from "../services/studio/export";
 import { getSourceContent } from "../services/source-viewer/source-content";
@@ -38,6 +39,7 @@ interface RegisterDeps {
   vectorStore: VectorStore;
   aiRuntime: AiRuntime;
   ragService: RagService;
+  chatRepo: ChatRepo;
   studioService: StudioService;
 }
 
@@ -56,6 +58,7 @@ export function registerIpc({
   vectorStore,
   aiRuntime,
   ragService,
+  chatRepo,
   studioService,
 }: RegisterDeps): void {
   const safeHandle = (
@@ -123,6 +126,22 @@ export function registerIpc({
 
   // rag-qa (013) — embed/search/chat CHỈ ở đây (main). KHÔNG log payload (câu hỏi/nội dung — Constitution III).
   safeHandle(CHANNELS.ragAsk, (input) => ragService.ask(input as RagAskInput));
+
+  // chat-history (027) — nạp/xoá lịch sử hội thoại. Đọc/ghi DB CHỈ ở main. KHÔNG log nội dung.
+  const notebookIdOf = (input: unknown): string => {
+    const id = (input as { notebookId?: unknown }).notebookId;
+    if (typeof id !== "string" || id === "") {
+      throw new Error("notebookId không hợp lệ.");
+    }
+    return id;
+  };
+  safeHandle(CHANNELS.chatHistory, (input) =>
+    chatRepo.listByNotebook(notebookIdOf(input)),
+  );
+  safeHandle(CHANNELS.chatClear, (input) => {
+    chatRepo.clear(notebookIdOf(input));
+    return { cleared: true } as const;
+  });
 
   // studio (021) — tổng hợp toàn notebook (đọc chunk + chat CHỈ ở main). KHÔNG log content/citations.
   safeHandle(CHANNELS.studioGenerate, (input) =>
