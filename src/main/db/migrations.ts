@@ -87,6 +87,27 @@ export const MIGRATIONS: Migration[] = [
       );
     },
   },
+  // 027-chat-history: lịch sử hội thoại Chat theo notebook. FK ON DELETE CASCADE (xoá notebook → xoá lịch
+  // sử). Lưu cả citations (giữ kiểm chứng được khi nạp lại) + cờ not_found.
+  {
+    version: 4,
+    up(db) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS chat_message (
+          id             TEXT PRIMARY KEY,
+          notebook_id    TEXT NOT NULL REFERENCES notebook(id) ON DELETE CASCADE,
+          role           TEXT NOT NULL CHECK (role IN ('user','assistant')),
+          content        TEXT NOT NULL,
+          citations_json TEXT NOT NULL DEFAULT '[]',
+          not_found      INTEGER NOT NULL DEFAULT 0,
+          created_at     INTEGER NOT NULL
+        )
+      `);
+      db.exec(
+        "CREATE INDEX IF NOT EXISTS idx_chat_notebook ON chat_message(notebook_id, created_at)",
+      );
+    },
+  },
 ];
 
 export function getUserVersion(db: Db): number {

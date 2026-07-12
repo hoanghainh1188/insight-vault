@@ -13,6 +13,7 @@ import type {
   SourceContent,
   StudioResult,
   StudioExportResult,
+  StoredChatMessage,
 } from "./types";
 
 /**
@@ -53,6 +54,9 @@ export const CHANNELS = {
   sourceProgress: "source:progress",
   // rag-qa (013) — hỏi đáp theo nguồn
   ragAsk: "rag:ask",
+  // chat-history (027) — lưu/nạp/xoá lịch sử hội thoại theo notebook
+  chatHistory: "chat:history",
+  chatClear: "chat:clear",
   // studio (021) — tổng hợp tri thức từ notebook
   studioGenerate: "studio:generate",
   studioList: "studio:list",
@@ -104,4 +108,7 @@ export interface ChannelResponse {
   [CHANNELS.studioList]: StudioResult[];
   // studio export (025)
   [CHANNELS.studioExport]: StudioExportResult;
+  // chat-history (027)
+  [CHANNELS.chatHistory]: StoredChatMessage[];
+  [CHANNELS.chatClear]: { cleared: true };
 }

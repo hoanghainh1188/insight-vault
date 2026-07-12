@@ -22,6 +22,7 @@ import type {
   StudioResult,
   StudioExportInput,
   StudioExportResult,
+  StoredChatMessage,
 } from "@shared/ipc/types";
 
 /**
@@ -87,6 +88,11 @@ const api = {
   // rag-qa (013)
   ragAsk: (input: RagAskInput): Promise<RagAnswer> =>
     ipcRenderer.invoke(CHANNELS.ragAsk, input),
+  // chat-history (027) — nạp/xoá lịch sử hội thoại.
+  chatHistory: (notebookId: string): Promise<StoredChatMessage[]> =>
+    ipcRenderer.invoke(CHANNELS.chatHistory, { notebookId }),
+  chatClear: (notebookId: string): Promise<{ cleared: true }> =>
+    ipcRenderer.invoke(CHANNELS.chatClear, { notebookId }),
   // studio (021) — sinh + đọc bản tổng hợp.
   studioGenerate: (input: StudioGenerateInput): Promise<StudioResult> =>
     ipcRenderer.invoke(CHANNELS.studioGenerate, input),

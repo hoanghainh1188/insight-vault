@@ -25,6 +25,7 @@ export function ChatColumn({
     hasReadySources,
     canSend,
     send,
+    clearHistory,
   } = useChat(notebookId);
   const [draft, setDraft] = useState("");
   const [chatModel, setChatModel] = useState<string | null>(null);
@@ -57,6 +58,16 @@ export function ChatColumn({
     >
       <header className="chat-head">
         <h2>Hỏi đáp</h2>
+        {messages.length > 0 && (
+          <button
+            type="button"
+            className="chat-clear"
+            onClick={clearHistory}
+            data-testid="chat-clear"
+          >
+            Xoá hội thoại
+          </button>
+        )}
       </header>
 
       <div className="chat-thread" data-testid="chat-thread">

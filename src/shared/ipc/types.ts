@@ -198,6 +198,15 @@ export interface RagAnswer {
   modeUsed: RagMode;
 }
 
+/** Một tin trong lịch sử hội thoại đã lưu bền theo notebook (027-chat-history). */
+export interface StoredChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  citations: Citation[]; // assistant; user = []
+  notFound: boolean;
+  createdAt: number;
+}
+
 // ===== source-viewer (019) — nguồn: specs/.../source-viewer/data-model.md =====
 
 /** Mốc trang PDF: offset ký tự toàn cục nơi mỗi trang bắt đầu trong `SourceContent.text`. */

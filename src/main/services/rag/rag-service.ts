@@ -15,67 +15,90 @@ import { MAX_HISTORY_TURNS, NOT_FOUND_ANSWER } from "./constants";
 export interface RagServiceDeps extends RetrievalDeps {
   /** Gọi LLM chat với messages[], trả nội dung câu trả lời (wrap LLMProvider.chat → content). */
   chat: (messages: ChatMessage[]) => Promise<string>;
+  /** Lưu bền lượt hỏi–đáp (027-chat-history). Best-effort; KHÔNG log nội dung. */
+  saveTurn?: (
+    notebookId: string,
+    userContent: string,
+    assistant: {
+      content: string;
+      citations: RagAnswer["citations"];
+      notFound: boolean;
+    },
+  ) => void;
 }
 
 export function createRagService(deps: RagServiceDeps) {
-  return {
-    async ask(input: RagAskInput): Promise<RagAnswer> {
-      // Validate ở boundary (Constitution III). mode lạ KHÔNG âm thầm hạ về 'open' (giữ ràng buộc grounded).
-      const question = validateQuestion(input.question);
-      const mode = validateMode(input.mode);
-      const history = validateHistory(input.history);
+  // Tính câu trả lời (không side-effect persist) — gom mọi nhánh return vào đây.
+  async function compute(input: RagAskInput): Promise<RagAnswer> {
+    const question = validateQuestion(input.question);
+    const mode = validateMode(input.mode);
+    const history = validateHistory(input.history);
 
-      const scored = await retrieve(question, input.notebookId, deps);
+    const scored = await retrieve(question, input.notebookId, deps);
 
-      // Grounded + không có căn cứ → "không tìm thấy" (không gọi model, không bịa).
-      if (mode === "grounded" && scored.length === 0) {
-        return {
-          answer: NOT_FOUND_ANSWER,
-          citations: [],
-          notFound: true,
-          modeUsed: "grounded",
-        };
-      }
-
-      const built = buildContext(scored);
-      const system = systemPromptFor(mode, built.contextText);
-      const recent = history.slice(-MAX_HISTORY_TURNS);
-      const messages: ChatMessage[] = [
-        { role: "system", content: system },
-        ...recent.map((t) => ({ role: t.role, content: t.content })),
-        { role: "user", content: question },
-      ];
-
-      const raw = await deps.chat(messages);
-      const { answer, citations } = postprocessCitations(raw, built.map);
-
-      if (mode === "open") {
-        return { answer, citations, notFound: false, modeUsed: "open" };
-      }
-
-      // Grounded — đảm bảo "luôn kèm nguồn / kiểm chứng được" (Constitution II):
-      // 1) có [n] hợp lệ → dùng trực tiếp (trích dẫn chính xác).
-      // 2) model tự báo không có / rỗng → notFound.
-      // 3) có nội dung thật nhưng model quên chèn [n] (vd tóm tắt) → gắn CÁC NGUỒN ĐÃ TRUY HỒI làm
-      //    citation để câu trả lời vẫn mở/đối chiếu được — KHÔNG ẩn (retrieval đã có căn cứ; context
-      //    đưa cho model CHỈ gồm các chunk này).
-      if (citations.length > 0) {
-        return { answer, citations, notFound: false, modeUsed: "grounded" };
-      }
-      if (answer.trim() === "" || /không tìm thấy/i.test(answer)) {
-        return {
-          answer: NOT_FOUND_ANSWER,
-          citations: [],
-          notFound: true,
-          modeUsed: "grounded",
-        };
-      }
+    // Grounded + không có căn cứ → "không tìm thấy" (không gọi model, không bịa).
+    if (mode === "grounded" && scored.length === 0) {
       return {
-        answer,
-        citations: citationsFromMap(built.map),
-        notFound: false,
+        answer: NOT_FOUND_ANSWER,
+        citations: [],
+        notFound: true,
         modeUsed: "grounded",
       };
+    }
+
+    const built = buildContext(scored);
+    const system = systemPromptFor(mode, built.contextText);
+    const recent = history.slice(-MAX_HISTORY_TURNS);
+    const messages: ChatMessage[] = [
+      { role: "system", content: system },
+      ...recent.map((t) => ({ role: t.role, content: t.content })),
+      { role: "user", content: question },
+    ];
+
+    const raw = await deps.chat(messages);
+    const { answer, citations } = postprocessCitations(raw, built.map);
+
+    if (mode === "open") {
+      return { answer, citations, notFound: false, modeUsed: "open" };
+    }
+
+    // Grounded — đảm bảo "luôn kèm nguồn / kiểm chứng được" (Constitution II).
+    if (citations.length > 0) {
+      return { answer, citations, notFound: false, modeUsed: "grounded" };
+    }
+    if (answer.trim() === "" || /không tìm thấy/i.test(answer)) {
+      return {
+        answer: NOT_FOUND_ANSWER,
+        citations: [],
+        notFound: true,
+        modeUsed: "grounded",
+      };
+    }
+    return {
+      answer,
+      citations: citationsFromMap(built.map),
+      notFound: false,
+      modeUsed: "grounded",
+    };
+  }
+
+  return {
+    async ask(input: RagAskInput): Promise<RagAnswer> {
+      const result = await compute(input);
+      // Persist lượt (027) — best-effort: DB lỗi KHÔNG phá câu trả lời; KHÔNG log nội dung.
+      // deps.chat ném ở compute → ask ném TRƯỚC đây → không lưu lượt lỗi (đúng A2).
+      if (deps.saveTurn) {
+        try {
+          deps.saveTurn(input.notebookId, validateQuestion(input.question), {
+            content: result.answer,
+            citations: result.citations,
+            notFound: result.notFound,
+          });
+        } catch {
+          // bỏ qua lỗi persist (best-effort)
+        }
+      }
+      return result;
     },
   };
 }
