@@ -6,7 +6,7 @@ import type {
   ModelSelection,
   RuntimeStatus,
 } from "@shared/ipc/types";
-import type { LLMProvider } from "./provider";
+import type { ChatStreamOpts, LLMProvider } from "./provider";
 import type { OllamaClient } from "./ollama-client";
 import { computeRuntimeStatus } from "./runtime-status";
 
@@ -21,10 +21,10 @@ export class OllamaProvider implements LLMProvider {
     private readonly getSelection: () => ModelSelection,
   ) {}
 
-  async chat(req: ChatRequest): Promise<ChatResult> {
+  async chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult> {
     const model = req.model ?? this.getSelection().chatModel;
     if (!model) throw new Error("Chưa chọn mô hình trả lời (chat model).");
-    return this.client.chat({ ...req, model });
+    return this.client.chat({ ...req, model }, opts);
   }
 
   async embed(req: EmbedRequest): Promise<EmbedResult> {

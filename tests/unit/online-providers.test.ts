@@ -39,6 +39,20 @@ function statusFetch(status: number): typeof fetch {
     json: async () => ({}),
   })) as unknown as typeof fetch;
 }
+// fetch giả trả body là ReadableStream (cho đường stream 039 — streamLines đọc từng dòng).
+function streamFetch(chunks: string[]): typeof fetch {
+  return vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    body: new ReadableStream<Uint8Array>({
+      start(c) {
+        const enc = new TextEncoder();
+        for (const ch of chunks) c.enqueue(enc.encode(ch));
+        c.close();
+      },
+    }),
+  })) as unknown as typeof fetch;
+}
 const deps = (
   fetchFn: typeof fetch,
   key: string | null = "k",
@@ -120,6 +134,24 @@ describe("GeminiProvider (031)", () => {
       new GeminiProvider(deps(statusFetch(429))).chat({ messages: MSGS }),
     ).rejects.toMatchObject({ kind: "rate-limit" });
   });
+
+  it("chat stream (039): nối delta SSE Gemini qua onToken", async () => {
+    const tokens: string[] = [];
+    const p = new GeminiProvider(
+      deps(
+        streamFetch([
+          'data: {"candidates":[{"content":{"parts":[{"text":"Chào "}]}}]}\n',
+          'data: {"candidates":[{"content":{"parts":[{"text":"bạn"}]}}]}\n',
+        ]),
+      ),
+    );
+    const res = await p.chat(
+      { messages: MSGS },
+      { onToken: (d) => tokens.push(d) },
+    );
+    expect(tokens).toEqual(["Chào ", "bạn"]);
+    expect(res.content).toBe("Chào bạn");
+  });
 });
 
 describe("OpenAIProvider (031)", () => {
@@ -152,5 +184,24 @@ describe("OpenAIProvider (031)", () => {
     const s = await p.test();
     expect(s.reachable).toBe(false);
     expect(s.reason).toMatch(/khóa API/i);
+  });
+
+  it("chat stream (039): nối delta SSE qua onToken, trả nội dung đầy đủ", async () => {
+    const tokens: string[] = [];
+    const p = new OpenAIProvider(
+      deps(
+        streamFetch([
+          'data: {"choices":[{"delta":{"content":"Xin "}}]}\n',
+          'data: {"choices":[{"delta":{"content":"chào"}}]}\n',
+          "data: [DONE]\n",
+        ]),
+      ),
+    );
+    const res = await p.chat(
+      { messages: MSGS },
+      { onToken: (d) => tokens.push(d) },
+    );
+    expect(tokens).toEqual(["Xin ", "chào"]);
+    expect(res.content).toBe("Xin chào");
   });
 });

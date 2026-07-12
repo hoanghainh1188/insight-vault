@@ -6,6 +6,9 @@ import type {
   Model,
 } from "@shared/ipc/types";
 import { logEvent } from "../../logging";
+import type { ChatStreamOpts } from "./provider";
+import { streamLines } from "./online/online-http";
+import { parseOllamaLine } from "./online/stream-parse";
 
 // HTTP client tới Ollama (Constitution III: chỉ chạy ở main). Nhận `fetchFn` tiêm vào để unit-test
 // không cần Ollama thật. baseUrl mặc định localhost:11434 (A7), override qua env OLLAMA_HOST.
@@ -59,7 +62,7 @@ export interface OllamaClient {
   listModels(): Promise<Model[]>;
   /** true nếu Ollama phản hồi trong timeout. */
   ping(): Promise<boolean>;
-  chat(req: ChatRequest): Promise<ChatResult>;
+  chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult>;
   embed(req: EmbedRequest): Promise<EmbedResult>;
 }
 
@@ -128,7 +131,29 @@ export function createOllamaClient(
       }
     },
 
-    async chat(req: ChatRequest): Promise<ChatResult> {
+    async chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult> {
+      // Stream (039): NDJSON stream:true → nối delta qua onToken; giữ phần đã nhận khi huỷ (signal).
+      if (opts?.onToken) {
+        let acc = "";
+        await streamLines(
+          {
+            url: `${baseUrl}/api/chat`,
+            headers: {},
+            body: { model: req.model, messages: req.messages, stream: true },
+            fetchFn,
+            signal: opts.signal,
+            providerLabel: "Ollama",
+          },
+          (line) => {
+            const delta = parseOllamaLine(line);
+            if (delta) {
+              acc += delta;
+              opts.onToken!(delta);
+            }
+          },
+        );
+        return { content: acc };
+      }
       const res = await call(
         "/api/chat",
         {

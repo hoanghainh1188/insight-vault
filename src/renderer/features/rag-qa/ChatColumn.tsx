@@ -24,7 +24,9 @@ export function ChatColumn({
     runtimeReady,
     hasReadySources,
     canSend,
+    streamingId,
     send,
+    stop,
     clearHistory,
   } = useChat(notebookId);
   const [draft, setDraft] = useState("");
@@ -79,7 +81,7 @@ export function ChatColumn({
         {messages.map((m, i) => (
           <MessageBubble key={i} message={m} onCite={onCite} />
         ))}
-        {loading && (
+        {loading && !streamingId && (
           <div
             className="bubble-skeleton"
             data-testid="chat-skeleton"
@@ -130,16 +132,28 @@ export function ChatColumn({
                 >
                   Local · {chatModel ?? "chưa chọn"}
                 </span>
-                <button
-                  type="button"
-                  className="send-btn"
-                  onClick={submit}
-                  disabled={!canSend || draft.trim() === ""}
-                  aria-label="Gửi"
-                  data-testid="chat-send"
-                >
-                  <IconSend size={16} />
-                </button>
+                {streamingId ? (
+                  <button
+                    type="button"
+                    className="send-btn stop-btn"
+                    onClick={stop}
+                    aria-label="Dừng"
+                    data-testid="chat-stop"
+                  >
+                    <span className="stop-square" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="send-btn"
+                    onClick={submit}
+                    disabled={!canSend || draft.trim() === ""}
+                    aria-label="Gửi"
+                    data-testid="chat-send"
+                  >
+                    <IconSend size={16} />
+                  </button>
+                )}
               </div>
             </div>
             <p className="modehint" data-testid="mode-hint">

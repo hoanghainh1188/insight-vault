@@ -5,10 +5,11 @@ import type {
   EmbedResult,
   RuntimeStatus,
 } from "@shared/ipc/types";
-import type { LLMProvider } from "../provider";
-import { callJson } from "./online-http";
+import type { ChatStreamOpts, LLMProvider } from "../provider";
+import { callJson, streamLines } from "./online-http";
 import { OnlineProviderError } from "./online-error";
 import { PROVIDER_LABELS } from "./presets";
+import { sseData, sseDeltaAnthropic } from "./stream-parse";
 import type { OnlineProviderDeps } from "./provider-deps";
 
 // Provider Claude (Anthropic) — Messages API. system tách khỏi messages (khác OpenAI). Embedding KHÔNG hỗ
@@ -71,15 +72,42 @@ export class AnthropicProvider implements LLMProvider {
   readonly id = "anthropic";
   constructor(private readonly deps: OnlineProviderDeps) {}
 
-  async chat(req: ChatRequest): Promise<ChatResult> {
+  async chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult> {
     const key = await this.deps.getKey();
     if (!key)
       throw new OnlineProviderError(`${LABEL}: chưa nhập khóa API.`, "auth");
     const model = req.model ?? this.deps.getModel();
     if (!model) throw new Error(`${LABEL}: chưa chọn mô hình.`);
+    const headers = {
+      "x-api-key": key,
+      "anthropic-version": ANTHROPIC_VERSION,
+    };
+    if (opts?.onToken) {
+      let acc = "";
+      await streamLines(
+        {
+          url: ENDPOINT,
+          headers,
+          body: { ...toAnthropicRequest(req.messages, model), stream: true },
+          fetchFn: this.deps.fetchFn,
+          signal: opts.signal,
+          providerLabel: LABEL,
+        },
+        (line) => {
+          const payload = sseData(line);
+          if (payload === null) return;
+          const d = sseDeltaAnthropic(payload);
+          if (d) {
+            acc += d;
+            opts.onToken!(d);
+          }
+        },
+      );
+      return { content: acc };
+    }
     const json = await callJson({
       url: ENDPOINT,
-      headers: { "x-api-key": key, "anthropic-version": ANTHROPIC_VERSION },
+      headers,
       body: toAnthropicRequest(req.messages, model),
       fetchFn: this.deps.fetchFn,
       timeoutMs: this.deps.timeoutMs,

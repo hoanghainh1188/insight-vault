@@ -1,4 +1,5 @@
 import type { ChatMessage, RagAnswer, RagAskInput } from "@shared/ipc/types";
+import type { ChatStreamOpts } from "../ai-runtime/provider";
 import {
   validateHistory,
   validateMode,
@@ -15,6 +16,11 @@ import { MAX_HISTORY_TURNS, NOT_FOUND_ANSWER } from "./constants";
 export interface RagServiceDeps extends RetrievalDeps {
   /** Gọi LLM chat với messages[], trả nội dung câu trả lời (wrap LLMProvider.chat → content). */
   chat: (messages: ChatMessage[]) => Promise<string>;
+  /** Bản streaming (039): gọi onToken mỗi delta, trả nội dung ĐẦY ĐỦ (hoặc phần đã nhận nếu huỷ). */
+  chatStream: (
+    messages: ChatMessage[],
+    opts: ChatStreamOpts,
+  ) => Promise<string>;
   /** Lưu bền lượt hỏi–đáp (027-chat-history). Best-effort; KHÔNG log nội dung. */
   saveTurn?: (
     notebookId: string,
@@ -28,8 +34,12 @@ export interface RagServiceDeps extends RetrievalDeps {
 }
 
 export function createRagService(deps: RagServiceDeps) {
-  // Tính câu trả lời (không side-effect persist) — gom mọi nhánh return vào đây.
-  async function compute(input: RagAskInput): Promise<RagAnswer> {
+  // Tính câu trả lời (không side-effect persist) — gom mọi nhánh return vào đây. chatFn cho phép tái dùng
+  // cho non-stream (deps.chat) và stream (deps.chatStream + onToken) — 039.
+  async function compute(
+    input: RagAskInput,
+    chatFn: (messages: ChatMessage[]) => Promise<string>,
+  ): Promise<RagAnswer> {
     const question = validateQuestion(input.question);
     const mode = validateMode(input.mode);
     const history = validateHistory(input.history);
@@ -55,7 +65,7 @@ export function createRagService(deps: RagServiceDeps) {
       { role: "user", content: question },
     ];
 
-    const raw = await deps.chat(messages);
+    const raw = await chatFn(messages);
     const { answer, citations } = postprocessCitations(raw, built.map);
 
     if (mode === "open") {
@@ -82,22 +92,40 @@ export function createRagService(deps: RagServiceDeps) {
     };
   }
 
+  // Persist lượt (027) — best-effort: DB lỗi KHÔNG phá câu trả lời; KHÔNG log nội dung.
+  function persist(input: RagAskInput, result: RagAnswer): void {
+    if (!deps.saveTurn) return;
+    try {
+      deps.saveTurn(input.notebookId, validateQuestion(input.question), {
+        content: result.answer,
+        citations: result.citations,
+        notFound: result.notFound,
+      });
+    } catch {
+      // bỏ qua lỗi persist (best-effort)
+    }
+  }
+
   return {
     async ask(input: RagAskInput): Promise<RagAnswer> {
-      const result = await compute(input);
-      // Persist lượt (027) — best-effort: DB lỗi KHÔNG phá câu trả lời; KHÔNG log nội dung.
-      // deps.chat ném ở compute → ask ném TRƯỚC đây → không lưu lượt lỗi (đúng A2).
-      if (deps.saveTurn) {
-        try {
-          deps.saveTurn(input.notebookId, validateQuestion(input.question), {
-            content: result.answer,
-            citations: result.citations,
-            notFound: result.notFound,
-          });
-        } catch {
-          // bỏ qua lỗi persist (best-effort)
-        }
-      }
+      // deps.chat ném ở compute → ask ném TRƯỚC persist → không lưu lượt lỗi (đúng A2).
+      const result = await compute(input, deps.chat);
+      persist(input, result);
+      return result;
+    },
+
+    /**
+     * Bản streaming (039): stream token qua opts.onToken; huỷ (opts.signal) → giữ phần đã nhận (chatStream
+     * trả phần đã nhận, KHÔNG ném) → hậu kiểm chip trên phần đó. Lưu câu trả lời CUỐI như thường.
+     */
+    async askStream(
+      input: RagAskInput,
+      opts: ChatStreamOpts,
+    ): Promise<RagAnswer> {
+      const result = await compute(input, (messages) =>
+        deps.chatStream(messages, opts),
+      );
+      persist(input, result);
       return result;
     },
   };

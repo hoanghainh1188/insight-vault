@@ -37,6 +37,13 @@ function makeDeps(opts: {
       opts.capture?.push(messages);
       return opts.chatReply ? opts.chatReply(messages) : "Trả lời [1].";
     },
+    // 039: mô phỏng streaming — phát từng ký tự qua onToken, trả nội dung đầy đủ.
+    chatStream: async (messages, sopts) => {
+      opts.capture?.push(messages);
+      const reply = opts.chatReply ? opts.chatReply(messages) : "Trả lời [1].";
+      for (const ch of reply) sopts.onToken?.(ch);
+      return reply;
+    },
   };
 }
 
@@ -163,5 +170,35 @@ describe("rag-service.ask", () => {
       /quá dài/,
     );
     await expect(svc.ask(ask({ question: "   " }))).rejects.toThrow(/để trống/);
+  });
+});
+
+describe("rag-service.askStream (039)", () => {
+  it("nối token qua onToken + finalize chip hậu kiểm", async () => {
+    const tokens: string[] = [];
+    const svc = createRagService(makeDeps({}));
+    const res = await svc.askStream(ask(), {
+      onToken: (d) => tokens.push(d),
+    });
+    expect(tokens.join("")).toContain("Trả lời"); // đã stream từng delta
+    expect(res.answer).toContain("Trả lời");
+    expect(res.citations.length).toBeGreaterThan(0); // chip [1] hậu kiểm
+  });
+
+  it("grounded không căn cứ → notFound, KHÔNG stream (không gọi model)", async () => {
+    const tokens: string[] = [];
+    const svc = createRagService(makeDeps({ hits: [] }));
+    const res = await svc.askStream(ask(), {
+      onToken: (d) => tokens.push(d),
+    });
+    expect(res.notFound).toBe(true);
+    expect(tokens).toHaveLength(0);
+  });
+
+  it("phần đã nhận (nội dung ngắn như bị Dừng) → finalize trên phần đó", async () => {
+    const svc = createRagService(makeDeps({ chatReply: () => "Một phần [1]" }));
+    const res = await svc.askStream(ask(), {});
+    expect(res.answer).toContain("Một phần");
+    expect(res.citations.map((c) => c.n)).toEqual([1]);
   });
 });
