@@ -37,9 +37,15 @@ describe("validateHistory", () => {
     ).toThrow(/quá dài/);
     expect(() => validateHistory([{ role: "system", content: "a" }])).toThrow();
     expect(() => validateHistory([{ role: "user", content: 123 }])).toThrow();
+    // Nội dung lịch sử RẤT dài (> MAX_HISTORY_CONTENT_LEN) mới ném.
     expect(() =>
-      validateHistory([{ role: "user", content: "x".repeat(2001) }]),
+      validateHistory([{ role: "assistant", content: "x".repeat(20001) }]),
     ).toThrow();
+  });
+  it("câu trả lời cũ dài (>2000, ≤20000) trong lịch sử KHÔNG bị từ chối (bug multi-turn đã sửa)", () => {
+    expect(
+      validateHistory([{ role: "assistant", content: "x".repeat(5000) }]),
+    ).toHaveLength(1);
   });
 });
 

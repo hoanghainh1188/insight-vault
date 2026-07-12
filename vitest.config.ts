@@ -29,6 +29,7 @@ export default defineConfig({
         "src/main/services/rag/chat-repo.ts",
         "src/renderer/shared/useModalA11y.ts",
         "src/renderer/shared/lastNotebook.ts",
+        "src/renderer/shared/markdown/remark-cite.ts",
         "src/renderer/features/sources/useColumnWidths.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
