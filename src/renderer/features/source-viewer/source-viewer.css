@@ -114,11 +114,29 @@
   word-break: break-word;
 }
 .vtext .hl {
+  position: relative;
   background: var(--cite-bg);
   color: var(--ink);
   border-radius: 3px;
   padding: 1px 2px;
   box-shadow: 0 0 0 1px var(--cite-line) inset;
+}
+/* Nhãn [n] nổi phía trên đoạn được trích dẫn (037) — không che chữ (037/prototype .hltag). */
+.vtext .hltag {
+  position: absolute;
+  top: -0.95em;
+  left: -1px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--cite);
+  background: var(--cite-bg);
+  border: 1px solid var(--cite-line);
+  border-radius: 4px;
+  padding: 0 4px;
+  user-select: none;
+  pointer-events: none;
 }
 .pagemark {
   display: block;

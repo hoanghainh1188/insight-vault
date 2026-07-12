@@ -24,6 +24,16 @@ export interface DataDirInfo {
   ready: boolean;
 }
 
+/** Thông tin lưu trữ cục bộ (037) — hiển thị ở Cài đặt. Chỉ đọc metadata, không nội dung. */
+export interface StorageInfo {
+  /** Đường dẫn thư mục dữ liệu app. */
+  path: string;
+  /** Tổng dung lượng thư mục dữ liệu đang dùng (byte). */
+  usedBytes: number;
+  /** Dung lượng trống của ổ đĩa chứa thư mục (byte). */
+  freeBytes: number;
+}
+
 // ===== ai-runtime (007) — nguồn: specs/.../ai-runtime/data-model.md =====
 
 /** Một mô hình AI trên Ollama. `kind` suy đoán từ tên/metadata; UI lọc theo kind. */

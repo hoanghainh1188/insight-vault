@@ -37,6 +37,8 @@ const api = {
   // app-shell (001)
   getDataDir: (): Promise<DataDirInfo> =>
     ipcRenderer.invoke(CHANNELS.getDataDir),
+  getStorageInfo: (): Promise<import("@shared/ipc/types").StorageInfo> =>
+    ipcRenderer.invoke(CHANNELS.getStorageInfo),
   getPrivacyState: (): Promise<import("@shared/ipc/types").PrivacyState> =>
     ipcRenderer.invoke(CHANNELS.getPrivacyState),
   getOnboardingState: (): Promise<OnboardingState> =>

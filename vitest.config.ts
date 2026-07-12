@@ -31,6 +31,8 @@ export default defineConfig({
         "src/renderer/shared/lastNotebook.ts",
         "src/renderer/shared/markdown/remark-cite.ts",
         "src/renderer/features/sources/useColumnWidths.ts",
+        "src/renderer/shared/format-bytes.ts",
+        "src/main/services/app-shell/storage-info.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -50,6 +52,7 @@ export default defineConfig({
         // + e2e/thủ công, không phải logic thuần đo ngưỡng.
         "src/main/services/ai-runtime/online/online-http.ts",
         "src/main/services/ai-runtime/online/keytar-loader.ts",
+        "src/main/services/app-shell/storage-fs.ts",
       ],
       thresholds: {
         statements: 80,

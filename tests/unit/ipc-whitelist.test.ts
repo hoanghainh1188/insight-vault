@@ -7,6 +7,7 @@ import {
 
 const APP_CHANNELS = [
   "app:getDataDir",
+  "app:getStorageInfo",
   "app:getPrivacyState",
   "app:getOnboardingState",
   "app:setOnboardingComplete",

@@ -93,6 +93,81 @@
   border-radius: 5px;
   padding: 4px 6px;
   flex-shrink: 0;
+  min-width: 30px;
+  text-align: center;
+}
+/* Badge màu theo loại nguồn (037) — tăng phân biệt thị giác. */
+.src-icon.kind-pdf {
+  color: #8a2b25;
+  background: #f7e4e2;
+}
+.src-icon.kind-docx {
+  color: #1e4f8a;
+  background: #e2ecf7;
+}
+.src-icon.kind-url {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+.src-icon.kind-txt,
+.src-icon.kind-md {
+  color: var(--ink-soft);
+  background: var(--line-soft);
+}
+
+/* Thanh tiến độ xử lý nguồn (037). */
+.src-progress {
+  display: inline-block;
+  width: 64px;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.src-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width var(--duration-normal) var(--ease-out-expo);
+}
+
+/* Skeleton danh sách nguồn khi đang tải (037). */
+.src-skel {
+  pointer-events: none;
+}
+.skel-box,
+.skel-line {
+  background: linear-gradient(
+    90deg,
+    var(--line-soft) 25%,
+    var(--line) 50%,
+    var(--line-soft) 75%
+  );
+  background-size: 200% 100%;
+  animation: src-skel-shimmer var(--duration-normal) linear infinite;
+  border-radius: 5px;
+}
+.skel-box {
+  width: 30px;
+  height: 22px;
+}
+.skel-line {
+  height: 10px;
+  width: 70%;
+  margin: 3px 0;
+}
+.skel-line.short {
+  width: 45%;
+}
+@keyframes src-skel-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 .src-main {
   display: flex;

@@ -5,6 +5,7 @@ import { NotebooksGrid } from "../features/notebooks/NotebooksGrid";
 import { Workspace } from "../features/sources/Workspace";
 import { SettingsAiSection } from "../features/ai-runtime/SettingsAiSection";
 import { SettingsAiOnlineSection } from "../features/ai-runtime/SettingsAiOnlineSection";
+import { SettingsStorageSection } from "../features/app-shell/SettingsStorageSection";
 
 // HashRouter (clarify A2) — route phản ánh khu vực, deep-link được sau. Mặc định /notebooks (A6).
 export const router = createHashRouter([
@@ -24,6 +25,7 @@ export const router = createHashRouter([
             <h2>Cài đặt</h2>
             <SettingsAiSection />
             <SettingsAiOnlineSection />
+            <SettingsStorageSection />
           </section>
         ),
       },

@@ -1,4 +1,4 @@
-import type { Source, SourceStatus } from "@shared/ipc/types";
+import type { IngestStep, Source, SourceStatus } from "@shared/ipc/types";
 
 // Ánh xạ trạng thái nguồn → class .stat của prototype + nhãn tiếng Việt + trạng thái tổng hợp.
 // Hàm thuần (không React) — unit-test được, nằm trong coverage.
@@ -24,6 +24,21 @@ export function statusLabel(
 ): string {
   if (source.status === "error" && source.errorLabel) return source.errorLabel;
   return STATUS_LABEL[source.status];
+}
+
+// Nhãn tiếng Việt cho từng bước pipeline nạp nguồn (037 — hiển thị tiến độ realtime). "done" không hiện.
+const STEP_LABEL: Record<IngestStep, string> = {
+  parse: "Phân tích",
+  clean: "Làm sạch",
+  chunk: "Chia đoạn",
+  embed: "Nhúng",
+  store: "Lưu chỉ mục",
+  done: "Hoàn tất",
+};
+
+/** Nhãn bước xử lý hiện tại (037). Dùng cho thanh tiến độ ở dòng nguồn. */
+export function stepLabel(step: IngestStep): string {
+  return STEP_LABEL[step];
 }
 
 /**
