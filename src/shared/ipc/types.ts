@@ -235,4 +235,17 @@ export interface StudioResult {
 export interface StudioGenerateInput {
   notebookId: string;
   kind: StudioKind;
+  sourceId?: string; // 025: lọc theo 1 nguồn; bỏ trống = toàn bộ nguồn ready
+}
+
+/** Input xuất kết quả Studio ra tệp .md (025). */
+export interface StudioExportInput {
+  content: string;
+  suggestedName: string;
+}
+
+/** Kết quả xuất tệp: saved=false khi người dùng huỷ hộp thoại. */
+export interface StudioExportResult {
+  saved: boolean;
+  path?: string;
 }

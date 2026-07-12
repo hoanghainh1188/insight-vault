@@ -1,4 +1,8 @@
-// Khung nội dung rỗng cho từng khu vực (FR-006/007). Màn thật thuộc feature sau.
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { getLastNotebookId } from "../../shared/lastNotebook";
+
+// Khung nội dung rỗng cho từng khu vực. Màn thật thuộc feature khác.
 function Placeholder({
   title,
   hint,
@@ -23,12 +27,53 @@ export const NotebooksPlaceholder = (): JSX.Element => (
     hint="Danh sách notebook sẽ xuất hiện ở đây (feature sau)."
   />
 );
-export const WorkspacePlaceholder = (): JSX.Element => (
-  <Placeholder
-    title="Workspace"
-    hint="Không gian 3 cột Nguồn / Chat / Studio (feature sau)."
-  />
-);
+
+// Workspace cần 1 notebook. 025: nhớ notebook mở gần nhất → mở lại; chưa có / đã xoá → nhắc chọn.
+type WsTarget = "loading" | "pick" | string;
+
+export function WorkspacePlaceholder(): JSX.Element {
+  const [target, setTarget] = useState<WsTarget>("loading");
+
+  useEffect(() => {
+    const id = getLastNotebookId();
+    if (!id) {
+      setTarget("pick");
+      return;
+    }
+    let cancelled = false;
+    window.api
+      .notebookList()
+      .then((list) => {
+        if (cancelled) return;
+        setTarget(list.some((n) => n.id === id) ? id : "pick");
+      })
+      .catch(() => {
+        if (!cancelled) setTarget("pick");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (target === "loading") {
+    return (
+      <section className="placeholder" data-testid="placeholder-workspace" />
+    );
+  }
+  if (target !== "pick") {
+    return <Navigate to={`/workspace/${target}`} replace />;
+  }
+  return (
+    <section className="placeholder" data-testid="placeholder-workspace">
+      <h2>Workspace</h2>
+      <p>Chọn một notebook để mở không gian 3 cột Nguồn / Chat / Studio.</p>
+      <Link className="btn-primary-sm" to="/notebooks" data-testid="ws-pick">
+        Chọn notebook
+      </Link>
+    </section>
+  );
+}
+
 export const SettingsPlaceholder = (): JSX.Element => (
   <Placeholder
     title="Settings"

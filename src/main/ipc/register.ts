@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { ipcMain, BrowserWindow } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
 import type {
   AddSourceInput,
@@ -24,6 +24,7 @@ import type { IngestionPipeline } from "../services/ingestion/pipeline";
 import type { VectorStore } from "../services/ingestion/vector-store";
 import type { RagService } from "../services/rag/rag-service";
 import type { StudioService } from "../services/studio/studio-service";
+import { exportMarkdown } from "../services/studio/export";
 import { getSourceContent } from "../services/source-viewer/source-content";
 import { logEvent } from "../logging";
 
@@ -128,6 +129,18 @@ export function registerIpc({
     studioService.generate(input as StudioGenerateInput),
   );
   safeHandle(CHANNELS.studioList, (id) => studioService.list(id as string));
+  // studio export (025) — ghi .md qua save dialog (main). KHÔNG log content.
+  safeHandle(CHANNELS.studioExport, (input) => {
+    const { content, suggestedName } = input as {
+      content: string;
+      suggestedName: string;
+    };
+    return exportMarkdown(
+      BrowserWindow.getFocusedWindow(),
+      content,
+      suggestedName,
+    );
+  });
 
   logEvent("ipc.registered", { channels: Object.values(CHANNELS).length });
 }
