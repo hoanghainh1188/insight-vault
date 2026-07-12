@@ -27,6 +27,7 @@ mac:
   target:
     - dmg
   category: public.app-category.productivity
+  icon: build/icon.icns
   # v0.1: KHÔNG ký (unsigned) — người dùng mở lần đầu qua chuột phải → Open.
   identity: null
   artifactName: ${productName}-${version}-${arch}.${ext}
@@ -37,6 +38,8 @@ dmg:
 win:
   target:
     - nsis
+  # electron-builder tự sinh .ico từ PNG 1024 khi build (không cần ImageMagick trên runner).
+  icon: build/icon.png
   artifactName: ${productName}-${version}-Setup.${ext}
 
 nsis:

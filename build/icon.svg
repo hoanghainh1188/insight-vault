@@ -1,0 +1,29 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#238063"/>
+      <stop offset="1" stop-color="#123f32"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eef2f0"/>
+    </linearGradient>
+    <linearGradient id="hl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6cd5c"/>
+      <stop offset="1" stop-color="#eab434"/>
+    </linearGradient>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="30" flood-color="#0a2c22" flood-opacity="0.30"/>
+    </filter>
+  </defs>
+
+  <!-- squircle nền brand -->
+  <rect x="112" y="112" width="800" height="800" rx="200" fill="url(#bg)"/>
+  <rect x="112" y="112" width="800" height="800" rx="200" fill="#ffffff" opacity="0.05"/>
+
+  <!-- trang giấy + 1 dải highlight (tối giản) -->
+  <g filter="url(#sh)">
+    <rect x="356" y="292" width="312" height="440" rx="48" fill="url(#paper)"/>
+    <rect x="356" y="484" width="312" height="72" fill="url(#hl)"/>
+  </g>
+</svg>
