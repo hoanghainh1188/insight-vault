@@ -1,0 +1,85 @@
+name: release
+
+# Đóng gói + phát hành khi đẩy tag v* (VD v0.1.0). Mỗi nền tảng build trên runner của chính nó — BẮT BUỘC
+# vì native module (@lancedb/lancedb, keytar) có binary theo nền tảng, KHÔNG cross-build được.
+# v0.1: unsigned (chưa code-sign/notarize). macOS runner = Apple Silicon → dmg arm64.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: win
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Cài dependencies (từ lockfile)
+        run: npm ci
+
+      - name: Build + đóng gói (electron-vite + electron-builder)
+        run: npm run dist:${{ matrix.platform }}
+        env:
+          # Bỏ qua ký macOS (v0.1 unsigned) — không tự dò chứng chỉ trên runner.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.platform }}
+          path: |
+            release/*.dmg
+            release/*.exe
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Tải artifact từ các job build
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Tạo GitHub pre-release + đính kèm dmg/exe
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          name: InsightVault ${{ github.ref_name }} (pre-release)
+          files: artifacts/**/*
+          fail_on_unmatched_files: true
+          body: |
+            ## InsightVault ${{ github.ref_name }} — bản tiền phát hành
+
+            Trợ lý tri thức **cục bộ (local-first)** kiểu NotebookLM chạy offline — hỏi đáp tài liệu với
+            trích dẫn kiểm chứng được, tổng hợp Studio, AI local (Ollama) hoặc online (Claude/Gemini/OpenAI
+            bằng API key riêng).
+
+            ### Tải về
+            - **macOS (Apple Silicon):** `InsightVault-*-arm64.dmg`
+            - **Windows (x64):** `InsightVault-*-Setup.exe`
+
+            ### Lưu ý (bản tiền phát hành)
+            - **Chưa code-sign/notarize** → lần đầu mở sẽ có cảnh báo hệ điều hành:
+              - macOS: chuột phải vào app → **Open** (hoặc Cài đặt → Privacy & Security → Open Anyway).
+              - Windows: SmartScreen → **More info** → **Run anyway**.
+            - **Chưa hỗ trợ tự cập nhật** — tải bản mới thủ công từ Releases.
+            - macOS Intel (x64) chưa được đóng gói ở bản này.
+            - Cần **Ollama** chạy cục bộ để dùng AI local; hoặc nhập API key để dùng AI online.
