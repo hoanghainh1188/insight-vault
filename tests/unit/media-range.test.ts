@@ -33,6 +33,16 @@ describe("mimeForAudioExt (049)", () => {
     expect(mimeForAudioExt("xyz")).toBe("audio/mpeg");
     expect(mimeForAudioExt("")).toBe("audio/mpeg");
   });
+  it("051: m4a/aac audio container", () => {
+    expect(mimeForAudioExt("m4a")).toBe("audio/mp4");
+    expect(mimeForAudioExt("aac")).toBe("audio/aac");
+  });
+  it("051: video mp4/mov/webm/mkv", () => {
+    expect(mimeForAudioExt("mp4")).toBe("video/mp4");
+    expect(mimeForAudioExt("MOV")).toBe("video/quicktime");
+    expect(mimeForAudioExt("webm")).toBe("video/webm");
+    expect(mimeForAudioExt("mkv")).toBe("video/x-matroska");
+  });
 });
 
 describe("parseRange (049)", () => {

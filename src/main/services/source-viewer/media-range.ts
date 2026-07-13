@@ -1,11 +1,21 @@
 // Hàm THUẦN cho giao thức iv-media:// (049, Pha 2a-player) — tách khỏi media-serve.ts (I/O) để test
 // được và tính vào ngưỡng coverage. Không phụ thuộc node:fs/electron.
 
-const AUDIO_MIME: Record<string, string> = {
+// MIME theo đuôi media (049 audio; 051 thêm m4a/aac + video mp4/mov/webm/mkv). Phần tử <audio>/<video>
+// đều nằm dưới media-src (CSP không đổi).
+const MEDIA_MIME: Record<string, string> = {
+  // audio (049 + m4a/aac 051)
   mp3: "audio/mpeg",
   wav: "audio/wav",
   flac: "audio/flac",
   ogg: "audio/ogg",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+  // video (051)
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  webm: "video/webm",
+  mkv: "video/x-matroska",
 };
 
 /** Đuôi file (chữ thường, không có dấu chấm) từ đường dẫn; "" nếu không có. */
@@ -15,9 +25,9 @@ export function extOf(path: string): string {
   return path.slice(dot + 1).toLowerCase();
 }
 
-/** MIME theo đuôi file audio; mặc định audio/mpeg. */
+/** MIME theo đuôi file media (audio/video); mặc định audio/mpeg. Giữ tên `mimeForAudioExt` (049) ổn định. */
 export function mimeForAudioExt(ext: string): string {
-  return AUDIO_MIME[ext.toLowerCase()] ?? "audio/mpeg";
+  return MEDIA_MIME[ext.toLowerCase()] ?? "audio/mpeg";
 }
 
 /**

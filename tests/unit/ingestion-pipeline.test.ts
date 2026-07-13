@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { createHash } from "node:crypto";
 import { openDatabase } from "../../src/main/db/database";
 import { runMigrations } from "../../src/main/db/migrations";
 import { createSourceRepo } from "../../src/main/services/ingestion/source-repo";
@@ -60,7 +61,10 @@ function harness(opts: { ready?: boolean; parseThrows?: boolean } = {}) {
   const files: Record<string, string> = {
     "/doc.txt": bigText,
     "/small.txt": "noi dung ngan",
+    "/clip.mp4": "FAKEVIDEOBYTES",
   };
+  // 051: điều khiển video có/không audio track.
+  const vflags = { noAudio: false };
 
   // Gate embed: nếu set, mỗi lần embed sẽ chờ tới khi test release → mô phỏng embed đang chạy dở (B2).
   let embedGate: Promise<void> | null = null;
@@ -90,6 +94,24 @@ function harness(opts: { ready?: boolean; parseThrows?: boolean } = {}) {
         pages: [{ page: null, text: bigText }],
       };
     },
+    // 051 video: no-audio → transcript rỗng (pages []); có audio → text như audio.
+    parseVideo: async (_path, onProgress) => {
+      onProgress?.(0.5);
+      if (vflags.noAudio) return { pageCount: null, pages: [], timeMap: [] };
+      return {
+        pageCount: null,
+        pages: [{ page: null, text: bigText }],
+        timeMap: [],
+      };
+    },
+    statSize: async (p) => (files[p] ?? "").length,
+    // 051: hash STREAMING (khớp hashBytes = sha256 hex) → dedup vẫn nhất quán; không nạp cả file vào RAM.
+    hashFile: async (p) => ({
+      hash: createHash("sha256")
+        .update(files[p] ?? "")
+        .digest("hex"),
+      byteLength: (files[p] ?? "").length,
+    }),
     setOnline: (v) => online.push(v),
     emit: (e) => events.push(e),
   });
@@ -102,6 +124,7 @@ function harness(opts: { ready?: boolean; parseThrows?: boolean } = {}) {
     db,
     online,
     setReady: (v: boolean) => (ready = v),
+    setVideoNoAudio: (v: boolean) => (vflags.noAudio = v),
     setParseThrows: (v: boolean) => (flags.parseThrows = v),
     setEmbedThrows: (v: boolean) => (flags.embedThrows = v),
     gateEmbed: (): (() => void) => {
@@ -134,6 +157,34 @@ describe("ingestion pipeline", () => {
     expect(
       h.events.some((e) => e.step === "done" && e.status === "ready"),
     ).toBe(true);
+  });
+
+  it("051: add video (có audio) → ready, có chunk (tách→transcribe qua parseVideo)", async () => {
+    const h = harness();
+    const { source } = await h.pipeline.add({
+      notebookId: "nb1",
+      kind: "video",
+      filePath: "/clip.mp4",
+    });
+    await h.pipeline.whenIdle();
+    const after = h.repo.getById(source.id)!;
+    expect(after.kind).toBe("video");
+    expect(after.status).toBe("ready");
+    expect(h.repo.listChunks(source.id).length).toBeGreaterThan(1);
+  });
+
+  it("051 FR-011: video KHÔNG có audio → VẪN ready, 0 chunk (video phát được, không chip)", async () => {
+    const h = harness();
+    h.setVideoNoAudio(true);
+    const { source } = await h.pipeline.add({
+      notebookId: "nb1",
+      kind: "video",
+      filePath: "/clip.mp4",
+    });
+    await h.pipeline.whenIdle();
+    const after = h.repo.getById(source.id)!;
+    expect(after.status).toBe("ready"); // KHÔNG error
+    expect(h.repo.listChunks(source.id).length).toBe(0);
   });
 
   it("US1: duplicateWarning khi thêm lại cùng nội dung trong notebook", async () => {

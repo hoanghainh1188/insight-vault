@@ -36,6 +36,15 @@ export interface PipelineDeps {
     onProgress?: (frac: number) => void,
   ) => Promise<ParseResult>;
   parseUrl?: (url: string) => Promise<ParseResult>;
+  // 051 video: ffmpeg đọc file GỐC theo path (không nạp 1GB vào RAM); statSize để kiểm giới hạn.
+  parseVideo?: (
+    path: string,
+    onProgress?: (frac: number) => void,
+  ) => Promise<ParseResult>;
+  statSize?: (path: string) => Promise<number>;
+  // 051: hash + size STREAMING (không nạp cả file vào RAM) — cho video/audio lớn ở bước add(). Tuỳ chọn:
+  // thiếu thì fallback readFile+hashBytes (test harness cũ). sha256 hex khớp hashBytes → dedup nhất quán.
+  hashFile?: (path: string) => Promise<{ hash: string; byteLength: number }>;
   setOnline?: (online: boolean) => void;
   emit: (e: SourceProgressEvent) => void;
 }
@@ -100,6 +109,18 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         } finally {
           deps.setOnline?.(false);
         }
+      } else if (src.kind === "video") {
+        // 051: ffmpeg đọc thẳng file gốc theo path → KHÔNG nạp cả file (tới 1GB) vào RAM. Kiểm giới hạn
+        // qua stat. Tiến độ: tách audio + bóc băng gộp trong bước parse (0.1→0.25).
+        if (!deps.parseVideo || !deps.statSize) {
+          throw new StepError("parse", errorLabelForStep("parse", src.kind));
+        }
+        const size = await deps.statSize(sourceOrigin(src));
+        assertWithinLimit("video", size);
+        result = await deps.parseVideo(sourceOrigin(src), (frac) => {
+          const s = reload(src.id);
+          if (s) send(s, "parse", 0.1 + Math.max(0, Math.min(1, frac)) * 0.15);
+        });
       } else {
         const bytes = await deps.readFile(sourceOrigin(src));
         assertWithinLimit(src.kind, bytes.byteLength);
@@ -116,7 +137,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     const cleaned = result.pages
       .map((p) => ({ page: p.page, text: cleanText(p.text) }))
       .filter((p) => p.text.length > 0);
-    if (cleaned.length === 0) {
+    // Video KHÔNG có audio track → transcript rỗng: VẪN nạp thành công (ready, 0 chunk, video phát được —
+    // FR-011). Các loại khác rỗng = lỗi parse.
+    if (cleaned.length === 0 && src.kind !== "video") {
       throw new StepError("parse", errorLabelForStep("parse", src.kind));
     }
     return {
@@ -268,11 +291,20 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         title = input.url;
       } else {
         title = titleFromPath(input.filePath);
-        const bytes = await deps.readFile(input.filePath);
-        contentHash = hashBytes(bytes);
-        if (bytes.byteLength > 0) {
+        // 051: hash + size STREAMING nếu có (video/audio lớn → KHÔNG nạp cả file vào RAM ở add()).
+        let byteLength: number;
+        if (deps.hashFile) {
+          const r = await deps.hashFile(input.filePath);
+          contentHash = r.hash;
+          byteLength = r.byteLength;
+        } else {
+          const bytes = await deps.readFile(input.filePath);
+          contentHash = hashBytes(bytes);
+          byteLength = bytes.byteLength;
+        }
+        if (byteLength > 0) {
           try {
-            assertWithinLimit(kind, bytes.byteLength);
+            assertWithinLimit(kind, byteLength);
           } catch {
             sizeError = true;
           }

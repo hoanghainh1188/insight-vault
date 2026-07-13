@@ -17,6 +17,14 @@ describe("size-limits", () => {
     expect(SIZE_LIMITS.url).toBe(10 * MB);
   });
 
+  it("045/051 media: audio (gồm m4a/aac) 200MB, video 1GB", () => {
+    expect(SIZE_LIMITS.audio).toBe(200 * MB);
+    expect(SIZE_LIMITS.video).toBe(1024 * MB);
+    expect(isWithinLimit("video", 1024 * MB)).toBe(true);
+    expect(isWithinLimit("video", 1024 * MB + 1)).toBe(false);
+    expect(isWithinLimit("audio", 200 * MB + 1)).toBe(false);
+  });
+
   it("trong giới hạn → không ném; vượt → ném SizeLimitError với nhãn 'Tệp quá lớn'", () => {
     expect(() => assertWithinLimit("txt", 10 * MB)).not.toThrow();
     expect(isWithinLimit("txt", 10 * MB)).toBe(true);

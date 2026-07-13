@@ -91,6 +91,13 @@ Quy ước & lộ trình pha: [`CLAUDE.md`](CLAUDE.md). Làm việc nhóm: [`doc
 
 MIT — xem [`LICENSE`](LICENSE).
 
+### Thành phần bên thứ ba
+
+- **ffmpeg** (đóng gói kèm qua `ffmpeg-static`, dùng để tách audio khỏi video ở Pha 2b): phát hành theo
+  **GPL**. Bản build + giấy phép nằm trong `node_modules/ffmpeg-static/` (`ffmpeg.LICENSE`) và được đưa vào
+  bản đóng gói. Khi phân phối InsightVault, thông báo giấy phép GPL của ffmpeg được kèm theo. _(Nếu sau này
+  làm tầng trả phí độc quyền, cân nhắc chuyển sang build ffmpeg LGPL — xem `docs/04-decisions/2026-07-13-video-clarify.md`.)_
+
 ---
 
 > Dự án này khởi tạo từ template **spec-driven-jp** (Spec Kit + đọc tài liệu thiết kế). Hạ tầng template

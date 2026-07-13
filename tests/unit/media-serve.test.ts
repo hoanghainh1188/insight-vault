@@ -98,4 +98,18 @@ describe("createMediaHandler (049)", () => {
     );
     expect(res.status).toBe(200);
   });
+
+  it("051: nguồn kind=video cũng được phục vụ (200 + Range 206)", async () => {
+    const repo: Partial<SourceRepo> = {
+      getById: (id) =>
+        id === "vid" ? { ...audioSource(id), kind: "video" } : null,
+      getOrigin: (id) => (id === "vid" ? filePath : null),
+    };
+    const handler = createMediaHandler(repo as SourceRepo);
+    const full = await handler(req("vid"));
+    expect(full.status).toBe(200);
+    const part = await handler(req("vid", "bytes=0-4"));
+    expect(part.status).toBe(206);
+    expect(part.headers.get("Content-Range")).toBe("bytes 0-4/20");
+  });
 });

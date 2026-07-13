@@ -148,7 +148,8 @@ export interface SetColorInput {
 
 // ===== ingestion (011) — nguồn: specs/.../ingestion/data-model.md =====
 
-export type SourceKind = "pdf" | "docx" | "txt" | "md" | "url" | "audio";
+export type SourceKind =
+  "pdf" | "docx" | "txt" | "md" | "url" | "audio" | "video";
 
 /** Trạng thái vòng đời nguồn. Ánh xạ UI: ready→.stat ready; queued/processing/awaiting_embedding→.stat proc; error→.stat err. */
 export type SourceStatus =

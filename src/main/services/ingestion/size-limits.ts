@@ -11,7 +11,8 @@ export const SIZE_LIMITS: Record<SourceKind, number> = {
   txt: 25 * MB,
   md: 25 * MB,
   url: 10 * MB, // body tải về
-  audio: 200 * MB, // 045 — file audio lớn (bóc băng cục bộ)
+  audio: 200 * MB, // 045 — file audio lớn (bóc băng cục bộ); 051 thêm m4a/aac cùng giới hạn
+  video: 1024 * MB, // 051 — video lớn (tách audio + phát file gốc)
 };
 
 /** Lỗi vượt giới hạn — nhãn thân thiện dùng cho error_label của nguồn. */
