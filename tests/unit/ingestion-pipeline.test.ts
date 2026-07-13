@@ -30,6 +30,9 @@ function fakeVectorStore() {
     async search() {
       return []; // ingestion không dùng search (013 test riêng)
     },
+    async getVectorsByIds() {
+      return new Map();
+    },
     async close() {},
   };
   return { store, rows };

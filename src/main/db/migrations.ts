@@ -1,4 +1,5 @@
 import type { Db } from "./database";
+import { foldVietnamese } from "../services/ingestion/fts-fold";
 
 // Migration runner (ADR 2026-07-11-sqlite-migrations): PRAGMA user_version, append-only, 1 transaction/bước.
 // THÊM migration mới ở CUỐI mảng — KHÔNG sửa migration đã phát hành (dữ liệu người dùng đã áp).
@@ -164,6 +165,30 @@ export const MIGRATIONS: Migration[] = [
       db.exec("ALTER TABLE chunk ADD COLUMN bbox_y REAL");
       db.exec("ALTER TABLE chunk ADD COLUMN bbox_w REAL");
       db.exec("ALTER TABLE chunk ADD COLUMN bbox_h REAL");
+    },
+  },
+  // 055-rag-enhance: FTS5 own-storage cho tìm keyword BM25. Lưu text đã FOLD (bỏ dấu + đ→d ở JS — vì
+  // tokenizer remove_diacritics không xử lý đ). Trigger AFTER DELETE đồng bộ xoá (bao cả cascade source/
+  // notebook). INSERT đồng bộ tay ở source-repo.insertChunks (cần fold JS). Backfill chunk hiện có.
+  {
+    version: 7,
+    up(db) {
+      db.exec(
+        "CREATE VIRTUAL TABLE chunk_fts USING fts5(text, tokenize='unicode61')",
+      );
+      db.exec(`
+        CREATE TRIGGER chunk_fts_ad AFTER DELETE ON chunk BEGIN
+          DELETE FROM chunk_fts WHERE rowid = OLD.rowid;
+        END
+      `);
+      // Backfill: fold text mọi chunk hiện có (JS) → chunk_fts theo rowid.
+      const rows = db
+        .prepare("SELECT rowid, text FROM chunk")
+        .all() as unknown as { rowid: number; text: string }[];
+      const ins = db.prepare(
+        "INSERT INTO chunk_fts (rowid, text) VALUES (?, ?)",
+      );
+      for (const r of rows) ins.run(r.rowid, foldVietnamese(r.text));
     },
   },
 ];

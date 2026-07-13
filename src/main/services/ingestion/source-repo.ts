@@ -4,6 +4,7 @@ import type {
   SourceKind,
   SourceStatus,
 } from "@shared/ipc/types";
+import { foldVietnamese } from "./fts-fold";
 import type { Db } from "../../db/database";
 import type { ChunkDraft } from "./chunker";
 
@@ -221,13 +222,17 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
       const stmt = db.prepare(
         "INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end, t_start, t_end, bbox_x, bbox_y, bbox_w, bbox_h) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       );
+      // 055: đồng bộ FTS keyword — ghi text đã FOLD theo rowid vừa insert. Xoá do trigger AFTER DELETE.
+      const ftsStmt = db.prepare(
+        "INSERT INTO chunk_fts (rowid, text) VALUES (?, ?)",
+      );
       db.exec("BEGIN");
       try {
         for (const d of drafts) {
           const cid = uuid();
           ids.push(cid);
           const bb = d.locator.bbox;
-          stmt.run(
+          const res = stmt.run(
             cid,
             sourceId,
             d.ordinal,
@@ -242,6 +247,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
             bb?.w ?? null,
             bb?.h ?? null,
           );
+          ftsStmt.run(Number(res.lastInsertRowid), foldVietnamese(d.text));
         }
         db.exec("COMMIT");
       } catch (e) {

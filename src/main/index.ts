@@ -19,6 +19,8 @@ import { createNotebookRepo } from "./services/notebooks/notebook-repo";
 import { createAiRuntime } from "./services/ai-runtime/ai-runtime";
 import { createIngestion } from "./services/ingestion/ingestion";
 import { createRagService } from "./services/rag/rag-service";
+import { rewriteQuery } from "./services/rag/rewrite";
+import { createKeywordStore } from "./services/ingestion/keyword-store";
 import { createChatRepo } from "./services/rag/chat-repo";
 import { createStudioRepo } from "./services/studio/studio-repo";
 import { createStudioService } from "./services/studio/studio-service";
@@ -140,6 +142,8 @@ app.whenReady().then(async () => {
 
   // chat-history (027): lưu bền hội thoại theo notebook (migration #4).
   const chatRepo = createChatRepo(db);
+  // 055: keyword store BM25 (FTS5, migration #7) — cùng DB SQLite.
+  const keywordStore = createKeywordStore(db);
 
   // rag-qa (013): hỏi đáp theo nguồn. embed/chat qua provider active (007); search/getChunks (011).
   // 027: persist mỗi lượt qua chatRepo.saveTurn (best-effort, không log nội dung).
@@ -150,6 +154,16 @@ app.whenReady().then(async () => {
     search: (v, nb, k) => ingestion.vectorStore.search(v, nb, k),
     getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
     sourceTitle: (sid) => ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
+    // 055 hybrid: BM25 keyword (FTS5) + vector cho MMR. rewrite qua provider active (badge egress 031).
+    searchBm25: (nb, query, k) => keywordStore.searchBm25(nb, query, k),
+    getVectorsByIds: (ids) => ingestion.vectorStore.getVectorsByIds(ids),
+    rewrite: (question, history) =>
+      rewriteQuery(
+        question,
+        history,
+        async (messages) =>
+          (await aiRuntime.registry.getActive().chat({ messages })).content,
+      ),
     chat: async (messages) =>
       (await aiRuntime.registry.getActive().chat({ messages })).content,
     // Streaming (039): cùng provider active, truyền onToken/signal xuống chat.
