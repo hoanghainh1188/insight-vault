@@ -16,6 +16,9 @@ import type {
   StudioResult,
   StudioExportResult,
   StoredChatMessage,
+  ModelRecommendation,
+  OllamaHealth,
+  ReindexStatus,
 } from "./types";
 
 /**
@@ -46,6 +49,9 @@ export const CHANNELS = {
   aiSetProviderModel: "ai:setProviderModel",
   aiSetActiveProvider: "ai:setActiveProvider",
   aiTestProvider: "ai:testProvider",
+  // 059 — gợi ý model chat theo RAM + health-check Ollama
+  aiRecommendModel: "ai:recommendModel",
+  aiOllamaHealth: "ai:ollamaHealth",
   // notebooks (009)
   notebookList: "notebook:list",
   notebookCreate: "notebook:create",
@@ -76,6 +82,9 @@ export const CHANNELS = {
   studioList: "studio:list",
   // studio export (025) — xuất kết quả ra tệp .md
   studioExport: "studio:export",
+  // 059 embed-in-process — trạng thái tái lập chỉ mục
+  embedReindexStatus: "embed:reindexStatus",
+  embedReindexProgress: "embed:reindexProgress", // event push main→renderer
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -110,6 +119,9 @@ export interface ChannelResponse {
   [CHANNELS.aiSetProviderModel]: OnlineState;
   [CHANNELS.aiSetActiveProvider]: OnlineState;
   [CHANNELS.aiTestProvider]: RuntimeStatus;
+  // 059 — gợi ý model theo RAM + health Ollama
+  [CHANNELS.aiRecommendModel]: ModelRecommendation;
+  [CHANNELS.aiOllamaHealth]: OllamaHealth;
   [CHANNELS.notebookList]: Notebook[];
   [CHANNELS.notebookCreate]: Notebook;
   [CHANNELS.notebookRename]: Notebook;
@@ -136,4 +148,6 @@ export interface ChannelResponse {
   // chat-history (027)
   [CHANNELS.chatHistory]: StoredChatMessage[];
   [CHANNELS.chatClear]: { cleared: true };
+  // 059 embed-in-process
+  [CHANNELS.embedReindexStatus]: ReindexStatus;
 }

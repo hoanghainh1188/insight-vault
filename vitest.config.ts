@@ -48,6 +48,12 @@ export default defineConfig({
         "src/main/services/ingestion/image/image-transcript.ts",
         "src/main/services/ingestion/image/ocr-path.ts",
         "src/main/services/ingestion/parsers/image.ts",
+        // 059 embed-in-process: hàm thuần embedding + gợi ý model.
+        "src/main/services/embedding/e5-prefix.ts",
+        "src/main/services/embedding/model-version.ts",
+        "src/main/services/embedding/vector-normalize.ts",
+        "src/main/services/embedding/reindex-plan.ts",
+        "src/main/services/ai/model-recommend.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -80,6 +86,11 @@ export default defineConfig({
         "src/main/services/ingestion/video/extract-audio.ts",
         // 053 image: OCR worker tesseract.js I/O (verify Node + manual; hàm thuần ở image-transcript).
         "src/main/services/ingestion/image/ocr.ts",
+        // 059: adapter I/O (transformers.js feature-extraction, LanceDB re-add, Ollama /api/tags,
+        // job nền reindex) — phủ bởi hàm thuần + DI test + thủ công. Loại khỏi ngưỡng.
+        "src/main/services/embedding/embed-model.ts",
+        "src/main/services/embedding/reindex-runner.ts",
+        "src/main/services/ai/ollama-health.ts",
       ],
       thresholds: {
         statements: 80,

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import type { Model, ModelSelection } from "@shared/ipc/types";
 import { ModelSelect } from "./ModelSelect";
 import { useRuntimeStatus } from "./useRuntimeStatus";
+import { SettingsModelAdvice } from "./SettingsModelAdvice";
 
 // Khu vực "AI cục bộ (Ollama)" trong Cài đặt (prototype S5). Trạng thái + kiểm tra kết nối +
 // chọn chat/embedding model (lưu bền qua ai:setSelectedModels). Check-on-demand (A2).
@@ -29,7 +30,6 @@ export function SettingsAiSection(): JSX.Element {
   }, [loadModelsAndSelection]);
 
   const chatModels = models.filter((m) => m.kind !== "embedding");
-  const embeddingModels = models.filter((m) => m.kind === "embedding");
 
   const save = (next: ModelSelection): void => {
     setSelection(next);
@@ -45,9 +45,11 @@ export function SettingsAiSection(): JSX.Element {
       });
   };
 
+  const [adviceReload, setAdviceReload] = useState(0);
   const onTest = (): void => {
     refresh();
     loadModelsAndSelection();
+    setAdviceReload((n) => n + 1); // 059: re-fetch gợi ý model + health Ollama
   };
 
   const connected = status?.reachable === true;
@@ -86,13 +88,15 @@ export function SettingsAiSection(): JSX.Element {
         emptyHint="Chưa có mô hình trả lời. Cài bằng: ollama pull qwen2.5:7b"
       />
 
-      <ModelSelect
-        label="Mô hình embedding"
-        models={embeddingModels}
-        selected={selection.embeddingModel}
-        onSelect={(name) => save({ ...selection, embeddingModel: name })}
-        emptyHint="Chưa có mô hình embedding. Khuyến nghị cài: ollama pull nomic-embed-text"
-      />
+      {/* 059: gợi ý cỡ model chat theo RAM + trạng thái Ollama (chỉ gợi ý, không tự tải). */}
+      <SettingsModelAdvice reloadKey={adviceReload} />
+
+      {/* 059: embedding CHẠY IN-PROCESS (multilingual-e5-small) — không còn cần Ollama cho khâu nhúng. */}
+      <p className="ai-embed-note" data-testid="ai-embed-inprocess">
+        Embedding (lập chỉ mục &amp; tìm kiếm) chạy sẵn trong ứng dụng —{" "}
+        <strong>không cần Ollama</strong>. Mô hình nhúng tải một lần khi dùng
+        lần đầu rồi hoạt động ngoại tuyến.
+      </p>
 
       {/* FR-011 / F2: link/hướng dẫn tĩnh — KHÔNG tự chạy ollama pull trong app v1. */}
       <p className="ai-more-models mono" data-testid="ai-more-models">

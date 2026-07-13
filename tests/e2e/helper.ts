@@ -16,7 +16,11 @@ export async function launchFresh(
   const userData = await mkdtemp(join(tmpdir(), "iv-e2e-"));
   return electron.launch({
     args: [MAIN, `--user-data-dir=${userData}`],
-    env: { ...process.env, ...(env ?? {}) } as Record<string, string>,
+    // 059: embedding fake tất định trong E2E → không tải model e5 (~120MB), offline, nhanh, ổn định.
+    env: { ...process.env, IV_EMBED_FAKE: "1", ...(env ?? {}) } as Record<
+      string,
+      string
+    >,
   });
 }
 

@@ -136,6 +136,26 @@ const api = {
     ipcRenderer.invoke(CHANNELS.studioList, notebookId),
   studioExport: (input: StudioExportInput): Promise<StudioExportResult> =>
     ipcRenderer.invoke(CHANNELS.studioExport, input),
+  // 059 — gợi ý model theo RAM + health Ollama + trạng thái tái lập chỉ mục.
+  aiRecommendModel: (): Promise<
+    import("@shared/ipc/types").ModelRecommendation
+  > => ipcRenderer.invoke(CHANNELS.aiRecommendModel),
+  aiOllamaHealth: (): Promise<import("@shared/ipc/types").OllamaHealth> =>
+    ipcRenderer.invoke(CHANNELS.aiOllamaHealth),
+  embedReindexStatus: (): Promise<import("@shared/ipc/types").ReindexStatus> =>
+    ipcRenderer.invoke(CHANNELS.embedReindexStatus),
+  /** Đăng ký nhận tiến độ tái lập chỉ mục (push từ main). Trả hàm huỷ đăng ký. */
+  onReindexProgress: (
+    cb: (e: import("@shared/ipc/types").ReindexStatus) => void,
+  ): (() => void) => {
+    const listener = (
+      _e: unknown,
+      payload: import("@shared/ipc/types").ReindexStatus,
+    ): void => cb(payload);
+    ipcRenderer.on(CHANNELS.embedReindexProgress, listener);
+    return () =>
+      ipcRenderer.removeListener(CHANNELS.embedReindexProgress, listener);
+  },
 };
 
 export type Api = typeof api;

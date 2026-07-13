@@ -3,6 +3,7 @@ import { AppHeader } from "../features/app-shell/AppHeader";
 import { NavRail } from "../features/app-shell/NavRail";
 import { OnboardingGate } from "../features/app-shell/OnboardingGate";
 import { RuntimeOnboarding } from "../features/ai-runtime/RuntimeOnboarding";
+import { ReindexBanner } from "../features/ai-runtime/ReindexBanner";
 import { useKeyboardShortcuts } from "../shared/useKeyboardShortcuts";
 import { ShortcutsHelp } from "../shared/ShortcutsHelp";
 
@@ -12,6 +13,7 @@ export function App(): JSX.Element {
   return (
     <div className="app">
       <AppHeader />
+      <ReindexBanner />
       <RuntimeOnboarding />
       <div className="app-body">
         <NavRail />

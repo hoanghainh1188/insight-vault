@@ -119,6 +119,10 @@ export interface SourceRepo {
   /** Lấy nhiều chunk theo danh sách id bất kỳ (kết quả vector search), trả theo THỨ TỰ ids. */
   getChunksByIds(ids: string[]): Chunk[];
   chunkIds(sourceId: string): string[];
+  /** 059: đếm số chunk của một notebook. */
+  countChunksByNotebook(notebookId: string): number;
+  /** 059: mọi chunk (id + notebook + source) để tái lập chỉ mục toàn cục. */
+  allChunkRefs(): { id: string; notebookId: string; sourceId: string }[];
   deleteChunks(sourceId: string): void;
   delete(id: string): { deleted: true };
 }
@@ -282,6 +286,37 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
         )
         .all(sourceId) as unknown as { id: string }[];
       return rows.map((r) => r.id);
+    },
+
+    // 059: đếm số chunk của một notebook (so với số vector để biết notebook đã nhúng lại xong chưa).
+    // chunk KHÔNG có notebook_id → JOIN qua source.
+    countChunksByNotebook(notebookId) {
+      const row = db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM chunk c JOIN source s ON c.source_id = s.id WHERE s.notebook_id = ?",
+        )
+        .get(notebookId) as { n: number };
+      return row.n;
+    },
+
+    // 059: liệt kê MỌI chunk (id + notebook + source) để tái lập chỉ mục toàn cục. Nhẹ — không kèm text.
+    // notebook_id lấy từ source (chunk chỉ có source_id).
+    allChunkRefs() {
+      const rows = db
+        .prepare(
+          "SELECT c.id AS id, s.notebook_id AS notebook_id, c.source_id AS source_id " +
+            "FROM chunk c JOIN source s ON c.source_id = s.id",
+        )
+        .all() as unknown as {
+        id: string;
+        notebook_id: string;
+        source_id: string;
+      }[];
+      return rows.map((r) => ({
+        id: r.id,
+        notebookId: r.notebook_id,
+        sourceId: r.source_id,
+      }));
     },
 
     deleteChunks(sourceId) {

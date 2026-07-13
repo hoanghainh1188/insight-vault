@@ -21,6 +21,7 @@ import { extractAudioTo16kWav } from "./video/extract-audio";
 import { parseImage } from "./parsers/image";
 import { createOcr } from "./image/ocr";
 import { imageSizeFromFile } from "image-size/fromFile";
+import { createEmbedder, type Embedder } from "../embedding/embed-model";
 
 // Ghép domain ingestion ở main: source-repo (SQLite) + vector-store (LanceDB) + pipeline (parse/chunk/
 // embed). Composition root — loại khỏi ngưỡng coverage (như ai-runtime.ts). Business logic thuần đã
@@ -30,6 +31,8 @@ export interface Ingestion {
   sourceRepo: SourceRepo;
   vectorStore: VectorStore;
   pipeline: IngestionPipeline;
+  /** 059: embedder in-process (dùng CHUNG cho ingestion passage + retrieval query + reindex). */
+  embedder: Embedder;
 }
 
 export async function createIngestion(opts: {
@@ -56,16 +59,41 @@ export async function createIngestion(opts: {
     isPackaged: app.isPackaged,
     setOnline: opts.setOnline,
   });
+  // 059: embedding IN-PROCESS (e5-small, transformers.js) — KHÔNG cần Ollama. Model tải data dir lần đầu
+  // (badge egress dùng chung 045/031), sau offline. Dùng chung cho passage (nạp nguồn) + query + reindex.
+  const embedder = createEmbedder({
+    cacheDir: join(opts.dataDir, "models"),
+    setOnline: opts.setOnline,
+  });
 
   const pipeline = createIngestionPipeline({
     sourceRepo,
     vectorStore,
-    // Embedding lúc nạp nguồn LUÔN dùng Ollama local (031, FR-005 / quyết định #1) — KHÔNG qua
-    // registry.getActive() (đổi theo provider chat online). Trộn embedding khác nhà cung cấp sẽ phá vector
-    // index + rò rỉ corpus ra ngoài nếu provider online implement embed. embedLocal buộc cứng về Ollama.
-    getProvider: () => ({ embed: opts.aiRuntime.embedLocal }),
-    isRuntimeReady: async () =>
-      (await opts.aiRuntime.getRuntimeStatus()).ollamaReady,
+    // 059: embedding nạp nguồn dùng embedder IN-PROCESS (e5 passage) — thay Ollama (đảo 031). Provider giữ
+    // chữ ký cũ ({embed:{text}→{vector}}) để pipeline/embed.ts không đổi; adapter gắn tiền tố passage.
+    getProvider: () => ({
+      embed: async ({ text }) => ({
+        vector: (await embedder.embed([text], "passage"))[0],
+      }),
+    }),
+    // 059: nhúng passage theo LÔ (32/lần) — 1 forward pass cho nhiều chunk, nhanh hơn nhiều loop từng text.
+    embedBatch: async (texts, onProgress) => {
+      const BATCH = 32;
+      const vectors: number[][] = [];
+      for (let i = 0; i < texts.length; i += BATCH) {
+        const part = await embedder.embed(texts.slice(i, i + BATCH), "passage");
+        vectors.push(...part);
+        onProgress?.(Math.min(i + BATCH, texts.length), texts.length);
+      }
+      const dim = vectors[0]?.length ?? 0;
+      if (dim === 0 && texts.length > 0) {
+        throw new Error("Embedding rỗng — model nhúng không trả vector.");
+      }
+      return { vectors, dim };
+    },
+    // Embedding in-process luôn sẵn sàng (model tải lazy khi cần) → KHÔNG còn gate theo Ollama. Nếu tải
+    // model lỗi, bước embed ném lỗi → nguồn vào error (retry được), không kẹt awaiting_embedding.
+    isRuntimeReady: async () => true,
     readFile: async (p) => new Uint8Array(await readFile(p)),
     parseFile: async (kind, bytes, onProgress) => {
       if (kind === "pdf") return parsePdf(bytes);
@@ -133,5 +161,5 @@ export async function createIngestion(opts: {
     }
   })();
 
-  return { sourceRepo, vectorStore, pipeline };
+  return { sourceRepo, vectorStore, pipeline, embedder };
 }
