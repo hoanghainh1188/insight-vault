@@ -9,7 +9,11 @@ import { retrieve, type RetrievalDeps } from "./retrieval";
 import { buildContext } from "./context-builder";
 import { systemPromptFor } from "./prompt";
 import { citationsFromMap, postprocessCitations } from "./citation";
-import { MAX_HISTORY_TURNS, NOT_FOUND_ANSWER } from "./constants";
+import {
+  MAX_HISTORY_TURNS,
+  NOT_FOUND_ANSWER,
+  REINDEXING_ANSWER,
+} from "./constants";
 
 // Điều phối hỏi đáp (rag:ask). DI: retrieval deps + chat. KHÔNG log câu hỏi/nội dung (Constitution III).
 
@@ -21,6 +25,12 @@ export interface RagServiceDeps extends RetrievalDeps {
     messages: ChatMessage[],
     opts: ChatStreamOpts,
   ) => Promise<string>;
+  /**
+   * 059: notebook NÀY có đang tái lập chỉ mục (chưa nhúng đủ vector) không? true → trả thông báo "đang tái
+   * lập chỉ mục" thay vì truy xuất trên vector chưa đầy đủ (FR-010). PER-NOTEBOOK (research R4): notebook
+   * đã nhúng lại xong vẫn hỏi đáp được dù các notebook khác còn dở. Async vì cần đếm vector (LanceDB).
+   */
+  reindexing?: (notebookId: string) => Promise<boolean>;
   /** Lưu bền lượt hỏi–đáp (027-chat-history). Best-effort; KHÔNG log nội dung. */
   saveTurn?: (
     notebookId: string,
@@ -43,6 +53,17 @@ export function createRagService(deps: RagServiceDeps) {
     const question = validateQuestion(input.question);
     const mode = validateMode(input.mode);
     const history = validateHistory(input.history);
+
+    // 059: notebook này đang tái lập chỉ mục → vector chưa đầy đủ → báo thay vì trả sai/thiếu (FR-010).
+    // Per-notebook: notebook khác đã xong vẫn hỏi đáp bình thường.
+    if (deps.reindexing && (await deps.reindexing(input.notebookId))) {
+      return {
+        answer: REINDEXING_ANSWER,
+        citations: [],
+        notFound: false,
+        modeUsed: mode,
+      };
+    }
 
     // 055: truyền history cho query rewriting (giải tham chiếu hội thoại).
     const scored = await retrieve(question, input.notebookId, deps, history);
@@ -96,6 +117,8 @@ export function createRagService(deps: RagServiceDeps) {
   // Persist lượt (027) — best-effort: DB lỗi KHÔNG phá câu trả lời; KHÔNG log nội dung.
   function persist(input: RagAskInput, result: RagAnswer): void {
     if (!deps.saveTurn) return;
+    // 059: KHÔNG lưu thông báo "đang tái lập chỉ mục" vào lịch sử (trạng thái tạm thời).
+    if (result.answer === REINDEXING_ANSWER) return;
     try {
       deps.saveTurn(input.notebookId, validateQuestion(input.question), {
         content: result.answer,

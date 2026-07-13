@@ -14,6 +14,9 @@ import type {
   SetProviderKeyInput,
   SetProviderModelInput,
   StudioGenerateInput,
+  ModelRecommendation,
+  OllamaHealth,
+  ReindexStatus,
 } from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
 import { computeStorageInfo } from "../services/app-shell/storage-info";
@@ -48,6 +51,10 @@ interface RegisterDeps {
   ragService: RagService;
   chatRepo: ChatRepo;
   studioService: StudioService;
+  // 059 — gợi ý model theo RAM + health Ollama + trạng thái reindex.
+  recommendChatModel: () => ModelRecommendation;
+  ollamaHealth: () => Promise<OllamaHealth>;
+  reindexStatus: () => ReindexStatus;
 }
 
 /**
@@ -67,6 +74,9 @@ export function registerIpc({
   ragService,
   chatRepo,
   studioService,
+  recommendChatModel,
+  ollamaHealth,
+  reindexStatus,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -101,6 +111,11 @@ export function registerIpc({
     ai.setSelectedModels(sel as ModelSelection),
   );
   safeHandle(CHANNELS.aiGetRuntimeStatus, () => ai.getRuntimeStatus());
+  // 059 — gợi ý cỡ model chat theo RAM (chỉ gợi ý) + health-check Ollama (chat). Read-only, không tự tải.
+  safeHandle(CHANNELS.aiRecommendModel, () => recommendChatModel());
+  safeHandle(CHANNELS.aiOllamaHealth, () => ollamaHealth());
+  // 059 — trạng thái tái lập chỉ mục (đổi engine embedding).
+  safeHandle(CHANNELS.embedReindexStatus, () => reindexStatus());
 
   // online-provider (031) — network + keytar CHỈ ở main; renderer qua 6 kênh này. KHÔNG log key/nội dung.
   // Validate boundary trong online-runtime (id whitelist, key/model). Trả OnlineState (không chứa key).

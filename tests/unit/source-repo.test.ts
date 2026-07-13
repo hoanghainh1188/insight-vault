@@ -91,6 +91,41 @@ describe("source-repo", () => {
     expect(repo.chunkIds(s.id)).toEqual(ids);
   });
 
+  it("059: allChunkRefs + countChunksByNotebook (JOIN qua source — chunk không có notebook_id)", () => {
+    const { db, repo } = setup();
+    // notebook thứ 2 để kiểm map notebookId đúng.
+    db.prepare(
+      "INSERT INTO notebook (id, name, color, created_at, updated_at) VALUES (?,?,?,?,?)",
+    ).run("nb2", "N2", "#4F46E5", 1, 1);
+    const s1 = repo.create({
+      notebookId: "nb1",
+      kind: "pdf",
+      title: "a",
+      origin: "/a",
+      contentHash: "h1",
+    });
+    const s2 = repo.create({
+      notebookId: "nb2",
+      kind: "txt",
+      title: "b",
+      origin: "/b",
+      contentHash: "h2",
+    });
+    repo.insertChunks(s1.id, drafts); // 2 chunk nb1
+    repo.insertChunks(s2.id, [drafts[0]]); // 1 chunk nb2
+
+    const refs = repo.allChunkRefs();
+    expect(refs).toHaveLength(3);
+    // notebookId map đúng theo source (JOIN), KHÔNG throw "no such column".
+    expect(refs.filter((r) => r.notebookId === "nb1")).toHaveLength(2);
+    expect(refs.filter((r) => r.notebookId === "nb2")).toHaveLength(1);
+    expect(refs.every((r) => r.id && r.sourceId)).toBe(true);
+
+    expect(repo.countChunksByNotebook("nb1")).toBe(2);
+    expect(repo.countChunksByNotebook("nb2")).toBe(1);
+    expect(repo.countChunksByNotebook("nb-khong-ton-tai")).toBe(0);
+  });
+
   it("deleteChunks xoá chunk giữ source (cho retry)", () => {
     const { repo } = setup();
     const s = repo.create({

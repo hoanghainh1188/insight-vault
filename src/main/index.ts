@@ -27,6 +27,11 @@ import { createStudioService } from "./services/studio/studio-service";
 import { setEgressActive } from "./services/app-shell/privacy-state";
 import { createMediaHandler } from "./services/source-viewer/media-serve";
 import { logEvent } from "./logging";
+import { runReindex, needsReindex } from "./services/embedding/reindex-runner";
+import { recommendChatModel } from "./services/ai/model-recommend";
+import { checkOllama } from "./services/ai/ollama-health";
+import type { ReindexStatus } from "@shared/ipc/types";
+import { totalmem } from "node:os";
 
 // 049: đăng ký scheme iv-media:// là privileged (stream + fetch API) TRƯỚC khi app ready — cho <audio> phát
 // file audio gốc qua main (renderer sandbox không đọc FS). Handler đăng ký ở whenReady (cần sourceRepo).
@@ -147,10 +152,22 @@ app.whenReady().then(async () => {
 
   // rag-qa (013): hỏi đáp theo nguồn. embed/chat qua provider active (007); search/getChunks (011).
   // 027: persist mỗi lượt qua chatRepo.saveTurn (best-effort, không log nội dung).
+  // 059: trạng thái tái lập chỉ mục (đổi engine embedding). rag:ask báo "đang tái lập" khi inProgress.
+  const reindex: ReindexStatus = { inProgress: false, done: 0, total: 0 };
+
   const ragService = createRagService({
-    // Embedding LUÔN dùng Ollama local (031, quyết định #1) — nhất quán vector index bất kể provider
-    // chat online đang active. Chat mới đi qua provider active (getActive).
-    embed: async (text) => (await aiRuntime.embedLocal({ text })).vector,
+    // 059: embed CÂU TRUY VẤN in-process (e5 query) — thay Ollama. Dùng CHUNG embedder với ingestion
+    // (passage) → cùng không gian vector, nhất quán index. Không cần Ollama cho embed.
+    embed: async (text) => (await ingestion.embedder.embed([text], "query"))[0],
+    // 059 PER-NOTEBOOK (research R4): chỉ chặn notebook CHƯA nhúng đủ vector. Notebook đã xong (số vector =
+    // số chunk) hỏi đáp bình thường dù reindex toàn cục còn chạy. Notebook rỗng (0 chunk) → không chặn.
+    reindexing: async (nb) => {
+      if (!reindex.inProgress) return false;
+      const chunks = ingestion.sourceRepo.countChunksByNotebook(nb);
+      if (chunks === 0) return false;
+      const vectors = await ingestion.vectorStore.countByNotebook(nb);
+      return vectors < chunks;
+    },
     search: (v, nb, k) => ingestion.vectorStore.search(v, nb, k),
     getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
     sourceTitle: (sid) => ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
@@ -195,6 +212,16 @@ app.whenReady().then(async () => {
     ragService,
     chatRepo,
     studioService,
+    // 059 — gợi ý model theo RAM (thuần) + health Ollama (ping + /api/tags) + trạng thái reindex.
+    recommendChatModel: () => recommendChatModel(totalmem()),
+    ollamaHealth: () =>
+      checkOllama({
+        ping: async () => (await aiRuntime.getRuntimeStatus()).reachable,
+        listModels: () => aiRuntime.listModels(),
+        selectedChatModel: () =>
+          aiRuntime.getSelectedModels().chatModel ?? undefined,
+      }),
+    reindexStatus: () => reindex,
   });
 
   installSecurity();
@@ -205,6 +232,55 @@ app.whenReady().then(async () => {
   // - awaiting_embedding → tự nhúng tiếp khi runtime AI sẵn sàng (US4, FR-009).
   ingestion.pipeline.resumeInterrupted();
   void ingestion.pipeline.resumeAwaiting();
+
+  // 059: tái lập chỉ mục NỀN nếu đổi engine embedding (version lệch). Không chặn khởi động. Idempotent +
+  // resume (bỏ chunk đã có vector). Trong lúc chạy, rag:ask báo "đang tái lập" (reindex.inProgress).
+  const storedVersion = store.get("embeddingModelVersion") as
+    string | undefined;
+  if (needsReindex(storedVersion)) {
+    reindex.inProgress = true;
+    const emitReindex = (): void => {
+      for (const w of BrowserWindow.getAllWindows()) {
+        if (!w.isDestroyed()) {
+          w.webContents.send(CHANNELS.embedReindexProgress, {
+            inProgress: reindex.inProgress,
+            done: reindex.done,
+            total: reindex.total,
+          });
+        }
+      }
+    };
+    void runReindex({
+      listAllChunkRefs: () => ingestion.sourceRepo.allChunkRefs(),
+      getChunkTexts: (ids) =>
+        new Map(
+          ingestion.sourceRepo.getChunksByIds(ids).map((c) => [c.id, c.text]),
+        ),
+      embedPassage: (texts) => ingestion.embedder.embed(texts, "passage"),
+      vectorStore: ingestion.vectorStore,
+      readVersion: () =>
+        store.get("embeddingModelVersion") as string | undefined,
+      writeVersion: (v) => store.set("embeddingModelVersion", v),
+      onProgress: (done, total) => {
+        reindex.done = done;
+        reindex.total = total;
+        emitReindex();
+      },
+    })
+      // KHÔNG log message/String(e) thô (key 'message' không được redact — có thể dính nội dung chunk từ
+      // lib); chỉ log loại lỗi (Constitution III).
+      .catch((e) =>
+        logEvent("embed.reindex.error", {
+          errorType: e instanceof Error ? e.constructor.name : typeof e,
+        }),
+      )
+      .finally(() => {
+        reindex.inProgress = false;
+        emitReindex();
+      });
+  }
+  // Lưu ý: cài mới (chưa có chunk) → needsReindex=true nhưng runReindex chạy tức thì (0 chunk) rồi bump
+  // version → lần sau "done".
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

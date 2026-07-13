@@ -27,11 +27,19 @@ function fakeVectorStore() {
       for (const v of rows.values()) if (v.sourceId === sid) c++;
       return c;
     },
+    async countByNotebook(nid) {
+      let c = 0;
+      for (const v of rows.values()) if (v.notebookId === nid) c++;
+      return c;
+    },
     async search() {
       return []; // ingestion không dùng search (013 test riêng)
     },
     async getVectorsByIds() {
       return new Map();
+    },
+    async dropTable() {
+      rows.clear();
     },
     async close() {},
   };

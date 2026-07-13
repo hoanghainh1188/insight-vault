@@ -2,8 +2,9 @@ import { test, expect, type ElectronApplication } from "@playwright/test";
 import { join } from "node:path";
 import { launchFresh, dismissOnboarding, UNREACHABLE_OLLAMA } from "./helper";
 
-// 011-ingestion e2e. Ollama unreachable (tất định) → nguồn parse+chunk+lưu rồi dừng 'awaiting_embedding'
-// (US4, KHÔNG lỗi). Kiểm: add→có chunk+trạng thái không lỗi, delete→cascade sạch, whitelist source:*.
+// 011-ingestion e2e. 059: embedding CHẠY IN-PROCESS (fake tất định qua IV_EMBED_FAKE, không tải model) →
+// nguồn parse+chunk+nhúng+lưu → 'ready' KỂ CẢ khi Ollama offline (embed không còn cần Ollama). Kiểm:
+// add→có chunk+không lỗi, delete→cascade sạch, whitelist source:*.
 let app: ElectronApplication;
 const FIXTURE = join(process.cwd(), "tests/fixtures/sample.txt");
 
@@ -14,7 +15,7 @@ test.afterAll(async () => {
   await app?.close();
 });
 
-test("nạp tệp txt → nguồn xuất hiện, chờ nhúng (Ollama offline), không lỗi", async () => {
+test("nạp tệp txt → nguồn nhúng in-process → ready (Ollama offline), không lỗi", async () => {
   const win = await app.firstWindow();
   await dismissOnboarding(win);
 

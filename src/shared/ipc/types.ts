@@ -49,6 +49,28 @@ export interface ModelSelection {
   embeddingModel: string | null;
 }
 
+/** 059 — gợi ý cỡ model chat theo RAM máy (chỉ gợi ý, không tự tải). */
+export interface ModelRecommendation {
+  tier: "small" | "medium" | "large";
+  label: string;
+  examples: string[];
+  totalMemGb: number;
+}
+
+/** 059 — health-check Ollama (phục vụ chat; embedding đã in-process). */
+export interface OllamaHealth {
+  running: boolean;
+  models: string[];
+  modelPulled: boolean;
+}
+
+/** 059 — trạng thái tái lập chỉ mục (đổi engine embedding). */
+export interface ReindexStatus {
+  inProgress: boolean;
+  done: number;
+  total: number;
+}
+
 /** Trạng thái runtime AI cục bộ — nguồn cho onboarding & Cài đặt. Tách khỏi OnboardingState. */
 export interface RuntimeStatus {
   /** Ollama phản hồi ping trong timeout. */

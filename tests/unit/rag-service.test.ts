@@ -55,6 +55,54 @@ const ask = (over: Partial<RagAskInput> = {}): RagAskInput => ({
   ...over,
 });
 
+describe("rag-service — 059 reindex guard (per-notebook)", () => {
+  it("notebook đang tái lập → báo thông báo, KHÔNG truy xuất/chat, KHÔNG lưu", async () => {
+    let embedCalled = false;
+    let saved = false;
+    const svc = createRagService({
+      ...makeDeps({}),
+      embed: async () => {
+        embedCalled = true;
+        return [0.1];
+      },
+      reindexing: async () => true,
+      saveTurn: () => {
+        saved = true;
+      },
+    });
+    const res = await svc.ask(ask());
+    expect(res.answer).toMatch(/tái lập chỉ mục/i);
+    expect(res.citations).toEqual([]);
+    expect(embedCalled).toBe(false); // không truy xuất trên vector chưa đầy đủ
+    expect(saved).toBe(false); // không lưu thông báo tạm vào lịch sử
+  });
+
+  it("notebook đã nhúng xong → hoạt động bình thường (per-notebook)", async () => {
+    const svc = createRagService({
+      ...makeDeps({}),
+      reindexing: async () => false,
+    });
+    const res = await svc.ask(ask());
+    expect(res.answer).not.toMatch(/tái lập chỉ mục/i);
+  });
+
+  it("guard nhận đúng notebookId đang hỏi (chặn theo từng notebook)", async () => {
+    const seen: string[] = [];
+    const svc = createRagService({
+      ...makeDeps({}),
+      reindexing: async (nb) => {
+        seen.push(nb);
+        return nb === "nb-dang-reindex";
+      },
+    });
+    const blocked = await svc.ask(ask({ notebookId: "nb-dang-reindex" }));
+    expect(blocked.answer).toMatch(/tái lập chỉ mục/i);
+    const ok = await svc.ask(ask({ notebookId: "nb-xong" }));
+    expect(ok.answer).not.toMatch(/tái lập chỉ mục/i);
+    expect(seen).toEqual(["nb-dang-reindex", "nb-xong"]);
+  });
+});
+
 describe("rag-service.ask", () => {
   it("US1 grounded có nguồn → answer + citations map đúng chunk", async () => {
     const svc = createRagService(makeDeps({}));

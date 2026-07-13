@@ -28,6 +28,12 @@ export interface PipelineDeps {
   sourceRepo: SourceRepo;
   vectorStore: VectorStore;
   getProvider: () => Pick<LLMProvider, "embed"> | null;
+  // 059: nhúng passage theo LÔ (1 lần gọi model cho nhiều chunk) — nhanh hơn nhiều so với loop từng text
+  // qua getProvider().embed. Thiếu → fallback embedTexts(provider) từng text (test harness cũ).
+  embedBatch?: (
+    texts: string[],
+    onProgress?: (done: number, total: number) => void,
+  ) => Promise<{ vectors: number[][]; dim: number }>;
   isRuntimeReady: () => Promise<boolean>;
   readFile: (filePath: string) => Promise<Uint8Array>;
   parseFile: (
@@ -192,15 +198,22 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     const chunks = sourceRepo.listChunks(src.id);
     let vectors: number[][];
     let dim: number;
+    const onEmbedProgress = (done: number, total: number): void => {
+      const s = reload(src.id);
+      if (s) send(s, "embed", total ? done / total : 1);
+    };
     try {
-      const res = await embedTexts(
-        provider,
-        chunks.map((c) => c.text),
-        (done, total) => {
-          const s = reload(src.id);
-          if (s) send(s, "embed", total ? done / total : 1);
-        },
-      );
+      // 059: ưu tiên nhúng theo LÔ (nhanh hơn) nếu có; fallback loop từng text qua provider (test cũ).
+      const res = deps.embedBatch
+        ? await deps.embedBatch(
+            chunks.map((c) => c.text),
+            onEmbedProgress,
+          )
+        : await embedTexts(
+            provider,
+            chunks.map((c) => c.text),
+            onEmbedProgress,
+          );
       vectors = res.vectors;
       dim = res.dim;
     } catch {

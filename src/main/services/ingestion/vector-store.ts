@@ -27,6 +27,8 @@ export interface VectorStore {
   deleteBySource(sourceId: string): Promise<void>;
   deleteByNotebook(notebookId: string): Promise<void>;
   countBySource(sourceId: string): Promise<number>;
+  /** 059: đếm vector theo notebook (so với số chunk để biết notebook đã nhúng lại xong chưa). */
+  countByNotebook(notebookId: string): Promise<number>;
   /** Tìm topK chunk gần nhất trong phạm vi notebook (013). Bảng chưa tồn tại → []. */
   search(
     queryVector: number[],
@@ -35,6 +37,8 @@ export interface VectorStore {
   ): Promise<VectorSearchHit[]>;
   /** 055: lấy vector của các chunk theo id (cho MMR). Id không có vector → bỏ khỏi Map. */
   getVectorsByIds(ids: string[]): Promise<Map<string, number[]>>;
+  /** 059: xoá bảng vector (để tái tạo với dim mới khi đổi model embedding). Không tồn tại → no-op. */
+  dropTable(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -68,6 +72,7 @@ interface LanceConn {
   tableNames(): Promise<string[]>;
   openTable(name: string): Promise<LanceTable>;
   createTable(name: string, data: unknown[]): Promise<LanceTable>;
+  dropTable(name: string): Promise<void>;
 }
 
 /** Escape nháy đơn cho predicate SQL của LanceDB. */
@@ -115,6 +120,11 @@ export async function createLanceVectorStore(
       if (!t) return 0;
       return t.countRows(`source_id = '${q(sourceId)}'`);
     },
+    async countByNotebook(notebookId) {
+      const t = await getTable();
+      if (!t) return 0;
+      return t.countRows(`notebook_id = '${q(notebookId)}'`);
+    },
     async search(queryVector, notebookId, topK) {
       const t = await getTable();
       if (!t) return []; // chưa nạp nguồn nào
@@ -150,6 +160,13 @@ export async function createLanceVectorStore(
         }
       }
       return map;
+    },
+    async dropTable() {
+      const names = await conn.tableNames();
+      if (names.includes(TABLE)) {
+        await conn.dropTable(TABLE);
+      }
+      table = null; // buộc mở/tạo lại (dim mới) ở lần add tiếp theo
     },
     async close() {
       table = null;

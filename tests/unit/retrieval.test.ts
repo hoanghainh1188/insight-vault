@@ -29,11 +29,11 @@ function deps(hits: VectorSearchHit[], chunks: Chunk[]): RetrievalDeps {
 }
 
 describe("retrieve", () => {
-  it("lọc theo ngưỡng cosine (≤0.75); giữ thứ tự score tăng dần", async () => {
+  it("lọc theo ngưỡng cosine (≤0.5 — e5 059); giữ thứ tự score tăng dần", async () => {
     const hits: VectorSearchHit[] = [
       { id: "a", sourceId: "s-a", score: 0.2 }, // liên quan → giữ
-      { id: "b", sourceId: "s-b", score: 0.6 }, // liên quan vừa → giữ
-      { id: "c", sourceId: "s-c", score: 1.4 }, // gần trực giao (>0.75) → loại
+      { id: "b", sourceId: "s-b", score: 0.45 }, // liên quan vừa (≤0.5) → giữ
+      { id: "c", sourceId: "s-c", score: 0.6 }, // vượt ngưỡng e5 (>0.5) → loại
     ];
     const res = await retrieve(
       "hỏi",
