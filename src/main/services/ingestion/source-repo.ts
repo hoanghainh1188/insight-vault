@@ -39,6 +39,10 @@ interface ChunkRow {
   char_end: number;
   t_start: number | null; // 045 — audio timestamp (giây); null cho loại khác
   t_end: number | null;
+  bbox_x: number | null; // 053 — vùng chữ OCR (chuẩn hoá 0..1); null cho loại khác
+  bbox_y: number | null;
+  bbox_w: number | null;
+  bbox_h: number | null;
 }
 
 function toSource(r: SourceRow): Source {
@@ -68,6 +72,17 @@ function toChunk(r: ChunkRow): Chunk {
       // 045: chỉ gắn timestamp khi có (audio) — giữ locator gọn cho loại khác.
       ...(r.t_start != null
         ? { tStart: r.t_start, tEnd: r.t_end ?? r.t_start }
+        : {}),
+      // 053: chỉ gắn bbox khi có (ảnh OCR).
+      ...(r.bbox_x != null
+        ? {
+            bbox: {
+              x: r.bbox_x,
+              y: r.bbox_y ?? 0,
+              w: r.bbox_w ?? 0,
+              h: r.bbox_h ?? 0,
+            },
+          }
         : {}),
     },
   };
@@ -204,13 +219,14 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
     insertChunks(sourceId, drafts) {
       const ids: string[] = [];
       const stmt = db.prepare(
-        "INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end, t_start, t_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end, t_start, t_end, bbox_x, bbox_y, bbox_w, bbox_h) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       );
       db.exec("BEGIN");
       try {
         for (const d of drafts) {
           const cid = uuid();
           ids.push(cid);
+          const bb = d.locator.bbox;
           stmt.run(
             cid,
             sourceId,
@@ -221,6 +237,10 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
             d.locator.charEnd,
             d.locator.tStart ?? null,
             d.locator.tEnd ?? null,
+            bb?.x ?? null,
+            bb?.y ?? null,
+            bb?.w ?? null,
+            bb?.h ?? null,
           );
         }
         db.exec("COMMIT");

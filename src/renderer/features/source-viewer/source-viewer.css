@@ -133,6 +133,36 @@
   font-size: 12px;
   color: var(--danger, #b4232a);
 }
+/* Ảnh (053): khung bọc position:relative để overlay bbox định vị theo % (co giãn cùng ảnh). */
+.vimage {
+  position: sticky;
+  top: -24px;
+  margin: -24px -28px 16px;
+  padding: 14px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  z-index: 1;
+}
+.vimage-frame {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+.vimage-el {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  border-radius: 6px;
+}
+/* Khung nổi bật vùng chữ được trích dẫn (dùng token citation vàng). */
+.vbbox {
+  position: absolute;
+  border: 2px solid var(--cite-line, #d4a017);
+  background: var(--cite-bg, rgba(212, 160, 23, 0.18));
+  border-radius: 2px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
 .vtext {
   font-size: 14px;
   line-height: 1.7;

@@ -1,6 +1,7 @@
 import type { SourceKind } from "@shared/ipc/types";
 import type { PageText } from "../chunker";
 import type { TimeMapEntry } from "../audio/audio-transcript";
+import type { BoxMapEntry } from "../image/image-transcript";
 
 // Kết quả parse chuẩn hoá cho mọi loại nguồn. Pipeline sẽ làm sạch từng page rồi chunk.
 export interface ParseResult {
@@ -12,6 +13,8 @@ export interface ParseResult {
   pages: PageText[];
   /** Audio (045): map char↔time để gắn tStart/tEnd cho chunk sau khi chunk theo char. */
   timeMap?: TimeMapEntry[];
+  /** Ảnh (053): map char↔bbox (0..1) để gắn Locator.bbox cho chunk sau khi chunk theo char. */
+  boxMap?: BoxMapEntry[];
 }
 
 const EXT_KIND: Record<string, SourceKind> = {
@@ -32,6 +35,13 @@ const EXT_KIND: Record<string, SourceKind> = {
   mov: "video",
   webm: "video",
   mkv: "video",
+  // image (053, Pha 2c) — OCR tesseract.js → text + bbox; hiển thị <img> + highlight vùng
+  png: "image",
+  jpg: "image",
+  jpeg: "image",
+  webp: "image",
+  bmp: "image",
+  tiff: "image",
 };
 
 /** Suy loại nguồn từ đuôi tệp (thuần, unit-test được). Ném nếu không hỗ trợ. */

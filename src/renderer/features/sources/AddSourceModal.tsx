@@ -21,6 +21,13 @@ const FILE_EXT: Record<string, Exclude<SourceKind, "url">> = {
   mov: "video",
   webm: "video",
   mkv: "video",
+  // 053 (Pha 2c): image — OCR (tesseract.js) → text + bbox; hiển thị <img> + highlight vùng.
+  png: "image",
+  jpg: "image",
+  jpeg: "image",
+  webp: "image",
+  bmp: "image",
+  tiff: "image",
 };
 
 function kindOf(name: string): Exclude<SourceKind, "url"> | null {
@@ -68,7 +75,7 @@ export function AddSourceModal({
     }
     if (rejected.length)
       setError(
-        `Không hỗ trợ: ${rejected.join(", ")} (PDF/.docx/.txt/.md · audio .wav/.mp3/.flac/.ogg/.m4a/.aac · video .mp4/.mov/.webm/.mkv).`,
+        `Không hỗ trợ: ${rejected.join(", ")} (PDF/.docx/.txt/.md · audio .wav/.mp3/.flac/.ogg/.m4a/.aac · video .mp4/.mov/.webm/.mkv · ảnh .png/.jpg/.webp/.bmp/.tiff).`,
       );
     else if (dup) setNotice("Một nguồn có thể đã tồn tại trong notebook.");
     else onClose();
@@ -142,11 +149,13 @@ export function AddSourceModal({
           >
             Video
           </button>
+          {/* 053: ảnh nhập qua tab "Tệp" (OCR). Bấm "Hình ảnh" → về tab Tệp. */}
           <button
             type="button"
-            className="type"
-            disabled
-            title="Sắp có ở Pha 2c"
+            className={tab === "file" ? "type active" : "type"}
+            onClick={() => setTab("file")}
+            title="Kéo tệp ảnh (png/jpg/webp/bmp/tiff) vào tab Tệp — OCR trích chữ"
+            data-testid="tab-image"
           >
             Hình ảnh
           </button>
@@ -171,18 +180,18 @@ export function AddSourceModal({
             <p>Kéo-thả tệp vào đây hoặc bấm để chọn</p>
             <p className="hint">
               Xử lý ngay trên máy · PDF/.docx/.txt/.md · audio
-              .wav/.mp3/.flac/.ogg/.m4a/.aac · video .mp4/.mov/.webm/.mkv (tự
-              bóc băng)
+              .wav/.mp3/.flac/.ogg/.m4a/.aac · video .mp4/.mov/.webm/.mkv · ảnh
+              .png/.jpg/.webp/.bmp/.tiff (tự bóc băng / OCR)
             </p>
             <p className="hint" data-testid="video-origin-note">
-              Video phát từ vị trí file gốc; nếu xoá/di chuyển file, sẽ không
-              phát lại được (bản bóc băng vẫn xem được).
+              Video/ảnh phát/hiển thị từ vị trí file gốc; nếu xoá/di chuyển
+              file, sẽ không mở lại được (bản bóc băng/OCR vẫn xem được).
             </p>
             <input
               ref={fileInput}
               type="file"
               multiple
-              accept=".pdf,.docx,.txt,.md,.wav,.mp3,.flac,.ogg,.m4a,.aac,.mp4,.mov,.webm,.mkv"
+              accept=".pdf,.docx,.txt,.md,.wav,.mp3,.flac,.ogg,.m4a,.aac,.mp4,.mov,.webm,.mkv,.png,.jpg,.jpeg,.webp,.bmp,.tiff"
               hidden
               onChange={(e) => {
                 if (e.target.files) void addFiles(e.target.files);

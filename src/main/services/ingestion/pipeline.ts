@@ -14,6 +14,7 @@ import { detectKindFromPath, titleFromPath } from "./parsers";
 import { cleanText } from "./cleaning";
 import { chunkPages, type PageText } from "./chunker";
 import { timeForCharRange } from "./audio/audio-transcript";
+import { bboxForCharRange } from "./image/image-transcript";
 import { embedTexts } from "./embed";
 import { errorLabelForStep } from "./status";
 import { SizeLimitError, assertWithinLimit } from "./size-limits";
@@ -38,6 +39,11 @@ export interface PipelineDeps {
   parseUrl?: (url: string) => Promise<ParseResult>;
   // 051 video: ffmpeg đọc file GỐC theo path (không nạp 1GB vào RAM); statSize để kiểm giới hạn.
   parseVideo?: (
+    path: string,
+    onProgress?: (frac: number) => void,
+  ) => Promise<ParseResult>;
+  // 053 image: OCR đọc file theo path (không nạp vào RAM qua readFile như audio); statSize kiểm giới hạn.
+  parseImage?: (
     path: string,
     onProgress?: (frac: number) => void,
   ) => Promise<ParseResult>;
@@ -98,6 +104,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     pageCount: number | null;
     title?: string;
     timeMap?: ParseResult["timeMap"];
+    boxMap?: ParseResult["boxMap"];
   }> => {
     let result: ParseResult;
     try {
@@ -121,6 +128,17 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
           const s = reload(src.id);
           if (s) send(s, "parse", 0.1 + Math.max(0, Math.min(1, frac)) * 0.15);
         });
+      } else if (src.kind === "image") {
+        // 053: OCR đọc file theo path (như video, không nạp vào RAM). Tiến độ OCR trong bước parse.
+        if (!deps.parseImage || !deps.statSize) {
+          throw new StepError("parse", errorLabelForStep("parse", src.kind));
+        }
+        const size = await deps.statSize(sourceOrigin(src));
+        assertWithinLimit("image", size);
+        result = await deps.parseImage(sourceOrigin(src), (frac) => {
+          const s = reload(src.id);
+          if (s) send(s, "parse", 0.1 + Math.max(0, Math.min(1, frac)) * 0.15);
+        });
       } else {
         const bytes = await deps.readFile(sourceOrigin(src));
         assertWithinLimit(src.kind, bytes.byteLength);
@@ -137,9 +155,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     const cleaned = result.pages
       .map((p) => ({ page: p.page, text: cleanText(p.text) }))
       .filter((p) => p.text.length > 0);
-    // Video KHÔNG có audio track → transcript rỗng: VẪN nạp thành công (ready, 0 chunk, video phát được —
-    // FR-011). Các loại khác rỗng = lỗi parse.
-    if (cleaned.length === 0 && src.kind !== "video") {
+    // Video no-audio (051) / ảnh không chữ (053) → transcript rỗng: VẪN nạp thành công (ready, 0 chunk,
+    // media vẫn xem được — FR-011/FR-010). Các loại khác rỗng = lỗi parse.
+    if (cleaned.length === 0 && src.kind !== "video" && src.kind !== "image") {
       throw new StepError("parse", errorLabelForStep("parse", src.kind));
     }
     return {
@@ -147,6 +165,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       pageCount: result.pageCount,
       title: result.title,
       timeMap: result.timeMap,
+      boxMap: result.boxMap,
     };
   };
 
@@ -222,7 +241,8 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     src = reload(id)!;
     send(src, "parse", 0.1);
     try {
-      const { pages, pageCount, title, timeMap } = await parseAndClean(src);
+      const { pages, pageCount, title, timeMap, boxMap } =
+        await parseAndClean(src);
       if (signal.cancelled) return;
       if (pageCount != null) sourceRepo.setPageCount(id, pageCount);
       if (title && src.kind === "url") {
@@ -246,8 +266,19 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
               : d;
           })
         : drafts;
+      // Ảnh (053): gắn bbox (vùng chữ) cho mỗi chunk từ boxMap (theo char-range của chunk).
+      const located = boxMap
+        ? withTime.map((d) => {
+            const bb = bboxForCharRange(
+              boxMap,
+              d.locator.charStart,
+              d.locator.charEnd,
+            );
+            return bb ? { ...d, locator: { ...d.locator, bbox: bb } } : d;
+          })
+        : withTime;
       sourceRepo.deleteChunks(id); // sạch trước khi ghi (retry an toàn)
-      sourceRepo.insertChunks(id, withTime);
+      sourceRepo.insertChunks(id, located);
       send(reload(id)!, "chunk", 0.4);
       if (signal.cancelled) return;
       const embedded = await embedAndStore(reload(id)!, signal);
@@ -277,6 +308,15 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       const origin = input.kind === "url" ? input.url : input.filePath;
       if (typeof origin !== "string" || origin.trim() === "") {
         throw new Error("Nguồn thiếu đường dẫn tệp hoặc URL.");
+      }
+      // Constitution I (No Default Egress): nguồn tệp PHẢI là path cục bộ, KHÔNG phải URL. Chặn scheme
+      // `xxx://` (http/https/file/ftp…) — một số parser (tesseract.js loadImage) tự fetch nếu path giống
+      // URL, gây egress ngầm không qua badge. Windows `C:\` (không có `//`) và UNC `\\` không bị chặn.
+      if (
+        input.kind !== "url" &&
+        /^[a-z][a-z0-9+.-]*:\/\//i.test(input.filePath.trim())
+      ) {
+        throw new Error("Đường dẫn tệp phải là tệp cục bộ (không phải URL).");
       }
       // Derive/validate kind từ đường dẫn (chống renderer khai man loại tệp).
       const kind =

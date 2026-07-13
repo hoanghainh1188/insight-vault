@@ -39,9 +39,12 @@ export function SourceViewer({
   const isAudio = content?.kind === "audio"; // 049
   const isVideo = content?.kind === "video"; // 051
   const isMedia = isAudio || isVideo; // player audio/video dùng chung iv-media:// + effect seek/onError
+  const isImage = content?.kind === "image"; // 053
   const pageCount = content?.pageCount ?? 0;
   // Seek theo trích dẫn media: tStart (giây) từ locator (045 lưu sẵn). undefined nếu mở nguồn trực tiếp.
   const tStart = citation?.locator.tStart;
+  // Ảnh (053): vùng chữ (bbox 0..1) của trích dẫn → overlay khung. undefined nếu mở trực tiếp.
+  const bbox = citation?.locator.bbox;
 
   // Auto-scroll: tới đoạn highlight (nếu có), ngược lại lên đầu. Đặt trang hiện tại theo trích dẫn.
   useEffect(() => {
@@ -182,6 +185,37 @@ export function SourceViewer({
                 Không phát được file {isVideo ? "video" : "âm thanh"} gốc (có
                 thể đã bị xoá hoặc di chuyển). Bản bóc băng bên dưới vẫn xem
                 được.
+              </p>
+            )}
+          </div>
+        )}
+        {!loading && !missing && content && isImage && target && (
+          <div className="vimage" data-testid="viewer-image-player">
+            <div className="vimage-frame">
+              <img
+                className="vimage-el"
+                data-testid="viewer-image-el"
+                src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
+                alt={content.title}
+                onError={() => setAudioError(true)}
+              />
+              {bbox && (
+                <div
+                  className="vbbox"
+                  data-testid="viewer-bbox"
+                  style={{
+                    left: `${bbox.x * 100}%`,
+                    top: `${bbox.y * 100}%`,
+                    width: `${bbox.w * 100}%`,
+                    height: `${bbox.h * 100}%`,
+                  }}
+                />
+              )}
+            </div>
+            {audioError && (
+              <p className="vaudio-err" data-testid="viewer-image-error">
+                Không mở được ảnh gốc (có thể đã bị xoá hoặc di chuyển). Bản bóc
+                băng bên dưới vẫn xem được.
               </p>
             )}
           </div>

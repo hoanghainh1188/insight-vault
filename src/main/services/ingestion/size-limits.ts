@@ -13,6 +13,7 @@ export const SIZE_LIMITS: Record<SourceKind, number> = {
   url: 10 * MB, // body tải về
   audio: 200 * MB, // 045 — file audio lớn (bóc băng cục bộ); 051 thêm m4a/aac cùng giới hạn
   video: 1024 * MB, // 051 — video lớn (tách audio + phát file gốc)
+  image: 50 * MB, // 053 — ảnh OCR (tesseract.js)
 };
 
 /** Lỗi vượt giới hạn — nhãn thân thiện dùng cho error_label của nguồn. */

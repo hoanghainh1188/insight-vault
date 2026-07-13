@@ -112,4 +112,14 @@ describe("createMediaHandler (049)", () => {
     expect(part.status).toBe(206);
     expect(part.headers.get("Content-Range")).toBe("bytes 0-4/20");
   });
+
+  it("053: nguồn kind=image cũng được phục vụ (200)", async () => {
+    const repo: Partial<SourceRepo> = {
+      getById: (id) =>
+        id === "img" ? { ...audioSource(id), kind: "image" } : null,
+      getOrigin: (id) => (id === "img" ? filePath : null),
+    };
+    const res = await createMediaHandler(repo as SourceRepo)(req("img"));
+    expect(res.status).toBe(200);
+  });
 });

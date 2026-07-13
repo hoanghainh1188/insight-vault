@@ -155,6 +155,17 @@ export const MIGRATIONS: Migration[] = [
       );
     },
   },
+  // 053-image (Pha 2c): chunk thêm bbox (vùng chữ OCR, chuẩn hoá 0..1) cho locator ảnh. ADD COLUMN thuần,
+  // append-only — KHÔNG phá CHECK (khác #5). kind='image' không cần migration (CHECK kind đã bỏ ở #5).
+  {
+    version: 6,
+    up(db) {
+      db.exec("ALTER TABLE chunk ADD COLUMN bbox_x REAL");
+      db.exec("ALTER TABLE chunk ADD COLUMN bbox_y REAL");
+      db.exec("ALTER TABLE chunk ADD COLUMN bbox_w REAL");
+      db.exec("ALTER TABLE chunk ADD COLUMN bbox_h REAL");
+    },
+  },
 ];
 
 export function getUserVersion(db: Db): number {

@@ -43,6 +43,14 @@ describe("mimeForAudioExt (049)", () => {
     expect(mimeForAudioExt("webm")).toBe("video/webm");
     expect(mimeForAudioExt("mkv")).toBe("video/x-matroska");
   });
+  it("053: image png/jpg/jpeg/webp/bmp/tiff", () => {
+    expect(mimeForAudioExt("png")).toBe("image/png");
+    expect(mimeForAudioExt("JPG")).toBe("image/jpeg");
+    expect(mimeForAudioExt("jpeg")).toBe("image/jpeg");
+    expect(mimeForAudioExt("webp")).toBe("image/webp");
+    expect(mimeForAudioExt("bmp")).toBe("image/bmp");
+    expect(mimeForAudioExt("tiff")).toBe("image/tiff");
+  });
 });
 
 describe("parseRange (049)", () => {

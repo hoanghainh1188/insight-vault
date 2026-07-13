@@ -40,6 +40,9 @@ export default defineConfig({
         "src/main/services/source-viewer/media-range.ts",
         "src/main/services/ingestion/video/ffmpeg-path.ts",
         "src/main/services/ingestion/parsers/video.ts",
+        "src/main/services/ingestion/image/image-transcript.ts",
+        "src/main/services/ingestion/image/ocr-path.ts",
+        "src/main/services/ingestion/parsers/image.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -70,6 +73,8 @@ export default defineConfig({
         "src/main/services/source-viewer/media-serve.ts",
         // 051 video: spawn ffmpeg I/O (mock trong extract-audio.test.ts, không tính ngưỡng).
         "src/main/services/ingestion/video/extract-audio.ts",
+        // 053 image: OCR worker tesseract.js I/O (verify Node + manual; hàm thuần ở image-transcript).
+        "src/main/services/ingestion/image/ocr.ts",
       ],
       thresholds: {
         statements: 80,

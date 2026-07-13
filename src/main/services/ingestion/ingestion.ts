@@ -18,6 +18,9 @@ import { fetchAndParseUrl } from "./parsers/url";
 import { createTranscriber } from "./audio/transcribe";
 import { resolveFfmpegPath } from "./video/ffmpeg-path";
 import { extractAudioTo16kWav } from "./video/extract-audio";
+import { parseImage } from "./parsers/image";
+import { createOcr } from "./image/ocr";
+import { imageSizeFromFile } from "image-size/fromFile";
 
 // Ghép domain ingestion ở main: source-repo (SQLite) + vector-store (LanceDB) + pipeline (parse/chunk/
 // embed). Composition root — loại khỏi ngưỡng coverage (như ai-runtime.ts). Business logic thuần đã
@@ -45,6 +48,12 @@ export async function createIngestion(opts: {
   const transcriber = createTranscriber({
     cacheDir: join(opts.dataDir, "models"),
     // Báo egress khi tải model Whisper lần đầu (badge riêng tư khớp hành vi — Constitution I).
+    setOnline: opts.setOnline,
+  });
+  // 053: OCR tesseract.js — traineddata vie+eng tải về data dir lần đầu (badge egress), sau offline. Lazy.
+  const ocr = createOcr({
+    cacheDir: join(opts.dataDir, "models", "tesseract"),
+    isPackaged: app.isPackaged,
     setOnline: opts.setOnline,
   });
 
@@ -79,6 +88,17 @@ export async function createIngestion(opts: {
           uuid: () => randomUUID(),
         });
       return parseVideo(path, tmpDir, extractor, transcriber, onProgress);
+    },
+    // 053: OCR ảnh (tesseract.js) + đọc kích thước ảnh (image-size từ header) để chuẩn hoá bbox 0..1.
+    parseImage: async (path, onProgress) => {
+      // Đọc W×H CHỈ từ header ảnh (streaming, không nạp cả file vào RAM) — nhất quán hashFile/statSize.
+      const readDims = async (
+        p: string,
+      ): Promise<{ width: number; height: number }> => {
+        const d = await imageSizeFromFile(p);
+        return { width: d.width || 1, height: d.height || 1 };
+      };
+      return parseImage(path, ocr, readDims, onProgress);
     },
     statSize: async (p) => (await stat(p)).size,
     // 051: hash sha256 + size STREAMING (không nạp cả file — kể cả video 1GB — vào RAM ở bước add()).
