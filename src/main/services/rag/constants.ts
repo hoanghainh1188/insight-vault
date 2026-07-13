@@ -13,3 +13,8 @@ export const MAX_HISTORY_CONTENT_LEN = 20000;
 export const MAX_HISTORY_TURNS = 6; // số lượt hội thoại gần nhất gửi cho chat
 
 export const NOT_FOUND_ANSWER = "Không tìm thấy trong nguồn.";
+
+// 055 hybrid: hợp nhất vector + BM25 + đa dạng hoá.
+export const RRF_K = 60; // hằng Reciprocal Rank Fusion: điểm = Σ 1/(k+rank)
+export const MMR_LAMBDA = 0.7; // cân bằng liên quan (λ) ↔ đa dạng (1−λ)
+export const HYBRID_BRANCH_TOPK = 10; // top-K lấy từ MỖI nhánh (vector, bm25) trước khi hợp nhất

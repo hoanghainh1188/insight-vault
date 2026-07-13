@@ -33,6 +33,8 @@ export interface VectorStore {
     notebookId: string,
     topK: number,
   ): Promise<VectorSearchHit[]>;
+  /** 055: lấy vector của các chunk theo id (cho MMR). Id không có vector → bỏ khỏi Map. */
+  getVectorsByIds(ids: string[]): Promise<Map<string, number[]>>;
   close(): Promise<void>;
 }
 
@@ -60,6 +62,7 @@ interface LanceTable {
   delete(predicate: string): Promise<unknown>;
   countRows(filter?: string): Promise<number>;
   search(vector: number[]): LanceQuery;
+  query(): LanceQuery;
 }
 interface LanceConn {
   tableNames(): Promise<string[]>;
@@ -128,6 +131,25 @@ export async function createLanceVectorStore(
         sourceId: String(r["source_id"]),
         score: Number(r["_distance"]),
       }));
+    },
+    async getVectorsByIds(ids) {
+      const map = new Map<string, number[]>();
+      if (ids.length === 0) return map;
+      const t = await getTable();
+      if (!t) return map;
+      const inList = ids.map((id) => `'${q(id)}'`).join(",");
+      const rows = await t
+        .query()
+        .where(`id IN (${inList})`)
+        .limit(ids.length)
+        .toArray();
+      for (const r of rows) {
+        const v = r["vector"];
+        if (v != null) {
+          map.set(String(r["id"]), Array.from(v as ArrayLike<number>, Number));
+        }
+      }
+      return map;
     },
     async close() {
       table = null;

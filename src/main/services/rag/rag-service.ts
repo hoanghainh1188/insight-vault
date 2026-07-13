@@ -44,7 +44,8 @@ export function createRagService(deps: RagServiceDeps) {
     const mode = validateMode(input.mode);
     const history = validateHistory(input.history);
 
-    const scored = await retrieve(question, input.notebookId, deps);
+    // 055: truyền history cho query rewriting (giải tham chiếu hội thoại).
+    const scored = await retrieve(question, input.notebookId, deps, history);
 
     // Grounded + không có căn cứ → "không tìm thấy" (không gọi model, không bịa).
     if (mode === "grounded" && scored.length === 0) {
