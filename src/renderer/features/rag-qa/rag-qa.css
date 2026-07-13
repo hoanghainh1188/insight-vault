@@ -277,9 +277,9 @@
 }
 /* Chip mô hình — thông tin (không phải nút điều hướng): hiển thị model đang dùng. */
 .model-chip {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   font-size: 11px;
+  line-height: 1.6;
   color: var(--ink-soft);
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -287,6 +287,11 @@
   padding: 3px 9px;
   white-space: nowrap;
   cursor: default;
+  /* Cho phép co lại + cắt ellipsis khi cột hẹp → không đẩy nút gửi tràn ra ngoài composer. */
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .send-btn {
   margin-left: auto;

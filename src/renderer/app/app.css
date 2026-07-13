@@ -540,6 +540,28 @@
 .btn-primary-sm:hover {
   background: var(--accent-ink);
 }
+/* Biến thể VIỀN của primary-sm: viền + chữ màu thương hiệu, nền trong; hover đổ nền nhạt. */
+.btn-outline-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out-expo),
+    border-color var(--duration-fast) var(--ease-out-expo);
+}
+.btn-outline-sm:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-ink);
+}
 
 /* Empty / no-result state màn Notebooks (023-ui-polish C) */
 .nb-empty {
@@ -595,6 +617,7 @@
 
 /* Trạng thái focus bàn phím chung (023-ui-polish C / FR-009) */
 .btn-primary-sm:focus-visible,
+.btn-outline-sm:focus-visible,
 .btn-sm:focus-visible,
 .btn-primary:focus-visible,
 .nb-card-new:focus-visible {
