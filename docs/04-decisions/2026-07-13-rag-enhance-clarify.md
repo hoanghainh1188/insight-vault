@@ -47,8 +47,12 @@ trả rỗng.
 
 ## Clarify (2026-07-13) — 5 ambiguity đã chốt
 
-- **C1 — Rewrite khi nào:** **LUÔN chạy** (mọi câu hỏi). Prompt bảo toàn câu đã rõ (rewrite ≈ giữ nguyên
-  nếu không cần). Giúp cả câu đầu mơ hồ lẫn câu nối tiếp. Đơn giản, nhất quán.
+- **C1 — Rewrite khi nào:** ~~LUÔN chạy~~ → **ĐẢO (2026-07-13, sau chạy thử live): CHỈ khi CÓ hội thoại**
+  (giải đại từ/tham chiếu). Câu đầu / không history → DÙNG NGUYÊN câu gốc. _Lý do: thực nghiệm với model
+  local (ministral-3) cho thấy "luôn rewrite" khiến câu đã rõ bị **PHÌNH** (thêm chủ đề/từ khoá mới) → pha
+  loãng vector + nhiễu BM25 → truy xuất TỆ HƠN cả trước 055 (lộ rõ ở notebook CV toàn câu hỏi cụ thể). Câu
+  nối tiếp rewrite vẫn tốt (giải "nó" đúng)._ Kèm: prompt siết chặt (chỉ thay đại từ, KHÔNG mở rộng) +
+  **guardrail** (rewrite dài hơn gốc > 200 ký tự → bỏ, dùng câu gốc).
 - **C2 — Hiển thị câu viết lại:** **KHÔNG** hiện cho người dùng (giữ UI Chat gọn); rewrite chạy ngầm. _(Có
   thể log debug — không log nội dung ra file theo Constitution III.)_
 - **C3 — Toggle Settings:** **KHÔNG** — luôn bật, không thêm cài đặt. Hybrid nhanh; rewrite có fallback nên

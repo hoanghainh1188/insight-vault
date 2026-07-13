@@ -36,9 +36,11 @@ export async function retrieve(
   deps: RetrievalDeps,
   history: RagTurn[] = [],
 ): Promise<ScoredChunk[]> {
-  // 1. Query rewriting (fallback câu gốc khi lỗi/rỗng) — chỉ đổi TRUY VẤN, không đổi chunk/locator.
+  // 1. Query rewriting — CHỈ khi CÓ hội thoại (giải đại từ/tham chiếu). Câu đầu (không history) DÙNG
+  // NGUYÊN câu gốc: model local hay "phình" câu đã rõ → truy xuất tệ hơn (thực nghiệm). Chỉ đổi TRUY VẤN,
+  // không đổi chunk/locator. Fallback câu gốc khi lỗi/rỗng.
   let q = question;
-  if (deps.rewrite) {
+  if (deps.rewrite && history.length > 0) {
     try {
       const rw = (await deps.rewrite(question, history)).trim();
       if (rw !== "") q = rw;

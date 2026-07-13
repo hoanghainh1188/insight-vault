@@ -86,8 +86,9 @@ gần-trùng của cùng một đoạn.
 
 - **FR-001**: Trước khi truy xuất, hệ thống MUST viết lại câu hỏi bằng mô hình ngôn ngữ: giải tham chiếu
   hội thoại (dùng vài lượt gần nhất của lịch sử chat) + làm rõ/mở rộng câu ngắn hoặc mơ hồ.
-- **FR-002**: Việc viết lại MUST chạy cho mọi câu hỏi nhưng MUST bảo toàn nội dung khi câu đã rõ ràng (không
-  bóp méo ý người dùng).
+- **FR-002**: Việc viết lại MUST chỉ chạy khi CÓ hội thoại trước (để giải tham chiếu); câu hỏi đầu / không
+  có lịch sử MUST dùng nguyên câu gốc (tránh "phình" câu đã rõ làm giảm chất lượng truy xuất). Khi chạy,
+  MUST chỉ thay đại từ/tham chiếu, KHÔNG thêm chủ đề/từ khoá mới; rewrite dài bất thường → dùng câu gốc.
 - **FR-003**: Hệ thống MUST NOT hiển thị câu hỏi đã viết lại cho người dùng (chạy ngầm; UI hỏi đáp giữ
   nguyên).
 - **FR-004**: Nếu bước viết lại lỗi hoặc quá thời gian, hệ thống MUST dùng câu hỏi gốc và tiếp tục (không

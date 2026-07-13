@@ -43,4 +43,9 @@ describe("rewriteQuery (055)", () => {
     });
     expect(out).toBe("câu gốc");
   });
+  it("guardrail: LLM 'phình' câu quá dài → dùng câu gốc", async () => {
+    const long = "x".repeat(400);
+    const out = await rewriteQuery("câu ngắn", hist, async () => long);
+    expect(out).toBe("câu ngắn");
+  });
 });

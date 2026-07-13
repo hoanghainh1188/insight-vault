@@ -55,7 +55,9 @@ describe("retrieve hybrid (055)", () => {
     );
   });
 
-  it("rewrite ném → dùng câu gốc (embed nhận câu gốc)", async () => {
+  const hist = [{ role: "user" as const, content: "về hợp đồng X" }];
+
+  it("rewrite ném (có history) → dùng câu gốc (embed nhận câu gốc)", async () => {
     const embed = vi.fn(async () => [1, 0]);
     const deps = baseDeps({
       embed,
@@ -63,19 +65,24 @@ describe("retrieve hybrid (055)", () => {
         throw new Error("rewrite lỗi");
       },
     });
-    await retrieve("câu gốc", "nb1", deps, []);
-    // retrieve embed(q) với q = câu gốc (rewrite fallback). embed được gọi.
-    expect(embed).toHaveBeenCalled();
+    await retrieve("câu gốc", "nb1", deps, hist);
+    expect(embed).toHaveBeenCalledWith("câu gốc");
   });
 
-  it("rewrite thành công → embed nhận câu viết lại", async () => {
+  it("rewrite thành công (CÓ history) → embed nhận câu viết lại", async () => {
     const embed = vi.fn(async () => [1, 0]);
-    const deps = baseDeps({
-      embed,
-      rewrite: async () => "câu viết lại",
-    });
-    await retrieve("nó là gì", "nb1", deps, []);
+    const deps = baseDeps({ embed, rewrite: async () => "câu viết lại" });
+    await retrieve("nó là gì", "nb1", deps, hist);
     expect(embed).toHaveBeenCalledWith("câu viết lại");
+  });
+
+  it("câu đầu (history RỖNG) → KHÔNG rewrite, embed nhận câu gốc", async () => {
+    const embed = vi.fn(async () => [1, 0]);
+    const rewrite = vi.fn(async () => "không nên gọi");
+    const deps = baseDeps({ embed, rewrite });
+    await retrieve("câu hỏi rõ ràng", "nb1", deps, []);
+    expect(rewrite).not.toHaveBeenCalled();
+    expect(embed).toHaveBeenCalledWith("câu hỏi rõ ràng");
   });
 
   it("không hit nào (vector rỗng + bm25 rỗng) → [] (grounded 'không tìm thấy')", async () => {

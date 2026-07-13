@@ -6,12 +6,16 @@ import { MAX_HISTORY_TURNS } from "./constants";
 // lỗi/rỗng). KHÔNG log nội dung (Constitution III). Badge egress: dùng provider active (031) — nếu online
 // đang bật thì badge đã ở trạng thái online (không cần bật riêng cho bước này).
 
-const SYSTEM = `Bạn viết lại câu hỏi của người dùng thành MỘT truy vấn tìm kiếm độc lập, đầy đủ ngữ cảnh.
-Quy tắc:
-- Nếu câu hỏi có đại từ/tham chiếu ("nó", "cái đó", "vấn đề trên"...), thay bằng chủ thể thật từ hội thoại.
-- Nếu câu quá ngắn/mơ hồ, mở rộng thành truy vấn rõ ràng.
-- Nếu câu ĐÃ rõ ràng và đầy đủ, GIỮ NGUYÊN (không bịa thêm, không đổi ý).
-- CHỈ trả về truy vấn viết lại, KHÔNG giải thích, KHÔNG thêm dấu ngoặc/tiền tố.`;
+const SYSTEM = `Bạn viết lại câu hỏi nối tiếp thành MỘT câu hỏi độc lập bằng cách CHỈ thay đại từ/tham chiếu
+bằng chủ thể thật từ hội thoại trước. TUYỆT ĐỐI KHÔNG:
+- thêm chủ đề, lĩnh vực, từ khoá mới không có trong câu gốc;
+- mở rộng, diễn giải, hay làm câu dài hơn cần thiết;
+- đổi ý định của người dùng.
+Giữ câu NGẮN GỌN, sát câu gốc nhất có thể (chỉ khác ở phần đại từ được thay). CHỈ trả về câu viết lại,
+KHÔNG giải thích, KHÔNG dấu ngoặc/tiền tố.`;
+
+// Guardrail: rewrite dài hơn câu gốc quá nhiều = model "phình" → bỏ, dùng câu gốc.
+const MAX_EXPAND_CHARS = 200;
 
 /** Messages cho LLM: system + vài lượt hội thoại gần nhất + câu hỏi cần viết lại. THUẦN (test). */
 export function buildRewritePrompt(
@@ -50,7 +54,10 @@ export async function rewriteQuery(
     const out = (await chat(buildRewritePrompt(question, history))).trim();
     // Loại nháy bao ngoài nếu LLM lỡ thêm; rỗng → câu gốc.
     const cleaned = out.replace(/^["'“”]+|["'“”]+$/g, "").trim();
-    return cleaned === "" ? question : cleaned;
+    if (cleaned === "") return question;
+    // Guardrail: model "phình" câu (dài hơn gốc quá nhiều) → dùng câu gốc (tránh pha loãng truy xuất).
+    if (cleaned.length > question.length + MAX_EXPAND_CHARS) return question;
+    return cleaned;
   } catch {
     return question;
   }
