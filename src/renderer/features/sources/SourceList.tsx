@@ -27,7 +27,7 @@ export function SourceList({
         </div>
         <button
           type="button"
-          className="btn-primary"
+          className="btn-outline-sm"
           onClick={() => setShowAdd(true)}
           data-testid="add-source-btn"
         >
