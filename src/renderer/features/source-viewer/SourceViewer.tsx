@@ -14,7 +14,7 @@ export function SourceViewer({
   const hlRef = useRef<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Map<number, HTMLElement>>(new Map());
-  const audioRef = useRef<HTMLAudioElement | null>(null); // 049
+  const audioRef = useRef<HTMLMediaElement | null>(null); // 049 audio + 051 video (cùng HTMLMediaElement)
   const [currentPage, setCurrentPage] = useState(1);
   const [audioError, setAudioError] = useState(false); // 049: file gốc mất/không phát được
 
@@ -37,8 +37,10 @@ export function SourceViewer({
   const isPdf =
     (content?.kind === "pdf" && content.pageBreaks.length > 0) || false;
   const isAudio = content?.kind === "audio"; // 049
+  const isVideo = content?.kind === "video"; // 051
+  const isMedia = isAudio || isVideo; // player audio/video dùng chung iv-media:// + effect seek/onError
   const pageCount = content?.pageCount ?? 0;
-  // Seek theo trích dẫn audio: tStart (giây) từ locator (045 lưu sẵn). undefined nếu mở nguồn trực tiếp.
+  // Seek theo trích dẫn media: tStart (giây) từ locator (045 lưu sẵn). undefined nếu mở nguồn trực tiếp.
   const tStart = citation?.locator.tStart;
 
   // Auto-scroll: tới đoạn highlight (nếu có), ngược lại lên đầu. Đặt trang hiện tại theo trích dẫn.
@@ -149,20 +151,37 @@ export function SourceViewer({
             Nguồn không còn tồn tại.
           </p>
         )}
-        {!loading && !missing && content && isAudio && target && (
+        {!loading && !missing && content && isMedia && target && (
           <div className="vaudio" data-testid="viewer-audio-player">
-            <audio
-              ref={audioRef}
-              controls
-              preload="metadata"
-              className="vaudio-el"
-              src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
-              onError={() => setAudioError(true)}
-            />
+            {isVideo ? (
+              <video
+                ref={(el) => {
+                  audioRef.current = el;
+                }}
+                controls
+                preload="metadata"
+                className="vvideo-el"
+                data-testid="viewer-video-el"
+                src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
+                onError={() => setAudioError(true)}
+              />
+            ) : (
+              <audio
+                ref={(el) => {
+                  audioRef.current = el;
+                }}
+                controls
+                preload="metadata"
+                className="vaudio-el"
+                src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
+                onError={() => setAudioError(true)}
+              />
+            )}
             {audioError && (
               <p className="vaudio-err" data-testid="viewer-audio-error">
-                Không phát được file âm thanh gốc (có thể đã bị xoá hoặc di
-                chuyển). Bản bóc băng bên dưới vẫn xem được.
+                Không phát được file {isVideo ? "video" : "âm thanh"} gốc (có
+                thể đã bị xoá hoặc di chuyển). Bản bóc băng bên dưới vẫn xem
+                được.
               </p>
             )}
           </div>

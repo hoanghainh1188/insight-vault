@@ -27,6 +27,9 @@ asarUnpack:
   - "**/*.node"
   - node_modules/@lancedb/**
   - node_modules/keytar/**
+  # 051: binary ffmpeg (tách audio khỏi video) phải ngoài asar mới chạy được (spawn). Mỗi runner CI
+  # (mac/win) tự cài ffmpeg-static cho nền tảng của nó → artifact có đúng binary.
+  - node_modules/ffmpeg-static/**
 
 mac:
   target:

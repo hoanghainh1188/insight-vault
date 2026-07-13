@@ -120,6 +120,14 @@
   width: 100%;
   height: 36px;
 }
+/* Player video (051): khung phủ rộng cột, cao vừa phải, nền tối cho letterbox. */
+.vvideo-el {
+  width: 100%;
+  max-height: 320px;
+  background: #000;
+  border-radius: 6px;
+  display: block;
+}
 .vaudio-err {
   margin: 8px 0 0;
   font-size: 12px;

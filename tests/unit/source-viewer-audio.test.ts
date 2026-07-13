@@ -131,4 +131,43 @@ describe("SourceViewer audio player (049)", () => {
       container.querySelector('[data-testid="viewer-audio-player"]'),
     ).toBeNull();
   });
+
+  it("051: kind=video → render <video> (không <audio>) + seek tới tStart", () => {
+    const video: SourceContent = {
+      kind: "video",
+      title: "Phỏng vấn.mp4",
+      pageCount: 0,
+      text: "xin chào đây là video",
+      pageBreaks: [],
+    };
+    render(
+      viewerState({
+        content: video,
+        target: { sourceId: "vid 1", citation: citation(8) },
+      }),
+    );
+    const el = container.querySelector(
+      '[data-testid="viewer-video-el"]',
+    ) as HTMLVideoElement | null;
+    expect(el).not.toBeNull();
+    expect(el?.tagName).toBe("VIDEO");
+    expect(el?.getAttribute("src")).toBe("iv-media://source/vid%201");
+    expect(container.querySelector("audio")).toBeNull();
+
+    let seeked = -1;
+    Object.defineProperty(el as HTMLVideoElement, "currentTime", {
+      get: () => seeked,
+      set: (v: number) => {
+        seeked = v;
+      },
+      configurable: true,
+    });
+    (el as HTMLVideoElement).play = vi
+      .fn()
+      .mockResolvedValue(undefined) as unknown as HTMLVideoElement["play"];
+    act(() => {
+      (el as HTMLVideoElement).dispatchEvent(new Event("loadedmetadata"));
+    });
+    expect(seeked).toBe(8);
+  });
 });

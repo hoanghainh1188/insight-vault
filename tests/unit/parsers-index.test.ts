@@ -12,15 +12,22 @@ describe("parsers/index", () => {
     expect(detectKindFromPath("c.txt")).toBe("txt");
     expect(detectKindFromPath("d.md")).toBe("md");
     expect(detectKindFromPath("e.markdown")).toBe("md");
-    // 045: audio
+    // 045: audio; 051: m4a/aac
     expect(detectKindFromPath("r.mp3")).toBe("audio");
     expect(detectKindFromPath("s.WAV")).toBe("audio");
     expect(detectKindFromPath("t.flac")).toBe("audio");
+    expect(detectKindFromPath("u.m4a")).toBe("audio");
+    expect(detectKindFromPath("w.AAC")).toBe("audio");
+    // 051: video
+    expect(detectKindFromPath("v.mp4")).toBe("video");
+    expect(detectKindFromPath("v.MOV")).toBe("video");
+    expect(detectKindFromPath("v.webm")).toBe("video");
+    expect(detectKindFromPath("v.mkv")).toBe("video");
   });
 
   it("đuôi không hỗ trợ → ném", () => {
     expect(() => detectKindFromPath("x.png")).toThrow(/không hỗ trợ/);
-    expect(() => detectKindFromPath("v.mp4")).toThrow(/không hỗ trợ/); // video → 2b
+    expect(() => detectKindFromPath("y.avi")).toThrow(/không hỗ trợ/); // avi chưa hỗ trợ
     expect(() => detectKindFromPath("noext")).toThrow();
   });
 

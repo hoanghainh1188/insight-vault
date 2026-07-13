@@ -9,11 +9,18 @@ const FILE_EXT: Record<string, Exclude<SourceKind, "url">> = {
   txt: "txt",
   md: "md",
   markdown: "md",
-  // 045 (Pha 2a): audio — bóc băng cục bộ bằng Whisper.
+  // 045 (Pha 2a): audio — bóc băng cục bộ bằng Whisper. 051: thêm m4a/aac (tách qua ffmpeg).
   wav: "audio",
   mp3: "audio",
   flac: "audio",
   ogg: "audio",
+  m4a: "audio",
+  aac: "audio",
+  // 051 (Pha 2b): video — tách audio (ffmpeg) → bóc băng; phát <video> qua iv-media://.
+  mp4: "video",
+  mov: "video",
+  webm: "video",
+  mkv: "video",
 };
 
 function kindOf(name: string): Exclude<SourceKind, "url"> | null {
@@ -21,8 +28,8 @@ function kindOf(name: string): Exclude<SourceKind, "url"> | null {
   return FILE_EXT[ext] ?? null;
 }
 
-// Modal "Thêm nguồn" (prototype S3). Feature này: Tệp (PDF/.docx/.txt/.md) + URL.
-// Audio/Video + Hình ảnh hiển thị nhưng VÔ HIỆU (Pha 2 — FR-003).
+// Modal "Thêm nguồn" (prototype S3). Tệp (PDF/.docx/.txt/.md · audio 045+m4a/aac · video 051 mp4/mov/webm/mkv)
+// + URL. Audio/Video nhập qua tab Tệp (kéo-thả); tab "Video" bấm → tab Tệp. "Hình ảnh" (2c) còn VÔ HIỆU.
 export function AddSourceModal({
   notebookId,
   onAdd,
@@ -61,7 +68,7 @@ export function AddSourceModal({
     }
     if (rejected.length)
       setError(
-        `Không hỗ trợ: ${rejected.join(", ")} (PDF/.docx/.txt/.md/.wav/.mp3/.flac/.ogg).`,
+        `Không hỗ trợ: ${rejected.join(", ")} (PDF/.docx/.txt/.md · audio .wav/.mp3/.flac/.ogg/.m4a/.aac · video .mp4/.mov/.webm/.mkv).`,
       );
     else if (dup) setNotice("Một nguồn có thể đã tồn tại trong notebook.");
     else onClose();
@@ -125,12 +132,12 @@ export function AddSourceModal({
           >
             URL
           </button>
-          {/* 045: audio nhập qua tab "Tệp" (kéo-thả .mp3/.wav…). Tab "Video" (2b) + "Hình ảnh" (2c) còn hoãn. */}
+          {/* 045/051: audio + video nhập qua tab "Tệp" (kéo-thả). Bấm "Video" → về tab Tệp. "Hình ảnh" (2c) hoãn. */}
           <button
             type="button"
-            className="type"
-            disabled
-            title="Sắp có ở Pha 2b (audio đã hỗ trợ — kéo tệp vào tab Tệp)"
+            className={tab === "file" ? "type active" : "type"}
+            onClick={() => setTab("file")}
+            title="Kéo tệp video (mp4/mov/webm/mkv) hoặc audio vào tab Tệp"
             data-testid="tab-video"
           >
             Video
@@ -164,13 +171,18 @@ export function AddSourceModal({
             <p>Kéo-thả tệp vào đây hoặc bấm để chọn</p>
             <p className="hint">
               Xử lý ngay trên máy · PDF/.docx/.txt/.md · audio
-              .wav/.mp3/.flac/.ogg (tự bóc băng)
+              .wav/.mp3/.flac/.ogg/.m4a/.aac · video .mp4/.mov/.webm/.mkv (tự
+              bóc băng)
+            </p>
+            <p className="hint" data-testid="video-origin-note">
+              Video phát từ vị trí file gốc; nếu xoá/di chuyển file, sẽ không
+              phát lại được (bản bóc băng vẫn xem được).
             </p>
             <input
               ref={fileInput}
               type="file"
               multiple
-              accept=".pdf,.docx,.txt,.md,.wav,.mp3,.flac,.ogg"
+              accept=".pdf,.docx,.txt,.md,.wav,.mp3,.flac,.ogg,.m4a,.aac,.mp4,.mov,.webm,.mkv"
               hidden
               onChange={(e) => {
                 if (e.target.files) void addFiles(e.target.files);

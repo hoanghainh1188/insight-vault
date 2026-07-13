@@ -20,11 +20,18 @@ const EXT_KIND: Record<string, SourceKind> = {
   txt: "txt",
   md: "md",
   markdown: "md",
-  // audio (045, Pha 2a) — wav/mp3/flac/ogg (m4a/aac cần ffmpeg → 2b)
+  // audio (045, Pha 2a) — wav/mp3/flac/ogg; 051 thêm m4a/aac (tách qua ffmpeg)
   wav: "audio",
   mp3: "audio",
   flac: "audio",
   ogg: "audio",
+  m4a: "audio",
+  aac: "audio",
+  // video (051, Pha 2b) — tách audio bằng ffmpeg → bóc băng; phát <video> qua iv-media://
+  mp4: "video",
+  mov: "video",
+  webm: "video",
+  mkv: "video",
 };
 
 /** Suy loại nguồn từ đuôi tệp (thuần, unit-test được). Ném nếu không hỗ trợ. */

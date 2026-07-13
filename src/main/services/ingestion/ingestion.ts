@@ -1,5 +1,8 @@
 import { join } from "node:path";
-import { readFile } from "node:fs/promises";
+import { readFile, stat, mkdir, readdir, unlink } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { randomUUID, createHash } from "node:crypto";
+import { app } from "electron";
 import type { SourceProgressEvent } from "@shared/ipc/types";
 import type { Db } from "../../db/database";
 import type { AiRuntime } from "../ai-runtime/ai-runtime";
@@ -10,8 +13,11 @@ import { parseText } from "./parsers/text";
 import { parsePdf } from "./parsers/pdf";
 import { parseDocx } from "./parsers/docx";
 import { parseAudio } from "./parsers/audio";
+import { parseVideo } from "./parsers/video";
 import { fetchAndParseUrl } from "./parsers/url";
 import { createTranscriber } from "./audio/transcribe";
+import { resolveFfmpegPath } from "./video/ffmpeg-path";
+import { extractAudioTo16kWav } from "./video/extract-audio";
 
 // Ghép domain ingestion ở main: source-repo (SQLite) + vector-store (LanceDB) + pipeline (parse/chunk/
 // embed). Composition root — loại khỏi ngưỡng coverage (như ai-runtime.ts). Business logic thuần đã
@@ -58,10 +64,54 @@ export async function createIngestion(opts: {
       if (kind === "audio") return parseAudio(bytes, transcriber, onProgress);
       return parseText(new TextDecoder().decode(bytes)); // txt/md
     },
+    // 051 video: tách audio (ffmpeg) → wav tạm 16kHz trong <dataDir>/tmp → parseVideo tái dùng parseAudio.
+    // Resolve ffmpeg path lazy (tránh crash khởi động nếu nền tảng lạ). uuid cho tên file tạm.
+    parseVideo: async (path, onProgress) => {
+      const tmpDir = join(opts.dataDir, "tmp");
+      await mkdir(tmpDir, { recursive: true });
+      const ffmpegPath = resolveFfmpegPath(app.isPackaged);
+      const extractor = (
+        videoPath: string,
+        outDir: string,
+      ): Promise<string | null> =>
+        extractAudioTo16kWav(videoPath, outDir, {
+          ffmpegPath,
+          uuid: () => randomUUID(),
+        });
+      return parseVideo(path, tmpDir, extractor, transcriber, onProgress);
+    },
+    statSize: async (p) => (await stat(p)).size,
+    // 051: hash sha256 + size STREAMING (không nạp cả file — kể cả video 1GB — vào RAM ở bước add()).
+    hashFile: (p) =>
+      new Promise((resolve, reject) => {
+        const h = createHash("sha256");
+        let byteLength = 0;
+        const rs = createReadStream(p);
+        rs.on("data", (c: string | Buffer) => {
+          const b = typeof c === "string" ? Buffer.from(c) : c;
+          byteLength += b.length;
+          h.update(b);
+        });
+        rs.on("error", reject);
+        rs.on("end", () => resolve({ hash: h.digest("hex"), byteLength }));
+      }),
     parseUrl: (url) => fetchAndParseUrl(url),
     setOnline: opts.setOnline,
     emit: opts.emit,
   });
+
+  // 051: dọn wav tạm mồ côi (app crash/kill giữa lúc tách audio) trong <dataDir>/tmp — best-effort, không
+  // chặn khởi động. Tránh rò rỉ nội dung audio tách ra khỏi lifecycle nguồn (security review #2).
+  void (async () => {
+    try {
+      const tmpDir = join(opts.dataDir, "tmp");
+      for (const f of await readdir(tmpDir)) {
+        if (f.endsWith(".wav")) await unlink(join(tmpDir, f)).catch(() => {});
+      }
+    } catch {
+      /* tmp chưa tồn tại — bỏ qua */
+    }
+  })();
 
   return { sourceRepo, vectorStore, pipeline };
 }
