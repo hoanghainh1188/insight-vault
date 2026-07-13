@@ -23,10 +23,17 @@ describe("parsers/index", () => {
     expect(detectKindFromPath("v.MOV")).toBe("video");
     expect(detectKindFromPath("v.webm")).toBe("video");
     expect(detectKindFromPath("v.mkv")).toBe("video");
+    // 053: image
+    expect(detectKindFromPath("i.png")).toBe("image");
+    expect(detectKindFromPath("i.JPG")).toBe("image");
+    expect(detectKindFromPath("i.jpeg")).toBe("image");
+    expect(detectKindFromPath("i.webp")).toBe("image");
+    expect(detectKindFromPath("i.bmp")).toBe("image");
+    expect(detectKindFromPath("i.tiff")).toBe("image");
   });
 
   it("đuôi không hỗ trợ → ném", () => {
-    expect(() => detectKindFromPath("x.png")).toThrow(/không hỗ trợ/);
+    expect(() => detectKindFromPath("x.heic")).toThrow(/không hỗ trợ/); // heic ngoài phạm vi
     expect(() => detectKindFromPath("y.avi")).toThrow(/không hỗ trợ/); // avi chưa hỗ trợ
     expect(() => detectKindFromPath("noext")).toThrow();
   });

@@ -16,6 +16,14 @@ const MEDIA_MIME: Record<string, string> = {
   mov: "video/quicktime",
   webm: "video/webm",
   mkv: "video/x-matroska",
+  // image (053)
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  tiff: "image/tiff",
+  gif: "image/gif",
 };
 
 /** Đuôi file (chữ thường, không có dấu chấm) từ đường dẫn; "" nếu không có. */

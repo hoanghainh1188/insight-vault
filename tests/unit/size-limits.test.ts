@@ -25,6 +25,12 @@ describe("size-limits", () => {
     expect(isWithinLimit("audio", 200 * MB + 1)).toBe(false);
   });
 
+  it("053 image: 50MB", () => {
+    expect(SIZE_LIMITS.image).toBe(50 * MB);
+    expect(isWithinLimit("image", 50 * MB)).toBe(true);
+    expect(isWithinLimit("image", 50 * MB + 1)).toBe(false);
+  });
+
   it("trong giới hạn → không ném; vượt → ném SizeLimitError với nhãn 'Tệp quá lớn'", () => {
     expect(() => assertWithinLimit("txt", 10 * MB)).not.toThrow();
     expect(isWithinLimit("txt", 10 * MB)).toBe(true);

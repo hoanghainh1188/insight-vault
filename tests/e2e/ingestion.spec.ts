@@ -118,10 +118,10 @@ test("UI: mở Workspace → cột Nguồn + modal Thêm nguồn (Video bật 05
   await expect(win.getByTestId("add-source-modal")).toBeVisible();
   await expect(win.getByTestId("tab-file")).toBeVisible();
   await expect(win.getByTestId("tab-url")).toBeVisible();
-  // 051: tab "Video" đã BẬT (bấm → về tab Tệp; video nhập qua kéo-thả). "Hình ảnh" (2c) còn disabled.
+  // 051/053: tab "Video" + "Hình ảnh" đã BẬT (bấm → về tab Tệp; nhập qua kéo-thả). Không còn ô disabled.
   await expect(win.getByTestId("tab-video")).toBeEnabled();
-  await win.getByTestId("tab-video").click();
+  await expect(win.getByTestId("tab-image")).toBeEnabled();
+  await win.getByTestId("tab-image").click();
   await expect(win.getByTestId("drop-zone")).toBeVisible();
   await expect(win.getByTestId("video-origin-note")).toBeVisible();
-  await expect(win.getByRole("button", { name: "Hình ảnh" })).toBeDisabled();
 });

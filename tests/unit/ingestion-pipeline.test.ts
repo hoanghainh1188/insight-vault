@@ -62,9 +62,10 @@ function harness(opts: { ready?: boolean; parseThrows?: boolean } = {}) {
     "/doc.txt": bigText,
     "/small.txt": "noi dung ngan",
     "/clip.mp4": "FAKEVIDEOBYTES",
+    "/pic.png": "FAKEPNGBYTES",
   };
-  // 051: điều khiển video có/không audio track.
-  const vflags = { noAudio: false };
+  // 051/053: điều khiển video no-audio + ảnh no-text.
+  const vflags = { noAudio: false, imageNoText: false };
 
   // Gate embed: nếu set, mỗi lần embed sẽ chờ tới khi test release → mô phỏng embed đang chạy dở (B2).
   let embedGate: Promise<void> | null = null;
@@ -104,6 +105,22 @@ function harness(opts: { ready?: boolean; parseThrows?: boolean } = {}) {
         timeMap: [],
       };
     },
+    // 053 image: no-text → rỗng; có chữ → text + boxMap (gắn Locator.bbox).
+    parseImage: async (_path, onProgress) => {
+      onProgress?.(0.5);
+      if (vflags.imageNoText) return { pageCount: null, pages: [], boxMap: [] };
+      return {
+        pageCount: null,
+        pages: [{ page: null, text: bigText }],
+        boxMap: [
+          {
+            charStart: 0,
+            charEnd: bigText.length,
+            bbox: { x: 0.1, y: 0.1, w: 0.5, h: 0.2 },
+          },
+        ],
+      };
+    },
     statSize: async (p) => (files[p] ?? "").length,
     // 051: hash STREAMING (khớp hashBytes = sha256 hex) → dedup vẫn nhất quán; không nạp cả file vào RAM.
     hashFile: async (p) => ({
@@ -125,6 +142,7 @@ function harness(opts: { ready?: boolean; parseThrows?: boolean } = {}) {
     online,
     setReady: (v: boolean) => (ready = v),
     setVideoNoAudio: (v: boolean) => (vflags.noAudio = v),
+    setImageNoText: (v: boolean) => (vflags.imageNoText = v),
     setParseThrows: (v: boolean) => (flags.parseThrows = v),
     setEmbedThrows: (v: boolean) => (flags.embedThrows = v),
     gateEmbed: (): (() => void) => {
@@ -184,6 +202,36 @@ describe("ingestion pipeline", () => {
     await h.pipeline.whenIdle();
     const after = h.repo.getById(source.id)!;
     expect(after.status).toBe("ready"); // KHÔNG error
+    expect(h.repo.listChunks(source.id).length).toBe(0);
+  });
+
+  it("053: add ảnh (có chữ) → ready, chunk có Locator.bbox (từ boxMap)", async () => {
+    const h = harness();
+    const { source } = await h.pipeline.add({
+      notebookId: "nb1",
+      kind: "image",
+      filePath: "/pic.png",
+    });
+    await h.pipeline.whenIdle();
+    const after = h.repo.getById(source.id)!;
+    expect(after.kind).toBe("image");
+    expect(after.status).toBe("ready");
+    const chunks = h.repo.listChunks(source.id);
+    expect(chunks.length).toBeGreaterThan(0);
+    expect(chunks[0].locator.bbox).toBeDefined();
+    expect(chunks[0].locator.bbox!.w).toBeCloseTo(0.5);
+  });
+
+  it("053 FR-010: ảnh KHÔNG có chữ → VẪN ready, 0 chunk (ảnh xem được)", async () => {
+    const h = harness();
+    h.setImageNoText(true);
+    const { source } = await h.pipeline.add({
+      notebookId: "nb1",
+      kind: "image",
+      filePath: "/pic.png",
+    });
+    await h.pipeline.whenIdle();
+    expect(h.repo.getById(source.id)!.status).toBe("ready");
     expect(h.repo.listChunks(source.id).length).toBe(0);
   });
 

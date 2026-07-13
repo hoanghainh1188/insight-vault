@@ -8,7 +8,7 @@ import { extOf, mimeForAudioExt, parseRange } from "./media-range";
 // III). Hỗ trợ Range để <audio> seek. Tham chiếu file GỐC (không copy v1); file gốc mất → 404 (vẫn xem
 // transcript). Hàm thuần (parseRange/mimeForAudioExt/extOf) ở media-range.ts (test); file này I/O (exclude).
 
-/** Handler cho protocol.handle("iv-media", ...). URL: iv-media://source/<id>. Nguồn kind=audio (049) + video (051). */
+/** Handler cho protocol.handle("iv-media", ...). URL: iv-media://source/<id>. Nguồn audio (049)/video (051)/image (053). */
 export function createMediaHandler(
   sourceRepo: SourceRepo,
 ): (request: Request) => Promise<Response> {
@@ -16,8 +16,13 @@ export function createMediaHandler(
     const url = new URL(request.url);
     const id = decodeURIComponent(url.pathname.replace(/^\/+/, ""));
     const source = id ? sourceRepo.getById(id) : null;
-    // 049 audio + 051 video — chỉ phục vụ nguồn media (đọc file gốc); loại khác → 404.
-    if (!source || (source.kind !== "audio" && source.kind !== "video")) {
+    // 049 audio + 051 video + 053 image — chỉ phục vụ nguồn media (đọc file gốc); loại khác → 404.
+    if (
+      !source ||
+      (source.kind !== "audio" &&
+        source.kind !== "video" &&
+        source.kind !== "image")
+    ) {
       return new Response(null, { status: 404 });
     }
     const path = sourceRepo.getOrigin(id);

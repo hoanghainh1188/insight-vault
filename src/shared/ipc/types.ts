@@ -149,7 +149,15 @@ export interface SetColorInput {
 // ===== ingestion (011) — nguồn: specs/.../ingestion/data-model.md =====
 
 export type SourceKind =
-  "pdf" | "docx" | "txt" | "md" | "url" | "audio" | "video";
+  "pdf" | "docx" | "txt" | "md" | "url" | "audio" | "video" | "image";
+
+/** Vùng bao chữ trên ảnh (053), chuẩn hoá 0..1 theo kích thước ảnh → overlay co giãn theo `<img>`. */
+export interface Bbox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 /** Trạng thái vòng đời nguồn. Ánh xạ UI: ready→.stat ready; queued/processing/awaiting_embedding→.stat proc; error→.stat err. */
 export type SourceStatus =
@@ -164,6 +172,8 @@ export interface Locator {
   /** Audio (045): mốc thời gian (giây) của đoạn được trích dẫn — cho player seek (2a-player). */
   tStart?: number;
   tEnd?: number;
+  /** Ảnh (053): vùng chữ OCR (chuẩn hoá 0..1) — cho overlay highlight trên `<img>`. */
+  bbox?: Bbox;
 }
 
 /** Nguồn (metadata) — KHÔNG expose origin/content_hash toàn văn ra renderer. */
