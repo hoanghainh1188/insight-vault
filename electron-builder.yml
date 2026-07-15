@@ -21,6 +21,13 @@ extraResources:
 files:
   - out/**/*
   - package.json
+  # 078 slim-bundle: LOẠI dep LỒNG của @lancedb — bản riêng onnxruntime-node (180M) + onnxruntime-web
+  # (94M, WASM trình duyệt) + @huggingface (38M) DÀNH CHO embedding-function nội bộ của lancedb mà app
+  # KHÔNG dùng (app tự embed qua @huggingface/transformers TOP-LEVEL rồi đưa vector vào). Đã verify lancedb
+  # dist KHÔNG require eager chúng (chỉ lazy `eval(import())` khi gọi embedding-function). ~312M.
+  - "!node_modules/@lancedb/lancedb/node_modules/onnxruntime-node/**"
+  - "!node_modules/@lancedb/lancedb/node_modules/onnxruntime-web/**"
+  - "!node_modules/@lancedb/lancedb/node_modules/@huggingface/**"
 
 # Binary native phải nằm NGOÀI asar để load được lúc chạy.
 asarUnpack:
@@ -42,6 +49,10 @@ mac:
   # v0.1: KHÔNG ký (unsigned) — người dùng mở lần đầu qua chuột phải → Open.
   identity: null
   artifactName: ${productName}-${version}-${arch}.${ext}
+  # 078: bản mac chỉ cần binary onnxruntime-node cho darwin → LOẠI win32+linux (~176M). Merge với `files` chung.
+  files:
+    - "!node_modules/onnxruntime-node/bin/napi-v6/win32/**"
+    - "!node_modules/onnxruntime-node/bin/napi-v6/linux/**"
 
 dmg:
   writeUpdateInfo: false
@@ -52,6 +63,10 @@ win:
   # electron-builder tự sinh .ico từ PNG 1024 khi build (không cần ImageMagick trên runner).
   icon: build/icon.png
   artifactName: ${productName}-${version}-Setup.${ext}
+  # 078: bản win chỉ cần binary onnxruntime-node cho win32 → LOẠI darwin+linux (~87M). Merge với `files` chung.
+  files:
+    - "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**"
+    - "!node_modules/onnxruntime-node/bin/napi-v6/linux/**"
 
 nsis:
   oneClick: false
