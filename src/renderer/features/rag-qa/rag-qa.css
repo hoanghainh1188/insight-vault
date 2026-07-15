@@ -184,6 +184,38 @@
   font-weight: 600;
 }
 
+/* 072: hành động câu trả lời (Sao chép / Xuất) — nút viền nhẹ, chỉ nổi khi hover. */
+.bubble-actions {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bubblebtn {
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out-expo),
+    border-color var(--duration-fast) var(--ease-out-expo);
+}
+.bubblebtn:hover {
+  background: var(--surface-2, var(--surface));
+  border-color: var(--line-strong, var(--line));
+}
+.bubblebtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.bubble-notice {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
 /* Composer */
 .chat-composer {
   border-top: 1px solid var(--line);
@@ -244,6 +276,20 @@
   background: var(--warn-bg);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
+}
+
+/* 071: badge "Mở rộng · có thể ngoài nguồn" — cảnh báo phần trả lời có thể ngoài tài liệu nguồn. */
+.ungrounded {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--warn-ink);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-radius: 999px;
+  padding: 1px 8px;
+  vertical-align: middle;
 }
 
 /* Composer box (prototype .cbox): input trên, thanh công cụ dưới. */

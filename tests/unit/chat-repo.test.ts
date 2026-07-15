@@ -65,6 +65,37 @@ describe("chat-repo (027)", () => {
     expect(assistant.notFound).toBe(true);
   });
 
+  it("071: khứ hồi modeUsed='open' (badge bền qua reload); user row không có mode", () => {
+    const { repo } = setup();
+    repo.saveTurn("nb1", "hỏi", {
+      content: "trả lời mở rộng",
+      citations: [],
+      notFound: false,
+      modeUsed: "open",
+    });
+    const list = repo.listByNotebook("nb1");
+    expect(list[0].modeUsed).toBeUndefined(); // user row
+    expect(list[1].modeUsed).toBe("open"); // assistant row
+  });
+
+  it("071: bỏ trống modeUsed → mặc định 'grounded' (không badge)", () => {
+    const { repo } = setup();
+    repo.saveTurn("nb1", "hỏi", {
+      content: "trả lời theo nguồn [1]",
+      citations: cites,
+      notFound: false,
+    });
+    expect(repo.listByNotebook("nb1")[1].modeUsed).toBe("grounded");
+  });
+
+  it("071: hàng cũ mode_used=NULL (trước migration #8) → modeUsed undefined (coi như grounded)", () => {
+    const { db, repo } = setup();
+    db.prepare(
+      "INSERT INTO chat_message (id, notebook_id, role, content, citations_json, not_found, mode_used, created_at) VALUES (?,?,?,?,?,?,?,?)",
+    ).run("old", "nb1", "assistant", "cũ", "[]", 0, null, 5000);
+    expect(repo.listByNotebook("nb1")[0].modeUsed).toBeUndefined();
+  });
+
   it("citations_json hỏng → parse an toàn thành [] (không vỡ)", () => {
     const { db, repo } = setup();
     db.prepare(
