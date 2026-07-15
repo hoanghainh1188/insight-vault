@@ -106,8 +106,8 @@ export function StudioResultCard({
       </div>
       {result.truncated && (
         <p className="studio-truncated" data-testid="studio-truncated">
-          Dựa trên phần đầu tài liệu (nội dung dài đã được rút gọn theo giới
-          hạn).
+          Dựa trên một phần mỗi nguồn (nội dung dài đã được rút gọn cân đối theo
+          giới hạn).
         </p>
       )}
       {result.citations.length > 0 && (

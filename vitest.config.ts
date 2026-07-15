@@ -25,6 +25,7 @@ export default defineConfig({
         "src/renderer/features/source-viewer/highlight.ts",
         "src/main/services/studio/studio-repo.ts",
         "src/main/services/studio/prompt.ts",
+        "src/main/services/studio/balanced-context.ts",
         "src/main/services/studio/export-name.ts",
         "src/main/services/rag/chat-repo.ts",
         "src/main/services/rag/fusion.ts",
