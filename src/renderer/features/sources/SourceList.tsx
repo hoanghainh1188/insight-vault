@@ -1,16 +1,20 @@
 import { useState } from "react";
+import type { ContentSearchHit } from "@shared/ipc/types";
 import { useSources } from "./useSources";
 import { aggregateLabel } from "./source-status";
 import { SourceItem } from "./SourceItem";
 import { AddSourceModal } from "./AddSourceModal";
+import { ContentSearchBox } from "../search/ContentSearchBox";
 
-// Cột "Nguồn" của Workspace (prototype S2): header tổng hợp + nút thêm + danh sách nguồn + modal.
+// Cột "Nguồn" của Workspace (prototype S2): header tổng hợp + nút thêm + tìm toàn văn (073) + danh sách nguồn + modal.
 export function SourceList({
   notebookId,
   onOpenSource,
+  onOpenHit,
 }: {
   notebookId: string;
   onOpenSource?: (sourceId: string) => void; // 019: mở trình xem nguồn
+  onOpenHit?: (hit: ContentSearchHit) => void; // 073: mở kết quả tìm + highlight
 }): JSX.Element {
   const { sources, loading, progress, add, remove, retry } =
     useSources(notebookId);
@@ -34,6 +38,10 @@ export function SourceList({
           Thêm nguồn
         </button>
       </header>
+
+      {onOpenHit && (
+        <ContentSearchBox notebookId={notebookId} onOpenHit={onOpenHit} />
+      )}
 
       {loading ? (
         <ul

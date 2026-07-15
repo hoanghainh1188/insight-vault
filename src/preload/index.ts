@@ -98,6 +98,12 @@ const api = {
   // source-viewer (019)
   sourceGetContent: (id: string): Promise<SourceContent | null> =>
     ipcRenderer.invoke(CHANNELS.sourceGetContent, id),
+  /** 073: tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25). */
+  sourceSearch: (
+    notebookId: string,
+    query: string,
+  ): Promise<import("@shared/ipc/types").ContentSearchHit[]> =>
+    ipcRenderer.invoke(CHANNELS.sourceSearch, { notebookId, query }),
   /** Đăng ký nhận tiến độ nạp nguồn (push từ main). Trả hàm huỷ đăng ký. */
   onSourceProgress: (cb: (e: SourceProgressEvent) => void): (() => void) => {
     const listener = (_e: unknown, payload: SourceProgressEvent): void =>

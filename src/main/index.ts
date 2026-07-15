@@ -24,6 +24,7 @@ import { createKeywordStore } from "./services/ingestion/keyword-store";
 import { createChatRepo } from "./services/rag/chat-repo";
 import { createStudioRepo } from "./services/studio/studio-repo";
 import { createStudioService } from "./services/studio/studio-service";
+import { createContentSearch } from "./services/search/content-search";
 import { setEgressActive } from "./services/app-shell/privacy-state";
 import { startupErrorDialog } from "./services/app-shell/startup-error";
 import { createMediaHandler } from "./services/source-viewer/media-serve";
@@ -246,6 +247,14 @@ app
         (await aiRuntime.registry.getActive().chat({ messages })).content,
     });
 
+    // content-search (073): tìm toàn văn nội dung nguồn (BM25 FTS5) → chunk → ContentSearchHit. Chỉ đọc.
+    const contentSearch = createContentSearch({
+      searchBm25: (nb, query, k) => keywordStore.searchBm25(nb, query, k),
+      getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
+      getSourceTitle: (sid) =>
+        ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
+    });
+
     registerIpc({
       store,
       version: app.getVersion(),
@@ -258,6 +267,7 @@ app
       ragService,
       chatRepo,
       studioService,
+      contentSearch,
       // 059 — gợi ý model theo RAM (thuần) + health Ollama (ping + /api/tags) + trạng thái reindex.
       recommendChatModel: () => recommendChatModel(totalmem()),
       ollamaHealth: () =>

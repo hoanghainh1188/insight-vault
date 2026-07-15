@@ -39,6 +39,9 @@ export default defineConfig({
         "src/renderer/features/sources/useColumnWidths.ts",
         "src/renderer/shared/format-bytes.ts",
         "src/main/services/app-shell/storage-info.ts",
+        // 073 content-search: hàm thuần snippet + service DI (không I/O trực tiếp).
+        "src/main/services/search/snippet.ts",
+        "src/main/services/search/content-search.ts",
         "src/main/services/ai-runtime/online/stream-parse.ts",
         "src/renderer/shared/shortcuts.ts",
         "src/main/services/ingestion/audio/resample.ts",

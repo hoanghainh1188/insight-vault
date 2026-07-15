@@ -275,6 +275,20 @@ export interface Citation {
   locator: Locator;
 }
 
+// ===== content-search (073) — tìm toàn văn nội dung nguồn (FTS5 BM25) =====
+
+/** Input tìm toàn văn trong 1 notebook. */
+export interface ContentSearchInput {
+  notebookId: string;
+  query: string;
+}
+
+/** 1 kết quả tìm: mở rộng Citation (bấm → openCitation mở Source Viewer + highlight) + đoạn trích. */
+export interface ContentSearchHit extends Citation {
+  /** Đoạn trích ngắn của chunk (đã gọn khoảng trắng, cắt tối đa ~160 ký tự). */
+  snippet: string;
+}
+
 /** Kết quả hỏi đáp — answer đã hậu kiểm (gỡ chip lỗi), citations chỉ gồm [n] hợp lệ & thực xuất hiện. */
 export interface RagAnswer {
   answer: string;
