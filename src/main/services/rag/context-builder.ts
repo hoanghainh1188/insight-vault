@@ -9,7 +9,8 @@ function pageLabel(page: number | null): string {
   return page == null ? "—" : String(page);
 }
 
-function block(n: number, sc: ScoredChunk): string {
+/** Khối đoạn nguồn đánh số `[n]` (định dạng chung cho buildContext + buildBalancedContext). Hàm THUẦN. */
+export function citationBlock(n: number, sc: ScoredChunk): string {
   return `[${n}] (Nguồn: ${sc.sourceTitle}, trang ${pageLabel(sc.chunk.locator.page)})\n${sc.chunk.text}`;
 }
 
@@ -28,7 +29,7 @@ export function buildContext(
   let n = 0;
 
   for (const sc of scored) {
-    const b = block(n + 1, sc);
+    const b = citationBlock(n + 1, sc);
     // Bỏ nguyên chunk nếu vượt ngân sách (nhưng luôn nhận chunk đầu tiên).
     if (n > 0 && used + b.length + 2 > budget) continue;
     n += 1;

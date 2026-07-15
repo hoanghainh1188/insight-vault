@@ -7,7 +7,8 @@ import type { StudioKind } from "@shared/ipc/types";
 const COMMON = [
   "Bạn là trợ lý tổng hợp tài liệu. Dưới đây là các đoạn nguồn được ĐÁNH SỐ [1], [2], …",
   "Chỉ dùng thông tin trong các đoạn đó, TUYỆT ĐỐI KHÔNG bịa hay thêm kiến thức ngoài.",
-  "Sau mỗi ý lấy từ một đoạn, chèn chip trích dẫn [n] tương ứng (n là số đoạn nguồn).",
+  "BẮT BUỘC: mỗi ý/câu phải kết thúc bằng ít nhất một chip trích dẫn [n] tương ứng (n là số đoạn nguồn); câu KHÔNG có [n] là không hợp lệ. Ví dụ: 'Tài liệu nêu ba mục tiêu chính [2].'",
+  "Bao quát cân bằng TẤT CẢ các đoạn nguồn (mọi tài liệu), KHÔNG chỉ tập trung một vài đoạn đầu hay cuối.",
   "Trả lời bằng tiếng Việt, rõ ràng, súc tích.",
 ].join(" ");
 

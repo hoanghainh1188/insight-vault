@@ -15,6 +15,16 @@ describe("studio prompt", () => {
     }
   });
 
+  it("ép tuân thủ chip [n] mạnh hơn (BẮT BUỘC) + bao quát TẤT CẢ nguồn (#65)", () => {
+    for (const kind of KINDS) {
+      const p = systemPromptFor(kind);
+      // Bắt buộc mỗi ý có [n] (tăng tuân thủ model local) — kiểm chứng được (Constitution II).
+      expect(p).toContain("BẮT BUỘC");
+      // Yêu cầu trải đều mọi nguồn để tránh thiên về 1 tài liệu.
+      expect(p.toUpperCase()).toContain("TẤT CẢ");
+    }
+  });
+
   it("prompt khác nhau theo loại (nhiệm vụ riêng)", () => {
     const set = new Set(KINDS.map((k) => systemPromptFor(k)));
     expect(set.size).toBe(4);

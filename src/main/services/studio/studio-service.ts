@@ -6,7 +6,7 @@ import type {
   StudioResult,
 } from "@shared/ipc/types";
 import type { ScoredChunk } from "../rag/rag-types";
-import { buildContext } from "../rag/context-builder";
+import { buildBalancedContext } from "./balanced-context";
 import { postprocessCitations, citationsFromMap } from "../rag/citation";
 import { STUDIO_CONTEXT_BUDGET, STUDIO_KINDS } from "./constants";
 import { systemPromptFor } from "./prompt";
@@ -36,17 +36,23 @@ export function createStudioService(deps: StudioServiceDeps) {
       throw new Error("Yêu cầu Studio không hợp lệ.");
     }
 
-    // Gom chunk theo thứ tự source.created_at (listByNotebook đã ORDER) → chunk.ordinal (listChunks ORDER).
+    // Gom chunk theo NHÓM NGUỒN (mỗi nguồn 1 mảng, chunk theo ordinal). buildBalancedContext chia đều
+    // ngân sách cho mọi nguồn (#65) → bản tóm tắt không thiên về 1 tài liệu.
     // sourceId (025): lọc CHỈ nguồn đó (phải ready + thuộc notebook); bỏ trống → toàn bộ nguồn ready.
-    const scored: ScoredChunk[] = [];
+    const groups: ScoredChunk[][] = [];
+    let totalChunks = 0;
     for (const src of deps.listSources(notebookId)) {
       if (src.status !== "ready") continue;
       if (sourceId && src.id !== sourceId) continue;
-      for (const chunk of deps.listChunks(src.id)) {
-        scored.push({ chunk, sourceTitle: src.title, score: 0 });
+      const chunks = deps
+        .listChunks(src.id)
+        .map((chunk) => ({ chunk, sourceTitle: src.title, score: 0 }));
+      if (chunks.length > 0) {
+        groups.push(chunks);
+        totalChunks += chunks.length;
       }
     }
-    if (scored.length === 0) {
+    if (totalChunks === 0) {
       throw new Error(
         sourceId
           ? "Nguồn đã chọn chưa sẵn sàng. Chờ lập chỉ mục xong rồi thử lại."
@@ -54,7 +60,10 @@ export function createStudioService(deps: StudioServiceDeps) {
       );
     }
 
-    const { contextText, map } = buildContext(scored, STUDIO_CONTEXT_BUDGET);
+    const { contextText, map } = buildBalancedContext(
+      groups,
+      STUDIO_CONTEXT_BUDGET,
+    );
     const messages: ChatMessage[] = [
       { role: "system", content: systemPromptFor(kind) },
       { role: "user", content: contextText },
@@ -76,7 +85,7 @@ export function createStudioService(deps: StudioServiceDeps) {
       answer,
       finalCitations,
     );
-    return { ...saved, truncated: map.size < scored.length };
+    return { ...saved, truncated: map.size < totalChunks };
   }
 
   function list(notebookId: string): StudioResult[] {
