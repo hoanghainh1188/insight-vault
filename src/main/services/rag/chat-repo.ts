@@ -1,4 +1,4 @@
-import type { Citation, StoredChatMessage } from "@shared/ipc/types";
+import type { Citation, RagMode, StoredChatMessage } from "@shared/ipc/types";
 import type { Db } from "../../db/database";
 
 // Repo lịch sử hội thoại (027-chat-history). Lưu bền theo notebook (SQLite ở main). Nhận Db + deps (now/uuid)
@@ -9,6 +9,7 @@ interface ChatRow {
   content: string;
   citations_json: string;
   not_found: number;
+  mode_used: string | null;
   created_at: number;
 }
 
@@ -21,6 +22,8 @@ export interface AssistantTurn {
   content: string;
   citations: Citation[];
   notFound: boolean;
+  /** 071: chế độ đã dùng. Bỏ trống → coi như "grounded" (không badge). */
+  modeUsed?: RagMode;
 }
 
 export interface ChatRepo {
@@ -51,6 +54,11 @@ function toMessage(r: ChatRow): StoredChatMessage {
     content: r.content,
     citations: parseCitations(r.citations_json),
     notFound: r.not_found === 1,
+    // Hàng cũ (NULL) hoặc giá trị lạ → undefined (coi như grounded, không badge).
+    modeUsed:
+      r.mode_used === "open" || r.mode_used === "grounded"
+        ? r.mode_used
+        : undefined,
     createdAt: r.created_at,
   };
 }
@@ -60,8 +68,8 @@ export function createChatRepo(db: Db, deps: RepoDeps = {}): ChatRepo {
   const uuid = deps.uuid ?? (() => crypto.randomUUID());
 
   const insert = db.prepare(
-    `INSERT INTO chat_message (id, notebook_id, role, content, citations_json, not_found, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO chat_message (id, notebook_id, role, content, citations_json, not_found, mode_used, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
   return {
@@ -71,7 +79,16 @@ export function createChatRepo(db: Db, deps: RepoDeps = {}): ChatRepo {
       const tAssistant = tUser + 1;
       db.exec("BEGIN");
       try {
-        insert.run(uuid(), notebookId, "user", userContent, "[]", 0, tUser);
+        insert.run(
+          uuid(),
+          notebookId,
+          "user",
+          userContent,
+          "[]",
+          0,
+          null,
+          tUser,
+        );
         insert.run(
           uuid(),
           notebookId,
@@ -79,6 +96,7 @@ export function createChatRepo(db: Db, deps: RepoDeps = {}): ChatRepo {
           assistant.content,
           JSON.stringify(assistant.citations),
           assistant.notFound ? 1 : 0,
+          assistant.modeUsed ?? "grounded",
           tAssistant,
         );
         db.exec("COMMIT");

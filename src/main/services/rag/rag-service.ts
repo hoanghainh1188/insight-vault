@@ -39,6 +39,7 @@ export interface RagServiceDeps extends RetrievalDeps {
       content: string;
       citations: RagAnswer["citations"];
       notFound: boolean;
+      modeUsed: RagAnswer["modeUsed"];
     },
   ) => void;
 }
@@ -124,6 +125,7 @@ export function createRagService(deps: RagServiceDeps) {
         content: result.answer,
         citations: result.citations,
         notFound: result.notFound,
+        modeUsed: result.modeUsed,
       });
     } catch {
       // bỏ qua lỗi persist (best-effort)
