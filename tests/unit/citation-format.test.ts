@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   formatCitationLabel,
   citationLabels,
+  pageSuffix,
 } from "../../src/renderer/features/rag-qa/citation-format";
 import type { Citation } from "@shared/ipc/types";
 
@@ -25,5 +26,10 @@ describe("citation-format", () => {
       "[1] Tài liệu 1 · trang 3",
       "[2] Tài liệu 2",
     ]);
+  });
+
+  it("pageSuffix: có trang → ' · trang X'; null → ''", () => {
+    expect(pageSuffix(48)).toBe(" · trang 48");
+    expect(pageSuffix(null)).toBe("");
   });
 });

@@ -90,6 +90,33 @@ describe("createContentSearch (073)", () => {
     expect(svc.search("nb1", "khong-khop")).toEqual([]);
   });
 
+  it("notebookId rỗng/sai kiểu → [] (guard biên)", () => {
+    const svc = make();
+    expect(svc.search("", "q")).toEqual([]);
+    expect(svc.search(undefined as unknown as string, "q")).toEqual([]);
+  });
+
+  it("chunk trong hits nhưng đã bị xoá → bỏ, n vẫn liên tục 1..M", () => {
+    const only = chunk("c2", "s2", "còn lại");
+    const svc = make({
+      // BM25 trả c1 (đã xoá) + c2 (còn); getChunksByIds chỉ trả c2.
+      searchBm25: () => [
+        { id: "c1", score: 0.1 },
+        { id: "c2", score: 0.2 },
+      ],
+      getChunksByIds: () => [only],
+    });
+    const hits = svc.search("nb1", "q");
+    expect(hits).toHaveLength(1);
+    expect(hits[0].n).toBe(1);
+    expect(hits[0].chunkId).toBe("c2");
+  });
+
+  it("getSourceTitle trả rỗng → giữ nguyên (hợp đồng: caller tự fallback)", () => {
+    const svc = make({ getSourceTitle: () => "" });
+    expect(svc.search("nb1", "q")[0].sourceTitle).toBe("");
+  });
+
   it("chỉ gọi getSourceTitle 1 lần/nguồn (cache)", () => {
     let calls = 0;
     const c = [chunk("a", "s1", "x"), chunk("b", "s1", "y")];

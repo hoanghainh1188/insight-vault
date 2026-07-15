@@ -14,6 +14,7 @@ export interface ContentSearchDeps {
     topK: number,
   ) => { id: string; score: number }[];
   getChunksByIds: (ids: string[]) => Chunk[];
+  /** Tiêu đề nguồn để hiển thị — hợp đồng: KHÔNG bao giờ trả rỗng (fallback ở caller, vd "Nguồn"). */
   getSourceTitle: (sourceId: string) => string;
 }
 
@@ -21,6 +22,8 @@ export function createContentSearch(deps: ContentSearchDeps) {
   return {
     /** Tìm topK đoạn khớp keyword trong notebook. Query rỗng/không token → []. */
     search(notebookId: string, query: string): ContentSearchHit[] {
+      // Guard biên (defense-in-depth): input sai kiểu → [] thay vì để lỗi bind SQLite lan xuống.
+      if (typeof notebookId !== "string" || notebookId === "") return [];
       if (typeof query !== "string" || query.trim() === "") return [];
       const hits = deps.searchBm25(notebookId, query, SEARCH_TOP_K);
       if (hits.length === 0) return [];
