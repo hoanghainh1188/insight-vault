@@ -1,4 +1,4 @@
-import { app, ipcMain, BrowserWindow } from "electron";
+import { app, ipcMain, BrowserWindow, clipboard } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
 import type {
   AddSourceInput,
@@ -101,6 +101,12 @@ export function registerIpc({
     setOnboardingComplete(store),
   );
   safeHandle(CHANNELS.getAppInfo, () => buildAppInfo(version));
+  // ghi clipboard qua main (#67): navigator.clipboard bị chặn bởi permission handler + file:// không phải
+  // secure context ở bản đóng gói. Dùng Electron clipboard (local, không egress). KHÔNG log nội dung.
+  safeHandle(CHANNELS.clipboardWrite, (text) => {
+    clipboard.writeText(String(text));
+    return { ok: true } as const;
+  });
 
   // ai-runtime (007) — Ollama gọi CHỈ ở đây (main); renderer chạm qua 5 kênh này. Cùng instance với pipeline.
   const ai = aiRuntime;

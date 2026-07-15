@@ -82,3 +82,16 @@ test("cột Studio: chưa có nguồn ready / runtime chưa sẵn sàng → nút
     await expect(win.getByTestId(`studio-btn-${kind}`)).toBeDisabled();
   }
 });
+
+test("clipboardWrite: ghi được từ renderer sandbox → main clipboard khớp (#67)", async () => {
+  // Bug gốc #67 chỉ lộ trong renderer sandbox thật (permission deny-all): navigator.clipboard bị chặn.
+  // Fix đưa qua IPC → Electron clipboard. Verify: gọi từ window rồi đọc lại bằng clipboard của main.
+  const win = await app.firstWindow();
+  const text = `insightvault-clip-${Date.now()}`;
+
+  const res = await win.evaluate((t) => window.api.clipboardWrite(t), text);
+  expect(res).toEqual({ ok: true });
+
+  const readBack = await app.evaluate(({ clipboard }) => clipboard.readText());
+  expect(readBack).toBe(text);
+});
