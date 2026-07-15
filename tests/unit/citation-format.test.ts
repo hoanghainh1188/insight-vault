@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   formatCitationLabel,
   citationLabels,
+  formatAnswerMarkdown,
 } from "../../src/renderer/features/rag-qa/citation-format";
 import type { Citation } from "@shared/ipc/types";
 
@@ -25,5 +26,22 @@ describe("citation-format", () => {
       "[1] Tài liệu 1 · trang 3",
       "[2] Tài liệu 2",
     ]);
+  });
+
+  describe("formatAnswerMarkdown (072)", () => {
+    it("có nguồn → nội dung + mục 'Nguồn:' kèm trang", () => {
+      const out = formatAnswerMarkdown("Trả lời [1].", [cite(1, 48)]);
+      expect(out).toBe(
+        "Trả lời [1].\n\n---\n\nNguồn:\n[1] Tài liệu 1 · trang 48\n",
+      );
+    });
+    it("không nguồn → chỉ nội dung (không mục Nguồn)", () => {
+      const out = formatAnswerMarkdown("Không tìm thấy trong nguồn.", []);
+      expect(out).toBe("Không tìm thấy trong nguồn.\n");
+      expect(out).not.toContain("Nguồn:");
+    });
+    it("cắt khoảng trắng cuối trước khi ghép", () => {
+      expect(formatAnswerMarkdown("abc  \n\n", [])).toBe("abc\n");
+    });
   });
 });
