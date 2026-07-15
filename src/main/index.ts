@@ -124,9 +124,26 @@ function handleFatalStartup(err: unknown): void {
 process.on("uncaughtException", handleFatalStartup);
 process.on("unhandledRejection", handleFatalStartup);
 
+// Single-instance lock (#70): 2 tiến trình cùng ghi SQLite/LanceDB + cùng chạy reindex nền lúc khởi động
+// → hỏng dữ liệu/race migration. Instance thứ 2 KHÔNG lấy được lock → thoát ngay và focus cửa sổ đang có
+// (không chạy init). Guard trong whenReady chặn init kể cả khi handler kịp chạy trước lúc quit hoàn tất.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+app.on("second-instance", () => {
+  const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
+
 app
   .whenReady()
   .then(async () => {
+    // Instance thứ 2 (không có lock) đã gọi app.quit() — KHÔNG chạy init để tránh chạm DB/LanceDB.
+    if (!gotSingleInstanceLock) return;
     // Icon dock macOS: bản đóng gói lấy từ bundle .icns; khi DEV thì phải set thủ công (nếu không → icon
     // Electron mặc định). Không lỗi nếu thiếu file/không phải macOS.
     if (process.platform === "darwin" && app.dock) {
