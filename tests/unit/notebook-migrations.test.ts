@@ -4,6 +4,7 @@ import {
   runMigrations,
   getUserVersion,
   MIGRATIONS,
+  SchemaVersionError,
   type Migration,
 } from "../../src/main/db/migrations";
 
@@ -38,10 +39,19 @@ describe("migrations", () => {
     expect(runMigrations(db)).toBe(max);
   });
 
-  it("guard: DB version > max migration → ném (không hạ cấp)", () => {
+  it("guard: DB version > max migration → ném SchemaVersionError (không hạ cấp)", () => {
     const db = openDatabase(":memory:");
+    const max = MIGRATIONS.reduce((m, x) => Math.max(m, x.version), 0);
     db.exec("PRAGMA user_version = 99");
     expect(() => runMigrations(db)).toThrow(/không tự hạ cấp/);
+    try {
+      runMigrations(db);
+      expect.unreachable("phải ném");
+    } catch (e) {
+      expect(e).toBeInstanceOf(SchemaVersionError);
+      expect((e as SchemaVersionError).dbVersion).toBe(99);
+      expect((e as SchemaVersionError).appVersion).toBe(max);
+    }
   });
 
   it("áp thêm migration mới (append) nâng version tiếp", () => {

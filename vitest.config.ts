@@ -54,6 +54,8 @@ export default defineConfig({
         "src/main/services/embedding/vector-normalize.ts",
         "src/main/services/embedding/reindex-plan.ts",
         "src/main/services/ai/model-recommend.ts",
+        // 062: hàm thuần map lỗi khởi động → dialog (không I/O).
+        "src/main/services/app-shell/startup-error.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.

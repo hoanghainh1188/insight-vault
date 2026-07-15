@@ -9,6 +9,24 @@ export interface Migration {
   up(db: Db): void;
 }
 
+/**
+ * DB trên đĩa có schema mới hơn app đang chạy (người dùng cài bản cũ đè bản mới hơn).
+ * Cố ý KHÔNG tự hạ cấp — bảo vệ dữ liệu. Kiểu riêng để tầng khởi động nhận diện và hiện
+ * dialog "cần cập nhật" thay vì chết âm thầm. `dbVersion`/`appVersion` là số schema (an toàn
+ * để hiển thị — không phải nội dung người dùng).
+ */
+export class SchemaVersionError extends Error {
+  constructor(
+    readonly dbVersion: number,
+    readonly appVersion: number,
+  ) {
+    super(
+      `Schema DB (v${dbVersion}) mới hơn phiên bản ứng dụng (v${appVersion}) — không tự hạ cấp để tránh mất dữ liệu.`,
+    );
+    this.name = "SchemaVersionError";
+  }
+}
+
 export const MIGRATIONS: Migration[] = [
   {
     version: 1,
@@ -208,9 +226,7 @@ export function runMigrations(
   const current = getUserVersion(db);
   const max = migrations.reduce((m, x) => Math.max(m, x.version), 0);
   if (current > max) {
-    throw new Error(
-      `Schema DB (v${current}) mới hơn phiên bản ứng dụng (v${max}) — không tự hạ cấp để tránh mất dữ liệu.`,
-    );
+    throw new SchemaVersionError(current, max);
   }
   const pending = migrations
     .filter((m) => m.version > current)
