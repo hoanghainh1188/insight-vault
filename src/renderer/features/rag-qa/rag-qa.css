@@ -246,6 +246,20 @@
   padding: 10px 12px;
 }
 
+/* 071: badge "Mở rộng · có thể ngoài nguồn" — cảnh báo phần trả lời có thể ngoài tài liệu nguồn. */
+.ungrounded {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--warn-ink);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-radius: 999px;
+  padding: 1px 8px;
+  vertical-align: middle;
+}
+
 /* Composer box (prototype .cbox): input trên, thanh công cụ dưới. */
 .cbox {
   border: 1px solid var(--line);

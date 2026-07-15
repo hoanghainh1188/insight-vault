@@ -9,6 +9,8 @@ export interface ChatMessage {
   content: string;
   citations?: Citation[];
   notFound?: boolean;
+  /** 071: chế độ đã dùng — "open" → badge "không dựa trên nguồn". */
+  modeUsed?: RagMode;
   streaming?: boolean; // 039: đang nhận token (render text thô, chưa chip)
 }
 
@@ -60,6 +62,7 @@ export function useChat(notebookId: string) {
             content: m.content,
             citations: m.citations,
             notFound: m.notFound,
+            modeUsed: m.modeUsed,
           })),
         );
       })
@@ -148,6 +151,7 @@ export function useChat(notebookId: string) {
               content: res.answer,
               citations: res.citations,
               notFound: res.notFound,
+              modeUsed: res.modeUsed,
             },
           ];
         });

@@ -302,6 +302,8 @@ export interface StoredChatMessage {
   content: string;
   citations: Citation[]; // assistant; user = []
   notFound: boolean;
+  /** 071: chế độ đã dùng cho câu trả lời (assistant). "open" → badge "không dựa trên nguồn". */
+  modeUsed?: RagMode;
   createdAt: number;
 }
 

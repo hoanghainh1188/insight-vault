@@ -24,6 +24,16 @@ export function MessageBubble({
       <span className="who" data-testid="bubble-who">
         {isUser ? "Bạn" : "InsightVault"}
       </span>
+      {/* 071: chế độ Mở rộng có thể chứa nội dung ngoài nguồn → badge cảnh báo (kiểm chứng được). */}
+      {!isUser && message.modeUsed === "open" && (
+        <span
+          className="ungrounded"
+          data-testid="ungrounded-badge"
+          title="Câu trả lời ở chế độ Mở rộng có thể chứa kiến thức ngoài tài liệu nguồn."
+        >
+          Mở rộng · có thể ngoài nguồn
+        </span>
+      )}
       {isUser ? (
         <p className="bubble-text">{message.content}</p>
       ) : message.streaming ? (

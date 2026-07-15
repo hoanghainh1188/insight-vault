@@ -209,6 +209,15 @@ export const MIGRATIONS: Migration[] = [
       for (const r of rows) ins.run(r.rowid, foldVietnamese(r.text));
     },
   },
+  // 071-ungrounded-badge: chat_message thêm mode_used ('grounded'|'open'|NULL) để badge "không dựa trên
+  // nguồn" (chế độ Mở rộng) BỀN qua reload (kiểm chứng được — Constitution II). ADD COLUMN thuần, append-only;
+  // hàng cũ = NULL → coi như grounded (không badge).
+  {
+    version: 8,
+    up(db) {
+      db.exec("ALTER TABLE chat_message ADD COLUMN mode_used TEXT");
+    },
+  },
 ];
 
 export function getUserVersion(db: Db): number {
