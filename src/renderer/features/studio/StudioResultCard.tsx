@@ -37,7 +37,9 @@ export function StudioResultCard({
 
   const onCopy = async (): Promise<void> => {
     try {
-      await navigator.clipboard.writeText(result.content);
+      // Ghi clipboard qua main (#67): navigator.clipboard bị chặn ở renderer sandbox (permission +
+      // file:// không phải secure context ở bản đóng gói).
+      await window.api.clipboardWrite(result.content);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

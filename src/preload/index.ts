@@ -46,6 +46,9 @@ const api = {
   setOnboardingComplete: (): Promise<{ completed: true }> =>
     ipcRenderer.invoke(CHANNELS.setOnboardingComplete),
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(CHANNELS.getAppInfo),
+  // ghi clipboard qua main (#67) — navigator.clipboard bị chặn ở renderer sandbox.
+  clipboardWrite: (text: string): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.clipboardWrite, text),
   // ai-runtime (007)
   aiListModels: (): Promise<Model[]> =>
     ipcRenderer.invoke(CHANNELS.aiListModels),

@@ -36,6 +36,8 @@ export const CHANNELS = {
   getOnboardingState: "app:getOnboardingState",
   setOnboardingComplete: "app:setOnboardingComplete",
   getAppInfo: "app:getAppInfo",
+  // ghi clipboard qua main (renderer sandbox: navigator.clipboard bị chặn bởi permission handler) (#67)
+  clipboardWrite: "app:clipboardWrite",
   // ai-runtime (007)
   aiListModels: "ai:listModels",
   aiTestConnection: "ai:testConnection",
@@ -107,6 +109,7 @@ export interface ChannelResponse {
   [CHANNELS.getOnboardingState]: OnboardingState;
   [CHANNELS.setOnboardingComplete]: { completed: true };
   [CHANNELS.getAppInfo]: AppInfo;
+  [CHANNELS.clipboardWrite]: { ok: true };
   [CHANNELS.aiListModels]: Model[];
   [CHANNELS.aiTestConnection]: RuntimeStatus;
   [CHANNELS.aiGetSelectedModels]: ModelSelection;
