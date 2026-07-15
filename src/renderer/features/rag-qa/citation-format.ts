@@ -12,3 +12,16 @@ export function formatCitationLabel(c: Citation): string {
 export function citationLabels(citations: Citation[]): string[] {
   return citations.map(formatCitationLabel);
 }
+
+/**
+ * 072: gộp câu trả lời + danh sách nguồn thành markdown để Copy/Export (kiểm chứng được — kèm trang).
+ * Hàm THUẦN. Không nguồn → chỉ nội dung. Có nguồn → thêm mục "Nguồn:" ngăn bằng đường kẻ.
+ */
+export function formatAnswerMarkdown(
+  content: string,
+  citations: Citation[],
+): string {
+  const body = content.trimEnd();
+  if (citations.length === 0) return `${body}\n`;
+  return `${body}\n\n---\n\nNguồn:\n${citationLabels(citations).join("\n")}\n`;
+}
