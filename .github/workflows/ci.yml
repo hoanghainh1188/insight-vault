@@ -30,4 +30,29 @@ jobs:
       - name: "Build (electron-vite: main/preload/renderer)"
         run: npm run build
 
-  # NOTE: e2e (Playwright _electron) cần display → job riêng dùng xvfb, thêm sau. Chưa bắt buộc.
+  # E2E (Playwright _electron) cần display → xvfb trên Linux. Suite tất định: IV_EMBED_FAKE=1 (không tải
+  # model) + UNREACHABLE_OLLAMA (không cần Ollama thật) → chỉ kiểm bề mặt IPC + đường "chưa sẵn sàng".
+  # Job riêng (không phụ thuộc build-test). CHƯA bắt buộc — promote thành required check sau khi ổn định.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Cài dependencies (từ lockfile)
+        run: npm ci
+
+      - name: "Build out/ (electron-vite — e2e chạy trên out/main)"
+        run: npx electron-vite build
+
+      - name: Cài thư viện hệ thống + xvfb cho Electron headless
+        run: |
+          npx playwright install-deps
+          sudo apt-get install -y xvfb
+
+      - name: E2E (Playwright _electron qua xvfb)
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:e2e
