@@ -13,6 +13,7 @@ import type {
   RuntimeStatus,
   Source,
   SourceContent,
+  ContentSearchHit,
   StudioResult,
   StudioExportResult,
   StoredChatMessage,
@@ -68,6 +69,8 @@ export const CHANNELS = {
   sourceRetry: "source:retry",
   // source-viewer (019) — lấy toàn văn nguồn để hiển thị + highlight
   sourceGetContent: "source:getContent",
+  // content-search (073) — tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25)
+  sourceSearch: "source:search",
   // ingestion (011) — 1 event push (main→renderer, KHÔNG phải invoke/ChannelResponse)
   sourceProgress: "source:progress",
   // rag-qa (013) — hỏi đáp theo nguồn
@@ -138,6 +141,8 @@ export interface ChannelResponse {
   [CHANNELS.sourceRetry]: Source;
   // source-viewer (019)
   [CHANNELS.sourceGetContent]: SourceContent | null;
+  // content-search (073)
+  [CHANNELS.sourceSearch]: ContentSearchHit[];
   // rag-qa (013)
   [CHANNELS.ragAsk]: RagAnswer;
   // streaming (039) — ragStreamToken là event push, không vào đây

@@ -35,6 +35,7 @@ import type { VectorStore } from "../services/ingestion/vector-store";
 import type { RagService } from "../services/rag/rag-service";
 import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
+import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
 import { getSourceContent } from "../services/source-viewer/source-content";
 import { logEvent } from "../logging";
@@ -51,6 +52,7 @@ interface RegisterDeps {
   ragService: RagService;
   chatRepo: ChatRepo;
   studioService: StudioService;
+  contentSearch: ContentSearch;
   // 059 — gợi ý model theo RAM + health Ollama + trạng thái reindex.
   recommendChatModel: () => ModelRecommendation;
   ollamaHealth: () => Promise<OllamaHealth>;
@@ -74,6 +76,7 @@ export function registerIpc({
   ragService,
   chatRepo,
   studioService,
+  contentSearch,
   recommendChatModel,
   ollamaHealth,
   reindexStatus,
@@ -174,6 +177,14 @@ export function registerIpc({
   safeHandle(CHANNELS.sourceGetContent, (id) =>
     getSourceContent(sourceRepo, id as string),
   );
+  // content-search (073) — tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25). CHỈ đọc; KHÔNG log query.
+  safeHandle(CHANNELS.sourceSearch, (input) => {
+    const { notebookId, query } = input as {
+      notebookId: string;
+      query: string;
+    };
+    return contentSearch.search(notebookId, query);
+  });
 
   // rag-qa (013) — embed/search/chat CHỈ ở đây (main). KHÔNG log payload (câu hỏi/nội dung — Constitution III).
   safeHandle(CHANNELS.ragAsk, (input) => ragService.ask(input as RagAskInput));

@@ -29,7 +29,11 @@ export function Workspace(): JSX.Element {
 
   return (
     <div className="workspace" data-testid="workspace" style={style}>
-      <SourceList notebookId={notebookId} onOpenSource={viewer.openSource} />
+      <SourceList
+        notebookId={notebookId}
+        onOpenSource={viewer.openSource}
+        onOpenHit={viewer.openCitation}
+      />
       <div
         className="col-splitter"
         data-testid="splitter-src"
