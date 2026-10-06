@@ -1,0 +1,78 @@
+/* 088 — giao diện lỗi (error boundary). Bình tĩnh, không báo động: nhấn mạnh "dữ liệu vẫn an toàn". */
+.error-fallback {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 48px 24px;
+  background: var(--canvas);
+}
+.error-fallback-card {
+  max-width: 460px;
+  padding: 28px 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.error-fallback-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--danger-line);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-weight: 700;
+}
+.error-fallback-card h2 {
+  margin: 14px 0 8px;
+  font-size: 17px;
+  color: var(--ink);
+}
+.error-fallback-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.error-fallback-card code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.error-fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.error-fallback-link {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  padding: 7px 2px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.error-fallback-link:hover {
+  color: var(--accent-ink);
+}
+.error-fallback-link:focus-visible,
+.error-fallback-actions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.error-fallback-link:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+p.error-fallback-note {
+  margin-top: 12px;
+  color: var(--danger);
+  font-size: 12.5px;
+}

@@ -350,6 +350,36 @@
   color: var(--ink-soft);
   margin: 0;
 }
+/* 088 — dòng Nhật ký lỗi (cùng nhịp với khối Sao lưu & khôi phục phía trên). */
+.logs-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.logs-row h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.logs-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.logs-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+.logs-row .btn-outline-sm {
+  flex-shrink: 0;
+}
 
 /* Bảng phím tắt (043) */
 .shortcuts-modal {
