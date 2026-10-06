@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { Citation, StudioKind } from "@shared/ipc/types";
 import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
+import { announce } from "../../shared/a11y/announcer";
+import { studioMessage } from "../../shared/a11y/messages";
 import "./studio.css";
 
 // Cột Studio (prototype S2, cột 3). 4 nút "Tạo nhanh" → sinh bản tổng hợp toàn notebook. Nút vô hiệu khi
@@ -44,6 +46,12 @@ export function StudioColumn({
         : null;
   const disabled = blockReason !== null;
 
+  // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
+  const run = async (kind: StudioKind, label: string): Promise<void> => {
+    announce(studioMessage(label, "start"));
+    if (await generate(kind, scopeId)) announce(studioMessage(label, "done"));
+  };
+
   return (
     <section
       className="studio-col"
@@ -84,7 +92,7 @@ export function StudioColumn({
             key={kind}
             type="button"
             className="studio-btn"
-            onClick={() => generate(kind, scopeId)}
+            onClick={() => void run(kind, label)}
             disabled={disabled || loading[kind] === true}
             data-testid={`studio-btn-${kind}`}
           >
@@ -94,7 +102,7 @@ export function StudioColumn({
       </div>
 
       <div className="studio-results">
-        {KINDS.map(({ kind }) => {
+        {KINDS.map(({ kind, label }) => {
           const err = errors[kind];
           const res = results[kind];
           // Skeleton khi đang tạo lần đầu (chưa có kết quả cũ) — US3.
@@ -117,6 +125,7 @@ export function StudioColumn({
               <p
                 key={kind}
                 className="studio-error"
+                role="alert"
                 data-testid={`studio-error-${kind}`}
               >
                 {err}
@@ -129,7 +138,7 @@ export function StudioColumn({
               key={kind}
               result={res}
               regenerating={loading[kind] === true}
-              onRegenerate={() => generate(kind, scopeId)}
+              onRegenerate={() => void run(kind, label)}
               onCite={onCite}
             />
           );

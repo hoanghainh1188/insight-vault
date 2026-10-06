@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Citation, RagMode, RagTurn } from "@shared/ipc/types";
+import { announce } from "../../shared/a11y/announcer";
+import {
+  CHAT_CANCELLED,
+  CHAT_STARTED,
+  chatDoneMessage,
+} from "../../shared/a11y/messages";
 
 // Hook cột Chat: nạp lịch sử hội thoại đã lưu theo notebook (027-chat-history) + gọi ragAskStream (streaming,
 // 039; main tự persist câu trả lời cuối) + kiểm runtime/nguồn ready. Multi-turn: gửi lịch sử hiện có.
@@ -24,6 +30,8 @@ export function useChat(notebookId: string) {
   // 039: id stream đang chạy (để hiện nút Dừng); ref để listener token lọc đúng lượt.
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const activeStreamRef = useRef<string | null>(null);
+  // 091: người dùng bấm Dừng ⇒ câu báo kết thúc là "Đã dừng" thay vì "Đã có câu trả lời".
+  const stopRequestedRef = useRef(false);
 
   // Đăng ký nhận token (039) một lần — nối delta vào bong bóng assistant đang stream (khớp streamId).
   useEffect(() => {
@@ -49,6 +57,8 @@ export function useChat(notebookId: string) {
       void window.api.ragStop(activeStreamRef.current).catch(() => {});
       activeStreamRef.current = null;
       setStreamingId(null);
+      // 091: lượt bị huỷ không còn câu báo kết thúc ⇒ báo huỷ để "Đang soạn…" không treo lơ lửng.
+      announce(CHAT_CANCELLED);
     }
     setError(null);
     setMessages([]);
@@ -129,6 +139,8 @@ export function useChat(notebookId: string) {
         { role: "assistant", content: "", streaming: true },
       ]);
       setLoading(true);
+      stopRequestedRef.current = false;
+      announce(CHAT_STARTED);
       try {
         const res = await window.api.ragAskStream({
           notebookId,
@@ -139,6 +151,13 @@ export function useChat(notebookId: string) {
         });
         // Lượt đã bị huỷ/đổi notebook giữa chừng → không ghi đè (streamId không còn active).
         if (activeStreamRef.current !== streamId) return;
+        announce(
+          chatDoneMessage({
+            citationCount: res.citations.length,
+            notFound: res.notFound,
+            stopped: stopRequestedRef.current,
+          }),
+        );
         // Thay bong bóng streaming bằng kết quả cuối (markdown + chip hậu kiểm).
         setMessages((prev) => {
           if (prev.length === 0) return prev;
@@ -186,7 +205,9 @@ export function useChat(notebookId: string) {
   // Dừng stream đang chạy (039) — main abort → ragAskStream resolve với phần đã nhận → finalize bình thường.
   const stop = useCallback(() => {
     const id = activeStreamRef.current;
-    if (id) void window.api.ragStop(id).catch(() => {});
+    if (!id) return;
+    stopRequestedRef.current = true;
+    void window.api.ragStop(id).catch(() => {});
   }, []);
 
   return {

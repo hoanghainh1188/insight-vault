@@ -1,5 +1,6 @@
 import type { Source } from "@shared/ipc/types";
 import { statClass, statusLabel, stepLabel } from "./source-status";
+import { progressValueText } from "../../shared/a11y/messages";
 import type { SourceProgress } from "./useSources";
 
 const KIND_ICON: Record<Source["kind"], string> = {
@@ -64,13 +65,24 @@ export function SourceItem({
         )}
         {showProgress ? (
           <span className="src-sub" data-testid="source-progress">
-            <span className="src-progress" aria-hidden="true">
+            {/* 091: tra được bằng trình đọc màn hình (giá trị + bước); thông báo mốc nằm ở useSources. */}
+            <span
+              className="src-progress"
+              role="progressbar"
+              aria-label={`Tiến độ xử lý ${source.title}`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={pct}
+              aria-valuetext={progressValueText(stepLabel(progress!.step), pct)}
+            >
               <span
                 className="src-progress-fill"
                 style={{ width: `${pct}%` }}
               />
             </span>
-            {stepLabel(progress!.step)} · {pct}%
+            <span aria-hidden="true">
+              {stepLabel(progress!.step)} · {pct}%
+            </span>
           </span>
         ) : (
           <span className="src-sub">

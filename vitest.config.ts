@@ -65,6 +65,9 @@ export default defineConfig({
         "src/renderer/features/vault-backup/messages.ts",
         // 088 app-log: báo lỗi renderer (thuần, jsdom test) — log-file/renderer-error đã nằm trong services/**.
         "src/renderer/shared/error-report.ts",
+        // 091 a11y: kênh thông báo + câu thông báo (thuần).
+        "src/renderer/shared/a11y/announcer.ts",
+        "src/renderer/shared/a11y/messages.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.

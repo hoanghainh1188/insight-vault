@@ -13,8 +13,19 @@ export const MAIN = join(process.cwd(), "out/main/index.js");
 export async function launchFresh(
   env?: Record<string, string>,
 ): Promise<ElectronApplication> {
+  return (await launchFreshAt(env)).app;
+}
+
+/**
+ * Như launchFresh nhưng trả kèm đường dẫn userData tạm — test cần đọc tệp trong userData (nhật ký…) dùng cái này
+ * thay vì hỏi main qua app.evaluate ngay sau launch (đua với lần điều hướng đầu của cửa sổ ⇒ "Execution context
+ * was destroyed" chập chờn trên CI).
+ */
+export async function launchFreshAt(
+  env?: Record<string, string>,
+): Promise<{ app: ElectronApplication; userData: string }> {
   const userData = await mkdtemp(join(tmpdir(), "iv-e2e-"));
-  return electron.launch({
+  const app = await electron.launch({
     args: [MAIN, `--user-data-dir=${userData}`],
     // 059: embedding fake tất định trong E2E → không tải model e5 (~120MB), offline, nhanh, ổn định.
     env: { ...process.env, IV_EMBED_FAKE: "1", ...(env ?? {}) } as Record<
@@ -22,6 +33,7 @@ export async function launchFresh(
       string
     >,
   });
+  return { app, userData };
 }
 
 /** OLLAMA_HOST trỏ cổng chắc chắn không có service → ping fail → ollamaReady=false (tất định). */
