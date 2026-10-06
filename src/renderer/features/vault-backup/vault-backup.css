@@ -1,0 +1,153 @@
+/* Sao lưu / khôi phục vault (085) — dùng token sẵn có (tokens.css), không hardcode màu. */
+
+.vb-panel {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.vb-panel h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.vb-desc {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.vb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.vb-busy {
+  font-size: 12px;
+  color: var(--warn-ink);
+}
+
+/* Hộp thoại */
+.vb-modal {
+  width: 460px;
+}
+.vb-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  margin: 2px 0 6px;
+}
+.vb-check input {
+  accent-color: var(--accent);
+}
+.vb-callout {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+.vb-callout.danger {
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.vb-callout strong {
+  font-weight: 600;
+}
+.vb-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.vb-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 4px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.vb-spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: vb-spin 0.8s linear infinite;
+}
+@keyframes vb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vb-spinner {
+    animation: none;
+  }
+}
+.vb-done {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.vb-done code,
+.vb-summary code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--line-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+  word-break: break-all;
+}
+.vb-summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+.vb-summary dt {
+  color: var(--ink-soft);
+}
+.vb-summary dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Thông báo kết quả sau khi khởi động lại */
+.vb-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--accent-line);
+}
+.vb-result.failed {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-bottom-color: var(--danger-line);
+}
+.vb-result p {
+  margin: 0;
+  flex: 1;
+}
+.vb-result code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
