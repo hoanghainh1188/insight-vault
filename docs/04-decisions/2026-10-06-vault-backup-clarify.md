@@ -83,3 +83,19 @@
 - Mật khẩu tối thiểu **8 ký tự**, không ép quy tắc phức tạp.
 - Lần mở app đầu sau khôi phục: thông báo kết quả (thành công: ngày tạo bản đã khôi phục + vị trí bản tự sao
   lưu; thất bại: lý do + vault cũ giữ nguyên).
+
+## Cập nhật lúc implement + review (2026-10-06)
+
+- **Xác thực trước, giải nén sau:** giải mã/kiểm SHA-256 ra payload tạm → liệt kê kiểm allowlist + kích thước →
+  mới `tar.x` (tar không bao giờ đọc dữ liệu chưa xác thực; hết race để lại thư mục rác).
+- **State machine hoán đổi:** `staged → movingOut → movingIn`, lỗi ⇒ `rollingBack{from, step: discard→restore}`.
+  Không bao giờ `rm` dữ liệu sống trong rollback (mục mới chuyển sang `discard/`); kiểm `staged/insightvault.db` trước
+  khi chuyển vault cũ ra; previous/ sót khi state hỏng ⇒ giữ dưới `recovered-*`. (Sửa 2 Blocking code review.)
+- **Bảo mật (security review, 0 Blocking):** config khôi phục chỉ giữ khoá đã biết và **luôn TẮT provider online**;
+  DB khôi phục: `trusted_schema=OFF` + schema phải khớp đúng schema app ở cùng version (chặn trigger/view lạ) trước
+  và sau migration; giới hạn manifest/config ≤ 1 MB + kiểm dung lượng trống theo tổng kích thước giải nén;
+  iv-media:// chỉ phục vụ đuôi media đã biết; file sao lưu 0600, thư mục 0700; cờ mã hoá lấy từ header.
+- **Còn lại có chủ đích:** bản tự sao lưu trước khôi phục KHÔNG mã hoá (cùng mức bảo vệ với vault trên máy — UI nêu
+  rõ); bản sao lưu không mã hoá không có xác thực nguồn (SHA-256 chỉ chống hỏng); đường dẫn `origin` của nguồn
+  không phải media vẫn được "Thử lại" đọc (cục bộ, không egress do online luôn tắt sau khôi phục).
+- **Hiệu năng (SC-001):** vault 526 MB → sao lưu có mã hoá 6,6 s; giải nén khôi phục 1,2 s.

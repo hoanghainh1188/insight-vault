@@ -43,7 +43,7 @@ type BackupSummary = {
 | `backup:progress` _(event)_ | —                              | `{ op:"backup" \| "restore"; step: VaultBackupStep }`                                             |
 | `restore:pick`              | —                              | `{ status:"ok"; token; encrypted } \| { status:"cancelled" } \| { status:"error"; code }`         |
 | `restore:prepare`           | `{ token; password?: string }` | `{ status:"ok"; summary: BackupSummary } \| { status:"error"; code }`                             |
-| `restore:confirm`           | `{ token }`                    | `{ status:"error"; code }` _(thành công ⇒ app relaunch, không trả về)_                            |
+| `restore:confirm`           | `{ token }`                    | `{ status:"relaunching" } \| { status:"error"; code }` _(thành công ⇒ app relaunch)_                            |
 | `restore:cancel`            | `{ token }`                    | `{ ok: true }` (idempotent, dọn staging)                                                          |
 | `app:getRestoreResult`      | —                              | `RestoreResult \| null` (one-shot: đọc rồi xoá)                                                   |
 

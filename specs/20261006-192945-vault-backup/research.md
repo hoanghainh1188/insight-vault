@@ -46,8 +46,11 @@ từng mục dưới.
   - Sửa 1 byte giữa body → lỗi tar `checksum failure`. Sửa **byte cuối ciphertext** (tar vẫn hợp lệ) → lỗi
     `unable to authenticate data` ở `decipher.final()` — pipeline reject → staging xoá. ⇒ **mọi lỗi trong
     pipeline giải mã/giải nén map về 1 mã `badPasswordOrCorrupt`** (khớp quyết định "1 thông báo chung").
-  - Lưu ý: GCM nhả plaintext chưa xác thực cho tar trong lúc stream ⇒ chỉ được coi staging là hợp lệ khi
-    pipeline **hoàn tất** (đã qua `final()`); staging nằm trong thư mục riêng, không bao giờ dùng khi lỗi.
+  - Lưu ý: GCM nhả plaintext chưa xác thực trong lúc stream. **Cập nhật lúc implement:** stream thẳng vào
+    `tar.x` gây race (lệnh ghi tar còn treo tạo lại thư mục đích sau khi đã dọn — test chập chờn khi tải nặng) và
+    để trình phân tích tar đọc dữ liệu chưa xác thực. ⇒ **Xác thực trước, giải nén sau:** giải mã / kiểm SHA-256
+    body ra file tạm `payload` (chỉ hợp lệ khi qua `final()`/so hash) → `tar.t` liệt kê kiểm allowlist toàn bộ
+    entry → `tar.x` từ file đã xác thực (filter giữ làm phòng thủ chiều sâu). Tốn thêm 1 lần ghi cỡ file nén.
 - **Alternatives:** chunked AEAD (STREAM) — phát hiện sớm hơn nhưng phức tạp, không cần vì đã stage + verify
   trọn trước khi xác nhận; `age`/libsodium — thêm native/lib ngoài.
 
@@ -66,7 +69,8 @@ từng mục dưới.
 - **Decision:** ở `whenReady`, ngay sau `ensureDataDir` và **trước** `new Store()`/`openDatabase`, gọi
   `applyPendingRestore(dataDir)` — state machine trên thư mục `<userData>/restore/`:
   - `staged/` (đã giải nén + verify + migrate thử), `previous/` (vault cũ), `state.json {phase, …}`.
-  - `phase: staged → swapping → swapped`; mỗi bước **idempotent** (chạy lại sau crash an toàn):
+  - `phase: staged → movingOut → movingIn` (lỗi ⇒ `rollingBack`); mỗi bước **idempotent** (chạy lại sau crash an
+    toàn). Tách 2 pha để biết chắc mục sống là cũ hay mới khi rollback:
     A) chuyển từng mục sống (`insightvault.db`, `-wal`, `-shm`, `vectors/`, `config.json`) → `previous/` nếu chưa
     có ở đó; B) chuyển mục từ `staged/` → vị trí sống. Lỗi ở A/B ⇒ **rollback**: xoá mục sống đến từ staged, trả
     `previous/` về chỗ cũ. Kết thúc ghi `result.json` (one-shot cho thông báo FR-016a) và dọn `staged/`,

@@ -54,15 +54,16 @@ tmp/backup-<uuid>/  # snapshot tạm của 1 lần sao lưu (xoá khi xong/lỗi
 
 | Field             | Type                                  |
 | ----------------- | ------------------------------------- |
-| `phase`           | `"staged" \| "swapping" \| "swapped"` |
+| `phase`           | `"staged" \| "movingOut" \| "movingIn" \| "rollingBack"` |
 | `backupCreatedAt` | string (ISO, từ manifest)             |
 | `preRestorePath`  | string \| null (bản tự sao lưu)       |
 
 ```text
-(confirm) ──► staged ──boot──► swapping ──A,B ok──► swapped ──► result{ok:true} ; dọn staged/previous/state
+(confirm) ──► staged ──boot──► movingOut (A) ──► movingIn (B) ──► result{ok:true} ; dọn staged/previous/state
                                    │ lỗi A/B
                                    └──► rollback ──► result{ok:false, reason} ; dọn
-crash ở swapping ⇒ boot kế: chạy lại A,B (idempotent)
+lỗi A/B ⇒ ghi rollingBack{rollbackFrom} TRƯỚC khi rollback; crash ở bất kỳ pha ⇒ boot kế chạy tiếp pha đó (idempotent)
+rollback cũng lỗi ⇒ NÉM (fatal startup dialog), giữ state — không bao giờ mở DB rỗng
 state.json hỏng/không đọc được ⇒ coi như không có restore; nếu previous/ còn mà mục sống thiếu ⇒ rollback
 ```
 
