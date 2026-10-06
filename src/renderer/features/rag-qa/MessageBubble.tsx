@@ -59,6 +59,8 @@ export function MessageBubble({
     <div
       className={isUser ? "bubble user" : "bubble ai"}
       data-testid={`bubble-${message.role}`}
+      // 091: đang stream ⇒ báo trình đọc màn hình nội dung chưa xong (không đọc từng token).
+      aria-busy={message.streaming ? true : undefined}
     >
       <span className="who" data-testid="bubble-who">
         {isUser ? "Bạn" : "InsightVault"}

@@ -1,7 +1,7 @@
 import { test, expect, type ElectronApplication } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { dismissOnboarding, launchFresh } from "./helper";
+import { dismissOnboarding, launchFreshAt } from "./helper";
 
 // 088 — nhật ký ra file trên app thật: bản chưa đóng gói ghi vào <userData>/logs/main.log (JSON lines), có dòng
 // app.start; lỗi renderer báo qua kênh whitelisted chỉ lưu loại lỗi + tên component (không message/URL);
@@ -19,9 +19,9 @@ async function readLog(): Promise<Record<string, unknown>[]> {
 }
 
 test.beforeAll(async () => {
-  app = await launchFresh();
-  const userData = await app.evaluate(({ app: a }) => a.getPath("userData"));
-  logFile = join(userData, "logs", "main.log");
+  const launched = await launchFreshAt();
+  app = launched.app;
+  logFile = join(launched.userData, "logs", "main.log");
 });
 test.afterAll(async () => {
   await app?.close();

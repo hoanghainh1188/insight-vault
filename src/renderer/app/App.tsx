@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from "../shared/useKeyboardShortcuts";
 import { ShortcutsHelp } from "../shared/ShortcutsHelp";
 import { RestoreResultNotice } from "../features/vault-backup/RestoreResultNotice";
 import { ErrorBoundary } from "../shared/ErrorBoundary";
+import { LiveRegion } from "../shared/a11y/LiveRegion";
 import { CrashNoticeBanner } from "../features/crash-report/CrashNoticeBanner";
 
 // Layout vỏ: header in-app (dưới khung native OS) + nav rail trái + vùng nội dung (<Outlet/>).
@@ -32,6 +33,8 @@ export function App(): JSX.Element {
       </div>
       <OnboardingGate />
       {helpOpen && <ShortcutsHelp onClose={closeHelp} />}
+      {/* 091: vùng thông báo trình đọc màn hình dùng chung (mốc stream/tiến độ/Studio). */}
+      <LiveRegion />
     </div>
   );
 }
