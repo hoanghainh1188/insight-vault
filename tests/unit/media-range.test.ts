@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   extOf,
   mimeForAudioExt,
+  isServableMediaExt,
   parseRange,
 } from "../../src/main/services/source-viewer/media-range";
 
@@ -90,5 +91,16 @@ describe("parseRange (049)", () => {
   });
   it("start > end → null", () => {
     expect(parseRange("bytes=300-200", SIZE)).toBeNull();
+  });
+});
+
+describe("isServableMediaExt (085 S4)", () => {
+  it("chỉ đuôi media đã biết; không phân biệt hoa thường; chặn prototype key", () => {
+    expect(isServableMediaExt("mp3")).toBe(true);
+    expect(isServableMediaExt("PNG")).toBe(true);
+    expect(isServableMediaExt("")).toBe(false);
+    expect(isServableMediaExt("txt")).toBe(false);
+    expect(isServableMediaExt("pem")).toBe(false);
+    expect(isServableMediaExt("constructor")).toBe(false);
   });
 });

@@ -20,6 +20,12 @@ import type {
   ModelRecommendation,
   OllamaHealth,
   ReindexStatus,
+  VaultBackupState,
+  BackupCreateResult,
+  RestorePickResult,
+  RestorePrepareResult,
+  RestoreConfirmResult,
+  RestoreResult,
 } from "./types";
 
 /**
@@ -90,6 +96,15 @@ export const CHANNELS = {
   // 059 embed-in-process — trạng thái tái lập chỉ mục
   embedReindexStatus: "embed:reindexStatus",
   embedReindexProgress: "embed:reindexProgress", // event push main→renderer
+  // vault-backup (085) — sao lưu / khôi phục vault (path chỉ ở main; restore dùng token)
+  backupGetState: "backup:getState",
+  backupCreate: "backup:create",
+  backupProgress: "backup:progress", // event push main→renderer
+  restorePick: "restore:pick",
+  restorePrepare: "restore:prepare",
+  restoreConfirm: "restore:confirm",
+  restoreCancel: "restore:cancel",
+  getRestoreResult: "app:getRestoreResult",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -158,4 +173,12 @@ export interface ChannelResponse {
   [CHANNELS.chatClear]: { cleared: true };
   // 059 embed-in-process
   [CHANNELS.embedReindexStatus]: ReindexStatus;
+  // vault-backup (085) — backupProgress là event push, không vào đây
+  [CHANNELS.backupGetState]: VaultBackupState;
+  [CHANNELS.backupCreate]: BackupCreateResult;
+  [CHANNELS.restorePick]: RestorePickResult;
+  [CHANNELS.restorePrepare]: RestorePrepareResult;
+  [CHANNELS.restoreConfirm]: RestoreConfirmResult;
+  [CHANNELS.restoreCancel]: { ok: true };
+  [CHANNELS.getRestoreResult]: RestoreResult | null;
 }

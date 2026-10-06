@@ -39,6 +39,12 @@ import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
 import { getSourceContent } from "../services/source-viewer/source-content";
 import { logEvent } from "../logging";
+import type { BackupService } from "../services/vault-backup/backup-service";
+import type { VaultLock } from "../services/vault-backup/vault-lock";
+import {
+  parseBackupCreateInput,
+  parseRestoreTokenInput,
+} from "../services/vault-backup/ipc-input";
 
 interface RegisterDeps {
   store: StoreLike;
@@ -57,7 +63,14 @@ interface RegisterDeps {
   recommendChatModel: () => ModelRecommendation;
   ollamaHealth: () => Promise<OllamaHealth>;
   reindexStatus: () => ReindexStatus;
+  // 085 — sao lưu/khôi phục vault + khoá chặn ghi trong lúc chụp/sau xác nhận khôi phục.
+  backupService: BackupService;
+  vaultLock: VaultLock;
 }
+
+/** Thông báo khi kênh ghi vault bị chặn bởi vault lock (085, R7). Không chứa dữ liệu người dùng. */
+export const VAULT_LOCKED_MESSAGE =
+  "Đang sao lưu/khôi phục — thử lại sau giây lát.";
 
 /**
  * Đăng ký IPC handler CHỈ cho các kênh whitelisted (Constitution III, US2).
@@ -80,6 +93,8 @@ export function registerIpc({
   recommendChatModel,
   ollamaHealth,
   reindexStatus,
+  backupService,
+  vaultLock,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -158,21 +173,34 @@ export function registerIpc({
   );
   // Xoá notebook: dọn vector LanceDB theo notebook_id TRƯỚC (tránh mồ côi), rồi xoá SQLite (cascade
   // source→chunk). Nhất quán 2 store (ADR lancedb-integration, FR-015).
+  // 085: chặn các kênh GHI vault khi đang chụp dữ liệu / đã xác nhận khôi phục (vault lock).
+  const assertVaultWritable = (): void => {
+    if (vaultLock.isLocked()) throw new Error(VAULT_LOCKED_MESSAGE);
+  };
+
   safeHandle(CHANNELS.notebookDelete, async (id) => {
+    assertVaultWritable();
     await vectorStore.deleteByNotebook(id as string);
     return notebookRepo.delete(id as string);
   });
 
   // ingestion (011) — FS/parse/embed/LanceDB CHỈ ở main (Constitution III). KHÔNG log nội dung tài liệu.
-  safeHandle(CHANNELS.sourceAdd, (input) =>
-    pipeline.add(input as AddSourceInput),
-  );
+  safeHandle(CHANNELS.sourceAdd, (input) => {
+    assertVaultWritable();
+    return pipeline.add(input as AddSourceInput);
+  });
   safeHandle(CHANNELS.sourceListByNotebook, (id) =>
     sourceRepo.listByNotebook(id as string),
   );
   safeHandle(CHANNELS.sourceGet, (id) => sourceRepo.getById(id as string));
-  safeHandle(CHANNELS.sourceDelete, (id) => pipeline.remove(id as string));
-  safeHandle(CHANNELS.sourceRetry, (id) => pipeline.retry(id as string));
+  safeHandle(CHANNELS.sourceDelete, (id) => {
+    assertVaultWritable();
+    return pipeline.remove(id as string);
+  });
+  safeHandle(CHANNELS.sourceRetry, (id) => {
+    assertVaultWritable();
+    return pipeline.retry(id as string);
+  });
   // source-viewer (019) — tái dựng toàn văn từ chunk đã lưu để hiển thị. CHỈ đọc; KHÔNG log content.
   safeHandle(CHANNELS.sourceGetContent, (id) =>
     getSourceContent(sourceRepo, id as string),
@@ -258,6 +286,29 @@ export function registerIpc({
       suggestedName,
     );
   });
+
+  // vault-backup (085) — FS/crypto/hộp thoại CHỈ ở main; renderer không gửi path (token thay path).
+  // Payload validate ở boundary (ipc-input); sai hình ⇒ ioError. KHÔNG log payload (chứa mật khẩu).
+  const invalidPayload = { status: "error", code: "ioError" } as const;
+  safeHandle(CHANNELS.backupGetState, () => backupService.getState());
+  safeHandle(CHANNELS.backupCreate, (input) => {
+    const req = parseBackupCreateInput(input);
+    return req ? backupService.createBackup(req) : invalidPayload;
+  });
+  safeHandle(CHANNELS.restorePick, () => backupService.pickRestore());
+  safeHandle(CHANNELS.restorePrepare, (input) => {
+    const req = parseRestoreTokenInput(input);
+    return req ? backupService.prepareRestore(req) : invalidPayload;
+  });
+  safeHandle(CHANNELS.restoreConfirm, (input) => {
+    const req = parseRestoreTokenInput(input);
+    return req ? backupService.confirmRestore(req) : invalidPayload;
+  });
+  safeHandle(CHANNELS.restoreCancel, (input) => {
+    const req = parseRestoreTokenInput(input);
+    return req ? backupService.cancelRestore(req) : { ok: true };
+  });
+  safeHandle(CHANNELS.getRestoreResult, () => backupService.getRestoreResult());
 
   logEvent("ipc.registered", { channels: Object.values(CHANNELS).length });
 }

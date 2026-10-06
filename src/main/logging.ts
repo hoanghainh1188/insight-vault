@@ -10,6 +10,7 @@ const SENSITIVE_KEYS = [
   "answer",
   "apiKey",
   "token",
+  "password", // 085 — mật khẩu sao lưu (phòng thủ chiều sâu; service vốn không log mật khẩu)
 ];
 
 /** Che các trường nhạy cảm trong object metadata trước khi log (đệ quy nông). */

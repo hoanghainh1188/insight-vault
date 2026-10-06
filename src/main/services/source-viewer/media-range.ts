@@ -33,6 +33,14 @@ export function extOf(path: string): string {
   return path.slice(dot + 1).toLowerCase();
 }
 
+/**
+ * Đuôi có thuộc danh sách media phục vụ được không (085 security S4): origin của nguồn có thể đến từ bản sao
+ * lưu khôi phục (không tin cậy) — chỉ stream file có đuôi audio/video/ảnh, tránh lộ file tuỳ ý (vd ~/.ssh/…).
+ */
+export function isServableMediaExt(ext: string): boolean {
+  return Object.hasOwn(MEDIA_MIME, ext.toLowerCase());
+}
+
 /** MIME theo đuôi file media (audio/video); mặc định audio/mpeg. Giữ tên `mimeForAudioExt` (049) ổn định. */
 export function mimeForAudioExt(ext: string): string {
   return MEDIA_MIME[ext.toLowerCase()] ?? "audio/mpeg";

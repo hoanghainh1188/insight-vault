@@ -13,6 +13,15 @@ describe("logging policy (FR-014)", () => {
     expect(out.ok).toBe("giữ");
   });
 
+  it("che mật khẩu sao lưu (085)", () => {
+    const out = redact({ password: "mat-khau-123", code: "busy" }) as Record<
+      string,
+      unknown
+    >;
+    expect(out.password).toBe("[REDACTED]");
+    expect(out.code).toBe("busy");
+  });
+
   it("che đệ quy trong object lồng nhau", () => {
     const out = redact({ meta: { query: "hỏi gì đó", page: 12 } }) as Record<
       string,

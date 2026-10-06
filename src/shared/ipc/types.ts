@@ -372,3 +372,66 @@ export interface StudioExportResult {
   saved: boolean;
   path?: string;
 }
+
+// ── vault-backup (085) — sao lưu / khôi phục vault. Renderer KHÔNG nhận/gửi đường dẫn file (token thay path).
+
+/** Mã lỗi sao lưu/khôi phục (không kèm path/nội dung). `badPasswordOrCorrupt` gộp sai mật khẩu + file hỏng. */
+export type VaultBackupErrorCode =
+  | "busy"
+  | "passwordTooShort"
+  | "notBackup"
+  | "unsupportedFormat"
+  | "badPasswordOrCorrupt"
+  | "passwordRequired"
+  | "newerSchema"
+  | "diskFull"
+  | "tokenInvalid"
+  | "ioError";
+
+export interface VaultBackupState {
+  busy: boolean;
+  reason: "processing" | "reindexing" | "operation" | null;
+}
+
+export type VaultBackupStep =
+  "snapshot" | "pack" | "decrypt" | "verify" | "preBackup";
+
+/** Event push `backup:progress` (main→renderer). */
+export interface VaultBackupProgress {
+  op: "backup" | "restore";
+  step: VaultBackupStep;
+}
+
+export type VaultBackupError = { status: "error"; code: VaultBackupErrorCode };
+
+export type BackupCreateResult =
+  | { status: "ok"; fileName: string; sizeBytes: number; dir: string }
+  | { status: "cancelled" }
+  | VaultBackupError;
+
+export type RestorePickResult =
+  | { status: "ok"; token: string; encrypted: boolean }
+  | { status: "cancelled" }
+  | VaultBackupError;
+
+/** Tóm tắt bản sao lưu hiển thị trước khi xác nhận khôi phục (từ manifest đã xác thực). */
+export interface BackupSummary {
+  createdAt: string;
+  appVersion: string;
+  notebookCount: number;
+  sourceCount: number;
+  encrypted: boolean;
+  /** Mô hình embedding khác app hiện tại → sẽ tái lập chỉ mục nền sau khôi phục (059). */
+  needsReindex: boolean;
+}
+
+export type RestorePrepareResult =
+  { status: "ok"; summary: BackupSummary } | VaultBackupError;
+
+/** `restore:confirm` — thành công thì app thoát + khởi động lại (renderer thường không kịp nhận). */
+export type RestoreConfirmResult = { status: "relaunching" } | VaultBackupError;
+
+/** Kết quả lần khôi phục gần nhất — đọc 1 lần ở lần mở app đầu sau hoán đổi (FR-016a). */
+export type RestoreResult =
+  | { ok: true; backupCreatedAt: string; preRestorePath: string | null }
+  | { ok: false; reason: "swapFailed" };
