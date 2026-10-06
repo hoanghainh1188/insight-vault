@@ -27,6 +27,13 @@ import type {
   StudioExportInput,
   StudioExportResult,
   StoredChatMessage,
+  BackupCreateResult,
+  RestoreConfirmResult,
+  RestorePickResult,
+  RestorePrepareResult,
+  RestoreResult,
+  VaultBackupProgress,
+  VaultBackupState,
 } from "@shared/ipc/types";
 
 /**
@@ -164,6 +171,31 @@ const api = {
     ipcRenderer.on(CHANNELS.embedReindexProgress, listener);
     return () =>
       ipcRenderer.removeListener(CHANNELS.embedReindexProgress, listener);
+  },
+  // vault-backup (085) — KHÔNG có tham số path; đường dẫn do hộp thoại ở main chọn, restore dùng token.
+  backupGetState: (): Promise<VaultBackupState> =>
+    ipcRenderer.invoke(CHANNELS.backupGetState),
+  backupCreate: (req: { password?: string }): Promise<BackupCreateResult> =>
+    ipcRenderer.invoke(CHANNELS.backupCreate, req),
+  restorePick: (): Promise<RestorePickResult> =>
+    ipcRenderer.invoke(CHANNELS.restorePick),
+  restorePrepare: (req: {
+    token: string;
+    password?: string;
+  }): Promise<RestorePrepareResult> =>
+    ipcRenderer.invoke(CHANNELS.restorePrepare, req),
+  restoreConfirm: (token: string): Promise<RestoreConfirmResult> =>
+    ipcRenderer.invoke(CHANNELS.restoreConfirm, { token }),
+  restoreCancel: (token: string): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.restoreCancel, { token }),
+  getRestoreResult: (): Promise<RestoreResult | null> =>
+    ipcRenderer.invoke(CHANNELS.getRestoreResult),
+  /** Tiến trình sao lưu/khôi phục theo bước (push từ main). Trả hàm huỷ đăng ký. */
+  onBackupProgress: (cb: (e: VaultBackupProgress) => void): (() => void) => {
+    const listener = (_e: unknown, payload: VaultBackupProgress): void =>
+      cb(payload);
+    ipcRenderer.on(CHANNELS.backupProgress, listener);
+    return () => ipcRenderer.removeListener(CHANNELS.backupProgress, listener);
   },
 };
 

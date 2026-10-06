@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import type { StorageInfo } from "@shared/ipc/types";
 import { formatBytes } from "../../shared/format-bytes";
+import { VaultBackupPanel } from "../vault-backup/VaultBackupPanel";
 
 // Section "Lưu trữ cục bộ" ở Cài đặt (037, prototype S5). Hiển thị đường dẫn thư mục dữ liệu + dung lượng
-// đã dùng + còn trống — củng cố minh bạch local-first (Constitution I). Chỉ đọc, không xoá/di chuyển.
+// đã dùng + còn trống — củng cố minh bạch local-first (Constitution I). 085: kèm khối Sao lưu & khôi phục.
 export function SettingsStorageSection(): JSX.Element {
   const [info, setInfo] = useState<StorageInfo | null>(null);
   const [failed, setFailed] = useState(false);
@@ -63,6 +64,7 @@ export function SettingsStorageSection(): JSX.Element {
           </p>
         </>
       )}
+      <VaultBackupPanel />
     </section>
   );
 }

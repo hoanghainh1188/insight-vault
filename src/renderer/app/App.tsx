@@ -6,6 +6,7 @@ import { RuntimeOnboarding } from "../features/ai-runtime/RuntimeOnboarding";
 import { ReindexBanner } from "../features/ai-runtime/ReindexBanner";
 import { useKeyboardShortcuts } from "../shared/useKeyboardShortcuts";
 import { ShortcutsHelp } from "../shared/ShortcutsHelp";
+import { RestoreResultNotice } from "../features/vault-backup/RestoreResultNotice";
 
 // Layout vỏ: header in-app (dưới khung native OS) + nav rail trái + vùng nội dung (<Outlet/>).
 export function App(): JSX.Element {
@@ -13,6 +14,7 @@ export function App(): JSX.Element {
   return (
     <div className="app">
       <AppHeader />
+      <RestoreResultNotice />
       <ReindexBanner />
       <RuntimeOnboarding />
       <div className="app-body">

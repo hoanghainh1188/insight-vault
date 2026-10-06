@@ -14,6 +14,15 @@ người dùng. Chạy trên **macOS + Windows**.
 - **Kiểm chứng được:** mọi câu trả lời trích dẫn về đúng đoạn nguồn gốc (trang / timestamp / đoạn).
 - **Offline & tự chủ:** chạy được không cần Internet; người dùng kiểm soát mô hình và chi phí.
 
+### Sao lưu & khôi phục
+
+**Cài đặt → Lưu trữ cục bộ → Sao lưu… / Khôi phục…** xuất toàn bộ vault (notebook, nguồn đã xử lý, lịch sử chat,
+kết quả Studio, chỉ mục, cấu hình) ra 1 file `.ivbackup`, tuỳ chọn **mã hoá bằng mật khẩu** (AES-256-GCM, quên
+mật khẩu = không mở được). Khôi phục **thay toàn bộ** vault hiện tại — app tự sao lưu vault cũ vào
+`<thư mục dữ liệu>/backups/` (giữ 3 bản) rồi khởi động lại. Bản sao lưu **không gồm** file gốc (PDF, audio,
+video, ảnh — phát/xem media cần file gốc còn đúng chỗ), mô hình AI đã tải và khoá API online (nhập lại trên máy
+mới). Toàn bộ chạy cục bộ, không kết nối mạng.
+
 Chi tiết yêu cầu sản phẩm & ràng buộc: [`docs/OVERVIEW.md`](docs/OVERVIEW.md).
 Nguyên tắc kỹ thuật bất di bất dịch: [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
 

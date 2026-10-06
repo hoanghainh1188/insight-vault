@@ -34,6 +34,10 @@ import { recommendChatModel } from "./services/ai/model-recommend";
 import { checkOllama } from "./services/ai/ollama-health";
 import type { ReindexStatus } from "@shared/ipc/types";
 import { totalmem } from "node:os";
+import { applyPendingRestore } from "./services/vault-backup/restore-swap";
+import { createBackupService } from "./services/vault-backup/backup-service";
+import { createVaultLock } from "./services/vault-backup/vault-lock";
+import { createElectronDialogs } from "./services/vault-backup/dialogs";
 
 // 049: đăng ký scheme iv-media:// là privileged (stream + fetch API) TRƯỚC khi app ready — cho <audio> phát
 // file audio gốc qua main (renderer sandbox không đọc FS). Handler đăng ký ở whenReady (cần sourceRepo).
@@ -163,6 +167,17 @@ app
       return;
     }
 
+    // 085: hoán đổi vault đã dàn dựng (khôi phục) TRƯỚC khi mở config/DB/LanceDB. Lỗi rollback ⇒ ném (fatal
+    // startup dialog) thay vì mở DB rỗng. Không log path.
+    const restoreOutcome = await applyPendingRestore(
+      dataDir.path,
+      undefined,
+      logEvent,
+    );
+    if (restoreOutcome !== "none") {
+      logEvent("vaultBackup.restoreApplied", { outcome: restoreOutcome });
+    }
+
     const store = new Store();
 
     // SQLite (009): mở DB trong data dir, chạy migration (nay tới v2 — bảng source/chunk), tạo repo.
@@ -255,6 +270,43 @@ app
         ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
     });
 
+    // 085 vault-backup: busy = nguồn queued/processing hoặc reindex nền; khoá chặn ghi lúc chụp/sau xác nhận.
+    const vaultLock = createVaultLock({
+      hasActiveSources: () =>
+        ingestion.sourceRepo.listByStatus("queued").length > 0 ||
+        ingestion.sourceRepo.listByStatus("processing").length > 0,
+      isReindexing: () => reindex.inProgress,
+    });
+    const backupService = createBackupService({
+      dataDir: dataDir.path,
+      db,
+      appVersion: app.getVersion(),
+      getConfig: () => ({ ...(store.store as Record<string, unknown>) }),
+      lock: vaultLock,
+      dialogs: createElectronDialogs(),
+      emit: (p) => {
+        for (const w of BrowserWindow.getAllWindows()) {
+          if (!w.isDestroyed()) w.webContents.send(CHANNELS.backupProgress, p);
+        }
+      },
+      relaunch: () => {
+        // E2E (chỉ khi CHƯA đóng gói): thoát mà không tự mở lại — test tự khởi chạy lại trên cùng userData
+        // (tiến trình relaunch mồ côi sẽ giữ single-instance lock).
+        if (!(process.env.IV_E2E_NO_RELAUNCH === "1" && !app.isPackaged)) {
+          app.relaunch();
+        }
+        app.exit(0);
+      },
+      log: logEvent,
+    });
+
+    // Renderer reload/crash giữa phiên khôi phục ⇒ huỷ phiên để nút không kẹt "bận" (code review S1).
+    app.on("web-contents-created", (_e, contents) => {
+      const abandon = (): void => void backupService.abandonRestore();
+      contents.on("did-start-loading", abandon);
+      contents.on("render-process-gone", abandon);
+    });
+
     registerIpc({
       store,
       version: app.getVersion(),
@@ -278,6 +330,8 @@ app
             aiRuntime.getSelectedModels().chatModel ?? undefined,
         }),
       reindexStatus: () => reindex,
+      backupService,
+      vaultLock,
     });
 
     installSecurity();

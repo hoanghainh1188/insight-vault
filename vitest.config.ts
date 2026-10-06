@@ -60,12 +60,17 @@ export default defineConfig({
         "src/main/services/ai/model-recommend.ts",
         // 062: hàm thuần map lỗi khởi động → dialog (không I/O).
         "src/main/services/app-shell/startup-error.ts",
+        // 085 vault-backup: service vault-backup (đã nằm trong src/main/services/**) + helper thuần renderer.
+        "src/renderer/features/vault-backup/password-rules.ts",
+        "src/renderer/features/vault-backup/messages.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
       // Chỉ loại các adapter I/O native / composition root (không test được thuần). pipeline.ts GIỮ
       // trong ngưỡng vì chứa business logic (cancel/resume/error-by-step) đã phủ test bằng DI.
       exclude: [
+        // 085: adapter hộp thoại Electron (I/O native) — phủ bởi e2e (IV_E2E_DIALOG_PATH).
+        "src/main/services/vault-backup/dialogs.ts",
         "src/main/services/ai-runtime/ai-runtime.ts",
         "src/main/services/ingestion/ingestion.ts",
         "src/main/services/ingestion/vector-store.ts",

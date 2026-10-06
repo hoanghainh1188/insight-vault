@@ -1,7 +1,12 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { Readable } from "node:stream";
 import type { SourceRepo } from "../ingestion/source-repo";
-import { extOf, mimeForAudioExt, parseRange } from "./media-range";
+import {
+  extOf,
+  isServableMediaExt,
+  mimeForAudioExt,
+  parseRange,
+} from "./media-range";
 
 // Phục vụ file audio gốc cho player renderer qua giao thức iv-media:// (049, Pha 2a-player). Renderer
 // sandbox KHÔNG đọc FS → main stream file theo sourceId (tra DB, KHÔNG nhận path từ renderer — Constitution
@@ -26,7 +31,10 @@ export function createMediaHandler(
       return new Response(null, { status: 404 });
     }
     const path = sourceRepo.getOrigin(id);
-    if (!path || !existsSync(path)) return new Response(null, { status: 404 });
+    // 085 S4: origin có thể đến từ bản sao lưu khôi phục ⇒ chỉ phục vụ đuôi media đã biết.
+    if (!path || !isServableMediaExt(extOf(path)) || !existsSync(path)) {
+      return new Response(null, { status: 404 });
+    }
 
     const size = statSync(path).size;
     const mime = mimeForAudioExt(extOf(path));

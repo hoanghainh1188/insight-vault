@@ -67,6 +67,17 @@ describe("createMediaHandler (049)", () => {
     expect(res.status).toBe(404);
   });
 
+  it("085 S4: origin trỏ file không phải media (vd khoá SSH) → 404, không stream", async () => {
+    const secret = join(dir, "id_rsa");
+    writeFileSync(secret, "PRIVATE KEY");
+    const repo = {
+      getById: (id: string) => (id === "evil" ? audioSource(id) : null),
+      getOrigin: (id: string) => (id === "evil" ? secret : null),
+    } as unknown as SourceRepo;
+    const res = await createMediaHandler(repo)(req("evil"));
+    expect(res.status).toBe(404);
+  });
+
   it("audio nhưng file gốc mất → 404", async () => {
     const res = await createMediaHandler(makeRepo())(req("missing"));
     expect(res.status).toBe(404);
