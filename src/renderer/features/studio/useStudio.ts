@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Source, StudioKind, StudioResult } from "@shared/ipc/types";
 
 // Hook cột Studio: nạp kết quả đã lưu khi mở notebook (studio:list) + sinh mới theo loại (studio:generate).
@@ -15,6 +15,8 @@ export function useStudio(notebookId: string) {
   const [ollamaReady, setOllamaReady] = useState<boolean | null>(null);
   const [readySources, setReadySources] = useState<Source[]>([]);
   const hasReadySources = readySources.length > 0;
+  // 091 (review S3): notebook hiện tại — kết quả của lượt tạo cũ về muộn sau khi chuyển notebook thì bỏ.
+  const notebookRef = useRef(notebookId);
 
   // Trạng thái sẵn sàng (mirror useChat): model + danh sách nguồn ready (cho dropdown lọc — US2).
   const refreshReadiness = useCallback(() => {
@@ -41,8 +43,10 @@ export function useStudio(notebookId: string) {
   // Đổi notebook → nạp kết quả đã lưu (persist qua đóng/mở — US3).
   useEffect(() => {
     let cancelled = false;
+    notebookRef.current = notebookId;
     setResults({});
     setErrors({});
+    setLoading({});
     window.api
       .studioList(notebookId)
       .then((list) => {
@@ -60,7 +64,9 @@ export function useStudio(notebookId: string) {
   }, [notebookId]);
 
   const generate = useCallback(
-    async (kind: StudioKind, sourceId?: string) => {
+    // 091: trả true khi tạo xong (để tầng UI báo trình đọc màn hình); lỗi đã nằm ở errors[kind].
+    async (kind: StudioKind, sourceId?: string): Promise<boolean> => {
+      const stale = (): boolean => notebookRef.current !== notebookId;
       setLoading((p) => ({ ...p, [kind]: true }));
       setErrors((p) => ({ ...p, [kind]: undefined }));
       try {
@@ -69,14 +75,18 @@ export function useStudio(notebookId: string) {
           kind,
           sourceId,
         });
+        if (stale()) return false;
         setResults((p) => ({ ...p, [kind]: res }));
+        return true;
       } catch (e) {
+        if (stale()) return false;
         setErrors((p) => ({
           ...p,
           [kind]: e instanceof Error ? e.message : "Không tạo được Studio.",
         }));
+        return false;
       } finally {
-        setLoading((p) => ({ ...p, [kind]: false }));
+        if (!stale()) setLoading((p) => ({ ...p, [kind]: false }));
       }
     },
     [notebookId],

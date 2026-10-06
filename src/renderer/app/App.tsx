@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from "../shared/useKeyboardShortcuts";
 import { ShortcutsHelp } from "../shared/ShortcutsHelp";
 import { RestoreResultNotice } from "../features/vault-backup/RestoreResultNotice";
 import { ErrorBoundary } from "../shared/ErrorBoundary";
+import { LiveRegion } from "../shared/a11y/LiveRegion";
 
 // Layout vỏ: header in-app (dưới khung native OS) + nav rail trái + vùng nội dung (<Outlet/>).
 // 088: vùng nội dung bọc ErrorBoundary — lỗi 1 màn không kéo sập header/nav; điều hướng đi là tự hồi phục.
@@ -30,6 +31,8 @@ export function App(): JSX.Element {
       </div>
       <OnboardingGate />
       {helpOpen && <ShortcutsHelp onClose={closeHelp} />}
+      {/* 091: vùng thông báo trình đọc màn hình dùng chung (mốc stream/tiến độ/Studio). */}
+      <LiveRegion />
     </div>
   );
 }
