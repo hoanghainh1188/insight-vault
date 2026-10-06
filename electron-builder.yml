@@ -28,6 +28,11 @@ files:
   - "!node_modules/@lancedb/lancedb/node_modules/onnxruntime-node/**"
   - "!node_modules/@lancedb/lancedb/node_modules/onnxruntime-web/**"
   - "!node_modules/@lancedb/lancedb/node_modules/@huggingface/**"
+  # 096 slim-bundle: bản *.wasm.js của tesseract.js-core là WASM nhúng base64 DÀNH CHO TRÌNH DUYỆT; ở Node, core
+  # `tesseract-core-*.js` đọc file `.wasm` cạnh nó (đã verify bằng chạy thật). ~25,7M. GIỮ cả họ LSTM + không-LSTM:
+  # tesseract.js 7 (adapter Node) thực tế nạp bản KHÔNG-LSTM — giữ cả hai để nâng cấp sửa lỗi đó không làm hỏng OCR.
+  # Test canh giữ: tests/unit/slim-tesseract.test.ts.
+  - "!node_modules/tesseract.js-core/*.wasm.js"
 
 # Binary native phải nằm NGOÀI asar để load được lúc chạy.
 asarUnpack:
