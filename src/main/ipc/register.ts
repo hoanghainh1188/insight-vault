@@ -40,6 +40,7 @@ import { exportMarkdown } from "../services/studio/export";
 import { getSourceContent } from "../services/source-viewer/source-content";
 import { logError, logEvent } from "../logging";
 import { createRendererErrorReporter } from "../services/app-log/renderer-error";
+import type { CrashService } from "../services/crash-report/crash-service";
 import type { BackupService } from "../services/vault-backup/backup-service";
 import type { VaultLock } from "../services/vault-backup/vault-lock";
 import {
@@ -69,6 +70,8 @@ interface RegisterDeps {
   vaultLock: VaultLock;
   // 088 — thư mục nhật ký (mở bằng trình quản lý tệp từ Cài đặt / màn hình lỗi).
   logsDir: string;
+  // 093 — báo lỗi opt-in.
+  crashService: CrashService;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
@@ -102,6 +105,7 @@ export function registerIpc({
   backupService,
   vaultLock,
   logsDir,
+  crashService,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -147,6 +151,11 @@ export function registerIpc({
     if (err) logEvent("logs.openFailed", {});
     return { ok: err === "" };
   });
+  // crash-report (093): bản nháp đã làm sạch; mở issue với đích CỐ ĐỊNH (renderer chỉ gửi tiêu đề + nội dung).
+  safeHandle(CHANNELS.crashGetReport, () => crashService.getReport());
+  safeHandle(CHANNELS.crashOpenIssue, (input) => crashService.openIssue(input));
+  safeHandle(CHANNELS.crashGetNotice, () => crashService.getNotice());
+  safeHandle(CHANNELS.crashDismissNotice, () => crashService.dismissNotice());
 
   // ai-runtime (007) — Ollama gọi CHỈ ở đây (main); renderer chạm qua 5 kênh này. Cùng instance với pipeline.
   const ai = aiRuntime;

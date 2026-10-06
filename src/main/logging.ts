@@ -49,7 +49,7 @@ export function redact(meta: unknown, depth = 0): unknown {
 }
 
 /** Thay thư mục nhà (chứa tên tài khoản HĐH) bằng "~" trong mọi chuỗi — lưới an toàn theo GIÁ TRỊ (088). */
-function maskHome(value: unknown, home: string, depth = 0): unknown {
+export function maskHome(value: unknown, home: string, depth = 0): unknown {
   if (typeof value === "string") return value.split(home).join("~");
   if (value === null || typeof value !== "object" || depth >= MAX_DEPTH)
     return value;

@@ -78,6 +78,8 @@ export default defineConfig({
         "src/main/services/vault-backup/dialogs.ts",
         // 088: adapter node:fs cho sink nhật ký (I/O thuần; logic xoay vòng ở log-file.ts đã tính coverage).
         "src/main/services/app-log/log-fs.ts",
+        // 093: adapter node:fs cho báo lỗi (tệp đánh dấu phiên, đọc đuôi nhật ký, liệt kê minidump).
+        "src/main/services/crash-report/crash-fs.ts",
         "src/main/services/ai-runtime/ai-runtime.ts",
         "src/main/services/ingestion/ingestion.ts",
         "src/main/services/ingestion/vector-store.ts",

@@ -26,6 +26,8 @@ import type {
   RestorePrepareResult,
   RestoreConfirmResult,
   RestoreResult,
+  CrashReportDraft,
+  CrashNotice,
 } from "./types";
 
 /**
@@ -48,6 +50,12 @@ export const CHANNELS = {
   // app-log (088): renderer báo lỗi (chỉ loại lỗi + tên component) + mở thư mục nhật ký bằng trình quản lý tệp.
   reportRendererError: "app:reportRendererError",
   openLogsFolder: "app:openLogsFolder",
+  // crash-report (093): báo lỗi opt-in — soạn báo cáo đã làm sạch, mở GitHub issue điền sẵn (đích cố định ở main),
+  // thông báo khi phiên trước kết thúc bất thường.
+  crashGetReport: "crash:getReport",
+  crashOpenIssue: "crash:openIssue",
+  crashGetNotice: "crash:getNotice",
+  crashDismissNotice: "crash:dismissNotice",
   // ai-runtime (007)
   aiListModels: "ai:listModels",
   aiTestConnection: "ai:testConnection",
@@ -133,6 +141,10 @@ export interface ChannelResponse {
   [CHANNELS.clipboardWrite]: { ok: true };
   [CHANNELS.reportRendererError]: { ok: boolean };
   [CHANNELS.openLogsFolder]: { ok: boolean };
+  [CHANNELS.crashGetReport]: CrashReportDraft;
+  [CHANNELS.crashOpenIssue]: { ok: boolean; throttled?: boolean };
+  [CHANNELS.crashGetNotice]: CrashNotice;
+  [CHANNELS.crashDismissNotice]: { ok: true };
   [CHANNELS.aiListModels]: Model[];
   [CHANNELS.aiTestConnection]: RuntimeStatus;
   [CHANNELS.aiGetSelectedModels]: ModelSelection;

@@ -9,6 +9,7 @@ import { ShortcutsHelp } from "../shared/ShortcutsHelp";
 import { RestoreResultNotice } from "../features/vault-backup/RestoreResultNotice";
 import { ErrorBoundary } from "../shared/ErrorBoundary";
 import { LiveRegion } from "../shared/a11y/LiveRegion";
+import { CrashNoticeBanner } from "../features/crash-report/CrashNoticeBanner";
 
 // Layout vỏ: header in-app (dưới khung native OS) + nav rail trái + vùng nội dung (<Outlet/>).
 // 088: vùng nội dung bọc ErrorBoundary — lỗi 1 màn không kéo sập header/nav; điều hướng đi là tự hồi phục.
@@ -19,6 +20,7 @@ export function App(): JSX.Element {
     <div className="app">
       <AppHeader />
       <RestoreResultNotice />
+      <CrashNoticeBanner />
       <ReindexBanner />
       <RuntimeOnboarding />
       <div className="app-body">
