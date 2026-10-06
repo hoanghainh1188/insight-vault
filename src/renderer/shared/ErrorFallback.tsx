@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CrashReportDialog } from "./crash-report/CrashReportDialog";
 import "./error-fallback.css";
 
 interface ErrorFallbackProps {
@@ -17,6 +18,7 @@ export function ErrorFallback({
   resetRoute,
 }: ErrorFallbackProps): JSX.Element {
   const [open, setOpen] = useState<OpenState>("idle");
+  const [reporting, setReporting] = useState(false);
 
   function reload(): void {
     if (resetRoute) window.location.hash = "#/notebooks";
@@ -54,6 +56,14 @@ export function ErrorFallback({
           <button type="button" className="btn-outline-sm" onClick={reload}>
             Tải lại ứng dụng
           </button>
+          {/* 093: gửi báo cáo ngay từ màn hình lỗi (người dùng xem/sửa rồi tự gửi). */}
+          <button
+            type="button"
+            className="error-fallback-link error-fallback-push"
+            onClick={() => setReporting(true)}
+          >
+            Báo lỗi…
+          </button>
           <button
             type="button"
             className="error-fallback-link"
@@ -67,6 +77,7 @@ export function ErrorFallback({
           <p className="error-fallback-note">Không mở được thư mục nhật ký.</p>
         )}
       </div>
+      {reporting && <CrashReportDialog onClose={() => setReporting(false)} />}
     </div>
   );
 }

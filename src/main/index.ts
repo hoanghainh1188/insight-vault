@@ -3,10 +3,12 @@ import { existsSync } from "node:fs";
 import {
   app,
   BrowserWindow,
+  crashReporter,
   dialog,
   nativeImage,
   protocol,
   session,
+  shell,
 } from "electron";
 import Store from "electron-store";
 import { CHANNELS } from "@shared/ipc/channels";
@@ -31,11 +33,19 @@ import { createMediaHandler } from "./services/source-viewer/media-serve";
 import { logError, logEvent, setLogSink } from "./logging";
 import { createFileSink, resolveLogsDir } from "./services/app-log/log-file";
 import { createNodeLogFs } from "./services/app-log/log-fs";
+import { createSessionMarker } from "./services/crash-report/session-marker";
+import {
+  createNodeMarkerFs,
+  listCrashDumps,
+  readLogTail,
+  restrictDumpDir,
+} from "./services/crash-report/crash-fs";
+import { createCrashService } from "./services/crash-report/crash-service";
 import { runReindex, needsReindex } from "./services/embedding/reindex-runner";
 import { recommendChatModel } from "./services/ai/model-recommend";
 import { checkOllama } from "./services/ai/ollama-health";
 import type { ReindexStatus } from "@shared/ipc/types";
-import { totalmem } from "node:os";
+import { homedir, release, totalmem } from "node:os";
 import { applyPendingRestore } from "./services/vault-backup/restore-swap";
 import { createBackupService } from "./services/vault-backup/backup-service";
 import { createVaultLock } from "./services/vault-backup/vault-lock";
@@ -114,6 +124,14 @@ function createWindow(): void {
 // createWindow không chạy → app mở nhưng biến mất). Chỉ THOÁT khi lỗi xảy ra TRƯỚC khi có cửa sổ
 // (giai đoạn khởi động); nếu đã có cửa sổ, lỗi runtime muộn chỉ log — không giết phiên người dùng.
 // Constitution III: chỉ log errorType (không path/nội dung); detail dialog do hàm thuần startupErrorDialog dựng.
+// Trạng thái nhật ký/phiên (088/093) khai báo TRƯỚC mọi handler dùng tới — uncaughtException có thể bắn ngay lúc
+// nạp module, đọc biến `let` khai báo sau sẽ dính TDZ.
+let logsDir = "";
+/** Phiên trước kết thúc bất thường? (tính lúc khởi động, đọc bởi crash service). */
+let abnormalExit = false;
+/** Khởi động thất bại ⇒ GIỮ tệp đánh dấu phiên: lần mở sau vẫn mời gửi báo cáo (093). */
+let keepSessionMarker = false;
+
 let fatalHandled = false;
 function handleFatalStartup(err: unknown): void {
   if (fatalHandled) return;
@@ -127,6 +145,7 @@ function handleFatalStartup(err: unknown): void {
   // runtime muộn là lỗi khởi động rồi giết phiên người dùng. Sau khi UI đã lên, lỗi muộn chỉ log.
   if (everShownWindow) return;
   fatalHandled = true;
+  keepSessionMarker = true;
   dialog.showErrorBox(title, detail);
   app.quit();
 }
@@ -141,9 +160,16 @@ const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
   app.quit();
 }
+const sessionMarker = (dir: string) =>
+  createSessionMarker({ dir, fs: createNodeMarkerFs() });
+/** Thoát sạch ⇒ xoá tệp đánh dấu phiên. Gọi cả ở đường app.exit (không phát will-quit). */
+const endSession = (): void => {
+  if (logsDir && !keepSessionMarker) sessionMarker(logsDir).end();
+};
+app.on("will-quit", endSession);
+
 // 088: nhật ký ra file — chỉ instance giữ lock (instance thứ 2 thoát ngay, không tranh ghi cùng tệp). Lỗi dựng
 // sink ⇒ chỉ còn console, app vẫn chạy (nhật ký là phụ trợ, không được làm hỏng khởi động).
-let logsDir = "";
 if (gotSingleInstanceLock) {
   try {
     logsDir = resolveLogsDir({
@@ -170,6 +196,22 @@ if (gotSingleInstanceLock) {
     arch: process.arch,
     packaged: app.isPackaged,
   });
+
+  // 093: crash native ghi minidump CHỈ trên máy (ADR crash-report-clarify) — không bao giờ tự tải lên; dump có
+  // thể chứa nội dung tài liệu trong bộ nhớ nên cũng không đính kèm vào báo cáo.
+  crashReporter.start({ uploadToServer: false });
+  try {
+    restrictDumpDir(app.getPath("crashDumps"));
+  } catch (e) {
+    logEvent("crash.dumpDirRestrictFailed", {
+      errorType: e instanceof Error ? e.constructor.name : typeof e,
+    });
+  }
+  // Tệp đánh dấu phiên: còn sót lúc khởi động ⇒ lần trước không thoát sạch ⇒ mời người dùng gửi báo cáo.
+  if (logsDir) {
+    abnormalExit = sessionMarker(logsDir).begin();
+    if (abnormalExit) logEvent("app.previousSessionAbnormal", {});
+  }
 }
 
 // 088: tiến trình renderer/GPU/utility chết — trước đây không để lại dấu vết. Chỉ log lý do + mã thoát.
@@ -211,6 +253,7 @@ app
     if (!dataDir.ready) {
       // 088: không log đường dẫn (chứa tên tài khoản) — dialog bên dưới đã hiện cho người dùng.
       logError("datadir.error", { ready: false });
+      keepSessionMarker = true;
       dialog.showErrorBox(
         "Không tạo được thư mục dữ liệu",
         `InsightVault không thể tạo thư mục dữ liệu tại:\n${dataDir.path}\n\nKiểm tra quyền truy cập hoặc dung lượng ổ đĩa rồi mở lại ứng dụng.`,
@@ -347,6 +390,7 @@ app
         if (!(process.env.IV_E2E_NO_RELAUNCH === "1" && !app.isPackaged)) {
           app.relaunch();
         }
+        endSession(); // app.exit không phát will-quit — khởi động lại sau khôi phục là thoát sạch (093)
         app.exit(0);
       },
       log: logEvent,
@@ -357,6 +401,31 @@ app
       const abandon = (): void => void backupService.abandonRestore();
       contents.on("did-start-loading", abandon);
       contents.on("render-process-gone", abandon);
+    });
+
+    // 093: báo lỗi opt-in — soạn bản nháp từ nhật ký, mở GitHub issue điền sẵn (người dùng tự gửi). Lần chạy đầu
+    // (chưa có mốc) lấy "bây giờ" làm mốc ⇒ dump có sẵn từ trước không bị báo là crash "mới".
+    if (store.get("crashReport.ackedAt") === undefined) {
+      store.set("crashReport.ackedAt", Date.now());
+    }
+    const crashService = createCrashService({
+      env: {
+        appVersion: app.getVersion(),
+        electronVersion: process.versions.electron,
+        platform: process.platform,
+        arch: process.arch,
+        osRelease: release(),
+      },
+      home: homedir(),
+      abnormalExit,
+      readLogLines: () => (logsDir ? readLogTail(logsDir, 400) : []),
+      listDumps: () => listCrashDumps(app.getPath("crashDumps")),
+      getAckedAt: () =>
+        (store.get("crashReport.ackedAt") as number | undefined) ?? 0,
+      setAckedAt: (ms) => store.set("crashReport.ackedAt", ms),
+      openExternal: (url) => shell.openExternal(url),
+      now: Date.now,
+      log: logEvent,
     });
 
     registerIpc({
@@ -385,6 +454,7 @@ app
       backupService,
       vaultLock,
       logsDir,
+      crashService,
     });
 
     installSecurity();

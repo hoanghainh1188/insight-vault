@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { CrashReportDialog } from "../../shared/crash-report/CrashReportDialog";
 
 // 088 — dòng "Nhật ký lỗi" ở Cài đặt → Lưu trữ cục bộ: mở thư mục nhật ký bằng trình quản lý tệp của HĐH để
 // người dùng tự xem/gửi khi báo lỗi. Nhật ký chỉ nằm trên máy (local-first), không tự gửi đi đâu.
 export function LogsFolderRow(): JSX.Element {
   const [failed, setFailed] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   async function open(): Promise<void> {
     setFailed(false);
@@ -28,14 +30,26 @@ export function LogsFolderRow(): JSX.Element {
           </p>
         )}
       </div>
-      <button
-        type="button"
-        className="btn-outline-sm"
-        onClick={() => void open()}
-        data-testid="logs-open"
-      >
-        Mở thư mục nhật ký
-      </button>
+      <div className="logs-actions">
+        <button
+          type="button"
+          className="btn-outline-sm"
+          onClick={() => void open()}
+          data-testid="logs-open"
+        >
+          Mở thư mục nhật ký
+        </button>
+        {/* 093: báo lỗi opt-in — xem/sửa bản nháp rồi tự gửi qua GitHub. */}
+        <button
+          type="button"
+          className="btn-outline-sm"
+          onClick={() => setReporting(true)}
+          data-testid="crash-report-open"
+        >
+          Báo lỗi…
+        </button>
+      </div>
+      {reporting && <CrashReportDialog onClose={() => setReporting(false)} />}
     </div>
   );
 }

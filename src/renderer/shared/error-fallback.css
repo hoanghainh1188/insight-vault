@@ -47,8 +47,11 @@
   gap: 8px;
   margin-top: 20px;
 }
-.error-fallback-link {
+/* Đẩy nhóm liên kết phụ (Báo lỗi · Mở thư mục nhật ký) sang phải. */
+.error-fallback-push {
   margin-left: auto;
+}
+.error-fallback-link {
   border: 0;
   background: none;
   padding: 7px 2px;

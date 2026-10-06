@@ -34,6 +34,18 @@ export interface RendererErrorInput {
   componentStack?: string;
 }
 
+/** Bản nháp báo lỗi (093) — người dùng xem/sửa trước khi tự gửi qua GitHub. Không chứa nội dung tài liệu. */
+export interface CrashReportDraft {
+  title: string;
+  text: string;
+}
+
+/** Thông báo lúc mở app (093): phiên trước kết thúc bất thường và/hoặc có crash native mới. */
+export interface CrashNotice {
+  abnormalExit: boolean;
+  newNativeCrashes: number;
+}
+
 /** Thông tin lưu trữ cục bộ (037) — hiển thị ở Cài đặt. Chỉ đọc metadata, không nội dung. */
 export interface StorageInfo {
   /** Đường dẫn thư mục dữ liệu app. */

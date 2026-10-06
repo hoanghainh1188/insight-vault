@@ -15,6 +15,8 @@ import type {
   RagAnswer,
   RagAskInput,
   RendererErrorInput,
+  CrashNotice,
+  CrashReportDraft,
   RenameNotebookInput,
   RuntimeStatus,
   SetColorInput,
@@ -62,6 +64,17 @@ const api = {
     ipcRenderer.invoke(CHANNELS.reportRendererError, input),
   openLogsFolder: (): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke(CHANNELS.openLogsFolder),
+  // crash-report (093)
+  crashGetReport: (): Promise<CrashReportDraft> =>
+    ipcRenderer.invoke(CHANNELS.crashGetReport),
+  crashOpenIssue: (
+    input: CrashReportDraft,
+  ): Promise<{ ok: boolean; throttled?: boolean }> =>
+    ipcRenderer.invoke(CHANNELS.crashOpenIssue, input),
+  crashGetNotice: (): Promise<CrashNotice> =>
+    ipcRenderer.invoke(CHANNELS.crashGetNotice),
+  crashDismissNotice: (): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.crashDismissNotice),
   // ai-runtime (007)
   aiListModels: (): Promise<Model[]> =>
     ipcRenderer.invoke(CHANNELS.aiListModels),
