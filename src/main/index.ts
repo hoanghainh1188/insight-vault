@@ -28,7 +28,9 @@ import { createContentSearch } from "./services/search/content-search";
 import { setEgressActive } from "./services/app-shell/privacy-state";
 import { startupErrorDialog } from "./services/app-shell/startup-error";
 import { createMediaHandler } from "./services/source-viewer/media-serve";
-import { logEvent } from "./logging";
+import { logError, logEvent, setLogSink } from "./logging";
+import { createFileSink, resolveLogsDir } from "./services/app-log/log-file";
+import { createNodeLogFs } from "./services/app-log/log-fs";
 import { runReindex, needsReindex } from "./services/embedding/reindex-runner";
 import { recommendChatModel } from "./services/ai/model-recommend";
 import { checkOllama } from "./services/ai/ollama-health";
@@ -116,7 +118,10 @@ let fatalHandled = false;
 function handleFatalStartup(err: unknown): void {
   if (fatalHandled) return;
   const { title, detail, errorType } = startupErrorDialog(err);
-  logEvent("startup.error", { errorType });
+  // 088: lỗi muộn (đã có cửa sổ) ghi riêng "runtime.uncaught" để phân biệt khi đọc nhật ký.
+  logError(everShownWindow ? "runtime.uncaught" : "startup.error", {
+    errorType,
+  });
   // Chốt một chiều: chỉ THOÁT nếu chưa từng dựng cửa sổ (giai đoạn khởi động). Không dùng số cửa sổ
   // hiện tại vì trên macOS đóng hết cửa sổ KHÔNG thoát app (idle ở dock) → sẽ về 0 và hiểu nhầm lỗi
   // runtime muộn là lỗi khởi động rồi giết phiên người dùng. Sau khi UI đã lên, lỗi muộn chỉ log.
@@ -136,6 +141,52 @@ const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
   app.quit();
 }
+// 088: nhật ký ra file — chỉ instance giữ lock (instance thứ 2 thoát ngay, không tranh ghi cùng tệp). Lỗi dựng
+// sink ⇒ chỉ còn console, app vẫn chạy (nhật ký là phụ trợ, không được làm hỏng khởi động).
+let logsDir = "";
+if (gotSingleInstanceLock) {
+  try {
+    logsDir = resolveLogsDir({
+      packaged: app.isPackaged,
+      osLogsPath: app.getPath("logs"),
+      userDataPath: app.getPath("userData"),
+    });
+    setLogSink(
+      createFileSink({
+        dir: logsDir,
+        fs: createNodeLogFs(),
+        onError: (errorType) =>
+          console.error("[InsightVault] logfile.disabled", { errorType }),
+      }),
+    );
+  } catch (e) {
+    console.error("[InsightVault] logfile.init.error", {
+      errorType: e instanceof Error ? e.constructor.name : typeof e,
+    });
+  }
+  logEvent("app.start", {
+    version: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    packaged: app.isPackaged,
+  });
+}
+
+// 088: tiến trình renderer/GPU/utility chết — trước đây không để lại dấu vết. Chỉ log lý do + mã thoát.
+app.on("render-process-gone", (_e, _wc, details) => {
+  logError("renderer.gone", {
+    reason: details.reason,
+    exitCode: details.exitCode,
+  });
+});
+app.on("child-process-gone", (_e, details) => {
+  logError("childProcess.gone", {
+    type: details.type,
+    reason: details.reason,
+    exitCode: details.exitCode,
+  });
+});
+
 app.on("second-instance", () => {
   const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
   if (win) {
@@ -158,7 +209,8 @@ app
     // Đảm bảo data dir tồn tại (FR-011/012). userData = chuẩn OS (F1).
     const dataDir = await ensureDataDir(app.getPath("userData"));
     if (!dataDir.ready) {
-      logEvent("datadir.error", { path: dataDir.path });
+      // 088: không log đường dẫn (chứa tên tài khoản) — dialog bên dưới đã hiện cho người dùng.
+      logError("datadir.error", { ready: false });
       dialog.showErrorBox(
         "Không tạo được thư mục dữ liệu",
         `InsightVault không thể tạo thư mục dữ liệu tại:\n${dataDir.path}\n\nKiểm tra quyền truy cập hoặc dung lượng ổ đĩa rồi mở lại ứng dụng.`,
@@ -332,6 +384,7 @@ app
       reindexStatus: () => reindex,
       backupService,
       vaultLock,
+      logsDir,
     });
 
     installSecurity();

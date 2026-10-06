@@ -24,6 +24,16 @@ export interface DataDirInfo {
   ready: boolean;
 }
 
+/**
+ * Báo lỗi renderer về main để ghi nhật ký (088). CHỈ loại lỗi (Error.name) + componentStack của React — KHÔNG
+ * message/stack thô (có thể dính nội dung tài liệu). Main làm sạch lại (chỉ giữ tên component).
+ */
+export interface RendererErrorInput {
+  source: "boundary" | "window" | "rejection";
+  errorType: string;
+  componentStack?: string;
+}
+
 /** Thông tin lưu trữ cục bộ (037) — hiển thị ở Cài đặt. Chỉ đọc metadata, không nội dung. */
 export interface StorageInfo {
   /** Đường dẫn thư mục dữ liệu app. */

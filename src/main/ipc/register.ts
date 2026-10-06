@@ -1,4 +1,4 @@
-import { app, ipcMain, BrowserWindow, clipboard } from "electron";
+import { app, ipcMain, BrowserWindow, clipboard, shell } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
 import type {
   AddSourceInput,
@@ -38,7 +38,8 @@ import type { StudioService } from "../services/studio/studio-service";
 import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
 import { getSourceContent } from "../services/source-viewer/source-content";
-import { logEvent } from "../logging";
+import { logError, logEvent } from "../logging";
+import { createRendererErrorReporter } from "../services/app-log/renderer-error";
 import type { BackupService } from "../services/vault-backup/backup-service";
 import type { VaultLock } from "../services/vault-backup/vault-lock";
 import {
@@ -66,7 +67,12 @@ interface RegisterDeps {
   // 085 — sao lưu/khôi phục vault + khoá chặn ghi trong lúc chụp/sau xác nhận khôi phục.
   backupService: BackupService;
   vaultLock: VaultLock;
+  // 088 — thư mục nhật ký (mở bằng trình quản lý tệp từ Cài đặt / màn hình lỗi).
+  logsDir: string;
 }
+
+/** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
+const MAX_RENDERER_ERROR_REPORTS = 50;
 
 /** Thông báo khi kênh ghi vault bị chặn bởi vault lock (085, R7). Không chứa dữ liệu người dùng. */
 export const VAULT_LOCKED_MESSAGE =
@@ -95,6 +101,7 @@ export function registerIpc({
   reindexStatus,
   backupService,
   vaultLock,
+  logsDir,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -124,6 +131,21 @@ export function registerIpc({
   safeHandle(CHANNELS.clipboardWrite, (text) => {
     clipboard.writeText(String(text));
     return { ok: true } as const;
+  });
+  // app-log (088): renderer chỉ gửi loại lỗi + componentStack; main làm sạch + chặn lũ rồi ghi nhật ký.
+  safeHandle(
+    CHANNELS.reportRendererError,
+    createRendererErrorReporter({
+      log: logError,
+      max: MAX_RENDERER_ERROR_REPORTS,
+    }),
+  );
+  // Mở thư mục nhật ký CỐ ĐỊNH (không nhận path từ renderer). shell.openPath trả "" khi thành công.
+  safeHandle(CHANNELS.openLogsFolder, async () => {
+    if (!logsDir) return { ok: false }; // khởi tạo nhật ký thất bại lúc khởi động
+    const err = await shell.openPath(logsDir);
+    if (err) logEvent("logs.openFailed", {});
+    return { ok: err === "" };
   });
 
   // ai-runtime (007) — Ollama gọi CHỈ ở đây (main); renderer chạm qua 5 kênh này. Cùng instance với pipeline.
