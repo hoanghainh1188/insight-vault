@@ -101,4 +101,4 @@ MIT — xem [`LICENSE`](LICENSE).
 ---
 
 > Dự án này khởi tạo từ template **spec-driven-jp** (Spec Kit + đọc tài liệu thiết kế). Hạ tầng template
-> (`plugin/`, `.claude-plugin/`, CI `template-smoke-test`) được giữ lại; nội dung đã chỉnh cho InsightVault.
+> (`plugin/`, `.claude-plugin/`, CI `pipeline-config-check`) được giữ lại; nội dung đã chỉnh cho InsightVault.

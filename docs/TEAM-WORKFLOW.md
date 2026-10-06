@@ -9,7 +9,7 @@ conflict** và **không lệch ngữ cảnh** (glossary, constitution, design g�
 >
 > 1. **`.github/CODEOWNERS`** — thay `@your-lead-handle` bằng GitHub handle thật của (các) steward.
 > 2. **Branch protection cho `main`** — bật _Require PR_ + _Require review from Code Owners_ +
->    _Require status checks_ (`template-smoke-test`) + _Require branches up to date_. Chi tiết ở [mục 9](#9-điểm-nóng-conflict--branch-protection).
+>    _Require status checks_ (`pipeline-config-check`) + _Require branches up to date_. Chi tiết ở [mục 9](#9-điểm-nóng-conflict--branch-protection).
 
 ---
 
@@ -271,7 +271,7 @@ Settings → Branches → Add rule cho `main`:
 - ☑ Require a pull request before merging
 - ☑ Require approvals (≥1)
 - ☑ Require review from **Code Owners**
-- ☑ Require status checks to pass → chọn `template-smoke-test` (và CI dự án)
+- ☑ Require status checks to pass → chọn `pipeline-config-check` (và CI dự án)
 - ☑ Require branches to be up to date before merging (ép rebase → giảm drift)
 
 ---
