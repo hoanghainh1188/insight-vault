@@ -1,4 +1,4 @@
-name: template-smoke-test
+name: pipeline-config-check
 
 on:
   push:

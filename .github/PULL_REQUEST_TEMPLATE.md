@@ -16,7 +16,7 @@ Closes #<!-- số issue = feature ID -->
 - [ ] Đã chạy `glossary-steward` (term lệch đã sửa) và `security-reviewer` (nếu feature đụng data/auth/API)
 - [ ] Test gate xanh: `npm run lint` / `test` / `build` (hoặc tương đương của dự án)
 - [ ] Coverage đạt ngưỡng constitution (Article W — mặc định ≥ 80% business logic)
-- [ ] CI `template-smoke-test` (và CI dự án) xanh
+- [ ] CI `pipeline-config-check` (và CI dự án) xanh
 
 ## File dùng chung (gác cổng)
 - [ ] **THÊM** term mới vào `docs/00-glossary.md` (append) — OK để trong PR này; steward (code-owner) review phần glossary

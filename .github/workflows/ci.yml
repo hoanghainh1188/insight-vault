@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  # Cổng chất lượng THẬT cho app (khác template-smoke-test chỉ kiểm cấu trúc template).
+  # Cổng chất lượng THẬT cho app (khác pipeline-config-check chỉ kiểm cấu hình pipeline/docs).
   # Đặt job này ("build-test") làm required status check trong Ruleset của main.
   build-test:
     runs-on: ubuntu-latest

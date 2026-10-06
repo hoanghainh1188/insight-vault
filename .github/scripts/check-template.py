@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Kiểm tra nội dung template (không chỉ sự tồn tại của file).
 
-Chạy trong CI (smoke-test) và chạy được cả ở local:
+Chạy trong CI (workflow pipeline-config-check) và chạy được cả ở local:
     python3 .github/scripts/check-template.py
 
 Bắt các lỗi mà check `test -f` bỏ sót:
