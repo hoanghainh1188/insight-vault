@@ -121,3 +121,6 @@ Bổ sung ngay khi gặp thuật ngữ mới — không tự dịch rồi bỏ q
 | —      | Phiên khôi phục (token thay đường dẫn file)                   | restore token (`token`, `parseRestoreTokenInput`)   | renderer chỉ cầm UUID; path file nằm ở main từ hộp thoại — 085 |
 | —      | Tóm tắt bản sao lưu (hiện trước khi xác nhận)                 | backup summary (`BackupSummary`)                    | ngày tạo, số notebook/nguồn, phiên bản, mã hoá, cần tái lập chỉ mục — 085 |
 | —      | Kết quả khôi phục (báo ở lần mở app đầu sau hoán đổi)         | restore result (`RestoreResult`)                    | one-shot `restore/result.json`; ok hoặc swapFailed — 085 |
+| —      | Nhật ký (tệp ghi sự kiện/lỗi để chẩn đoán)                    | log (`logEvent`, `logError`, `main.log`)            | JSON lines, xoay vòng 1 MB × 3 tệp; bản đóng gói ở thư mục log chuẩn HĐH, dev/E2E ở `<userData>/logs`; meta qua `redact` — 088 |
+| —      | Vùng chặn lỗi giao diện                                       | error boundary (`ErrorBoundary`)                    | bọc vùng nội dung; lỗi render → `ErrorFallback` (Thử lại · Tải lại · Mở thư mục nhật ký), header/nav vẫn dùng được — 088 |
+| —      | Báo lỗi renderer (về main để ghi nhật ký)                     | renderer error report (`reportRendererError`)       | chỉ loại lỗi + tên component, không message/stack thô; tối đa 50 báo/phiên — 088 |

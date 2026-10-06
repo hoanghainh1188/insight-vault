@@ -24,8 +24,10 @@ export function loadKeytar(): KeytarLike {
     const require = createRequire(import.meta.url);
     return require("keytar") as KeytarLike;
   } catch (e) {
+    // 088: không log e.message (require stack chứa đường dẫn tuyệt đối/tên tài khoản) — chỉ loại lỗi + code.
     logEvent("ai.keytar.unavailable", {
-      reason: e instanceof Error ? e.message : "unknown",
+      errorType: e instanceof Error ? e.constructor.name : typeof e,
+      code: (e as { code?: unknown } | null)?.code ?? null,
     });
     return noopKeytar;
   }

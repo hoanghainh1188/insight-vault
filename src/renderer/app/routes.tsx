@@ -6,12 +6,15 @@ import { Workspace } from "../features/sources/Workspace";
 import { SettingsAiSection } from "../features/ai-runtime/SettingsAiSection";
 import { SettingsAiOnlineSection } from "../features/ai-runtime/SettingsAiOnlineSection";
 import { SettingsStorageSection } from "../features/app-shell/SettingsStorageSection";
+import { RouteErrorFallback } from "../shared/RouteErrorFallback";
 
 // HashRouter (clarify A2) — route phản ánh khu vực, deep-link được sau. Mặc định /notebooks (A6).
 export const router = createHashRouter([
   {
     path: "/",
     element: <App />,
+    // 088: lỗi ở chính vỏ app (ngoài ErrorBoundary của vùng nội dung).
+    errorElement: <RouteErrorFallback />,
     children: [
       { index: true, element: <Navigate to="/notebooks" replace /> },
       { path: "notebooks", element: <NotebooksGrid /> },

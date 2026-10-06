@@ -63,6 +63,8 @@ export default defineConfig({
         // 085 vault-backup: service vault-backup (đã nằm trong src/main/services/**) + helper thuần renderer.
         "src/renderer/features/vault-backup/password-rules.ts",
         "src/renderer/features/vault-backup/messages.ts",
+        // 088 app-log: báo lỗi renderer (thuần, jsdom test) — log-file/renderer-error đã nằm trong services/**.
+        "src/renderer/shared/error-report.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
@@ -71,6 +73,8 @@ export default defineConfig({
       exclude: [
         // 085: adapter hộp thoại Electron (I/O native) — phủ bởi e2e (IV_E2E_DIALOG_PATH).
         "src/main/services/vault-backup/dialogs.ts",
+        // 088: adapter node:fs cho sink nhật ký (I/O thuần; logic xoay vòng ở log-file.ts đã tính coverage).
+        "src/main/services/app-log/log-fs.ts",
         "src/main/services/ai-runtime/ai-runtime.ts",
         "src/main/services/ingestion/ingestion.ts",
         "src/main/services/ingestion/vector-store.ts",

@@ -45,6 +45,9 @@ export const CHANNELS = {
   getAppInfo: "app:getAppInfo",
   // ghi clipboard qua main (renderer sandbox: navigator.clipboard bị chặn bởi permission handler) (#67)
   clipboardWrite: "app:clipboardWrite",
+  // app-log (088): renderer báo lỗi (chỉ loại lỗi + tên component) + mở thư mục nhật ký bằng trình quản lý tệp.
+  reportRendererError: "app:reportRendererError",
+  openLogsFolder: "app:openLogsFolder",
   // ai-runtime (007)
   aiListModels: "ai:listModels",
   aiTestConnection: "ai:testConnection",
@@ -128,6 +131,8 @@ export interface ChannelResponse {
   [CHANNELS.setOnboardingComplete]: { completed: true };
   [CHANNELS.getAppInfo]: AppInfo;
   [CHANNELS.clipboardWrite]: { ok: true };
+  [CHANNELS.reportRendererError]: { ok: boolean };
+  [CHANNELS.openLogsFolder]: { ok: boolean };
   [CHANNELS.aiListModels]: Model[];
   [CHANNELS.aiTestConnection]: RuntimeStatus;
   [CHANNELS.aiGetSelectedModels]: ModelSelection;

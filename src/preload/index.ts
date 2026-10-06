@@ -14,6 +14,7 @@ import type {
   OnlineState,
   RagAnswer,
   RagAskInput,
+  RendererErrorInput,
   RenameNotebookInput,
   RuntimeStatus,
   SetColorInput,
@@ -56,6 +57,11 @@ const api = {
   // ghi clipboard qua main (#67) — navigator.clipboard bị chặn ở renderer sandbox.
   clipboardWrite: (text: string): Promise<{ ok: true }> =>
     ipcRenderer.invoke(CHANNELS.clipboardWrite, text),
+  // app-log (088)
+  reportRendererError: (input: RendererErrorInput): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke(CHANNELS.reportRendererError, input),
+  openLogsFolder: (): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke(CHANNELS.openLogsFolder),
   // ai-runtime (007)
   aiListModels: (): Promise<Model[]> =>
     ipcRenderer.invoke(CHANNELS.aiListModels),
