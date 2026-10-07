@@ -6,12 +6,13 @@ import {
   validateQuestion,
 } from "./question-validation";
 import { retrieve, type RetrievalDeps } from "./retrieval";
+import type { RelevanceConfig } from "./relevance-filter";
 import { buildContext } from "./context-builder";
 import { systemPromptFor } from "./prompt";
-import { citationsFromMap, postprocessCitations } from "./citation";
+import { postprocessCitations } from "./citation";
 import {
   MAX_HISTORY_TURNS,
-  NOT_FOUND_ANSWER,
+  NOT_FOUND_DISPLAY,
   REINDEXING_ANSWER,
 } from "./constants";
 
@@ -31,6 +32,11 @@ export interface RagServiceDeps extends RetrievalDeps {
    * đã nhúng lại xong vẫn hỏi đáp được dù các notebook khác còn dở. Async vì cần đếm vector (LanceDB).
    */
   reindexing?: (notebookId: string) => Promise<boolean>;
+  /**
+   * 108: cấu hình bộ lọc độ liên quan cho retrieve(). Chỉ công cụ đo (tests/eval, phần LLM tham khảo) đặt; app để
+   * trống ⇒ dùng RELEVANCE_CALIBRATION.config.
+   */
+  relevanceConfig?: RelevanceConfig;
   /** Lưu bền lượt hỏi–đáp (027-chat-history). Best-effort; KHÔNG log nội dung. */
   saveTurn?: (
     notebookId: string,
@@ -42,6 +48,16 @@ export interface RagServiceDeps extends RetrievalDeps {
       modeUsed: RagAnswer["modeUsed"];
     },
   ) => void;
+}
+
+// Mọi nhánh "không tìm thấy" ở chế độ theo nguồn trả CÙNG một câu hiển thị (kèm gợi ý — 108 FR-016).
+function notFoundResult(): RagAnswer {
+  return {
+    answer: NOT_FOUND_DISPLAY,
+    citations: [],
+    notFound: true,
+    modeUsed: "grounded",
+  };
 }
 
 export function createRagService(deps: RagServiceDeps) {
@@ -67,17 +83,16 @@ export function createRagService(deps: RagServiceDeps) {
     }
 
     // 055: truyền history cho query rewriting (giải tham chiếu hội thoại).
-    const scored = await retrieve(question, input.notebookId, deps, history);
+    const scored = await retrieve(
+      question,
+      input.notebookId,
+      deps,
+      history,
+      deps.relevanceConfig,
+    );
 
     // Grounded + không có căn cứ → "không tìm thấy" (không gọi model, không bịa).
-    if (mode === "grounded" && scored.length === 0) {
-      return {
-        answer: NOT_FOUND_ANSWER,
-        citations: [],
-        notFound: true,
-        modeUsed: "grounded",
-      };
-    }
+    if (mode === "grounded" && scored.length === 0) return notFoundResult();
 
     const built = buildContext(scored);
     const system = systemPromptFor(mode, built.contextText);
@@ -95,24 +110,12 @@ export function createRagService(deps: RagServiceDeps) {
       return { answer, citations, notFound: false, modeUsed: "open" };
     }
 
-    // Grounded — đảm bảo "luôn kèm nguồn / kiểm chứng được" (Constitution II).
+    // Grounded — "luôn kèm nguồn / kiểm chứng được" (Constitution II). 108 (FR-015): không có [n] hợp lệ nào
+    // ⇒ KHÔNG trình bày như có căn cứ (trước đây gắn mọi đoạn ngữ cảnh làm trích dẫn) → "không tìm thấy".
     if (citations.length > 0) {
       return { answer, citations, notFound: false, modeUsed: "grounded" };
     }
-    if (answer.trim() === "" || /không tìm thấy/i.test(answer)) {
-      return {
-        answer: NOT_FOUND_ANSWER,
-        citations: [],
-        notFound: true,
-        modeUsed: "grounded",
-      };
-    }
-    return {
-      answer,
-      citations: citationsFromMap(built.map),
-      notFound: false,
-      modeUsed: "grounded",
-    };
+    return notFoundResult();
   }
 
   // Persist lượt (027) — best-effort: DB lỗi KHÔNG phá câu trả lời; KHÔNG log nội dung.

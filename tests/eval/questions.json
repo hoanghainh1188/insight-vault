@@ -1,0 +1,1373 @@
+{
+  "datasetVersion": "1",
+  "reviewed": {
+    "by": "Hải",
+    "date": "2026-10-07"
+  },
+  "questions": [
+    {
+      "id": "q-001",
+      "text": "Vịnh Hạ Long cùng với đảo nào tạo thành một trong những khu du lịch quốc gia đầu tiên?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Vịnh Hạ Long cùng với đảo Cát Bà tạo thành một trong 21 khu du lịch quốc gia đầu tiên"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-002",
+      "text": "Mức triều cường ở vịnh Hạ Long khoảng bao nhiêu mét mỗi ngày?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "mức triều cường vào khoảng 3,5–4m/ngày"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-003",
+      "text": "Thời Bắc thuộc, vùng vịnh Hạ Long được gọi bằng tên gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "thời Bắc thuộc khu vực này được gọi là Lục Châu, Lục Hải"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-004",
+      "text": "Núi Vạn Xuân trên đảo cao bao nhiêu mét?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "núi Vạn Xuân cao 182m"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-005",
+      "text": "Vị vua nào đã lên thăm hang Đầu Gỗ vào năm 1917?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Năm 1917, hang Đầu Gỗ được vua Khải Định lên thăm"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-006",
+      "text": "Lòng hang Đầu Gỗ được chia thành mấy ngăn?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "trong lòng hang được chia thành 3 ngăn chính"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-007",
+      "text": "Khu vực Tùng Ngón có bao nhiêu loài san hô sinh sống?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Tùng Ngón là nơi cư trú của 65 loài san hô"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-008",
+      "text": "Năm 2003 vịnh Hạ Long đón bao nhiêu lượt khách du lịch?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "năm 2003 vịnh Hạ Long đón tới 1.306.919 lượt khách"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-009",
+      "text": "Khi được xếp hạng di tích quốc gia năm 1962, vịnh Hạ Long rộng bao nhiêu và có bao nhiêu hòn đảo?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "diện tích 1553 km² bao gồm 1969 hòn đảo"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-010",
+      "text": "Ở di chỉ nào trên vịnh người ta tìm thấy mảnh ghè của người vượn?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "di chỉ Tấn Mài trên vùng vịnh những mảnh ghè của người vượn"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-011",
+      "text": "Trên các đảo của vịnh Hạ Long có khoảng bao nhiêu loài thực vật?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "tổng số loài thực vật sống trên các đảo khoảng trên 1.000 loài"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-012",
+      "text": "Món phở thường được nấu với những loại thịt nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Thịt dùng cho món phở là thịt bò"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-013",
+      "text": "Phở được cho là bắt đầu phổ biến gắn với sự hình thành nhà máy nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "bối cảnh hình thành Nhà máy dệt Nam Định"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-014",
+      "text": "Phở gà xuất hiện vào năm nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Năm 1939, phở gà xuất hiện"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-015",
+      "text": "Khi nấu nước dùng phở, nước luộc xương lần đầu được xử lý thế nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Nước luộc xương lần đầu phải đổ đi"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-016",
+      "text": "Món phở xào xuất hiện vào thập niên nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "loại phở xuất hiện vào thập niên 1970 là phở xào"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-017",
+      "text": "Gia vị ăn kèm phở truyền thống gồm những gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "gia vị của phở là hành lá, hạt tiêu, giấm ớt, lát chanh thái"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-018",
+      "text": "Phở không người lái thời bao cấp được ăn kèm với gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "ăn với bánh mì hoặc cơm nguội"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-019",
+      "text": "Phở bò Giao Cù có xuất xứ từ đâu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "xuất xứ từ làng Giao Cù"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-020",
+      "text": "Người Nhật chọn ngày nào làm Ngày phở Việt Nam tại Nhật Bản?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "ngày 4 tháng 4 hàng năm là Ngày phở Việt Nam tại Nhật Bản"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-021",
+      "text": "Phở được người miền Bắc mang vào miền Nam vào năm nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "di cư vào miền Nam năm 1954 mang theo món phở"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-022",
+      "text": "Ai là người cách tân chiếc áo dài vào những năm 1930?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "do Le Mur Cát Tường cách tân"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-023",
+      "text": "Áo dài giống với những trang phục nào của Ấn Độ và Pakistan?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Áo dài giống với shalwar kameez, kurta"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-024",
+      "text": "Áo dài được xẻ tà ở vị trí nào trên thân áo?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "vị trí xẻ tà ở hai bên hông"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-025",
+      "text": "Giới quý tộc xưa ưa chuộng loại áo choàng cổ chéo nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "áo choàng cổ chéo gọi là áo giao lãnh"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-026",
+      "text": "Khi chiếm đóng Đại Việt năm 1407, nhà Minh buộc phụ nữ mặc gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "họ buộc phụ nữ phải mặc quần kiểu Trung Quốc"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-027",
+      "text": "Cải cách của Cát Tường biến áo ngũ thân còn lại mấy vạt?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "biến nó chỉ còn lại hai vạt trước và sau"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-028",
+      "text": "Điểm chia hai tà áo Lemur trễ dưới eo khoảng bao nhiêu xăng-ti-mét?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "trễ dưới eo độ 8 cm"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-029",
+      "text": "Những chiếc áo dài Lemur đầu tiên được xuất xưởng năm nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Đến năm 1935 thì cho xuất xưởng những chiếc áo đầu tiên"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-030",
+      "text": "Quảng cáo may quần áo phụ nữ lối mới năm 1934 được đăng trên tờ báo nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Báo Phong Hóa số 115 ngày 14 tháng 9 năm 1934"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-031",
+      "text": "Vải may bao nhiêu chiếc áo dài thì đủ may ba chiếc áo vắn?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "khoảng 2 cái áo dài may được 3 cái áo vắn"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-032",
+      "text": "Hồ Hoàn Kiếm còn được gọi bằng tên nào khác?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "còn được gọi là Hồ Gươm"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-033",
+      "text": "Tên gọi Hoàn Kiếm gắn với truyền thuyết nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "truyền thuyết vua Lê Lợi trả lại gươm thần cho Rùa vàng"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-034",
+      "text": "Hồ Thủy Quân bị lấp đi từ năm nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Từ năm 1884, nhà nước bảo hộ Pháp cho lấp hồ Thủy Quân"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-035",
+      "text": "Tháp Rùa được xây dựng trong khoảng thời gian nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "từ giữa năm 1884 đến tháng 4 năm 1886"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-036",
+      "text": "Cửa tròn ở tầng trên cùng của Tháp Rùa có đường kính bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "đường kính 0,68 mét"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-037",
+      "text": "Đền Ngọc Sơn thờ những vị nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Đền Ngọc Sơn thờ thần Văn Xương"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-038",
+      "text": "Tên cầu Thê Húc mang ý nghĩa gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "nơi đậu ánh sáng Mặt Trời buổi sáng sớm"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-039",
+      "text": "Trên thân Tháp Bút có khắc ba chữ gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "ba chữ Tả Thanh Thiên"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-040",
+      "text": "Rùa hồ Gươm có tên khoa học là gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "tên khoa học là Rafetus leloii"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-041",
+      "text": "Cá thể rùa Hồ Gươm cuối cùng chết vào ngày nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Ngày 19 tháng 1 năm 2016, cá thể rùa Hồ Gươm cuối cùng đã chết"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-042",
+      "text": "Lưu lượng nước hằng năm của sông Mê Kông khoảng bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "lưu lượng hàng năm đạt khoảng 475 tỉ m³"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-043",
+      "text": "Thác nước cản trở giao thông đường thủy trên sông Mê Kông dài và cao bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Thác nước này dài 15 km, cao 18 m"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-044",
+      "text": "Chín nhánh sông Mê Kông ở Việt Nam được gọi chung là gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "được gọi chung là sông Cửu Long"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-045",
+      "text": "Sông Nam Ou đổ vào sông Mê Kông tại đâu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "đổ vào sông Mê Kông tại Muang Pak Ou"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-046",
+      "text": "Phụ lưu Se Don đổ vào Mekong ở địa điểm nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "đổ vào Mekong tại Pak Se"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-047",
+      "text": "Nền văn minh sớm nhất được biết đến trong lưu vực sông Mê Kông thuộc vương quốc nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "của Vương quốc Phù Nam"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-048",
+      "text": "Người Pháp chiếm đóng Sài Gòn vào năm nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "sau khi chiếm đóng Sài Gòn năm 1861"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-049",
+      "text": "Lưu lượng đỉnh lũ lớn nhất của sông Mê Kông từng đạt bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "lưu lượng đỉnh lũ lớn nhất từng đạt 75.700 m3/s"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-050",
+      "text": "Đoạn sông tam giác châu từ Phnôm Pênh ra biển dài bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "là đoạn sông tam giác châu, dài 332 kilômét"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-051",
+      "text": "Thượng du sông Mê Kông chiếm bao nhiêu phần diện tích lưu vực?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "chiếm khoảng 1/4 tổng diện tích lưu vực"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-052",
+      "text": "Hai nhánh đầu nguồn của sông Lan Thương tên là gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "sông Trát Khúc (Zha Qu) và sông Ngang Khúc (Ang Qu)"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-053",
+      "text": "Theo luật, người không quốc tịch được hiểu là người như thế nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Người không quốc tịch là người không có quốc tịch Việt Nam và cũng không có quốc tịch nước ngoài"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-054",
+      "text": "Kết hôn hoặc ly hôn với người nước ngoài có làm thay đổi quốc tịch Việt Nam không?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "không làm thay đổi quốc tịch Việt Nam của đương sự"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-055",
+      "text": "Trẻ em có cha mẹ đều là công dân Việt Nam thì mang quốc tịch gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "có cha mẹ đều là công dân Việt Nam thì có quốc tịch Việt Nam"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-056",
+      "text": "Con sinh ra ở Việt Nam có cha mẹ không quốc tịch nhưng thường trú tại Việt Nam có được quốc tịch Việt Nam không?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "có cha mẹ đều là người không quốc tịch, nhưng có nơi thường trú tại Việt Nam thì có quốc tịch Việt Nam"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-057",
+      "text": "Người nhập quốc tịch Việt Nam có phải từ bỏ quốc tịch nước ngoài không?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Người nhập quốc tịch Việt Nam thì phải thôi quốc tịch nước ngoài"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-058",
+      "text": "Người bị tước quốc tịch Việt Nam phải chờ bao lâu mới được xem xét cho trở lại quốc tịch?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "phải sau ít nhất 5 năm, kể từ ngày bị tước quốc tịch"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-059",
+      "text": "Cơ quan công an cấp tỉnh có bao nhiêu ngày để xác minh theo đề nghị của Sở Tư pháp?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Trong thời hạn 20 ngày, kể từ ngày nhận được đề nghị của Sở Tư pháp, cơ quan Công an cấp tỉnh"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-060",
+      "text": "Phiếu lý lịch tư pháp nộp kèm hồ sơ quốc tịch phải được cấp trong thời hạn bao lâu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "phiếu được cấp không quá 90 ngày tính đến ngày nộp hồ sơ"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-061",
+      "text": "Trường hợp nào người xin thôi quốc tịch Việt Nam không được chấp thuận?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "nếu việc đó làm phương hại đến lợi ích quốc gia của Việt Nam"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-062",
+      "text": "Hủy quyết định cho nhập quốc tịch của một người có ảnh hưởng đến quốc tịch của vợ hoặc chồng họ không?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "không làm thay đổi quốc tịch Việt Nam của người kia"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-063",
+      "text": "Đội dân phòng là tổ chức gồm những ai?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Đội dân phòng là tổ chức gồm những người tham gia hoạt động phòng cháy và chữa cháy"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-064",
+      "text": "Ngày toàn dân phòng cháy và chữa cháy là ngày nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Ngày 04 tháng 10 hàng năm"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-065",
+      "text": "Dự án, thiết kế công trình có phải được thẩm duyệt về phòng cháy chữa cháy không?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "phải được thẩm duyệt về phòng cháy và chữa cháy"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-066",
+      "text": "Nơi khai thác dầu mỏ, khí đốt phải trang bị thiết bị gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "phải có các thiết bị phát hiện và xử lý rò rỉ khí cháy"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-067",
+      "text": "Người phát hiện ra đám cháy có trách nhiệm gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Người phát hiện thấy cháy phải bằng mọi cách báo cháy nhanh nhất và chữa cháy"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-068",
+      "text": "Xe của cảnh sát phòng cháy chữa cháy được dùng những tín hiệu ưu tiên nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "được sử dụng còi, đèn, cờ ưu tiên và tín hiệu đặc biệt khác"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-069",
+      "text": "Khi xảy ra cháy tại một cơ sở thì ai là người chỉ huy chữa cháy?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Cháy tại cơ sở thì người đứng đầu cơ sở là người chỉ huy chữa cháy"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-070",
+      "text": "Tài sản bị huy động để chữa cháy mà bị thiệt hại thì có được bồi thường không?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Phương tiện, tài sản được huy động bị thiệt hại hoặc nhà, công trình bị phá dỡ"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-071",
+      "text": "Cảng hàng không, nhà ga, bến xe phải trang bị phương tiện chữa cháy theo quy định của ai?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "trang bị phương tiện chữa cháy theo quy định của Bộ trưởng Bộ Công an"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-072",
+      "text": "Lực lượng nào có trách nhiệm hướng dẫn và kiểm tra hoạt động phòng cháy chữa cháy?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Lực lượng Cảnh sát phòng cháy và chữa cháy có trách nhiệm hướng dẫn, kiểm tra"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-073",
+      "text": "Theo Luật Bảo vệ môi trường 1993, chất thải là gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Chất thải là chất được loại ra trong sinh hoạt"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-074",
+      "text": "Ô nhiễm môi trường được định nghĩa ra sao?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Ô nhiễm môi trường là sự làm thay đổi tính chất của môi trường"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-075",
+      "text": "Sự cố môi trường là gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Sự cố môi trường là các tai biến hoặc rủi ro"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-076",
+      "text": "Công nghệ sạch được hiểu như thế nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Công nghệ sạch là quy trình công nghệ hoặc giải pháp kỹ thuật không gây ô nhiễm môi trường"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-077",
+      "text": "Đa dạng sinh học được định nghĩa là gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Đa dạng sinh học là sự phong phú về nguồn gien"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-078",
+      "text": "Chính phủ quy định gì đối với việc sản xuất và đốt pháo?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "hạn chế, tiến tới nghiêm cấm sản xuất pháo, đốt pháo"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-079",
+      "text": "Tổ chức, cá nhân có được gây tiếng ồn vượt giới hạn cho phép không?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "không được gây tiếng ồn, độ rung động vượt quá giới hạn cho phép"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-080",
+      "text": "Phát hiện dấu hiệu sự cố môi trường thì phải báo cho ai?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "phải báo ngay cho Uỷ ban nhân dân địa phương"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-081",
+      "text": "Chính quyền các cấp phải quy hoạch gì liên quan đến việc mai táng?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Chính quyền các cấp phải quy hoạch nơi chôn cất, hoả táng"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-082",
+      "text": "Luật Bảo vệ môi trường 1993 được ban hành căn cứ vào những điều nào của Hiến pháp?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Căn cứ vào Điều 29 và Điều 84 của Hiến pháp"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-083",
+      "text": "Giá vé tham quan vịnh Hạ Long cho người lớn là bao nhiêu?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-084",
+      "text": "Mỗi ngày có bao nhiêu chuyến thủy phi cơ ngắm cảnh vịnh Hạ Long?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-085",
+      "text": "Tuyến cáp treo nào đưa du khách lên ngắm toàn cảnh vịnh Hạ Long?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-086",
+      "text": "Quán phở nào ở Hà Nội được sách Michelin gắn sao?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-087",
+      "text": "Món bún chả Hà Nội gồm những nguyên liệu gì?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-088",
+      "text": "Cà phê trứng ra đời ở quán nào tại Hà Nội?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-089",
+      "text": "Nhà thiết kế nào đưa áo dài lên sàn diễn Tuần lễ thời trang Paris?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-090",
+      "text": "Áo dài được công nhận là di sản văn hóa phi vật thể quốc gia vào năm nào?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-091",
+      "text": "Hồ Hoàn Kiếm sâu nhất bao nhiêu mét?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-092",
+      "text": "Phố đi bộ quanh hồ Hoàn Kiếm mở vào những ngày nào trong tuần?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-093",
+      "text": "Đập thủy điện Xayaburi trên sông Mê Kông có công suất bao nhiêu MW?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-094",
+      "text": "Mỗi năm đồng bằng sông Cửu Long xuất khẩu bao nhiêu tấn cá tra?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-095",
+      "text": "Lệ phí nhập quốc tịch Việt Nam là bao nhiêu tiền?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-096",
+      "text": "Người nước ngoài xin thị thực du lịch Việt Nam được lưu trú tối đa bao nhiêu ngày?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-097",
+      "text": "Mức phạt tiền khi hộ gia đình không trang bị bình chữa cháy là bao nhiêu?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-098",
+      "text": "Số điện thoại báo cháy khẩn cấp ở Việt Nam là số mấy?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-099",
+      "text": "Bình chữa cháy dạng bột phải được bảo dưỡng mấy tháng một lần?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-100",
+      "text": "Túi ni lông khó phân hủy bị cấm sử dụng từ năm nào?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-101",
+      "text": "Chỉ số AQI bao nhiêu thì chất lượng không khí được coi là nguy hại?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-102",
+      "text": "Mức phí bảo vệ môi trường đối với nước thải sinh hoạt là bao nhiêu phần trăm giá nước?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-103",
+      "text": "How many islands did Ha Long Bay include when it was classified as a national site in 1962?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "bao gồm 1969 hòn đảo"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-104",
+      "text": "Which date did Japan choose as Vietnamese Pho Day?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "ngày 4 tháng 4 hàng năm là Ngày phở Việt Nam tại Nhật Bản"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-105",
+      "text": "What is the scientific name of the Hoan Kiem Lake turtle?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Rafetus leloii"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-106",
+      "text": "What is the annual water discharge of the Mekong River?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "475 tỉ m³"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-107",
+      "text": "When is Vietnam's national fire prevention day?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Ngày 04 tháng 10 hàng năm"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-108",
+      "text": "Who modernized the ao dai in the 1930s?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Le Mur Cát Tường"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-109",
+      "text": "How long must a person wait to regain Vietnamese nationality after it has been revoked?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "phải sau ít nhất 5 năm"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-110",
+      "text": "How much is a ticket for a Ha Long Bay cruise?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-111",
+      "text": "Which Michelin-starred restaurant serves pho in Hanoi?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-112",
+      "text": "What is the fine for not having a fire extinguisher at home?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    }
+  ]
+}

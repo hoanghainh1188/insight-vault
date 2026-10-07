@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { NOT_FOUND_HINT } from "../../src/main/services/rag/constants";
 import {
   groundedSystemPrompt,
   openSystemPrompt,
@@ -12,6 +13,12 @@ describe("system prompts", () => {
     expect(p).toContain("Không tìm thấy trong nguồn.");
     expect(p).toMatch(/KHÔNG bịa/i);
     expect(p).toContain("[1] noi dung");
+  });
+
+  it("(108) grounded yêu cầu NGUYÊN VĂN câu không tìm thấy — không chứa gợi ý hiển thị", () => {
+    const p = groundedSystemPrompt("[1] x");
+    expect(p).toContain('"Không tìm thấy trong nguồn."');
+    expect(p).not.toContain(NOT_FOUND_HINT);
   });
 
   it("open: cho phép kiến thức chung nhưng gắn nhãn 'không dựa trên nguồn'", () => {

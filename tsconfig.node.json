@@ -23,7 +23,9 @@
     "src/shared/**/*.ts",
     "src/renderer/env.d.ts",
     "tests/unit/**/*.ts",
+    "tests/eval/**/*.ts",
     "electron.vite.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "vitest.eval.config.ts"
   ]
 }

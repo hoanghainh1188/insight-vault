@@ -27,7 +27,7 @@ function dot(a: number[], b: number[]): number {
   return s;
 }
 
-function cosine(a: number[], b: number[]): number {
+export function cosine(a: number[], b: number[]): number {
   const na = Math.sqrt(dot(a, a));
   const nb = Math.sqrt(dot(b, b));
   if (na === 0 || nb === 0) return 0;

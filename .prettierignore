@@ -1,0 +1,3 @@
+# 108: dữ liệu bộ đánh giá — văn bản bên thứ ba + nhãn đã duyệt, KHÔNG định dạng lại (trích đoạn phải khớp nguyên văn)
+tests/eval/corpus/
+tests/eval/questions.json

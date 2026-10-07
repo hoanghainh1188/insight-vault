@@ -1,0 +1,101 @@
+[
+  {
+    "id": "vinh-ha-long",
+    "title": "Vịnh Hạ Long",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/V%E1%BB%8Bnh_H%E1%BA%A1_Long",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 75510308
+  },
+  {
+    "id": "pho",
+    "title": "Phở",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/Ph%E1%BB%9F",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 75612794
+  },
+  {
+    "id": "ao-dai",
+    "title": "Áo dài",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/%C3%81o_d%C3%A0i",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 75565615
+  },
+  {
+    "id": "ho-hoan-kiem",
+    "title": "Hồ Hoàn Kiếm",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/H%E1%BB%93_Ho%C3%A0n_Ki%E1%BA%BFm",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 75577937
+  },
+  {
+    "id": "song-me-kong",
+    "title": "Mê Kông",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/M%C3%AA_K%C3%B4ng",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 75432453
+  },
+  {
+    "id": "luat-quoc-tich-2008",
+    "title": "Luật Quốc tịch Việt Nam 2008",
+    "sourceUrl": "https://vi.wikisource.org/wiki/Lu%E1%BA%ADt_Qu%E1%BB%91c_t%E1%BB%8Bch_Vi%E1%BB%87t_Nam_2008",
+    "license": "public-domain-vn-law",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 198478
+  },
+  {
+    "id": "luat-pccc-2001",
+    "title": "Luật Phòng cháy và chữa cháy nước Cộng hòa xã hội chủ nghĩa Việt Nam 2001",
+    "sourceUrl": "https://vi.wikisource.org/wiki/Lu%E1%BA%ADt_Ph%C3%B2ng_ch%C3%A1y_v%C3%A0_ch%E1%BB%AFa_ch%C3%A1y_n%C6%B0%E1%BB%9Bc_C%E1%BB%99ng_h%C3%B2a_x%C3%A3_h%E1%BB%99i_ch%E1%BB%A7_ngh%C4%A9a_Vi%E1%BB%87t_Nam_2001",
+    "license": "public-domain-vn-law",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 196516
+  },
+  {
+    "id": "luat-bvmt-1993",
+    "title": "Luật Bảo vệ môi trường nước Cộng hòa xã hội chủ nghĩa Việt Nam 1993",
+    "sourceUrl": "https://vi.wikisource.org/wiki/Lu%E1%BA%ADt_B%E1%BA%A3o_v%E1%BB%87_m%C3%B4i_tr%C6%B0%E1%BB%9Dng_n%C6%B0%E1%BB%9Bc_C%E1%BB%99ng_h%C3%B2a_x%C3%A3_h%E1%BB%99i_ch%E1%BB%A7_ngh%C4%A9a_Vi%E1%BB%87t_Nam_1993",
+    "license": "public-domain-vn-law",
+    "retrievedAt": "2026-10-07",
+    "noise": false,
+    "revisionId": 112145
+  },
+  {
+    "id": "quang-hop",
+    "title": "Quang hợp",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/Quang_h%E1%BB%A3p",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": true,
+    "revisionId": 75051386
+  },
+  {
+    "id": "he-mat-troi",
+    "title": "Hệ Mặt Trời",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/H%E1%BB%87_M%E1%BA%B7t_Tr%E1%BB%9Di",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": true,
+    "revisionId": 75606175
+  },
+  {
+    "id": "bong-da",
+    "title": "Bóng đá",
+    "sourceUrl": "https://vi.wikipedia.org/wiki/B%C3%B3ng_%C4%91%C3%A1",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-07",
+    "noise": true,
+    "revisionId": 74981543
+  }
+]
