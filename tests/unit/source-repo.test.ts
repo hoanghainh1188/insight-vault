@@ -177,3 +177,128 @@ describe("source-repo", () => {
     expect(c.c).toBe(0);
   });
 });
+
+// 112 (FR-011): phiên bản cách trích của nguồn.
+describe("source-repo — extractionVersion (112)", () => {
+  it("nguồn mới mặc định 1; setExtractionVersion đổi giá trị", async () => {
+    const { openDatabase } = await import("../../src/main/db/database");
+    const { runMigrations } = await import("../../src/main/db/migrations");
+    const { createSourceRepo } =
+      await import("../../src/main/services/ingestion/source-repo");
+    const db = openDatabase(":memory:");
+    runMigrations(db);
+    db.prepare(
+      "INSERT INTO notebook (id, name, color, created_at, updated_at) VALUES (?,?,?,?,?)",
+    ).run("nb1", "N", "#4F46E5", 1, 1);
+    const repo = createSourceRepo(db, { now: () => 5, uuid: () => "s-1" });
+    const s = repo.create({
+      notebookId: "nb1",
+      kind: "pdf",
+      title: "a.pdf",
+      origin: "/a.pdf",
+      contentHash: "h",
+    });
+    expect(s.extractionVersion).toBe(1);
+    repo.setExtractionVersion(s.id, 2);
+    expect(repo.getById(s.id)!.extractionVersion).toBe(2);
+    expect(repo.listByNotebook("nb1")[0].extractionVersion).toBe(2);
+  });
+});
+
+// 112 (FR-015, research R10): thay chunk của nguồn trong MỘT transaction (xử lý lại nguyên tử).
+describe("source-repo — replaceChunks (112)", () => {
+  async function seeded() {
+    const { openDatabase } = await import("../../src/main/db/database");
+    const { runMigrations } = await import("../../src/main/db/migrations");
+    const { createSourceRepo } =
+      await import("../../src/main/services/ingestion/source-repo");
+    const { chunkPages } =
+      await import("../../src/main/services/ingestion/chunker");
+    const db = openDatabase(":memory:");
+    runMigrations(db);
+    db.prepare(
+      "INSERT INTO notebook (id, name, color, created_at, updated_at) VALUES (?,?,?,?,?)",
+    ).run("nb1", "N", "#4F46E5", 1, 1);
+    let n = 0;
+    const repo = createSourceRepo(db, {
+      now: () => 7,
+      uuid: () => `old-${++n}`,
+    });
+    const s = repo.create({
+      notebookId: "nb1",
+      kind: "pdf",
+      title: "a.pdf",
+      origin: "/a.pdf",
+      contentHash: "h",
+      pageCount: 1,
+    });
+    const oldIds = repo.insertChunks(
+      s.id,
+      chunkPages([{ page: 1, text: "chu cu tren trang mot" }]),
+    );
+    const ftsCount = () =>
+      (db.prepare("SELECT count(*) AS c FROM chunk_fts").get() as { c: number })
+        .c;
+    const ftsHit = (q: string) =>
+      (
+        db
+          .prepare(
+            "SELECT count(*) AS c FROM chunk_fts WHERE chunk_fts MATCH ?",
+          )
+          .get(q) as { c: number }
+      ).c;
+    return { repo, s, oldIds, chunkPages, ftsCount, ftsHit };
+  }
+
+  it("thay toàn bộ chunk bằng id định trước + FTS khớp + version/pageCount cập nhật", async () => {
+    const { repo, s, oldIds, chunkPages, ftsCount, ftsHit } = await seeded();
+    const drafts = chunkPages([
+      { page: 1, text: "noi dung moi trang mot" },
+      { page: 2, text: "noi dung moi trang hai" },
+    ]);
+    repo.replaceChunks(s.id, drafts, ["new-a", "new-b"], {
+      extractionVersion: 2,
+      pageCount: 2,
+    });
+    const chunks = repo.listChunks(s.id);
+    expect(chunks.map((c) => c.id)).toEqual(["new-a", "new-b"]);
+    expect(chunks[1].locator.page).toBe(2);
+    expect(repo.getChunksByIds(oldIds)).toEqual([]);
+    expect(ftsCount()).toBe(2);
+    expect(ftsHit("moi")).toBe(2);
+    expect(ftsHit("cu")).toBe(0);
+    const src = repo.getById(s.id)!;
+    expect(src.extractionVersion).toBe(2);
+    expect(src.pageCount).toBe(2);
+  });
+
+  it("lỗi giữa chừng (id trùng) ⇒ rollback: chunk + FTS + version cũ nguyên vẹn", async () => {
+    const { repo, s, oldIds, chunkPages, ftsCount, ftsHit } = await seeded();
+    const drafts = chunkPages([
+      { page: 1, text: "noi dung moi mot" },
+      { page: 2, text: "noi dung moi hai" },
+    ]);
+    expect(() =>
+      repo.replaceChunks(s.id, drafts, ["dup", "dup"], {
+        extractionVersion: 2,
+        pageCount: 2,
+      }),
+    ).toThrow();
+    expect(repo.listChunks(s.id).map((c) => c.id)).toEqual(oldIds);
+    expect(ftsCount()).toBe(1);
+    expect(ftsHit("cu")).toBe(1);
+    expect(repo.getById(s.id)!.extractionVersion).toBe(1);
+  });
+
+  it("số id ≠ số draft ⇒ ném, không đổi gì", async () => {
+    const { repo, s, oldIds, chunkPages } = await seeded();
+    const drafts = chunkPages([{ page: 1, text: "x" }]);
+    expect(() =>
+      repo.replaceChunks(s.id, drafts, [], {
+        extractionVersion: 2,
+        pageCount: 1,
+      }),
+    ).toThrow();
+    expect(repo.listChunks(s.id).map((c) => c.id)).toEqual(oldIds);
+  });
+});

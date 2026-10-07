@@ -234,7 +234,12 @@ export interface Source {
   pageCount: number | null;
   createdAt: number;
   updatedAt: number;
+  /** 112: cách trích đã dùng cho văn bản/chunk hiện tại (1 = trước 112; PDF bố cục = PDF_EXTRACTION_VERSION). */
+  extractionVersion: number;
 }
+
+/** 112: phiên bản cách trích PDF có bố cục (dòng/cột/bảng). PDF có version thấp hơn ⇒ gợi ý "Xử lý lại". */
+export const PDF_EXTRACTION_VERSION = 2;
 
 /** Chunk (đoạn) — đơn vị embed & trích dẫn. */
 export interface Chunk {

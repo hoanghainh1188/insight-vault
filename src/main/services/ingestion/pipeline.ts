@@ -10,6 +10,7 @@ import type { SourceRepo } from "./source-repo";
 import type { VectorStore, VectorRecord } from "./vector-store";
 import type { LLMProvider } from "../ai-runtime/provider";
 import type { ParseResult } from "./parsers";
+import { PDF_EXTRACTION_VERSION } from "@shared/ipc/types";
 import { detectKindFromPath, titleFromPath } from "./parsers";
 import { cleanText } from "./cleaning";
 import { chunkPages, type PageText } from "./chunker";
@@ -303,6 +304,10 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         : withTime;
       sourceRepo.deleteChunks(id); // sạch trước khi ghi (retry an toàn)
       sourceRepo.insertChunks(id, located);
+      // 112: chunk PDF vừa tạo bằng cách trích có bố cục ⇒ ghi phiên bản (gợi ý "Xử lý lại" biến mất).
+      if (src.kind === "pdf") {
+        sourceRepo.setExtractionVersion(id, PDF_EXTRACTION_VERSION);
+      }
       send(reload(id)!, "chunk", 0.4);
       if (signal.cancelled) return;
       const embedded = await embedAndStore(reload(id)!, signal);

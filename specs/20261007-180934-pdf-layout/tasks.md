@@ -108,13 +108,13 @@ ADR + glossary + gate.
 
 ### Dữ liệu
 
-- [ ] T035 [P] [US3] RED — `tests/unit/migration-extraction-version.test.ts`: migration #9 thêm `source.extraction_version` NOT NULL DEFAULT 1; nguồn cũ = 1; idempotent; schema-guard vault-backup chấp nhận DB v9
-- [ ] T036 [US3] GREEN — `src/main/db/migrations.ts`: migration #9 (ADD COLUMN, append-only)
-- [ ] T037 [US3] (D1) RED — `tests/unit/source-repo.test.ts` + `tests/unit/ingestion-pipeline.test.ts`: `Source.extractionVersion` đọc/ghi được; PDF nạp thành công ⇒ `extractionVersion = 2`; loại khác giữ 1
-- [ ] T038 [US3] (D1) GREEN — `src/shared/ipc/types.ts` (`Source.extractionVersion`, `PDF_EXTRACTION_VERSION = 2`), `src/main/services/ingestion/source-repo.ts` (map cột + `setExtractionVersion`), `src/main/services/ingestion/pipeline.ts` (ghi 2 khi PDF ready)
-- [ ] T039 [P] [US3] RED — `tests/unit/source-repo.test.ts`: `replaceChunks(sourceId, drafts, ids, {extractionVersion, pageCount})` trong MỘT transaction: chunk cũ biến mất, chunk mới đúng id/locator, `chunk_fts` khớp chunk mới, version cập nhật; lỗi giữa chừng ⇒ rollback (chunk + FTS cũ nguyên)
-- [ ] T040 [US3] GREEN — `src/main/services/ingestion/source-repo.ts`: `replaceChunks`
-- [ ] T041 [P] [US3] `src/main/services/ingestion/vector-store.ts`: `deleteByIds(ids)`; cập nhật interface `VectorStore` + mọi fake trong test
+- [X] T035 [P] [US3] RED — `tests/unit/migration-extraction-version.test.ts`: migration #9 thêm `source.extraction_version` NOT NULL DEFAULT 1; nguồn cũ = 1; idempotent; schema-guard vault-backup chấp nhận DB v9
+- [X] T036 [US3] GREEN — `src/main/db/migrations.ts`: migration #9 (ADD COLUMN, append-only)
+- [X] T037 [US3] (D1) RED — `tests/unit/source-repo.test.ts` + `tests/unit/ingestion-pipeline.test.ts`: `Source.extractionVersion` đọc/ghi được; PDF nạp thành công ⇒ `extractionVersion = 2`; loại khác giữ 1
+- [X] T038 [US3] (D1) GREEN — `src/shared/ipc/types.ts` (`Source.extractionVersion`, `PDF_EXTRACTION_VERSION = 2`), `src/main/services/ingestion/source-repo.ts` (map cột + `setExtractionVersion`), `src/main/services/ingestion/pipeline.ts` (ghi 2 khi PDF ready)
+- [X] T039 [P] [US3] RED — `tests/unit/source-repo.test.ts`: `replaceChunks(sourceId, drafts, ids, {extractionVersion, pageCount})` trong MỘT transaction: chunk cũ biến mất, chunk mới đúng id/locator, `chunk_fts` khớp chunk mới, version cập nhật; lỗi giữa chừng ⇒ rollback (chunk + FTS cũ nguyên)
+- [X] T040 [US3] GREEN — `src/main/services/ingestion/source-repo.ts`: `replaceChunks`
+- [X] T041 [P] [US3] `src/main/services/ingestion/vector-store.ts`: `deleteByIds(ids)`; cập nhật interface `VectorStore` + mọi fake trong test
 
 ### Quy tắc chặn + pipeline
 

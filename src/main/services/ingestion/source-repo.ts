@@ -28,6 +28,7 @@ interface SourceRow {
   content_hash: string;
   created_at: number;
   updated_at: number;
+  extraction_version: number;
 }
 
 interface ChunkRow {
@@ -57,6 +58,7 @@ function toSource(r: SourceRow): Source {
     pageCount: r.page_count,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+    extractionVersion: r.extraction_version,
   };
 }
 
@@ -123,7 +125,19 @@ export interface SourceRepo {
   ): void;
   setPageCount(id: string, pageCount: number | null): void;
   setTitle(id: string, title: string): void;
+  /** 112: ghi phiên bản cách trích đã dùng cho chunk hiện tại. */
+  setExtractionVersion(id: string, version: number): void;
   insertChunks(sourceId: string, drafts: ChunkDraft[]): string[];
+  /**
+   * 112 (xử lý lại nguyên tử): trong MỘT transaction — xoá chunk cũ (trigger xoá FTS), chèn chunk mới với `ids` định
+   * trước (vector đã ghi theo các id này), cập nhật extraction_version + page_count. Lỗi ⇒ rollback, không đổi gì.
+   */
+  replaceChunks(
+    sourceId: string,
+    drafts: ChunkDraft[],
+    ids: string[],
+    meta: { extractionVersion: number; pageCount: number | null },
+  ): void;
   listChunks(sourceId: string): Chunk[];
   /** Lấy nhiều chunk theo danh sách id bất kỳ (kết quả vector search), trả theo THỨ TỰ ids. */
   getChunksByIds(ids: string[]): Chunk[];
@@ -145,6 +159,51 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
       .prepare("SELECT * FROM source WHERE id = ?")
       .get(id) as unknown as SourceRow | undefined;
     return row ? toSource(row) : null;
+  };
+
+  const inTransaction = (fn: () => void): void => {
+    db.exec("BEGIN");
+    try {
+      fn();
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    }
+  };
+
+  // Ghi chunk + đồng bộ FTS keyword (055: text đã FOLD theo rowid vừa insert; xoá do trigger AFTER DELETE).
+  // Gọi BÊN TRONG transaction.
+  const writeChunks = (
+    sourceId: string,
+    drafts: ChunkDraft[],
+    ids: string[],
+  ): void => {
+    const stmt = db.prepare(
+      "INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end, t_start, t_end, bbox_x, bbox_y, bbox_w, bbox_h) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    );
+    const ftsStmt = db.prepare(
+      "INSERT INTO chunk_fts (rowid, text) VALUES (?, ?)",
+    );
+    drafts.forEach((d, i) => {
+      const bb = d.locator.bbox;
+      const res = stmt.run(
+        ids[i],
+        sourceId,
+        d.ordinal,
+        d.text,
+        d.locator.page,
+        d.locator.charStart,
+        d.locator.charEnd,
+        d.locator.tStart ?? null,
+        d.locator.tEnd ?? null,
+        bb?.x ?? null,
+        bb?.y ?? null,
+        bb?.w ?? null,
+        bb?.h ?? null,
+      );
+      ftsStmt.run(Number(res.lastInsertRowid), foldVietnamese(d.text));
+    });
   };
 
   return {
@@ -253,6 +312,12 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
       ).run(pageCount, now(), id);
     },
 
+    setExtractionVersion(id, version) {
+      db.prepare(
+        "UPDATE source SET extraction_version = ?, updated_at = ? WHERE id = ?",
+      ).run(version, now(), id);
+    },
+
     setTitle(id, title) {
       db.prepare(
         "UPDATE source SET title = ?, updated_at = ? WHERE id = ?",
@@ -260,43 +325,22 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
     },
 
     insertChunks(sourceId, drafts) {
-      const ids: string[] = [];
-      const stmt = db.prepare(
-        "INSERT INTO chunk (id, source_id, ordinal, text, page, char_start, char_end, t_start, t_end, bbox_x, bbox_y, bbox_w, bbox_h) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      );
-      // 055: đồng bộ FTS keyword — ghi text đã FOLD theo rowid vừa insert. Xoá do trigger AFTER DELETE.
-      const ftsStmt = db.prepare(
-        "INSERT INTO chunk_fts (rowid, text) VALUES (?, ?)",
-      );
-      db.exec("BEGIN");
-      try {
-        for (const d of drafts) {
-          const cid = uuid();
-          ids.push(cid);
-          const bb = d.locator.bbox;
-          const res = stmt.run(
-            cid,
-            sourceId,
-            d.ordinal,
-            d.text,
-            d.locator.page,
-            d.locator.charStart,
-            d.locator.charEnd,
-            d.locator.tStart ?? null,
-            d.locator.tEnd ?? null,
-            bb?.x ?? null,
-            bb?.y ?? null,
-            bb?.w ?? null,
-            bb?.h ?? null,
-          );
-          ftsStmt.run(Number(res.lastInsertRowid), foldVietnamese(d.text));
-        }
-        db.exec("COMMIT");
-      } catch (e) {
-        db.exec("ROLLBACK");
-        throw e;
-      }
+      const ids = drafts.map(() => uuid());
+      inTransaction(() => writeChunks(sourceId, drafts, ids));
       return ids;
+    },
+
+    replaceChunks(sourceId, drafts, ids, meta) {
+      if (ids.length !== drafts.length) {
+        throw new Error("replaceChunks: số id không khớp số chunk.");
+      }
+      inTransaction(() => {
+        db.prepare("DELETE FROM chunk WHERE source_id = ?").run(sourceId);
+        writeChunks(sourceId, drafts, ids);
+        db.prepare(
+          "UPDATE source SET extraction_version = ?, page_count = ?, updated_at = ? WHERE id = ?",
+        ).run(meta.extractionVersion, meta.pageCount, now(), sourceId);
+      });
     },
 
     listChunks(sourceId) {

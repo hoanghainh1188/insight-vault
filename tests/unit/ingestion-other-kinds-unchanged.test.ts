@@ -30,6 +30,7 @@ function longText(): string {
 const noopVectors: VectorStore = {
   async add() {},
   async deleteBySource() {},
+  async deleteByIds() {},
   async deleteByNotebook() {},
   async countBySource() {
     return 0;

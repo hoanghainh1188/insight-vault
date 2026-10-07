@@ -25,6 +25,8 @@ export interface VectorSearchHit {
 export interface VectorStore {
   add(records: VectorRecord[]): Promise<void>;
   deleteBySource(sourceId: string): Promise<void>;
+  /** 112: xoá vector theo danh sách chunk id (dọn vector cũ sau khi xử lý lại / vector mới khi xử lý lại lỗi). */
+  deleteByIds(ids: string[]): Promise<void>;
   deleteByNotebook(notebookId: string): Promise<void>;
   countBySource(sourceId: string): Promise<number>;
   /** 059: đếm vector theo notebook (so với số chunk để biết notebook đã nhúng lại xong chưa). */
@@ -110,6 +112,19 @@ export async function createLanceVectorStore(
     async deleteBySource(sourceId) {
       const t = await getTable();
       if (t) await t.delete(`source_id = '${q(sourceId)}'`);
+    },
+    async deleteByIds(ids) {
+      if (ids.length === 0) return;
+      const t = await getTable();
+      if (!t) return;
+      // Chia lô để biểu thức IN không quá dài (PDF lớn có thể vài nghìn chunk).
+      for (let i = 0; i < ids.length; i += 500) {
+        const inList = ids
+          .slice(i, i + 500)
+          .map((id) => `'${q(id)}'`)
+          .join(",");
+        await t.delete(`id IN (${inList})`);
+      }
     },
     async deleteByNotebook(notebookId) {
       const t = await getTable();
