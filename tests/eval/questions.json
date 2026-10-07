@@ -14,7 +14,9 @@
       "quotes": [
         "Vịnh Hạ Long cùng với đảo Cát Bà tạo thành một trong 21 khu du lịch quốc gia đầu tiên"
       ],
-      "docIds": ["vinh-ha-long"]
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-002",
@@ -22,8 +24,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["mức triều cường vào khoảng 3,5–4m/ngày"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "mức triều cường vào khoảng 3,5–4m/ngày"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-003",
@@ -31,8 +37,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["thời Bắc thuộc khu vực này được gọi là Lục Châu, Lục Hải"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "thời Bắc thuộc khu vực này được gọi là Lục Châu, Lục Hải"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-004",
@@ -40,8 +50,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["núi Vạn Xuân cao 182m"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "núi Vạn Xuân cao 182m"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-005",
@@ -49,8 +63,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Năm 1917, hang Đầu Gỗ được vua Khải Định lên thăm"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "Năm 1917, hang Đầu Gỗ được vua Khải Định lên thăm"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-006",
@@ -58,8 +76,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["trong lòng hang được chia thành 3 ngăn chính"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "trong lòng hang được chia thành 3 ngăn chính"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-007",
@@ -67,8 +89,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Tùng Ngón là nơi cư trú của 65 loài san hô"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "Tùng Ngón là nơi cư trú của 65 loài san hô"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-008",
@@ -76,8 +102,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["năm 2003 vịnh Hạ Long đón tới 1.306.919 lượt khách"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "năm 2003 vịnh Hạ Long đón tới 1.306.919 lượt khách"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-009",
@@ -85,8 +115,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["diện tích 1553 km² bao gồm 1969 hòn đảo"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "diện tích 1553 km² bao gồm 1969 hòn đảo"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-010",
@@ -94,8 +128,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["di chỉ Tấn Mài trên vùng vịnh những mảnh ghè của người vượn"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "di chỉ Tấn Mài trên vùng vịnh những mảnh ghè của người vượn"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-011",
@@ -106,7 +144,9 @@
       "quotes": [
         "tổng số loài thực vật sống trên các đảo khoảng trên 1.000 loài"
       ],
-      "docIds": ["vinh-ha-long"]
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-012",
@@ -114,8 +154,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Thịt dùng cho món phở là thịt bò"],
-      "docIds": ["pho"]
+      "quotes": [
+        "Thịt dùng cho món phở là thịt bò"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-013",
@@ -123,8 +167,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["bối cảnh hình thành Nhà máy dệt Nam Định"],
-      "docIds": ["pho"]
+      "quotes": [
+        "bối cảnh hình thành Nhà máy dệt Nam Định"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-014",
@@ -132,8 +180,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["Năm 1939, phở gà xuất hiện"],
-      "docIds": ["pho"]
+      "quotes": [
+        "Năm 1939, phở gà xuất hiện"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-015",
@@ -141,8 +193,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Nước luộc xương lần đầu phải đổ đi"],
-      "docIds": ["pho"]
+      "quotes": [
+        "Nước luộc xương lần đầu phải đổ đi"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-016",
@@ -150,8 +206,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["loại phở xuất hiện vào thập niên 1970 là phở xào"],
-      "docIds": ["pho"]
+      "quotes": [
+        "loại phở xuất hiện vào thập niên 1970 là phở xào"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-017",
@@ -162,7 +222,9 @@
       "quotes": [
         "gia vị của phở là hành lá, hạt tiêu, giấm ớt, lát chanh thái"
       ],
-      "docIds": ["pho"]
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-018",
@@ -170,8 +232,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["ăn với bánh mì hoặc cơm nguội"],
-      "docIds": ["pho"]
+      "quotes": [
+        "ăn với bánh mì hoặc cơm nguội"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-019",
@@ -179,8 +245,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["xuất xứ từ làng Giao Cù"],
-      "docIds": ["pho"]
+      "quotes": [
+        "xuất xứ từ làng Giao Cù"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-020",
@@ -188,8 +258,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["ngày 4 tháng 4 hàng năm là Ngày phở Việt Nam tại Nhật Bản"],
-      "docIds": ["pho"]
+      "quotes": [
+        "ngày 4 tháng 4 hàng năm là Ngày phở Việt Nam tại Nhật Bản"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-021",
@@ -197,8 +271,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["di cư vào miền Nam năm 1954 mang theo món phở"],
-      "docIds": ["pho"]
+      "quotes": [
+        "di cư vào miền Nam năm 1954 mang theo món phở"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-022",
@@ -206,8 +284,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["do Le Mur Cát Tường cách tân"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "do Le Mur Cát Tường cách tân"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-023",
@@ -215,8 +297,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Áo dài giống với shalwar kameez, kurta"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "Áo dài giống với shalwar kameez, kurta"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-024",
@@ -224,8 +310,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["vị trí xẻ tà ở hai bên hông"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "vị trí xẻ tà ở hai bên hông"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-025",
@@ -233,8 +323,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["áo choàng cổ chéo gọi là áo giao lãnh"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "áo choàng cổ chéo gọi là áo giao lãnh"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-026",
@@ -242,8 +336,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["họ buộc phụ nữ phải mặc quần kiểu Trung Quốc"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "họ buộc phụ nữ phải mặc quần kiểu Trung Quốc"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-027",
@@ -251,8 +349,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["biến nó chỉ còn lại hai vạt trước và sau"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "biến nó chỉ còn lại hai vạt trước và sau"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-028",
@@ -260,8 +362,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["trễ dưới eo độ 8 cm"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "trễ dưới eo độ 8 cm"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-029",
@@ -269,8 +375,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Đến năm 1935 thì cho xuất xưởng những chiếc áo đầu tiên"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "Đến năm 1935 thì cho xuất xưởng những chiếc áo đầu tiên"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-030",
@@ -278,8 +388,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["Báo Phong Hóa số 115 ngày 14 tháng 9 năm 1934"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "Báo Phong Hóa số 115 ngày 14 tháng 9 năm 1934"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-031",
@@ -287,8 +401,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["khoảng 2 cái áo dài may được 3 cái áo vắn"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "khoảng 2 cái áo dài may được 3 cái áo vắn"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-032",
@@ -296,8 +414,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["còn được gọi là Hồ Gươm"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "còn được gọi là Hồ Gươm"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-033",
@@ -305,8 +427,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["truyền thuyết vua Lê Lợi trả lại gươm thần cho Rùa vàng"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "truyền thuyết vua Lê Lợi trả lại gươm thần cho Rùa vàng"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-034",
@@ -314,8 +440,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["Từ năm 1884, nhà nước bảo hộ Pháp cho lấp hồ Thủy Quân"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "Từ năm 1884, nhà nước bảo hộ Pháp cho lấp hồ Thủy Quân"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-035",
@@ -323,8 +453,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["từ giữa năm 1884 đến tháng 4 năm 1886"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "từ giữa năm 1884 đến tháng 4 năm 1886"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-036",
@@ -332,8 +466,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["đường kính 0,68 mét"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "đường kính 0,68 mét"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-037",
@@ -341,8 +479,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["Đền Ngọc Sơn thờ thần Văn Xương"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "Đền Ngọc Sơn thờ thần Văn Xương"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-038",
@@ -350,8 +492,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["nơi đậu ánh sáng Mặt Trời buổi sáng sớm"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "nơi đậu ánh sáng Mặt Trời buổi sáng sớm"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-039",
@@ -359,8 +505,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["ba chữ Tả Thanh Thiên"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "ba chữ Tả Thanh Thiên"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-040",
@@ -368,8 +518,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["tên khoa học là Rafetus leloii"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "tên khoa học là Rafetus leloii"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-041",
@@ -380,7 +534,9 @@
       "quotes": [
         "Ngày 19 tháng 1 năm 2016, cá thể rùa Hồ Gươm cuối cùng đã chết"
       ],
-      "docIds": ["ho-hoan-kiem"]
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-042",
@@ -388,8 +544,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["lưu lượng hàng năm đạt khoảng 475 tỉ m³"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "lưu lượng hàng năm đạt khoảng 475 tỉ m³"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-043",
@@ -397,8 +557,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Thác nước này dài 15 km, cao 18 m"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "Thác nước này dài 15 km, cao 18 m"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-044",
@@ -406,8 +570,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["được gọi chung là sông Cửu Long"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "được gọi chung là sông Cửu Long"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-045",
@@ -415,8 +583,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["đổ vào sông Mê Kông tại Muang Pak Ou"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "đổ vào sông Mê Kông tại Muang Pak Ou"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-046",
@@ -424,8 +596,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["đổ vào Mekong tại Pak Se"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "đổ vào Mekong tại Pak Se"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-047",
@@ -433,8 +609,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["của Vương quốc Phù Nam"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "của Vương quốc Phù Nam"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-048",
@@ -442,8 +622,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["sau khi chiếm đóng Sài Gòn năm 1861"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "sau khi chiếm đóng Sài Gòn năm 1861"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-049",
@@ -451,8 +635,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["lưu lượng đỉnh lũ lớn nhất từng đạt 75.700 m3/s"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "lưu lượng đỉnh lũ lớn nhất từng đạt 75.700 m3/s"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-050",
@@ -460,8 +648,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["là đoạn sông tam giác châu, dài 332 kilômét"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "là đoạn sông tam giác châu, dài 332 kilômét"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-051",
@@ -469,8 +661,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["chiếm khoảng 1/4 tổng diện tích lưu vực"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "chiếm khoảng 1/4 tổng diện tích lưu vực"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-052",
@@ -478,8 +674,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["sông Trát Khúc (Zha Qu) và sông Ngang Khúc (Ang Qu)"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "sông Trát Khúc (Zha Qu) và sông Ngang Khúc (Ang Qu)"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-053",
@@ -490,7 +690,9 @@
       "quotes": [
         "Người không quốc tịch là người không có quốc tịch Việt Nam và cũng không có quốc tịch nước ngoài"
       ],
-      "docIds": ["luat-quoc-tich-2008"]
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-054",
@@ -498,8 +700,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["không làm thay đổi quốc tịch Việt Nam của đương sự"],
-      "docIds": ["luat-quoc-tich-2008"]
+      "quotes": [
+        "không làm thay đổi quốc tịch Việt Nam của đương sự"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-055",
@@ -510,7 +716,9 @@
       "quotes": [
         "có cha mẹ đều là công dân Việt Nam thì có quốc tịch Việt Nam"
       ],
-      "docIds": ["luat-quoc-tich-2008"]
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-056",
@@ -521,7 +729,9 @@
       "quotes": [
         "có cha mẹ đều là người không quốc tịch, nhưng có nơi thường trú tại Việt Nam thì có quốc tịch Việt Nam"
       ],
-      "docIds": ["luat-quoc-tich-2008"]
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-057",
@@ -532,7 +742,9 @@
       "quotes": [
         "Người nhập quốc tịch Việt Nam thì phải thôi quốc tịch nước ngoài"
       ],
-      "docIds": ["luat-quoc-tich-2008"]
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-058",
@@ -540,8 +752,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["phải sau ít nhất 5 năm, kể từ ngày bị tước quốc tịch"],
-      "docIds": ["luat-quoc-tich-2008"]
+      "quotes": [
+        "phải sau ít nhất 5 năm, kể từ ngày bị tước quốc tịch"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-059",
@@ -552,7 +768,9 @@
       "quotes": [
         "Trong thời hạn 20 ngày, kể từ ngày nhận được đề nghị của Sở Tư pháp, cơ quan Công an cấp tỉnh"
       ],
-      "docIds": ["luat-quoc-tich-2008"]
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-060",
@@ -560,8 +778,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["phiếu được cấp không quá 90 ngày tính đến ngày nộp hồ sơ"],
-      "docIds": ["luat-quoc-tich-2008"]
+      "quotes": [
+        "phiếu được cấp không quá 90 ngày tính đến ngày nộp hồ sơ"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-061",
@@ -572,7 +794,9 @@
       "quotes": [
         "nếu việc đó làm phương hại đến lợi ích quốc gia của Việt Nam"
       ],
-      "docIds": ["luat-quoc-tich-2008"]
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-062",
@@ -580,8 +804,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["không làm thay đổi quốc tịch Việt Nam của người kia"],
-      "docIds": ["luat-quoc-tich-2008"]
+      "quotes": [
+        "không làm thay đổi quốc tịch Việt Nam của người kia"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-063",
@@ -592,7 +820,9 @@
       "quotes": [
         "Đội dân phòng là tổ chức gồm những người tham gia hoạt động phòng cháy và chữa cháy"
       ],
-      "docIds": ["luat-pccc-2001"]
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-064",
@@ -600,8 +830,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Ngày 04 tháng 10 hàng năm"],
-      "docIds": ["luat-pccc-2001"]
+      "quotes": [
+        "Ngày 04 tháng 10 hàng năm"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-065",
@@ -609,8 +843,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["phải được thẩm duyệt về phòng cháy và chữa cháy"],
-      "docIds": ["luat-pccc-2001"]
+      "quotes": [
+        "phải được thẩm duyệt về phòng cháy và chữa cháy"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-066",
@@ -618,8 +856,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["phải có các thiết bị phát hiện và xử lý rò rỉ khí cháy"],
-      "docIds": ["luat-pccc-2001"]
+      "quotes": [
+        "phải có các thiết bị phát hiện và xử lý rò rỉ khí cháy"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-067",
@@ -630,7 +872,9 @@
       "quotes": [
         "Người phát hiện thấy cháy phải bằng mọi cách báo cháy nhanh nhất và chữa cháy"
       ],
-      "docIds": ["luat-pccc-2001"]
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-068",
@@ -638,8 +882,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["được sử dụng còi, đèn, cờ ưu tiên và tín hiệu đặc biệt khác"],
-      "docIds": ["luat-pccc-2001"]
+      "quotes": [
+        "được sử dụng còi, đèn, cờ ưu tiên và tín hiệu đặc biệt khác"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-069",
@@ -650,7 +898,9 @@
       "quotes": [
         "Cháy tại cơ sở thì người đứng đầu cơ sở là người chỉ huy chữa cháy"
       ],
-      "docIds": ["luat-pccc-2001"]
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-070",
@@ -661,7 +911,9 @@
       "quotes": [
         "Phương tiện, tài sản được huy động bị thiệt hại hoặc nhà, công trình bị phá dỡ"
       ],
-      "docIds": ["luat-pccc-2001"]
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-071",
@@ -672,7 +924,9 @@
       "quotes": [
         "trang bị phương tiện chữa cháy theo quy định của Bộ trưởng Bộ Công an"
       ],
-      "docIds": ["luat-pccc-2001"]
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-072",
@@ -683,7 +937,9 @@
       "quotes": [
         "Lực lượng Cảnh sát phòng cháy và chữa cháy có trách nhiệm hướng dẫn, kiểm tra"
       ],
-      "docIds": ["luat-pccc-2001"]
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-073",
@@ -691,8 +947,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Chất thải là chất được loại ra trong sinh hoạt"],
-      "docIds": ["luat-bvmt-1993"]
+      "quotes": [
+        "Chất thải là chất được loại ra trong sinh hoạt"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-074",
@@ -703,7 +963,9 @@
       "quotes": [
         "Ô nhiễm môi trường là sự làm thay đổi tính chất của môi trường"
       ],
-      "docIds": ["luat-bvmt-1993"]
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-075",
@@ -711,8 +973,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["Sự cố môi trường là các tai biến hoặc rủi ro"],
-      "docIds": ["luat-bvmt-1993"]
+      "quotes": [
+        "Sự cố môi trường là các tai biến hoặc rủi ro"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-076",
@@ -723,7 +989,9 @@
       "quotes": [
         "Công nghệ sạch là quy trình công nghệ hoặc giải pháp kỹ thuật không gây ô nhiễm môi trường"
       ],
-      "docIds": ["luat-bvmt-1993"]
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-077",
@@ -731,8 +999,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Đa dạng sinh học là sự phong phú về nguồn gien"],
-      "docIds": ["luat-bvmt-1993"]
+      "quotes": [
+        "Đa dạng sinh học là sự phong phú về nguồn gien"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-078",
@@ -740,8 +1012,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["hạn chế, tiến tới nghiêm cấm sản xuất pháo, đốt pháo"],
-      "docIds": ["luat-bvmt-1993"]
+      "quotes": [
+        "hạn chế, tiến tới nghiêm cấm sản xuất pháo, đốt pháo"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-079",
@@ -752,7 +1028,9 @@
       "quotes": [
         "không được gây tiếng ồn, độ rung động vượt quá giới hạn cho phép"
       ],
-      "docIds": ["luat-bvmt-1993"]
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-080",
@@ -760,8 +1038,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["phải báo ngay cho Uỷ ban nhân dân địa phương"],
-      "docIds": ["luat-bvmt-1993"]
+      "quotes": [
+        "phải báo ngay cho Uỷ ban nhân dân địa phương"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-081",
@@ -769,8 +1051,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["Chính quyền các cấp phải quy hoạch nơi chôn cất, hoả táng"],
-      "docIds": ["luat-bvmt-1993"]
+      "quotes": [
+        "Chính quyền các cấp phải quy hoạch nơi chôn cất, hoả táng"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-082",
@@ -778,8 +1064,12 @@
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Căn cứ vào Điều 29 và Điều 84 của Hiến pháp"],
-      "docIds": ["luat-bvmt-1993"]
+      "quotes": [
+        "Căn cứ vào Điều 29 và Điều 84 của Hiến pháp"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
     },
     {
       "id": "q-083",
@@ -967,8 +1257,12 @@
       "lang": "en",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["bao gồm 1969 hòn đảo"],
-      "docIds": ["vinh-ha-long"]
+      "quotes": [
+        "bao gồm 1969 hòn đảo"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
     },
     {
       "id": "q-104",
@@ -976,8 +1270,12 @@
       "lang": "en",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["ngày 4 tháng 4 hàng năm là Ngày phở Việt Nam tại Nhật Bản"],
-      "docIds": ["pho"]
+      "quotes": [
+        "ngày 4 tháng 4 hàng năm là Ngày phở Việt Nam tại Nhật Bản"
+      ],
+      "docIds": [
+        "pho"
+      ]
     },
     {
       "id": "q-105",
@@ -985,8 +1283,12 @@
       "lang": "en",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Rafetus leloii"],
-      "docIds": ["ho-hoan-kiem"]
+      "quotes": [
+        "Rafetus leloii"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
     },
     {
       "id": "q-106",
@@ -994,8 +1296,12 @@
       "lang": "en",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["475 tỉ m³"],
-      "docIds": ["song-me-kong"]
+      "quotes": [
+        "475 tỉ m³"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
     },
     {
       "id": "q-107",
@@ -1003,8 +1309,12 @@
       "lang": "en",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["Ngày 04 tháng 10 hàng năm"],
-      "docIds": ["luat-pccc-2001"]
+      "quotes": [
+        "Ngày 04 tháng 10 hàng năm"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
     },
     {
       "id": "q-108",
@@ -1012,8 +1322,12 @@
       "lang": "en",
       "type": "answerable",
       "split": "holdout",
-      "quotes": ["Le Mur Cát Tường"],
-      "docIds": ["ao-dai"]
+      "quotes": [
+        "Le Mur Cát Tường"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
     },
     {
       "id": "q-109",
@@ -1021,8 +1335,12 @@
       "lang": "en",
       "type": "answerable",
       "split": "dev",
-      "quotes": ["phải sau ít nhất 5 năm"],
-      "docIds": ["luat-quoc-tich-2008"]
+      "quotes": [
+        "phải sau ít nhất 5 năm"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
     },
     {
       "id": "q-110",

@@ -10,13 +10,13 @@ npm run eval:retrieval                    # quét lưới cấu hình (chọn tr
 EVAL_MODE=current npm run eval:retrieval  # chỉ đo cấu hình đang dùng + baseline, so với số liệu đã ghi
 ```
 
-| Biến môi trường  | Mặc định                   | Ý nghĩa                                                                  |
-| ---------------- | -------------------------- | ------------------------------------------------------------------------ |
-| `EVAL_MODE`      | `sweep`                    | `sweep` quét lưới · `current` đo cấu hình hiện hành (kiểm hồi quy)        |
-| `EVAL_CONFIG`    | —                          | JSON một `RelevanceConfig` để đo riêng (ghi đè `EVAL_MODE`)               |
-| `EVAL_WITH_LLM`  | `0`                        | `1` = thêm phần end-to-end qua Ollama cục bộ (tham khảo, không xét ĐẠT)   |
-| `EVAL_LLM_MODEL` | model chat đầu tiên        | model Ollama cho phần LLM                                                |
-| `EVAL_CACHE_DIR` | `tests/eval/.cache/models` | nơi tải mô hình e5 (~120MB, lần đầu cần Internet)                        |
+| Biến môi trường  | Mặc định                   | Ý nghĩa                                                                 |
+| ---------------- | -------------------------- | ----------------------------------------------------------------------- |
+| `EVAL_MODE`      | `sweep`                    | `sweep` quét lưới · `current` đo cấu hình hiện hành (kiểm hồi quy)      |
+| `EVAL_CONFIG`    | —                          | JSON một `RelevanceConfig` để đo riêng (ghi đè `EVAL_MODE`)             |
+| `EVAL_WITH_LLM`  | `0`                        | `1` = thêm phần end-to-end qua Ollama cục bộ (tham khảo, không xét ĐẠT) |
+| `EVAL_LLM_MODEL` | model chat đầu tiên        | model Ollama cho phần LLM                                               |
+| `EVAL_CACHE_DIR` | `tests/eval/.cache/models` | nơi tải mô hình e5 (~120MB, lần đầu cần Internet)                       |
 
 Báo cáo: `tests/eval/reports/<thời điểm>/report.{md,json}` (gitignore). Trên GitHub: Actions → `eval-retrieval` →
 Run workflow ⇒ artifact `eval-report`. Job không chặn PR.

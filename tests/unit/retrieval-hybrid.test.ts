@@ -277,6 +277,34 @@ describe("retrieve — cấu hình bộ lọc độ liên quan (108)", () => {
     expect(out.map((s) => s.chunk.id)).toEqual(["a"]);
   });
 
+  it("(review) không có hit nào qua lọc ⇒ KHÔNG đọc vector (gate khác vectorWithin)", async () => {
+    const gv = vi.fn(async () => new Map<string, number[]>());
+    const deps = baseDeps({
+      search: async () => [{ id: "far", sourceId: "s1", score: 0.9 }],
+      searchBm25: () => [],
+      getVectorsByIds: gv,
+    });
+    expect(await retrieve("q", "nb1", deps)).toEqual([]);
+    expect(gv).not.toHaveBeenCalled();
+  });
+
+  it("(review) gate khác vectorWithin ⇒ chỉ đọc vector của các đoạn đã qua lọc", async () => {
+    const gv = vi.fn(
+      async (ids: string[]) => new Map(ids.map((id) => [id, [1, 0]])),
+    );
+    const deps = baseDeps({
+      search: async () => [
+        { id: "a", sourceId: "s1", score: 0.1 },
+        { id: "far", sourceId: "s1", score: 0.9 },
+      ],
+      searchBm25: () => [],
+      getVectorsByIds: gv,
+    });
+    await retrieve("q", "nb1", deps);
+    expect(gv).toHaveBeenCalledTimes(1);
+    expect(gv.mock.calls[0][0]).toEqual(["a"]);
+  });
+
   it("câu chỉ trùng từ thông dụng (không hỗ trợ ngữ nghĩa) + requireVector ⇒ []", async () => {
     const deps = baseDeps({
       search: async () => [{ id: "far", sourceId: "s1", score: 0.3 }],

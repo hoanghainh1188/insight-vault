@@ -1,14 +1,18 @@
 Căn cứ Hiến pháp nước Cộng hoà xã hội chủ nghĩa Việt Nam năm 1992 đã được sửa đổi, bổ sung một số điều theo Nghị quyết số 51/2001/QH10;
 Quốc hội ban hành Luật quốc tịch Việt Nam.
 
+
 == CHƯƠNG I: NHỮNG QUY ĐỊNH CHUNG ==
+
 
 === Điều 1. Quốc tịch Việt Nam ===
 Quốc tịch Việt Nam thể hiện mối quan hệ gắn bó của cá nhân với Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam, làm phát sinh quyền, nghĩa vụ của công dân Việt Nam đối với Nhà nước và quyền, trách nhiệm của Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam đối với công dân Việt Nam.
 
+
 === Điều 2. Quyền đối với quốc tịch ===
 Ở nước Cộng hoà xã hội chủ nghĩa Việt Nam, mỗi cá nhân đều có quyền có quốc tịch. Công dân Việt Nam không bị tước quốc tịch Việt Nam, trừ trường hợp quy định tại Điều 31 của Luật này.
 Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam là Nhà nước thống nhất của các dân tộc cùng sinh sống trên lãnh thổ Việt Nam, mọi thành viên của các dân tộc đều bình đẳng về quyền có quốc tịch Việt Nam.
+
 
 === Điều 3. Giải thích từ ngữ ===
 Trong Luật này, các từ ngữ dưới đây được hiểu như sau:
@@ -19,8 +23,10 @@ Người Việt Nam định cư ở nước ngoài là công dân Việt Nam và
 Người gốc Việt Nam định cư ở nước ngoài là người Việt Nam đã từng có quốc tịch Việt Nam mà khi sinh ra quốc tịch của họ được xác định theo nguyên tắc huyết thống và con, cháu của họ đang cư trú, sinh sống lâu dài ở nước ngoài.
 Người nước ngoài cư trú ở Việt Nam là công dân nước ngoài và người không quốc tịch thường trú hoặc tạm trú ở Việt Nam.
 
+
 === Điều 4. Nguyên tắc quốc tịch ===
 Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam công nhận công dân Việt Nam có một quốc tịch là quốc tịch Việt Nam, trừ trường hợp Luật này có quy định khác.
+
 
 === Điều 5. Quan hệ giữa Nhà nước và công dân ===
 Người có quốc tịch Việt Nam là công dân Việt Nam.
@@ -28,22 +34,28 @@ Công dân Việt Nam được Nhà nước Cộng hoà xã hội chủ nghĩa V
 Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam có chính sách để công dân Việt Nam ở nước ngoài có điều kiện hưởng các quyền công dân và làm các nghĩa vụ công dân phù hợp với hoàn cảnh sống xa đất nước.
 Quyền và nghĩa vụ của công dân Việt Nam đồng thời có quốc tịch nước ngoài đang định cư ở nước ngoài được thực hiện theo quy định của pháp luật có liên quan.
 
+
 === Điều 6. Bảo hộ đối với công dân Việt Nam ở nước ngoài ===
 Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam bảo hộ quyền lợi chính đáng của công dân Việt Nam ở nước ngoài.
 Các cơ quan nhà nước ở trong nước, cơ quan đại diện Việt Nam ở nước ngoài có trách nhiệm thi hành mọi biện pháp cần thiết, phù hợp với pháp luật của nước sở tại, pháp luật và tập quán quốc tế để thực hiện sự bảo hộ đó.
+
 
 === Điều 7. Chính sách đối với người gốc Việt Nam định cư ở nước ngoài ===
 Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam có chính sách khuyến khích và tạo điều kiện thuận lợi để người gốc Việt Nam định cư ở nước ngoài giữ quan hệ gắn bó với gia đình và quê hương, góp phần xây dựng quê hương, đất nước.
 Nhà nước có chính sách tạo điều kiện thuận lợi cho người đã mất quốc tịch Việt Nam được trở lại quốc tịch Việt Nam.
 
+
 === Điều 8. Hạn chế tình trạng không quốc tịch ===
 Nhà nước Cộng hoà xã hội chủ nghĩa Việt Nam tạo điều kiện cho trẻ em sinh ra trên lãnh thổ Việt Nam đều có quốc tịch và những người không quốc tịch thường trú ở Việt Nam được nhập quốc tịch Việt Nam theo quy định của Luật này.
+
 
 === Điều 9. Giữ quốc tịch khi kết hôn, ly hôn, hủy việc kết hôn trái pháp luật ===
 Việc kết hôn, ly hôn và hủy việc kết hôn trái pháp luật giữa công dân Việt Nam với người nước ngoài không làm thay đổi quốc tịch Việt Nam của đương sự và con chưa thành niên của họ (nếu có).
 
+
 === Điều 10. Giữ quốc tịch khi quốc tịch của vợ hoặc chồng thay đổi ===
 Việc vợ hoặc chồng nhập, trở lại hoặc mất quốc tịch Việt Nam không làm thay đổi quốc tịch của người kia.
+
 
 === Điều 11. Giấy tờ chứng minh quốc tịch Việt Nam ===
 Một trong các giấy tờ sau đây có giá trị chứng minh người có quốc tịch Việt Nam:
@@ -53,19 +65,24 @@ Giấy chứng minh nhân dân;
 Hộ chiếu Việt Nam;
 Quyết định cho nhập quốc tịch Việt Nam, Quyết định cho trở lại quốc tịch Việt Nam, Quyết định công nhận việc nuôi con nuôi đối với trẻ em là người nước ngoài, Quyết định cho người nước ngoài nhận trẻ em Việt Nam làm con nuôi.
 
+
 === Điều 12. Giải quyết vấn đề phát sinh từ tình trạng công dân Việt Nam đồng thời có quốc tịch nước ngoài ===
 Vấn đề phát sinh từ tình trạng công dân Việt Nam đồng thời có quốc tịch nước ngoài được giải quyết theo điều ước quốc tế mà Cộng hòa xã hội chủ nghĩa Việt Nam là thành viên, trường hợp chưa có điều ước quốc tế thì được giải quyết theo tập quán và thông lệ quốc tế.
 Căn cứ vào quy định của Luật này, Chính phủ ký kết hoặc đề xuất việc ký kết, quyết định gia nhập điều ước quốc tế để giải quyết vấn đề phát sinh từ tình trạng công dân Việt Nam đồng thời có quốc tịch nước ngoài.
 
+
 == CHƯƠNG II: CÓ QUỐC TỊCH VIỆT NAM ==
 
+
 === Mục 1: QUY ĐỊNH CHUNG ===
+
 
 ==== Điều 13. Người có quốc tịch Việt Nam ====
 Người có quốc tịch Việt Nam bao gồm người đang có quốc tịch Việt Nam cho đến ngày Luật này có hiệu lực và người có quốc tịch Việt Nam theo quy định của Luật này.
 
 Người Việt Nam định cư ở nước ngoài mà chưa mất quốc tịch Việt Nam theo quy định của pháp luật Việt Nam trước ngày Luật này có hiệu lực thì vẫn còn quốc tịch Việt Nam và trong thời hạn 5 năm, kể từ ngày Luật này có hiệu lực, phải đăng ký với cơ quan đại diện Việt Nam ở nước ngoài để giữ quốc tịch Việt Nam.
 Chính phủ quy định trình tự, thủ tục đăng ký giữ quốc tịch Việt Nam.
+
 
 ==== Điều 14. Căn cứ xác định người có quốc tịch Việt Nam ====
 Người được xác định có quốc tịch Việt Nam, nếu có một trong những căn cứ sau đây:
@@ -76,16 +93,20 @@ Do sinh ra theo quy định tại các điều 15, 16 và 17 của Luật này;
 Theo quy định tại các điều 18, 35 và 37 của Luật này;
 Theo điều ước quốc tế mà Cộng hoà xã hội chủ nghĩa Việt Nam là thành viên.
 
+
 ==== Điều 15. Quốc tịch của trẻ em khi sinh ra có cha mẹ là công dân Việt Nam ====
 Trẻ em sinh ra trong hoặc ngoài lãnh thổ Việt Nam mà khi sinh ra có cha mẹ đều là công dân Việt Nam thì có quốc tịch Việt Nam.
+
 
 ==== Điều 16. Quốc tịch của trẻ em khi sinh ra có cha hoặc mẹ là công dân Việt Nam ====
 Trẻ em sinh ra trong hoặc ngoài lãnh thổ Việt Nam mà khi sinh ra có cha hoặc mẹ là công dân Việt Nam còn người kia là người không quốc tịch hoặc có mẹ là công dân Việt Nam còn cha không rõ là ai thì có quốc tịch Việt Nam.
 Trẻ em khi sinh ra có cha hoặc mẹ là công dân Việt Nam còn người kia là công dân nước ngoài thì có quốc tịch Việt Nam, nếu có sự thỏa thuận bằng văn bản của cha mẹ vào thời điểm đăng ký khai sinh cho con. Trường hợp trẻ em được sinh ra trên lãnh thổ Việt Nam mà cha mẹ không thỏa thuận được việc lựa chọn quốc tịch cho con thì trẻ em đó có quốc tịch Việt Nam.
 
+
 ==== Điều 17. Quốc tịch của trẻ em khi sinh ra có cha mẹ là người không quốc tịch ====
 Trẻ em sinh ra trên lãnh thổ Việt Nam mà khi sinh ra có cha mẹ đều là người không quốc tịch, nhưng có nơi thường trú tại Việt Nam thì có quốc tịch Việt Nam.
 Trẻ em sinh ra trên lãnh thổ Việt Nam mà khi sinh ra có mẹ là người không quốc tịch, nhưng có nơi thường trú tại Việt Nam, còn cha không rõ là ai thì có quốc tịch Việt Nam.
+
 
 ==== Điều 18. Quốc tịch của trẻ sơ sinh bị bỏ rơi, trẻ em được tìm thấy trên lãnh thổ Việt Nam ====
 Trẻ sơ sinh bị bỏ rơi, trẻ em được tìm thấy trên lãnh thổ Việt Nam mà không rõ cha mẹ là ai thì có quốc tịch Việt Nam.
@@ -93,7 +114,9 @@ Trẻ em quy định tại khoản 1 Điều này chưa đủ 15 tuổi không c
 a) Tìm thấy cha mẹ mà cha mẹ chỉ có quốc tịch nước ngoài;
 b) Chỉ tìm thấy cha hoặc mẹ mà người đó chỉ có quốc tịch nước ngoài.
 
+
 === Mục 2: NHẬP QUỐC TỊCH VIỆT NAM ===
+
 
 ==== Điều 19. Điều kiện được nhập quốc tịch Việt Nam ====
 Công dân nước ngoài và người không quốc tịch đang thường trú ở Việt Nam có đơn xin nhập quốc tịch Việt Nam thì có thể được nhập quốc tịch Việt Nam, nếu có đủ các điều kiện sau đây:
@@ -111,6 +134,7 @@ Người xin nhập quốc tịch Việt Nam phải có tên gọi Việt Nam. T
 Người xin nhập quốc tịch Việt Nam không được nhập quốc tịch Việt Nam, nếu việc đó làm phương hại đến lợi ích quốc gia của Việt Nam.
 Chính phủ quy định cụ thể các điều kiện được nhập quốc tịch Việt Nam.
 
+
 ==== Điều 20. Hồ sơ xin nhập quốc tịch Việt Nam ====
 Hồ sơ xin nhập quốc tịch Việt Nam gồm có các giấy tờ sau đây:
 a) Đơn xin nhập quốc tịch Việt Nam;
@@ -122,6 +146,7 @@ e) Giấy tờ chứng minh về chỗ ở, thời gian thường trú ở Việ
 g) Giấy tờ chứng minh bảo đảm cuộc sống ở Việt Nam.
 Những người được miễn một số điều kiện nhập quốc tịch Việt Nam quy định tại khoản 2 Điều 19 của Luật này thì được miễn các giấy tờ tương ứng với điều kiện được miễn.
 Chính phủ quy định cụ thể các giấy tờ trong hồ sơ xin nhập quốc tịch Việt Nam.
+
 
 ==== Điều 21. Trình tự, thủ tục giải quyết hồ sơ xin nhập quốc tịch Việt Nam ====
 Người xin nhập quốc tịch Việt Nam nộp hồ sơ cho Sở Tư pháp nơi cư trú. Trong trường hợp hồ sơ không có đầy đủ các giấy tờ quy định tại khoản 1 Điều 20 của Luật này hoặc không hợp lệ thì Sở Tư pháp thông báo ngay để người xin nhập quốc tịch Việt Nam bổ sung, hoàn chỉnh hồ sơ.
@@ -136,10 +161,13 @@ Trường hợp người xin nhập quốc tịch Việt Nam xin giữ quốc t�
 
 Trong thời hạn 30 ngày, kể từ ngày nhận được đề nghị của Thủ tướng Chính phủ, Chủ tịch nước xem xét, quyết định.
 
+
 ==== Điều 22. Trình tự, thủ tục và hồ sơ xin nhập quốc tịch Việt Nam đối với người không quốc tịch đã cư trú ổn định tại Việt Nam ====
 Người không quốc tịch mà không có đầy đủ các giấy tờ về nhân thân, nhưng đã cư trú ổn định trên lãnh thổ Việt Nam từ 20 năm trở lên tính đến ngày Luật này có hiệu lực và tuân thủ Hiến pháp, pháp luật Việt Nam thì được nhập quốc tịch Việt Nam theo trình tự, thủ tục và hồ sơ do Chính phủ quy định.
 
+
 === Mục 3: TRỞ LẠI QUỐC TỊCH VIỆT NAM ===
+
 
 ==== Điều 23. Các trường hợp được trở lại quốc tịch Việt Nam ====
 Người đã mất quốc tịch Việt Nam theo quy định tại Điều 26 của Luật này có đơn xin trở lại quốc tịch Việt Nam thì có thể được trở lại quốc tịch Việt Nam, nếu thuộc một trong những trường hợp sau đây:
@@ -157,6 +185,7 @@ a) Là vợ, chồng, cha đẻ, mẹ đẻ hoặc con đẻ của công dân Vi
 b) Có công lao đặc biệt đóng góp cho sự nghiệp xây dựng và bảo vệ Tổ quốc Việt Nam;
 c) Có lợi cho Nhà nước Cộng hòa xã hội chủ nghĩa Việt Nam.6. Chính phủ quy định cụ thể các điều kiện được trở lại quốc tịch Việt Nam.
 
+
 ==== Điều 24. Hồ sơ xin trở lại quốc tịch Việt Nam ====
 Hồ sơ xin trở lại quốc tịch Việt Nam gồm có các giấy tờ sau đây:
 a) Đơn xin trở lại quốc tịch Việt Nam;
@@ -166,6 +195,7 @@ d) Phiếu lý lịch tư pháp do cơ quan có thẩm quyền của Việt Nam 
 đ) Giấy tờ chứng minh người xin trở lại quốc tịch Việt Nam đã từng có quốc tịch Việt Nam;
 e) Giấy tờ chứng minh đủ điều kiện trở lại quốc tịch Việt Nam theo quy định tại khoản 1 Điều 23 của Luật này.
 Chính phủ quy định cụ thể các giấy tờ trong hồ sơ xin trở lại quốc tịch Việt Nam.
+
 
 ==== Điều 25. Trình tự, thủ tục giải quyết hồ sơ xin trở lại quốc tịch Việt Nam ====
 Người xin trở lại quốc tịch Việt Nam nếu cư trú ở trong nước thì nộp hồ sơ cho Sở Tư pháp nơi cư trú, nếu cư trú ở nước ngoài thì nộp hồ sơ cho cơ quan đại diện Việt Nam ở nước sở tại. Trong trường hợp hồ sơ không có đầy đủ các giấy tờ quy định tại Điều 24 của Luật này hoặc không hợp lệ thì cơ quan tiếp nhận hồ sơ thông báo ngay để người xin trở lại quốc tịch Việt Nam bổ sung, hoàn chỉnh hồ sơ.
@@ -183,9 +213,12 @@ Trường hợp người xin trở lại quốc tịch Việt Nam xin giữ qu�
 
 Trong thời hạn 20 ngày, kể từ ngày nhận được đề nghị của Thủ tướng Chính phủ, Chủ tịch nước xem xét, quyết định.
 
+
 == CHƯƠNG III: MẤT QUỐC TỊCH VIỆT NAM ==
 
+
 === Mục 1: QUY ĐỊNH CHUNG ===
+
 
 ==== Điều 26. Căn cứ mất quốc tịch Việt Nam ====
 Được thôi quốc tịch Việt Nam.
@@ -194,7 +227,9 @@ Không đăng ký giữ quốc tịch Việt Nam theo quy định tại khoản 
 Theo quy định tại khoản 2 Điều 18 và Điều 35 của Luật này.
 Theo điều ước quốc tế mà Cộng hoà xã hội chủ nghĩa Việt Nam là thành viên.
 
+
 === Mục 2: THÔI QUỐC TỊCH VIỆT NAM ===
+
 
 ==== Điều 27. Căn cứ thôi quốc tịch Việt Nam ====
 Công dân Việt Nam có đơn xin thôi quốc tịch Việt Nam để nhập quốc tịch nước ngoài thì có thể được thôi quốc tịch Việt Nam.
@@ -208,6 +243,7 @@ Người xin thôi quốc tịch Việt Nam không được thôi quốc tịch 
 Cán bộ, công chức và những người đang phục vụ trong lực lượng vũ trang nhân dân Việt Nam không được thôi quốc tịch Việt Nam.
 Chính phủ quy định cụ thể các điều kiện được thôi quốc tịch Việt Nam.
 
+
 ==== Điều 28. Hồ sơ xin thôi quốc tịch Việt Nam ====
 Hồ sơ xin thôi quốc tịch Việt Nam bao gồm:
 a) Đơn xin thôi quốc tịch Việt Nam;
@@ -219,6 +255,7 @@ e) Giấy xác nhận không nợ thuế do Cục thuế nơi người xin thôi
 g) Đối với người trước đây là cán bộ, công chức, viên chức hoặc phục vụ trong lực lượng vũ trang nhân dân Việt Nam đã nghỉ hưu, thôi việc, bị miễn nhiệm, bãi nhiệm, cách chức hoặc giải ngũ, phục viên chưa quá 5 năm thì còn phải nộp giấy của cơ quan, tổ chức, đơn vị đã ra quyết định cho nghỉ hưu, cho thôi việc, miễn nhiệm, bãi nhiệm, cách chức hoặc giải ngũ, phục viên xác nhận việc thôi quốc tịch Việt Nam của người đó không phương hại đến lợi ích quốc gia của Việt Nam.
 Trường hợp công dân Việt Nam không thường trú ở trong nước thì không phải nộp các giấy tờ quy định tại các điểm d, e và g khoản 1 Điều này.
 Chính phủ quy định cụ thể các giấy tờ trong hồ sơ xin thôi quốc tịch Việt Nam.
+
 
 ==== Điều 29. Trình tự, thủ tục giải quyết hồ sơ xin thôi quốc tịch Việt Nam ====
 Người xin thôi quốc tịch Việt Nam nếu cư trú ở trong nước thì nộp hồ sơ cho Sở Tư pháp nơi cư trú, nếu cư trú ở nước ngoài thì nộp hồ sơ cho cơ quan đại diện Việt Nam ở nước sở tại. Trong trường hợp hồ sơ không có đầy đủ các giấy tờ quy định tại Điều 28 của Luật này hoặc không hợp lệ thì cơ quan tiếp nhận hồ sơ thông báo ngay để người xin thôi quốc tịch Việt Nam bổ sung, hoàn chỉnh hồ sơ.
@@ -237,6 +274,7 @@ Trong trường hợp cần thiết, Bộ Tư pháp đề nghị Bộ Công an x
 Trong thời hạn 20 ngày, kể từ ngày nhận được văn bản đề xuất của Chủ tịch Ủy ban nhân dân cấp tỉnh hoặc của cơ quan đại diện Việt Nam ở nước ngoài, Bộ Tư pháp có trách nhiệm kiểm tra lại hồ sơ, nếu xét thấy người xin thôi quốc tịch Việt Nam có đủ điều kiện được thôi quốc tịch Việt Nam thì báo cáo Thủ tướng Chính phủ trình Chủ tịch nước xem xét, quyết định.
 Trong thời hạn 20 ngày, kể từ ngày nhận được đề nghị của Thủ tướng Chính phủ, Chủ tịch nước xem xét, quyết định.
 
+
 ==== Điều 30. Miễn thủ tục xác minh về nhân thân ====
 Hồ sơ xin thôi quốc tịch Việt Nam của những người thuộc một trong các trường hợp sau đây không phải qua thủ tục xác minh về nhân thân:
 
@@ -245,11 +283,14 @@ Người sinh ra và định cư ở nước ngoài;
 Người đã định cư ở nước ngoài từ 10 năm trở lên;
 Người đã được xuất cảnh theo diện đoàn tụ gia đình.
 
+
 === Mục 3: TƯỚC QUỐC TỊCH VIỆT NAM ===
+
 
 ==== Điều 31. Căn cứ tước quốc tịch Việt Nam ====
 Công dân Việt Nam cư trú ở nước ngoài có thể bị tước quốc tịch Việt Nam, nếu có hành vi gây phương hại nghiêm trọng đến nền độc lập dân tộc, đến sự nghiệp xây dựng và bảo vệ Tổ quốc Việt Nam hoặc đến uy tín của nước Cộng hoà xã hội chủ nghĩa Việt Nam.
 Người đã nhập quốc tịch Việt Nam theo quy định tại Điều 19 của Luật này dù cư trú ở trong hoặc ngoài lãnh thổ Việt Nam cũng có thể bị tước quốc tịch Việt Nam, nếu có hành vi quy định tại khoản 1 Điều này.
+
 
 ==== Điều 32. Trình tự, thủ tục tước quốc tịch Việt Nam ====
 
@@ -260,11 +301,14 @@ Chính phủ quy định cụ thể các giấy tờ trong hồ sơ kiến ngh�
 Hồ sơ kiến nghị tước quốc tịch Việt Nam được gửi đến Bộ Tư pháp. Trong thời hạn 30 ngày, kể từ ngày nhận được hồ sơ kiến nghị của Ủy ban nhân dân cấp tỉnh, cơ quan đại diện Việt Nam ở nước ngoài hoặc của Tòa án, Bộ Tư pháp có trách nhiệm chủ trì phối hợp với Bộ Công an, Bộ Ngoại giao và các bộ, ngành khác có liên quan thẩm tra hồ sơ kiến nghị tước quốc tịch Việt Nam và báo cáo Thủ tướng Chính phủ trình Chủ tịch nước xem xét, quyết định.
 Trong thời hạn 20 ngày, kể từ ngày nhận được đề nghị của Thủ tướng Chính phủ, Chủ tịch nước xem xét, quyết định.
 
+
 === Mục 4: HỦY BỎ QUYẾT ĐỊNH CHO NHẬP QUỐC TỊCH VIỆT NAM ===
+
 
 ==== Điều 33. Căn cứ hủy bỏ Quyết định cho nhập quốc tịch Việt Nam ====
 Người đã nhập quốc tịch Việt Nam theo quy định tại Điều 19 của Luật này, dù cư trú ở trong hoặc ngoài lãnh thổ Việt Nam mà cố ý khai báo không đúng sự thật hoặc giả mạo giấy tờ khi xin nhập quốc tịch Việt Nam thì Quyết định cho nhập quốc tịch Việt Nam có thể bị hủy bỏ, nếu được cấp chưa quá 5 năm.
 Việc hủy bỏ Quyết định cho nhập quốc tịch Việt Nam của vợ hoặc chồng không làm thay đổi quốc tịch Việt Nam của người kia.
+
 
 ==== Điều 34. Trình tự, thủ tục hủy bỏ Quyết định cho nhập quốc tịch Việt Nam ====
 
@@ -277,7 +321,9 @@ Trong thời hạn 15 ngày, kể từ ngày nhận được hồ sơ kiến ngh
 
 Trong thời hạn 20 ngày, kể từ ngày nhận được đề nghị của Thủ tướng Chính phủ, Chủ tịch nước xem xét, quyết định.
 
+
 == CHƯƠNG IV: THAY ĐỔI QUỐC TỊCH CỦA NGƯỜI CHƯA THÀNH NIÊN VÀ CỦA CON NUÔI ==
+
 
 ==== Điều 35. Quốc tịch của con chưa thành niên khi cha mẹ được nhập, trở lại hoặc thôi quốc tịch Việt Nam ====
 Khi có sự thay đổi về quốc tịch do nhập, trở lại hoặc thôi quốc tịch Việt Nam của cha mẹ thì quốc tịch của con chưa thành niên sinh sống cùng với cha mẹ cũng được thay đổi theo quốc tịch của họ.
@@ -287,8 +333,10 @@ Trường hợp cha hoặc mẹ được nhập, trở lại quốc tịch Việ
 
 Sự thay đổi quốc tịch của người từ đủ 15 tuổi đến chưa đủ 18 tuổi theo quy định tại khoản 1 và khoản 2 Điều này phải được sự đồng ý bằng văn bản của người đó.
 
+
 ==== Điều 36. Quốc tịch của con chưa thành niên khi cha mẹ bị tước quốc tịch Việt Nam hoặc bị hủy bỏ Quyết định cho nhập quốc tịch Việt Nam ====
 Khi cha mẹ hoặc một trong hai người bị tước quốc tịch Việt Nam hoặc bị hủy bỏ Quyết định cho nhập quốc tịch Việt Nam thì quốc tịch của con chưa thành niên không thay đổi.
+
 
 ==== Điều 37. Quốc tịch của con nuôi chưa thành niên ====
 Trẻ em là công dân Việt Nam được người nước ngoài nhận làm con nuôi thì vẫn giữ quốc tịch Việt Nam.
@@ -296,11 +344,14 @@ Trẻ em là người nước ngoài được công dân Việt Nam nhận làm 
 Trẻ em là người nước ngoài được cha mẹ mà một người là công dân Việt Nam, còn người kia là người nước ngoài nhận làm con nuôi thì được nhập quốc tịch Việt Nam theo đơn xin nhập quốc tịch Việt Nam của cha mẹ nuôi và được miễn các điều kiện quy định tại khoản 1 Điều 19 của Luật này.
 Sự thay đổi quốc tịch của con nuôi từ đủ 15 tuổi đến chưa đủ 18 tuổi phải được sự đồng ý bằng văn bản của người đó.
 
+
 == CHƯƠNG V: TRÁCH NHIỆM CỦA CÁC CƠ QUAN NHÀ NƯỚC VỀ QUỐC TỊCH ==
+
 
 ==== Điều 38. Nhiệm vụ, quyền hạn của Chủ tịch nước về quốc tịch ====
 Quyết định cho nhập quốc tịch Việt Nam, cho trở lại quốc tịch Việt Nam, cho thôi quốc tịch Việt Nam, tước quốc tịch Việt Nam, hủy bỏ Quyết định cho nhập quốc tịch Việt Nam.
 Quyết định việc đàm phán, ký điều ước quốc tế về quốc tịch theo quy định của Luật này và Luật ký kết, gia nhập và thực hiện điều ước quốc tế.
+
 
 ==== Điều 39. Trách nhiệm của Chính phủ về quốc tịch ====
 Thống nhất quản lý nhà nước về quốc tịch.
@@ -310,6 +361,7 @@ Quy định mức phí, lệ phí giải quyết các việc về quốc tịch.
 Thanh tra, kiểm tra việc thực hiện pháp luật về quốc tịch.
 Thực hiện hợp tác quốc tế về quốc tịch.
 
+
 ==== Điều 40. Trách nhiệm của các bộ, cơ quan ngang bộ, Ủy ban nhân dân cấp tỉnh, cơ quan đại diện Việt Nam ở nước ngoài ====
 Bộ Tư pháp chịu trách nhiệm trước Chính phủ thực hiện quản lý nhà nước về quốc tịch, ban hành các mẫu giấy tờ để giải quyết các việc về quốc tịch, thống kê nhà nước các việc đã giải quyết về quốc tịch để báo c�o Thủ tướng Chính phủ trình Chủ tịch nước.
 Bộ Ngoại giao phối hợp với Bộ Tư pháp hướng dẫn các cơ quan đại diện Việt Nam ở nước ngoài giải quyết các việc về quốc tịch, thống kê nhà nước các việc về quốc tịch do cơ quan đại diện Việt Nam ở nước ngoài giải quyết để gửi đến Bộ Tư pháp.
@@ -317,18 +369,23 @@ Các bộ, cơ quan ngang bộ trong phạm vi nhiệm vụ, quyền hạn của
 Ủy ban nhân dân cấp tỉnh có trách nhiệm xem xét và đề xuất ý kiến về các trường hợp xin nhập quốc tịch Việt Nam, xin trở lại quốc tịch Việt Nam, xin thôi quốc tịch Việt Nam, tước quốc tịch Việt Nam và hủy bỏ Quyết định cho nhập quốc tịch Việt Nam theo quy định của Luật này; hằng năm, thống kê các việc đã giải quyết về quốc tịch Việt Nam để báo cáo với Bộ Tư pháp.
 Cơ quan đại diện Việt Nam ở nước ngoài có trách nhiệm xem xét và đề xuất ý kiến về các trường hợp xin trở lại quốc tịch Việt Nam, xin thôi quốc tịch Việt Nam, tước quốc tịch Việt Nam; hằng năm, thống kê các việc đã giải quyết về quốc tịch Việt Nam để báo cáo với Bộ Ngoại giao và Bộ Tư pháp.
 
+
 ==== Điều 41. Thông báo và đăng tải kết quả giải quyết các việc về quốc tịch ====
 Bộ Tư pháp có trách nhiệm thông báo cho người xin nhập, xin trở lại, xin thôi quốc tịch Việt Nam, người bị tước quốc tịch Việt Nam, bị hủy bỏ Quyết định cho nhập quốc tịch Việt Nam về kết quả giải quyết các việc về quốc tịch có liên quan và đăng trên Trang thông tin điện tử của Bộ Tư pháp.
 Văn phòng Chủ tịch nước có trách nhiệm gửi đăng Công báo nước Cộng hòa xã hội chủ nghĩa Việt Nam quyết định cho nhập, cho trở lại, cho thôi, tước quốc tịch Việt Nam, hủy bỏ Quyết định cho nhập quốc tịch Việt Nam.
 
+
 == CHƯƠNG VI: ĐIỀU KHOẢN THI HÀNH ==
+
 
 ==== Điều 42. Điều khoản chuyển tiếp ====
 Kể từ ngày Luật này có hiệu lực thi hành, hồ sơ các việc về quốc tịch đã được tiếp nhận trước đó được tiếp tục giải quyết theo quy định của Luật quốc tịch Việt Nam năm 1998 và các văn bản quy định chi tiết, hướng dẫn thi hành.
 
+
 ==== Điều 43. Hiệu lực thi hành ====
 Luật này có hiệu lực thi hành từ ngày 01 tháng 7 năm 2009.
 Luật này thay thế Luật quốc tịch Việt Nam ngày 20 tháng 5 năm 1998.
+
 
 ==== Điều 44. Quy định chi tiết và hướng dẫn thi hành ====
 Chính phủ quy định chi tiết và hướng dẫn thi hành các điều, khoản được giao trong Luật; hướng dẫn những nội dung cần thiết khác của Luật này để đáp ứng yêu cầu quản lý nhà nước.

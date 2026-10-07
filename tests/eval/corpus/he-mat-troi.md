@@ -2,12 +2,14 @@ Hệ Mặt Trời hay Thái Dương hệ là hệ hành tinh của Mặt Trời,
 Mặt Trời là ngôi sao loại dãy chính nằm ở chính giữa hệ Mặt Trời. Các nhà thiên văn học thường chia hệ Mặt Trời thành ba vùng. Vùng trong cùng bao gồm 4 hành tinh đất đá (Sao Thủy, Sao Kim, Trái Đất và Sao Hỏa) và vành đai tiểu hành tinh nằm giữa quỹ đạo của Sao Hỏa và Sao Mộc. Vùng phía giữa chứa 2 hành tinh khí (Sao Mộc và Sao Thổ), 2 hành tinh băng (Sao Thiên Vương và Sao Hải Vương), và vành đai Kuiper nằm ngay bên ngoài quỹ đạo của Sao Hải Vương. Vùng ngoài cùng của hệ Mặt Trời hiện tại còn nhiều điều bí ẩn, được cho là chứa rất nhiều hành tinh lùn và thiên thể nhỏ băng giá chưa được tìm thấy.
 Qua nhiều thế kỷ nghiên cứu thiên văn, thuyết nhật tâm Copernicus của Nicolaus Copernicus đã được cải tiến thành thuyết hệ Mặt Trời hiện đại. Theo hiểu biết hiện nay của các nhà thiên văn, hệ Mặt Trời của chúng ta chỉ là một trong rất nhiều hệ hành tinh nằm quanh các ngôi sao khác, cùng nhau chuyển động trong Ngân Hà. Bằng chứng từ các bao thể trong thiên thạch cho thấy hệ Mặt Trời được hình thành khoảng 4,55 tỷ năm trước, khi một phần của đám mây phân tử sụp vào, tạo thành Mặt Trời sơ khai và đĩa tiền hành tinh. Các nghiên cứu về hệ Mặt Trời giúp con người hiểu rõ ảnh hưởng của thiên thạch đâm vào Trái Đất, điều kiện phát triển sự sống ngoài Trái Đất, phát triển ngành du hành vũ trụ, và có thêm hiểu biết vị thế của con người trong vũ trụ.
 
+
 == Lịch sử nghiên cứu ==
 Tri thức về hệ Mặt Trời được bồi đắp qua nhiều thế kỷ bởi các nhà khoa học và sau này các nhà thiên văn học. Bằng mắt thường, con người chỉ quan sát được 5 hành tinh: Sao Thuỷ, Sao Kim, Sao Hoả, Sao Mộc và Sao Thổ, cộng thêm Mặt Trời, Mặt Trăng và các vì sao. Người phương Đông và Việt Nam dựa vào Ngũ hành để đặt tên cho 5 hành tinh và 5 nguyên tố cơ bản: Thủy, Kim, Hỏa, Mộc, và Thổ. Từ hệ thống Ngũ Hành này thì phát triển ra vô vàn quan niệm khác về các hành tinh. Thuyết địa tâm trong cuốn Almagest bởi Plolemy đã thống trị thế giới phương Tây từ giữa thế kỉ 2 đến thế kỉ thứ 14–15. Cho đến thế kỉ thứ 16, các nên văn minh từ phương Tây đến phương Đông đều coi Trái Đất đứng yên, nằm chính giữa vũ trụ, và là một thực thể tách biệt khỏi thiên cầu.
 Vào thời Phục Hưng, Nicolaus Copernicus đưa ra thuyết nhật tâm Copernicus, cho rằng Trái Đất và các hành tinh đều quay quanh Mặt Trời theo hình tròn. Johannes Kepler cải tiến thuyết nhật tâm bằng cách đưa ra ba định luật về quỹ đạo thiên thể. Dựa trên thuyết nhật tâm, ông tạo ra bảng Rudolf để tuyên đoán vị trí chính xác của các hành tinh. Khi Pierre Gassendi sử dụng bảng này để tìm sao Thủy đi qua Mặt Trời năm 1631 và Jeremiah Horrocks tìm sao Kim đi qua Mặt Trời năm 1639, thuyết nhật tâm và ba định luật của ông được khoa học khẳng định là đúng đắn.
 Vào thế kỷ 17, Galileo sử dụng kính thiên văn để phát hiện ra rằng sao Mộc có bốn vệ tinh quay quanh và quan sát được các dãy núi và các miệng núi lửa do va chạm trên Mặt Trăng. Vào năm 1677, Edmund Halley nhận ra rằng thị sai của hành tinh với Mặt Trời có thể được sử dụng để xác định khoảng cách giữa Trái Đất, sao Kim và Mặt Trời bằng phương pháp lượng giác. Isaac Newton, trong tác phẩm vĩ đại Principia Mathematica năm 1687, chứng minh rằng định luật về chuyển động và lực hấp dẫn đều áp dụng chung cho Trái Đất và các thiên thể. Vì vậy định luật của ông được đặt tên là định luật vạn vật hấp dẫn.
 Thế kỉ 18 và 19 có nhiều đột phá trong thiên văn học. Năm 1705, Halley nhận ra rằng các lần quan sát sao chổi đều là một vật thể quay trở lại sau 75–76 năm. Ngày nay ta gọi sao chổi này là sao chổi Halley. Đây là bằng chứng đầu tiên cho thấy rằng có các vật thể không phải hành tinh quay quanh Mặt Trời. Sao Thiên Vương, dù đã được quan sát từ năm 1690, được công nhận là hành tinh ngoài quỹ đạo sao Thổ vào năm 1783. Sao Hải Vương được xác định là một hành tinh vào năm 1846 nhờ vào tính toán tương tác hấp dẫn với quỹ đạo của sao Thiên Vương. Tiểu hành tinh đầu tiên được phát hiện là Ceres bởi Giuseppe Piazzi vào năm 1801. Sau 65 năm, tiểu hành tinh thứ 100 được tìm thấy vào năm 1868.
 Thiên văn học thế kỷ 20 được đánh dấu bằng sự phát triển công nghệ không gian và máy tính, biến việc học hỏi hệ Mặt Trời thành khoa học thực nghiệm. Con người bắt đầu đặt kính thiên văn lên quỹ đạo vũ trụ từ những năm 1960 và đến năm 1989 sau khi tàu Voyager 2 bay qua Sao Hải Vương, con người đã chụp ảnh tất cả 8 hành tinh. Ngoài ra, các tàu thám hiểm không gian đã thăm hai hành tinh lùn (Sao Diêm Vương và Ceres), bay qua nhật hoa của Mặt Trời, và mang về mẫu vật từ các sao chổi và tiểu hành tinh. Các phát hiện từ tàu không gian một lần nữa thay đổi nhận thức của ta về hệ Mặt Trời bằng cách thúc đẩy việc định nghĩa từ hành tinh và hành tinh lùn năm 2006 và hướng mục tiêu nghiên cứu đến các đối tượng nằm ngoài quỹ đạo Sao Hải Vương.
+
 
 == Vận động hệ Mặt Trời ==
 
@@ -23,9 +25,11 @@ Hầu hết các vệ tinh tự nhiên của các hành tinh chuyển động th
 Một số ảnh hưởng nhiễu loạn có thể được mô tả là cộng hưởng quỹ đạo, dần dần biến các vệ tinh chuyển động theo tỉ lệ số nguyên (như vệ tinh Sao Mộc – Ganymede, Europa, Io và tỉ lệ 1:2:4). Sự tương tác hấp dẫn giữa các vật thể khối lượng cao còn có thể gây ra lực thủy triều, như thủy triều trên biển do lực hút Mặt Trăng.
 Trong các hình vẽ hệ Mặt Trời, người ta hay phóng đại Mặt Trời và các hành tinh vì nếu vẽ chuẩn tỉ lệ, các vật thể sẽ không thể nhìn thấy được. Ở Hà Nội năm 2023 đã từng có mô hình hệ Mặt Trời chuẩn tỉ lệ, kéo dài hơn 8 kilômét từ công viên Thống Nhất đến vườn bách thảo Hà Nội. Với tỉ lệ này thì đường kính của Mặt Trời là 2,35 mét, Trái Đất là 2,2 centimét và Sao Diêm Vương chỉ có đường kính là 4 milimét.
 
+
 == Quan sát các vật thể ==
 Các hành tinh không nhấp nháy mạnh như các vì sao khi nhìn lên bầu trời. Dù các vì sao có kích cỡ to hơn các hành tinh, các hành tinh có kích thước biểu kiến to hơn các vì sao. Ta chỉ cần phóng đại 20–30 lần để thấy hình dạng của các hành tinh trong khi các ngôi sao thì dù có phóng đại hàng trăm lần cũng chỉ là những điểm sáng. Vì vậy ánh sáng từ các hành tinh ít bị ảnh hưởng bởi khúc xạ khí quyển so với ánh sáng từ vì sao.
 Chuyển động của vật thể gây ra sự thay đổi của hai góc: góc ánh sáng Mặt Trời phản chiếu vật thể và góc nhìn từ Trái Đất đến vật thể. Đối với Mặt Trăng, khi hai góc chập vào nhau thì xảy ra hiện tượng nhật thực và nguyệt thực.
+
 
 == Mặt Trời ==
 
@@ -33,11 +37,13 @@ Mặt Trời nằm ở trung tâm hệ Mặt Trời và là vật thể nặng n
 Bề mặt nhìn thấy được của Mặt Trời được gọi là quang cầu, gồm có rất nhiều hạt sáng với kích thước lớn nhất là 1500 km. Cấu trúc đối lưu của hạt sáng là chứng cớ về sự tồn tại của vùng đối lưu ở phía dưới quang cầu. Hai lớp phía trên quan cầu là sắc cầu và nhật hoa, nơi mà diễn ra nhiều hoạt động mà ta có thể nhìn thấy từ Trái Đất, ví dụ như vết đen Mặt Trời, bùng nổ Mặt Trời, sự phun trào nhật hoa, vân vân.
 Mặt Trời có chu kì hoạt động khoảng 11 năm, bao gồm cực tiểu và cực đại hoạt động Mặt Trời. Dựa trên nguồn bức xạ ánh sáng, Mặt Trời được xếp loại là sao dãy chính loại G2V. Mặt Trời có nhiệt độ trung bình so với các ngôi sao khác. Các ngôi sao dãy chính nóng hơn Mặt Trời có độ sáng cao hơn nhưng lại có tuổi thọ ngắn hơn. Những ngôi sao sáng và nóng hơn Mặt Trời thì hiếm, trong khi các sao lùn đỏ bé và mát hơn Mặt Trời thì chiếm khoảng 75% sao trong Ngân Hà. Mặt Trời là một ngôi sao thuộc quần thể I vì Mặt Trời được hình thành trong nhánh của Ngân Hà và có nhiều nguyên tố nặng hơn hydro và heli (được gọi là "kim loại" trong thuật ngữ thiên văn) so với các ngôi sao quần thể II cũ hơn ở phần rìa Ngân Hà. Các hành tinh đất đá được cho là hình thành từ quá trình tích tụ 'kim loại' trong đĩa tiền hành tinh.
 
+
 == Môi trường không gian hệ ==
 
 Ngoài ánh sáng và dòng neutrino, Mặt Trời phát ra một dòng plasma các hạt mang điện được gọi là gió Mặt Trời, gồm có electron, proton, hạt alpha và các hạt nhân nguyên tử khác. Gió Mặt Trời lan ra ngoài với tốc độ từ 900.000 km/h đến 2.880.000 km/h, lấp đầy khoảng chân không giữa các thiên thể trong hệ Mặt Trời.
 Các hạt mang điện từ gió Mặt Trời quanh hệ Mặt Trời tạo ra bầu vật chất mang tên nhật quyển, kéo dài từ ranh giới nhật hoa khoảng 18 bán kính Mặt Trời (0,084 au) cho đến khoảng 120 au theo dữ liệu của tàu Voyager 1. Sự tương tác của các hạt trong gió Mặt Trời và trường từ Trái Đất dẫn đến hiện tượng cực quang được nhìn thấy gần cực Bắc và Nam Trái Đất. Bằng chứng từ tàu vũ trụ Cassini và Interstellar Boundary Explorer cho rằng nhật quyển có thể có hình dạng như bong bóng do tác động ràng buộc của từ trường liên sao, nhưng các nhà khoa học vẫn chưa biết rõ hình dạng thực của nhật quyển trông như thế nào.
 Có rất nhiều thiên thạch nằm rải rác trong không gian hệ Mặt Trời. Thiên thạch được định nghĩa là vật thể nhỏ từ 30 micrômét tới khoảng 1 mét. Các vật thể nhỏ hơn nữa được gọi chung là bụi vũ trụ. Hầu hết thiên thạch được hình thành từ sự phân rã của sao chổi và tiểu hành tinh, còn một vài thiên thạch được hình thành từ các mảnh vụn va chạm từ hành tinh. Phần lớn thiên thạch được làm từ silicat và các kim loại nặng như niken và sắt. Gần quỹ đạo Trái Đất cũng có rất nhiều thiên thạch, một số đám thiên thạch là nguồn gốc của các mưa sao băng trong khí quyển. Theo định nghĩa của Liên đoàn Thiên văn Quốc tế, các vật thể bé hơn tiểu hành tinh được gọi là thiên thạch (<1 mét) còn các vật thể bé hơn thiên thạch được gọi chung là bụi, (<30 micrômét) tuy nhiên ở đây không có ranh giới thật sự rõ ràng giữa ba cụm từ.
+
 
 == Bốn hành tinh đất đá ==
 
@@ -50,6 +56,7 @@ Mặt Trăng, theo thuyết va chạm lớn, được hình thành khi một v�
 Sao Hỏa (1.38–1.67 au) có bán kính khoảng một nửa so với Trái Đất. Hầu hết bề mặt hành tinh có màu đỏ do oxit sắt, hai vùng cực được phủ bởi lớp băng trắng làm từ nước và cácbon dioxít. Sao Hỏa có một bầu khí quyển chủ yếu là cácbon dioxít với áp suất bề mặt chỉ bằng 0,6% so với áp suất của Trái Đất, vừa đủ để xuất hiện một số hiện tượng thời tiết trên khí quyển. Trên Sao Hỏa có các đồng bằng, cao nguyên và các miệng núi lửa. Có một thung lũng lớn dài 5000 km, rộng 200 km và sâu 7 km nằm trên Sao Hỏa tên là Valles Marineris, ngoài ra Sao Hỏa có núi lửa cao nhất hệ Mặt Trời tên là Olympus Mons. Sao Hoả có 2 vệ tinh là Deimos và Phobos.
 Hai vệ tinh Deimos và Phobos đều có đặc điểm khá giống nhau.
 
+
 == Tiểu hành tinh ==
 
 Các tiểu hành tinh là các vật thể bé hơn hành tinh, chủ yếu được cấu thành từ các khoáng chất carbon, đá và kim loại, với một số trong số chúng chứa băng. Các tiểu hành tinh có kích thước từ vài mét đến hàng trăm kilômét, theo định nghĩa của Liên đoàn Thiên văn Quốc tế có kích cỡ trên khoảng 1 mét. Một số tiểu hành tinh, ví dụ như Vesta và Pallas, được các nhà khoa học cho rằng là tiền thân của các hành tinh khi hệ Mặt Trời còn đang hình thành. Số ít các tiểu hành tinh thậm chí có vệ tinh tự nhiên quay quanh. Các tiểu hành tinh giúp các nhà khoa học hiểu rõ lịch sử và sự tiến hoá của hệ Mặt Trời. Ngoài ra, các tiểu hành tinh được cho là chứa nhiều kim loại quý như nikel, sắt, titan và nước, là mục tiêu hấp dẫn cho hoạt động khai thác không gian trong tương lai.
@@ -61,6 +68,7 @@ Sau đây là ba tiểu hành tinh điển hình được các nhà khoa học �
 1 Ceres (2,55–2,98 au, rộng 960 km) là hành tinh lùn duy nhất đã được tìm thấy trong vành đai tiểu hành tinh. Bề mặt của nó chứa carbon, băng và tinh thể ngậm nước. Ceres từng có hoạt động phun trào nước và nitơ từ núi lửa băng. Bằng chứng cho sự phun trào có thể thấy tại các điểm sáng trên bề mặt. Ceres có một bầu khí quyển rất mỏng, gần như không thể phân biệt được với chân không. Ceres đã được thăm bởi tàu Dawn của Mỹ.
 433 Eros (1,13–1,78 au, dài 34 km). Eros đã được thăm bởi tàu NEAR Shoemaker của Mỹ.
 162173 Ryugu (0,96–1.42 au, rộng 0,5 km). Ryugu đã được thăm bởi tàu Hayabusa2 của Nhật Bản.
+
 
 == Bốn hành tinh khổng lồ ==
 
@@ -85,6 +93,7 @@ Miranda .
 Sao Hải Vương
 Triton .
 
+
 == Vành đai Kuiper ==
 
 Vành đai Kuiper là đĩa vật chất nằm xa hơn quỹ đạo của các hành tinh, mở rộng từ quỹ đạo Sao Hải Vương (cách Mặt Trời 30 au) tới bán kính khoảng 50 au. Thiên thể đầu tiên được phát hiện dẫn tới việc xác nhận sự tồn tại của vành đai này là 15760 Albion, được phát hiện vào năm 1992 bởi nhà thiên văn David Jewitt cùng với nghiên cứu sinh của ông là Jane Lưu. Từ đó đến nay đã có hơn một nghìn đối tượng thuộc vành đai này được phát hiện, và người ta cho rằng vành đai này có thể có hơn 100.000 đối tượng có đường kính lớn hơn 100 km. Một số vệ tinh trong hệ Mặt Trời, như Triton của Sao Hải Vương và Phoebe của Sao Thổ, đều được cho là có nguồn gốc từ vành đai này.
@@ -98,9 +107,10 @@ Haumea (34,6–51,6 au) có hình ellipsoid (quả trứng), tốc độ quay nh
 Makemake (38,1–52,8 au) theo kết quả phân tích quang phổ có metan, ethan, và băng nitơ trên bề mặt. Makemake có 1 vệ tinh tự nhiên đã được phát hiện, được tạm gọi là S/2015 (136472) 1.
 Quaoar (41,9–45,5 au) theo kết quả phân tích quang phổ có băng và amoniac ở trên bề mặt. Ngoài ra, Quaoar có 2 vành đai mỏng và có 1 vệ tinh tự nhiên đã được phát hiện: Weywot.
 
+
 == Các vật thể ngoài vành đai Kuiper ==
 
-Trước đây vành đai Kuiper được cho là nơi bắt nguồn của các sao chổi chu kỳ ngắn, với chu kỳ quỹ đạo ít hơn 200 năm. Tuy nhiên, nghiên cứu từ giữa thập niên 1990 đã cho thấy nguồn gốc chính xác của sao chổi là ở đĩa phân tán, một khu vực nằm bên ngoài vành đai Kuiper. Đĩa phân tán là một vùng với mật độ thưa thớt, chồng lên vành đai Kuiper nhưng mở rộng ra xa hơn 100 au. Các vật thể của đĩa phân tán có quỹ đạo elip rất dẹt và rất nghiêng so với mặt phẳng hoàng đạo.
+Trước đây vành đai Kuiper được cho là nơi bắt nguồn của các sao chổi chu kỳ ngắn, với chu kỳ quỹ đạo ít hơn 200 năm. Tuy nhiên, nghiên cứu từ giữa thập niên 1990 đã cho thấy nguồn gốc chính xác của sao chổi là ở đĩa phân tán, một khu vực nằm bên ngoài vành đai Kuiper. Đĩa phân tán là một vùng với mật độ thưa thớt, chồng lên vành đai Kuiper nhưng mở rộng ra xa hơn 100 au. Các vật thể của đĩa phân tán có quỹ đạo elip rất dẹt và rất nghiêng so với mặt phẳng hoàng đạo. 
 Hiện tại các nhà khoa học tìm thấy 3 hành tinh lùn trong khu vực này:
 
 Eris (38,3–97,5 au)
@@ -108,9 +118,11 @@ Cung Công (Gonggong, 33,8–101,2 au)
 Sedna (76,2–937 au)
 Quyển Hill của hệ Mặt Trời được ước tính có bán kính từ 180.000 đến 230.000 au, gấp trăm lần quỹ đạo của các hành tinh lùn. Việc tìm hiểu các vật thể ở khu vực này còn nhiều khó khăn. Các vật thể mà ta phát hiện trong khu vực này có quỹ đạo bị nhiễu loạn, khiến chúng di chuyển gần hơn với Mặt Trời, và việc phát hiện những vật thể này thường chỉ có thể xảy ra khi chúng là sao chổi. Vì vậy, đây là khu vực còn nhiều bí ẩn và được các nhà khoa học đưa ra nhiều giả thuyết về các vật thể có thể nằm trong khu vực này, ví dụ như đám mây Oort và "hành tinh thứ chín".
 
+
 == Hệ Mặt Trời trong vũ trụ ==
 
 So sánh với các loại hành tinh hay được tìm thấy ở các hệ sao khác, hệ Mặt Trời của ta thiếu hành tinh có quỹ đạo bé hơn Sao Thuỷ và "siêu Trái Đất", tức là hành tinh có kích thước lớn hơn nhiều lần Trái Đất. Giống như các hệ hành tinh khác, hệ Mặt Trời có vùng sống được, bao gồm Trái Đất, nơi nhiệt độ bề mặt và khí quyển cho phép sự tồn tại của nước ở trạng thái lỏng.
+
 
 == Lịch sử hình thành ==
 

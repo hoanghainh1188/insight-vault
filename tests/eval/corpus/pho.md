@@ -2,6 +2,7 @@ Phở (chữ Nôm: 𬖾) là một món ăn truyền thống của Việt Nam, �
 Thành phần chính của phở là bánh phở và nước dùng cùng với thịt bò hoặc thịt gà cắt lát mỏng, hành. Nước dùng của phở bò thường được ninh từ xương ống bò kèm với các loại gia vị như quế, hồi, thảo quả nướng. Thịt bò thích hợp nhất để nấu phở là thịt, xương từ các giống bò ta (bò nội, bò vàng). Ngoài ra còn kèm theo các gia vị như: tương, tiêu, chanh, nước mắm, ớt, ... Những gia vị này được thêm vào tùy theo khẩu vị của người dùng. Phở thông thường được dùng để làm món điểm tâm buổi sáng hoặc lót dạ buổi đêm; nhưng ở các thành phố lớn, món ăn này có thể được thưởng thức cả ngày. Tại các tỉnh phía Nam Việt Nam và một số vùng miền khác, phở được bày kèm với đĩa rau thơm như hành, giá và những lá cây rau mùi, rau húng, trong đó ngò gai là loại lá đặc trưng của phở; tuy nhiên tại Hà Nội thông thường sẽ không có đĩa rau sống này. Phở thường là phở bò hay phở gà, nhưng đôi khi cũng có những biến thể khác, đặc biệt là phở cuốn, phở sốt vang, phở khô, phở xào, phở chua, phở vịt ở Cao Bằng, và phở thịt quay ở các tỉnh miền núi phía Bắc, phở khô ở Gia Lai.
 Nước dùng cho nồi phở thường là nước dùng trong được ninh từ xương bò (hoặc xương lợn), kèm theo nhiều loại gia vị bao gồm quế, hồi, gừng nướng, thảo quả, sá sùng, đinh hương, hạt mùi, hành khô nướng. Thịt dùng cho món phở là thịt bò (với đủ loại thịt bắp, nạm, gầu được làm tái, hay chín hẳn) hoặc thịt gà (gà ta già luộc, xé thịt cho thịt ngọt đậm đà). "Bánh phở" theo truyền thống là một loại mì gạo làm từ bột gạo, tráng thành tấm mỏng rồi cắt thành sợi. Phở luôn được thưởng thức khi còn nóng hổi. Theo đó, để có một bát phở ngon và đậm vị, điều này còn phụ thuộc rất nhiều vào kĩ năng của người nấu, trong đó quan trọng nhất đó chính là nồi nước dùng.
 
+
 == Nguồn gốc ==
 
 Một trong những tài liệu đầu tiên nhắc đến phở là cuốn từ điển Hán-Việt Nhật Dụng Thường Đàm (日用常談) của Phạm Đình Hổ biên soạn vào năm 1827. Trong mục thực phẩm, cụm từ chữ Hán 玉酥餅 "ngọc tô bính" được chú thích bằng chữ Nôm là 𩛄普𤙭 "bánh phở bò".
@@ -16,6 +17,7 @@ Nguyễn Công Hoan (1903-1977) ghi nhận: "1913... trọ số 8 hàng Hài... 
 Tiếng rao món phở âm Nôm: "phở đây, phở ơ! Danh từ phở được chính thức ấn hành lần đầu trong cuốn Việt Nam tự điển (1930) do Hội Khai Trí Tiến Đức khởi thảo: "Món đồ ăn bằng bánh thái nhỏ nấu với thịt bò"
 Năm 1939, phở gà xuất hiện, bởi khi ấy một tuần có hai ngày: thứ hai và thứ sáu không có thịt bò bán. Chưa rõ vì sao có sự cố này, song có lẽ một nguyên nhân khó thể bỏ qua đó là việc giết mổ trâu bò luôn bị hạn chế suốt thời phong kiến, do trâu bò vẫn là sức kéo chính cho nền nông nghiệp lúa nước Việt Nam. Bởi vậy, nhiều chủ quán phở bò đành phải đóng cửa vào hai ngày không có thịt bò trong tuần, tạo điều kiện cho phở gà phát triển. Từ sau năm 1939, hai món phở bò và phở gà đã chính thức ngự trị và song hành cùng nhau trong lòng ẩm thực Việt.
 
+
 == Giá trị dinh dưỡng ==
 
 Phở là món ăn tổ hợp của các chất vị. Trong bát phở có chứa 18-20 loại thực phẩm gốc động vật và thực vật tự nhiên. Điều đặc biệt nhất ở phở là các nguyên liệu đó được sử dụng gần như ở trạng thái nguyên thủy và tự phối hợp với nhau hài hòa để tạo nên một hương vị đặc trưng rất lạ lẫm, ngon miệng, dễ tiêu hóa.
@@ -23,7 +25,9 @@ Nước dùng là phần quan trọng của phở. Calci từ xương, tủy; ch
 Thịt bò có nhiều axit amonia, Creatinin, carnitine và khoáng chất kali hỗ trợ cơ bắp phát triển săn chắc. Nó chứa khoảng 50% lượng chất béo thuộc dạng chưa bão hòa, chất cytocilin và vitamin B12 cùng các loại rau, củ, quả tươi có tác dụng điều hòa Cholesterol trong máu và các tế bào của cơ thể con người.
 Bánh phở tươi cung cấp rất nhiều dinh dưỡng cho mỗi thực khách (3 mg đạm, 0,5 mg B1, 1,2 mg B5/bát).
 
+
 == Chế biến ==
+
 
 === Nấu nước dùng ===
 Trong món phở, công đoạn chế biến nước dùng (hay còn gọi là nước lèo) là công đoạn quan trọng nhất.
@@ -32,8 +36,10 @@ Tuy nhiên, công thức của từng loại nước dùng cụ thể cho từng
 
 Nguyên thủy, để tăng vị ngọt rất giàu amino acid của nước phở, theo truyền thống, khi chưa có bột ngọt (mì chính), người xưa dùng tôm he. Cách nấu nước dùng ngày nay đã có những sự khác biệt tùy địa phương, như miền Bắc thường dùng nhiều mì chính (nhất là trong thời bao cấp, có cả phở "không người lái" - không thịt), còn miền Nam nhiều nơi nấu nước dùng bằng xương gà và thêm khô mực.
 
+
 === Trình bày ===
 Đầu tiên, cho bánh phở đã nhúng qua nước sôi, để ráo rồi cho vào tô vừa ăn. Sau đó, dùng đũa xới đều bánh phở cho bánh không dính vào nhau. Tiếp theo, cho thịt bò xắt từng lát hoặc tùy theo sở thích của người ăn mà xếp vào tái, nạm, vè, gầu.... làm sao để thật khéo léo để cho mỗi đũa gắp bánh phở của thực khách đều kèm theo thịt. Ngoài màu trắng của bánh phở, màu nâu của thịt bò hay màu vàng trong gầu, hành lá, hành tây và ngò cũng góp phần tô điểm cho tô phở thêm phần đẹp mắt và ngon miệng. Đối với bước chan nước phở vào tô mới lắm công phu vì nước ngon nhưng phải được chan vào đều trên mặt tô phở, xung quanh miếng thịt khi đó thịt vẫn chín nóng đều mà vẫn giữ màu xanh của hành lá, hành củ và ngò trên tô phở.
+
 
 == Biến tấu ==
 
@@ -44,26 +50,32 @@ Tại Hà Nội thì ăn phở với quẩy trong khi người Sài Gòn chỉ �
 Và một số người kinh doanh ăn uống hiện nay lạm dụng tên gọi "phở" để gọi một số món ăn hoàn toàn không phải là phở do nguyên liệu và cách chế biến khác, gia vị khác và hình thức cũng khác.
 Trừ quán bán tô phở với thịt bò Kobe và giá đến 850 nghìn đồng ở Hà Nội, phở thố đá với thịt bò 7 loại, bò Kobe và nấm truffle đen giá 100 USD ở Thành phố Hồ Chí Minh hoặc tô phở AnQi tại nhà hàng Tiato ở California với thịt bò Kobe loại A 5 Wagyu đắt nhất, tôm hùm xanh cực hiếm, nấm truffle alba trắng loại tốt, nước dùng nấu bằng gan ngỗng béo và giá khởi điểm 5.000 đô la để từ thiện một bệnh viện trẻ em.
 
+
 === Phở bát đá (phở thố đá) ===
 
 Một biến thể mới xuất hiện gần đây là dạng phở bát đá. Có nguồn gốc từ phở truyền thống nhưng nhằm giữ được hương vị thơm ngon, độ nóng đến miếng cuối cùng của phở, các quán phở đã sử dụng những chiếc bát đá dày (thường có đai kim loại để tránh nứt vỡ) để đựng nước dùng phở, đun sôi sùng sục khi mang ra cho thực khách. Nguyên liệu chế biến phở bát đá được để riêng và còn sống. Khi ăn, thực khách sẽ "hóa thân" thành đầu bếp, tự tay thả những nguyên liệu mình muốn vào bát nước dùng nóng hổi. Khẩu vị và độ chín của thịt, rau, các nguyên liệu sẽ do chính người thưởng thức quyết định.
 
+
 === Phở ăn liền ===
 Tiếp thu công nghệ từ món mì ăn liền, phở ăn liền ra đời. Đi đầu trong sản xuất phở ăn liền là Acecook Việt Nam. Năm 2006, Acecook Việt Nam sản xuất được sợi phở ăn liền từ bột gạo. Đến nay, phở ăn liền đã xuất khẩu đi 42 nước trên thế giới và chiếm tỉ trọng 10% hàng xuất khẩu của Acecook Việt Nam. Mỗi năm doanh nghiệp này sử dụng 20.000 tấn gạo để sản xuất các sản phẩm chế biến từ gạo, doanh thu từ các mặt hàng này năm 2017 chiếm 18% tổng doanh số, đạt 1.500 tỉ đồng.
 
+
 == Phở tại một số địa phương trong nước ==
+
 
 === Phở tại Hà Nội ===
 
 Ở Hà Nội, phở là một món ăn đặc biệt. Phở được dùng riêng như là một món ăn sáng, trưa hoặc tối. Nước dùng của phở được làm từ nước ninh của xương bò: xương cục, xương ống và xương vè. Thịt dùng cho món phở có thể là bò, hoặc gà. Bánh phở phải mỏng và dai mềm, gia vị của phở là hành lá, hạt tiêu, giấm ớt, lát chanh thái.
 Từ thời Pháp thuộc, phở Hà Nội xuất hiện đầu tiên dưới hình thức "phở gánh". Đó là những người bán phở dạo. Trên đôi quang gánh của họ, một bên là thùng hàng tự chế có đủ nguyên liệu để chế biến món phở và bát, đĩa, đũa, thìa; bên kia là nồi nước dùng đặt trên một bếp than. Trước năm 1980, những gánh phở như vậy đã đi khắp các hàng cùng ngõ hẻm của Hà Nội với những tiếng rao quen thuộc của văn hóa ẩm thực về đêm của Hà Thành. Ngày nay, khi xã hội phát triển, quán ăn nhiều lên thì "phở gánh" ngày càng ít xuất hiện. Trong số đó có Phở bưng Hàng Trống là vẫn còn nổi tiếng.
-Từ giữa những năm 1960 đến trước những năm 1990 của thế kỷ 20, vì nhiều lý do nhất là khâu quản lý hành chính bao cấp về lương thực, thực phẩm, tại Hà Nội và nhiều tỉnh miền Bắc xuất hiện "phở không người lái" (loại phở chỉ chan nước dùng, không có thịt) trong các cửa hàng mậu dịch quốc doanh. Chất lượng phở quốc doanh ở các cửa hàng này hoàn toàn tùy thuộc vào tay nghề hạn chế của các nhân viên không chuyên nhưng có rất nhiều sáng kiến. Họ biến tấu các loại gia vị, cách nấu nước dùng theo những gì họ có, họ kiếm được trong hoàn cảnh thời chiến thiếu thốn đủ thứ. Một "sáng kiến" của thời kỳ này là phở "không người lái" ăn với bánh mì hoặc cơm nguội.
+Từ giữa những năm 1960 đến trước những năm 1990 của thế kỷ 20, vì nhiều lý do nhất là khâu quản lý hành chính bao cấp về lương thực, thực phẩm, tại Hà Nội và nhiều tỉnh miền Bắc xuất hiện "phở không người lái" (loại phở chỉ chan nước dùng, không có thịt) trong các cửa hàng mậu dịch quốc doanh. Chất lượng phở quốc doanh ở các cửa hàng này hoàn toàn tùy thuộc vào tay nghề hạn chế của các nhân viên không chuyên nhưng có rất nhiều sáng kiến. Họ biến tấu các loại gia vị, cách nấu nước dùng theo những gì họ có, họ kiếm được trong hoàn cảnh thời chiến thiếu thốn đủ thứ. Một "sáng kiến" của thời kỳ này là phở "không người lái" ăn với bánh mì hoặc cơm nguội. 
 Cũng từ thời bao cấp, ở Hà Nội, người ta thường có thói quen cho thêm nhiều mì chính vào nước dùng. Phở Hà Nội cũng được ăn kèm với những miếng quẩy nhỏ, nhưng đã mất đi trong thập kỷ 60 tới giữa thập kỷ 80 khi giai đoạn khó khăn. Cùng với thời đổi mới từ thập niên 90, phở đã phong phú hơn và quẩy đã trở lại trong bát phở Hà Nội.
 Hàng phở đầu tiên của người Việt ở Hà Nội từ hàng gánh chuyển sang bán trong cửa hàng được cho là Phở Cát Tường (phố Cầu Gỗ) từ đầu thế kỉ XX. Ở Hà Nội ngày nay có nhiều cửa hàng phở nổi tiếng đã lưu truyền qua hai đến ba thế hệ. Các thương hiệu phở gia truyền nổi tiếng được nhiều người biết đến có thể kể như: Phở Bát Đàn, Phở mặn Gầm Cầu, Phở Sướng, Phở Vui, Phở Nhớ, phở Thìn Bờ Hồ, phở Thìn Lò Đúc. Nhiều hàng phở treo biển "Phở gia truyền Nam Định", đặc biệt với những người thuộc dòng họ Cồ cũng góp phần không nhỏ vào danh sách các hàng phở nổi tiếng ở Hà Nội như Phở Cụ Chiêu - Hàng Đồng, Phở Cồ Thưởng - Thái Thịnh, Phở Cồ Cử - Thụy Khuê. Quán phở Nam Định ở Hà Nội thường tương đối rộng rãi, bán đủ các biến thể phở bò (phở nước, phở xào, phở trộn, phở tái lăn), lại thêm cơm rang, mì xào.
 
+
 === Phở bò tại Nam Định (nay là Ninh Bình) ===
 Phở bò Giao Cù là một món ăn phổ biến xuất xứ từ làng Giao Cù, xã Nam Đồng, tỉnh Ninh Bình. Phở Giao Cù cũng có những đặc điểm chung như phở của các vùng khác là gồm bánh phở, nước phở, thịt bò hoặc thịt gà, và một số gia vị kèm theo, nhưng lại mang cái khác toàn diện mà khó có thể nhầm lẫn được. Bánh phở Giao Cù là loại đặc biệt có sợi nhỏ ngon và mềm, khác với sợi bánh của vùng khác. Thịt bò được thái mỏng đập dập, nhúng và vớt trong khoảng thời gian phù hợp nên ăn mềm mà vẫn giữ được độ tươi ngon và dinh dưỡng của thịt... Và nếu nói đến nước thì thường mang tính "gia truyền". Những người thợ làm phở thường giấu kín bí quyết pha chế nước phở của mình và chỉ truyền cho thế hệ sau trong gia đình mà thôi.
-Phở gia truyền ở Ninh Bình chủ yếu có nguồn gốc từ Hoa kiều ở Giao Cù và từ họ Cồ ở làng Vân Cù, xã Nam Đồng, tỉnh Ninh Bình. Sau đó được truyền ra các làng bên cạnh nhưng đã được biến chế, không còn mang nét nguyên vẹn như xưa và thêm một số phụ gia. Vào thập niên 50, người Giao Cù đã mang món phở ra Hà Nội và bán theo xe đẩy. Từ giữa những năm 60 đến trước những năm 90 của thế kỷ 20, vì nhiều lý do nhất là khâu quản lý hành chính bao cấp về lương thực, thực phẩm, phở Vân Cù, Giao Cù vắng bóng ở những địa phương khác, nhưng từ năm 90 trở lại đây, Phở phục hồi trở lại và ngày càng phát triển mạnh. Hiện nay dân làng thuộc làng Vân Cù, Giao Cù và các làng lân cận đi khắp nơi từ Bắc vào Nam mở các quán phở đế kiếm kế sinh nhai và gìn giữ một món ăn ngon người Việt.
+Phở gia truyền ở Ninh Bình chủ yếu có nguồn gốc từ Hoa kiều ở Giao Cù  và từ họ Cồ ở làng Vân Cù, xã Nam Đồng, tỉnh Ninh Bình. Sau đó được truyền ra các làng bên cạnh nhưng đã được biến chế, không còn mang nét nguyên vẹn như xưa và thêm một số phụ gia. Vào thập niên 50, người Giao Cù đã mang món phở ra Hà Nội và bán theo xe đẩy. Từ giữa những năm 60 đến trước những năm 90 của thế kỷ 20, vì nhiều lý do nhất là khâu quản lý hành chính bao cấp về lương thực, thực phẩm, phở Vân Cù, Giao Cù vắng bóng ở những địa phương khác, nhưng từ năm 90 trở lại đây, Phở phục hồi trở lại và ngày càng phát triển mạnh. Hiện nay dân làng thuộc làng Vân Cù, Giao Cù và các làng lân cận đi khắp nơi từ Bắc vào Nam mở các quán phở đế kiếm kế sinh nhai và gìn giữ một món ăn ngon người Việt.
+
 
 === Phở Sài Gòn (phở Nam) ===
 Phở bắt nguồn từ Bắc Bộ, xâm nhập vào Trung Bộ giữa thập niên 1950, sau sự thất bại của Pháp ở Đông Dương và Việt Nam bị chia thành 2 miền. Người Việt Nam ở phía Bắc di cư vào miền Nam năm 1954 mang theo món phở và phở đã bắt đầu có những sự khác biệt. Tại miền Nam, nhất là tại Sài Gòn, thịt bò trong phở thường được bán theo 5 kiểu: chín, tái, nạm, gầu, gân, ngoài ra còn một chén nước béo (nước mỡ của xương bò) để riêng nếu khách muốn. Nước lèo (nước dùng) thường không được bỏ bột ngọt (mì chính) như ở Hà Nội và có màu hơi đục, không trong như phở Bắc, đôi khi ngọt hơn, béo hơn và nấu bằng xương gà, thêm con khô mực hoặc củ hành nướng và gừng nướng.Phở Nam thường phải đi kèm với:
@@ -73,15 +85,18 @@ Một dĩa rau trụng riêng: giá (đôi khi ăn sống), và đầu hành.
 Các tiệm phở còn bán thêm chén hột gà (trứng chần) và tiết canh.
 Có khá nhiều quán phở nổi danh ở Sài Gòn trước năm 1975: phở Công Lý, phở Tàu Bay (ông chủ tên thật là Phạm Đăng Nhàn), phở Tàu Thủy, phở Dậu (đường Nam Kỳ Khởi Nghĩa quận 3), phở Phú Gia (đường Lý Chính Thắng quận 3 chuyên phở hương vị bắc), phố phở Pasteur (đường chuyên bán phở bò), phố phở Hiền Vương (chuyên bán phở gà); phở Cao Vân (đường Mạc Đĩnh Chi, quận 1 của ông Trần Văn Phồn). Hầu hết các quán phở này nay vẫn còn, truyền đến đời cháu nhưng "không còn cái hương mãnh liệt" và "không còn xuân sắc như thuở trước 75". Ngoài ra, phở Bình (quận 3) từng là sở chỉ huy của đơn vị F100 thuộc biệt động Sài Gòn, nơi bắt đầu chiến dịch Tết Mậu Thân (1968). Năm 1988, nơi này được công nhận là di tích lịch sử cấp quốc gia.
 
+
 === Phở Hà Giang ===
 Phở Tráng Kìm Hà Giang là một trong những đặc sản của vùng. Món ăn nổi tiếng không chỉ vì ngon, hấp dẫn mà còn rất "lạ" trong cách chế biến.
 Cụ thể, phở Tráng Kìm – đặc sản của xã Quyết Tiến, huyện Quản Bạ là một món điểm tâm sáng quen thuộc của những người đi chợ phiên, du khách đến Hà Giang, đặc biệt là dân lái xe đường dài.
 Thoạt nhìn, phở Tráng Kìm Hà Giang cũng khá giống phở Hà Nội hay phở Nam Định. Tuy nhiên, điểm khác biệt tạo nên sự độc đáo của món ăn là ở cách chế biến tinh tế, khéo léo, nguyên liệu được lựa chọn kỹ càng.
 Sợi phở Tráng Kìm Hà Giang được làm rất thủ công. Bột gạo được xay bằng tay, sau đó đem tráng và "phơi" ngay trên bếp. Khi bánh phở khô, chính những đôi tay ấy lại cắt ra sợi phở to bản, dai và dày. Nước dùng không chỉ có vị ngọt từ xương mà còn dậy mùi gừng, quế, hồi, thảo quả và nhiều gia vị khác của người dân tộc. Ăn kèm phở là thịt gà đồi chắc nịch, thơm ngon được luộc và thái sẵn. Đặc biệt, người dân nơi đây dùng nghệ khi luộc gà để thịt có màu vàng tươi bắt mắt. Hơn nữa, những bát phở Tráng Kìm sẽ luôn đầy ụ, nhiều thịt, nhiều bánh, nóng hổi và rất vừa miệng.
 
+
 === Phở Gia Lai ===
 Phở khô 2 tô Gia Lai một trong những đặc sản của vùng Tây Nguyên. Món ăn nổi tiếng Gia Lai, Buôn Mê Thuột rất được người Tây Nguyên ưa chuộng, điểm lạ của món ăn đó là nước phở và bò viên hoặc bò để riêng, và sợi phở để riêng, khi ăn có thể trộn với tương ớt và nước tương để ăn kèm. Sau khi trộn đều với nhau thì nhìn màu sợi phở trở lên rất bắt mắt và dậy mùi.
 Khi nhìn thì sợi phở sẽ giống với sợi hủ tiếu, nhưng với hương vị nước nấu phở và bò viên, đậm đà chắc chắn sẽ đem lại cho thực khách ấn tượng không phải khi đến với vùng đất Tây Nguyên.
+
 
 == Phở tại hải ngoại ==
 
@@ -91,15 +106,19 @@ Không chỉ có người Việt nấu phở mà cả người Hoa Kỳ cũng m�
 Tháng 5 năm 2009, ông Nguyễn Trọng Thìn - chủ quán phở thìn Lò Đúc (Hà Nội), nhận được thư mời của một giám đốc người Hàn Quốc cho biết muốn mở phở Việt tại Seoul. Sau khi tiếp nhận kỹ thuật nấu phở của ông Thìn, phía Hàn Quốc đã đề nghị ông hợp tác mở quán phở tại Seoul, nhưng vì việc kinh doanh ở nhà nên ông đã từ chối và tặng lại công thức nấu để họ tự hoạt động và họ đã mở hai tiệm Pho Tang (Phở Tặng - với hàm ý phở nấu từ công thức do người Việt Nam tặng). Năm 2019, Phở Thìn Lò Đúc đã xuất hiện ở nước ngoài tại Tokyo, Nhật Bản và Melbourne, Úc.
 Phở 24 là thương hiệu Việt Nam đầu tiên tiến hành nhượng quyền kinh doanh cửa hàng phở và đã xây dựng được hệ thống khoảng hơn 20 cửa hàng phở ở ngoài Việt Nam, tập trung chủ yếu ở khu vực Châu Á – Thái Bình Dương (từ năm 2003 - 2011). Từ cửa hàng nhượng quyền đầu tiên ở Jakarta năm 2005, Phở 24 đã có mặt tại rất nhiều thành phố lớn trên thế giới như Seoul, Hồng Kông, London, Melbourne...
 
+
 == Công nghệ chế biến phở ==
 Năm 2006, PGS.TS Trần Doãn Sơn (Trường Đại học Bách khoa, Đại học Quốc gia Thành phố Hồ Chí Minh) đã sáng chế thành công máy làm bánh phở tươi kiểu one touch - một nút nhấn xuất sang Hoa Kỳ, đầu này cho bột vào, đầu kia ra bánh phở tươi chỉ trong năm phút. Tháng 1 năm 2007, công ty Imperial (Hoa Kỳ) ký nhập khẩu bảy máy với giá 6.500 USD/máy.
 Từ năm 2012 trở lại đây, hệ thống nồi ninh nước phở đã được hiện đại hóa bằng công nghệ cao với sự hỗ trợ của ngành điện tử - tin học. Hệ thống nồi inox liên hoàn được áp dụng cho ra đời các kiểu nồi hầm ninh bán tự động hoặc hoàn toàn tự động. Loại cao cấp hoàn toàn tự động còn có chương trình mô phỏng chế độ ninh xương truyền thống tự điều tiết nhiệt lượng, thời gian ninh cho chất lượng nước dùng rất cao. Hệ thống còn có van xả giúp rửa, vệ sinh nồi sạch sẽ.
 
+
 == Trong văn hóa đại chúng ==
+
 
 === Văn hóa ăn phở ===
 Những quán phở Việt Nam vẫn giữ những thói quen là ít khi mang thực đơn cho khách hàng mà khách sẽ phải tự chọn loại phở gì (ví dụ: phở bò, phở gà...). Phở được đựng trong tô. Thông thường thì những bàn ăn được đánh số để phục vụ, trên đó có sẵn đũa, thìa và những gia vị kèm theo phở như: tương, chanh, nước mắm, ớt...
 Nhà thiết kế Yanko Design đã thiết kế một tô đựng phở đặc biệt và tiện lợi, có ngăn riêng cho phụ gia kèm theo.
+
 
 === Văn học, nghệ thuật ===
 Có thể kể đến như:
@@ -109,11 +128,13 @@ Nhà thơ Tú Mỡ với bài thơ Phở đức tụng
 Nhà văn Thạch Lam viết trong cuốn Hà Nội băm sáu phố phường:
 
 Bức tranh Gánh phở rong ở Hà Nội vẽ người bán phở gánh ở phố cổ Hà Nội của họa sĩ Pháp Maurice Salge vẽ năm 1913.
-Phở còn xuất hiện trong câu đối trong truyện dân gian. Trước lời tán tỉnh của các thực khách nam, bà chủ tiệm phở - một thiếu phụ mất chồng đáp: Nạc mỡ nữa làm gì, em nghĩ chín rồi, đừng nói với em câu tái giá. Vế xuất này vừa có năm từ liên quan đến phở (nạc, mỡ, chín, tái, giá), vừa nhắn nhủ: Bản thân suy nghĩ kỹ rồi, đừng đề nghị lấy chồng lần nữa. Trong số tám vế đối được Lãng Nhân ghi nhận, có vế đối của một ông thầy bói: Càn khôn đâu cũng mặc, lão xin gieo lại, dẫu bề nào lão chẳng can chi. Vế đối này vừa có năm từ liên quan đến bói toán (càn, khôn, gieo, can, chi) vừa hé lộ mưu đồ dẫu có chuyện gì ta chẳng liên quan.
+Phở còn xuất hiện trong câu đối trong truyện dân gian. Trước lời tán tỉnh của các thực khách nam, bà chủ tiệm phở - một thiếu phụ mất chồng đáp: Nạc mỡ nữa làm gì, em nghĩ chín rồi, đừng nói với em câu tái giá. Vế xuất này vừa có năm từ liên quan đến phở (nạc, mỡ, chín, tái, giá), vừa nhắn nhủ: Bản thân suy nghĩ kỹ rồi, đừng đề nghị lấy chồng lần nữa.  Trong số tám vế đối được Lãng Nhân ghi nhận, có vế đối của một ông thầy bói: Càn khôn đâu cũng mặc, lão xin gieo lại, dẫu bề nào lão chẳng can chi. Vế đối này vừa có năm từ liên quan đến bói toán (càn, khôn, gieo, can, chi) vừa hé lộ mưu đồ dẫu có chuyện gì ta chẳng liên quan.
+
 
 === Ngày của phở ===
 Năm 2016, người Nhật đã chọn ngày 4 tháng 4 hàng năm là Ngày phở Việt Nam tại Nhật Bản. Ngày 4 tháng 4 được chọn vì số 4 (four) trong tiếng Anh và từ "phở" đều phiên âm bằng tiếng Nhật là フォー (fō) để giúp mọi người dễ nhớ.
 Tại Việt Nam, ngày 12 tháng 12 năm 2017, báo Tuổi Trẻ phối hợp với Công ty Acecook Việt Nam tổ chức sự kiện "Ngày của Phở" lần đầu tiên tại Thành phố Hồ Chí Minh. Khi khởi xướng chương trình, báo Tuổi Trẻ cho biết đã đề xuất cơ quan có thẩm quyền công nhận ngày 12 tháng 12 là "Ngày của Phở". Sau đó, chương trình được tổ chức thường niên như một hoạt động văn hóa ẩm thực nhằm quảng bá món phở Việt Nam.
+
 
 == Vinh danh ==
 Vào tháng 8/2024, 3 món nổi tiếng gồm phở Hà Nội, Nam Định và mì Quảng được Bộ Văn hóa Thể thao và Du lịch công nhận Di sản văn hóa phi vật thể quốc gia vì mang nhiều giá trị từ lịch sử, tri thức đến kết nối cộng đồng. Theo Bộ, cả 3 di sản văn hóa phi vật thể đều được địa phương giới thiệu với đầy đủ giá trị như tính đại diện, thể hiện bản sắc cộng đồng, địa phương; phản ánh sự đa dạng văn hóa và sự sáng tạo của con người, được kế tục qua nhiều thế hệ; có khả năng phục hồi và tồn tại lâu dài; được cộng đồng đồng thuận, tự nguyện đề cử và cam kết bảo vệ.

@@ -56,11 +56,16 @@ không có đáp án mà vẫn giữ đủ câu có đáp án.
    bị bỏ (một nguồn sự thật). Logic lọc tách thành hàm thuần `selectRelevant` (sẵn sàng cho cấu hình khác về sau).
 3. "Không bịa" vẫn được siết ở **tầng trả lời** (độc lập với ngưỡng): chế độ theo nguồn, câu trả lời không có `[n]` hợp
    lệ ⇒ "Không tìm thấy trong nguồn." + gợi ý (trước đây gắn mọi đoạn ngữ cảnh làm trích dẫn) — FR-015/016.
+   **Đánh đổi:** câu trả lời đúng nhưng mô hình quên chèn `[n]` (vd tóm tắt) nay cũng thành "Không tìm thấy". Đo
+   end-to-end (`EVAL_WITH_LLM=1`, `gpt-oss:20b`, 24 câu hold-out có đáp án): **4,2%** (1/24) bị trả "không tìm thấy" —
+   chấp nhận được; tỉ lệ phụ thuộc mô hình chat (model nhỏ hơn có thể cao hơn) ⇒ theo dõi tiếp ở #109.
 4. SC-001 (≥ 90% từ chối đúng ở tầng truy xuất) **không đạt** trong feature này — ghi nhận là giới hạn đã biết. Việc
    tách câu không có đáp án tốt hơn cần kỹ thuật ngoài phạm vi spec 108 (reranker cross-encoder, bước LLM chấm độ liên
-   quan, hoặc mô hình embedding khác) ⇒ **tách issue riêng**, dùng chính bộ đánh giá + `npm run eval:retrieval`
+   quan, hoặc mô hình embedding khác) ⇒ **tách issue riêng (#109)**, dùng chính bộ đánh giá + `npm run eval:retrieval`
    (kèm `EVAL_WITH_LLM=1` để đo end-to-end) làm thước đo.
-5. SC-006 (độ trễ): cấu hình không đổi ⇒ không tăng (đo cùng lần chạy: 0%).
+5. SC-006 (độ trễ): cấu hình không đổi ⇒ phần lọc không tăng (đo cùng lần chạy: 0%). `retrieve()` chỉ đọc vector chunk
+   một lần — trên các đoạn đã qua lọc (như trước 108); riêng gate `vectorWithin` mới cần đọc hợp tập hai nhánh trước khi
+   lọc. Đường "không có đoạn nào" không tốn lần đọc vector nào.
 
 ## Giới hạn
 

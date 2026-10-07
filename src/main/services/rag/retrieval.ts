@@ -61,15 +61,16 @@ export async function retrieve(
     }
   }
 
-  // Vector chunk lấy MỘT lần cho hợp tập hai nhánh: dùng cho distance của hit BM25 (gate vectorWithin, điểm
-  // hiển thị) và dùng lại cho MMR (108, research R11).
-  const vecMap = deps.getVectorsByIds
-    ? await deps.getVectorsByIds(unionIds(vHits, kHits))
-    : new Map<string, number[]>();
+  // Vector chunk lấy MỘT lần (108, research R11): gate `vectorWithin` cần distance của hit BM25 TRƯỚC khi lọc ⇒ đọc
+  // hợp tập hai nhánh; gate khác ⇒ chỉ đọc các đoạn đã qua lọc (đường rỗng không tốn lần đọc nào). Dùng lại cho MMR.
+  let vecMap = new Map<string, number[]>();
   const distanceOf = (id: string): number | undefined => {
     const v = vecMap.get(id);
     return v ? 1 - cosine(vector, v) : undefined;
   };
+  if (deps.getVectorsByIds && cfg.bm25Gate === "vectorWithin") {
+    vecMap = await deps.getVectorsByIds(unionIds(vHits, kHits));
+  }
 
   // 3. Lọc độ liên quan (108): ngưỡng vector tuyệt đối/tương đối + chặn nhánh BM25 theo cấu hình đã hiệu chuẩn.
   const kept = selectRelevant({ vHits, kHits, distanceOf }, cfg);
@@ -81,6 +82,9 @@ export async function retrieve(
     kept.keyword.map((h) => h.id),
   ]);
   if (fused.length === 0) return []; // → grounded "không tìm thấy" (013 giữ nguyên)
+  if (deps.getVectorsByIds && cfg.bm25Gate !== "vectorWithin") {
+    vecMap = await deps.getVectorsByIds(fused);
+  }
 
   // 5. MMR đa dạng hoá (cần vector chunk; thiếu vector → giữ theo RRF order).
   const order = deps.getVectorsByIds
