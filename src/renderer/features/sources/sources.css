@@ -460,3 +460,52 @@
   line-height: 1.4;
   color: var(--danger);
 }
+
+/* 112: PDF trích theo cách cũ — gợi ý thụ động "Xử lý lại để giữ bố cục" (không chặn thao tác khác). */
+.src-hint {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--warn-ink);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-radius: 999px;
+}
+.src-reprocess-run {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+/* Hộp xác nhận "Xử lý lại" — nêu hệ quả với trích dẫn cũ (FR-013). */
+.src-confirm {
+  margin-top: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--warn-line);
+  border-left: 3px solid var(--warn-strong);
+  border-radius: 6px;
+}
+.src-confirm p {
+  margin: 0 0 6px;
+}
+.src-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.nb-icon-btn.primary {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+.nb-icon-btn.primary:hover,
+.nb-icon-btn.primary:focus-visible {
+  background: var(--accent);
+  color: #fff;
+}

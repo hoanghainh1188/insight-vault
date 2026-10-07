@@ -131,9 +131,9 @@ ADR + glossary + gate.
 
 ### UI
 
-- [ ] T049 [US3] RED — `tests/unit/source-reprocess-ui.test.ts` (jsdom): gợi ý "Xử lý lại để giữ bố cục" khi `kind==="pdf" && extractionVersion < PDF_EXTRACTION_VERSION`; mục "Xử lý lại" chỉ cho PDF `ready`/`error`, khoá khi đang xử lý/vault khoá; hộp xác nhận nêu hệ quả, huỷ ⇒ không gọi IPC; `missing` ⇒ mở luồng relink 101; `mismatch` ⇒ thông báo lý do; tiến độ + nút Huỷ; thông báo lỗi khi thất bại
-- [ ] T050 [US3] GREEN — `src/renderer/features/sources/useReprocess.ts` + `SourceItem.tsx` + `sources.css`
-- [ ] T051 [US3] E2E `tests/e2e/source-reprocess.spec.ts`: whitelist kênh mới; PDF cũ (seed version 1) hiện gợi ý; "Xử lý lại" ⇒ xác nhận ⇒ xong, gợi ý biến mất (IV_EMBED_FAKE=1)
+- [X] T049 [US3] RED — `tests/unit/source-reprocess-ui.test.ts` (jsdom): gợi ý "Xử lý lại để giữ bố cục" khi `kind==="pdf" && extractionVersion < PDF_EXTRACTION_VERSION`; mục "Xử lý lại" chỉ cho PDF `ready`/`error`, khoá khi đang xử lý/vault khoá; hộp xác nhận nêu hệ quả, huỷ ⇒ không gọi IPC; `missing` ⇒ mở luồng relink 101; `mismatch` ⇒ thông báo lý do; tiến độ + nút Huỷ; thông báo lỗi khi thất bại
+- [X] T050 [US3] GREEN — `src/renderer/features/sources/useReprocess.ts` + `SourceItem.tsx` + `sources.css` — **Thực hiện:** "Xử lý lại" là nút hành động cạnh "Thử lại"/"Xoá" (cột Nguồn hiện dùng nút, không có menu); hộp xác nhận nội tuyến `role="alertdialog"`; khoá kho báo qua thông điệp lỗi từ main
+- [X] T051 [US3] E2E `tests/e2e/source-reprocess.spec.ts`: whitelist kênh mới; PDF cũ (seed version 1) hiện gợi ý; "Xử lý lại" ⇒ xác nhận ⇒ xong, gợi ý biến mất (IV_EMBED_FAKE=1) — **Thực hiện:** E2E kiểm kênh + PDF thật (version 2, xử lý lại xong vẫn ready, mismatch, missing); gợi ý cho PDF version 1 kiểm ở unit UI (renderer không ghi được DB để seed version 1)
 
 **Checkpoint**: xử lý lại an toàn, nguyên tử.
 

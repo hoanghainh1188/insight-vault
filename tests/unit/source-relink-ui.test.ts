@@ -23,7 +23,10 @@ let sourceRelink: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
   sourceRelink = vi.fn(() => Promise.resolve({ status: "ok" }));
-  (window as unknown as { api: unknown }).api = { sourceRelink };
+  (window as unknown as { api: unknown }).api = {
+    sourceRelink,
+    onSourceProgress: () => () => {}, // 112: SourceItem nghe tiến độ "Xử lý lại"
+  };
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
