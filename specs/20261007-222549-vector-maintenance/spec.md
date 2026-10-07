@@ -23,6 +23,27 @@ mới; ADR mới hoãn ANN kèm số liệu."
   notebook, top-6). Index xấp xỉ (ANN) chỉ nhanh hơn vài ms nhưng mất độ phủ (Recall 0,34 với IVF_PQ @200k; 0,98 với
   HNSW_SQ); index vô hướng trên `notebook_id` làm **chậm hơn** ⇒ người dùng đã chốt: **giữ tìm kiếm chính xác, hoãn ANN**.
 
+## Clarifications
+
+### Session 2026-10-07
+
+Chốt đủ 10 mục ở `docs/04-decisions/2026-10-07-vector-maintenance-clarify.md` (người dùng chọn toàn bộ phương án khuyên dùng):
+
+- Q: Khi nào kích hoạt? → A: Kết hợp — debounce yên ~60 s sau ghi cuối + cổng ngưỡng + bắt kịp sau khởi động (~45 s) +
+  sau reindex; trần 1 lần/10 phút.
+- Q: Phối hợp với nạp/sao lưu? → A: Single-flight riêng, chỉ chạy khi kho yên (định nghĩa bận dùng chung với khoá vault,
+  không có truy vấn đang chạy); bận ⇒ hoãn; sao lưu/khôi phục chờ bảo trì xong có trần thời gian; xung đột ⇒ hoãn.
+- Q: Biên an toàn phiên bản cũ? → A: 10 phút, tường minh, không dọn tệp chưa xác minh.
+- Q: Hiển thị? → A: Hoàn toàn ngầm, chỉ nhật ký (4 sự kiện start/done/skip/error, meta giới hạn); không UI, không IPC,
+  không dòng dung lượng vector.
+- Q: Lỗi? → A: Nuốt + backoff cấp số nhân, ngưng sau 3 lỗi liên tiếp tới lần khởi động sau.
+- Q: Kiểm thử? → A: Unit hàm lên lịch (test-first ≥ 80%) + integration kho thật quy mô nhỏ trong bộ test chính (gồm ca
+  ghi trong lúc bảo trì) + hồi quy bộ đo 108 ở test gate.
+- Q: Mở rộng giao diện kho? → A: Thêm bắt buộc thao tác bảo trì + đo số liệu kho; giao diện hẹp của reindex giữ nguyên.
+- Q: Dung lượng trống? → A: Cần trống ≥ 2 × kích thước kho, thiếu ⇒ hoãn "lowDisk"; không trần thời gian cứng.
+- Q: Điều kiện xem lại ANN? → A: p95 tìm kiếm sau bảo trì > 50 ms trên máy tham chiếu hoặc một notebook ~1 triệu vector;
+  phải đo lại Recall bằng bộ đo 108.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Dung lượng vault không phình mãi sau nhiều lần xoá/xử lý lại (Priority: P1)
@@ -145,10 +166,10 @@ INDEX có dòng mới.
   giải phóng dung lượng của vector đã xoá — mà không cần người dùng thao tác.
 - **FR-002**: Bảo trì MUST được kích hoạt theo tổ hợp: (a) sau thao tác ghi (nạp/xoá/xử lý lại) khi kho đã **yên** một
   khoảng debounce kể từ lần ghi cuối; (b) một lần **bắt kịp** sau khi app khởi động (trễ, không chặn cửa sổ); (c) một lần
-  sau khi **tái lập chỉ mục** kết thúc. Không chạy theo từng thao tác ghi.
+  sau khi **tái lập chỉ mục** kết thúc. Không chạy theo từng thao tác ghi. Debounce 60 s; bắt kịp trễ 45 s.
 - **FR-003**: Bảo trì MUST chỉ thực sự chạy khi vượt **ngưỡng kích hoạt** đo được (số phân mảnh và/hoặc lượng thay đổi
   tích luỹ từ lần bảo trì trước); dưới ngưỡng ⇒ bỏ qua, ghi lý do.
-- **FR-004**: Hệ thống MUST áp **trần tần suất**: không chạy quá một lần trong một khoảng tối thiểu.
+- **FR-004**: Hệ thống MUST áp **trần tần suất**: không chạy quá một lần trong 10 phút.
 - **FR-005**: Quyết định "có chạy bây giờ không" MUST là một hàm thuần nhận vào: thời điểm ghi cuối, số thao tác ghi
   tích luỹ, số liệu đo của kho, trạng thái bận, kết quả/lần chạy trước, số lần lỗi liên tiếp và thời điểm hiện tại (đồng
   hồ tiêm vào) — kiểm thử được không cần kho thật.
@@ -170,10 +191,10 @@ INDEX có dòng mới.
 
 - **FR-011**: Bảo trì MUST NOT làm mất, thay đổi hay nhân đôi bất kỳ vector hay `id` đoạn nào; kết quả tìm kiếm, đếm
   theo nguồn/notebook và lấy vector theo `id` trước và sau bảo trì MUST giống hệt.
-- **FR-012**: Bảo trì MUST giữ các phiên bản cũ trong một **biên an toàn thời gian > 0** (hằng số có tên, truyền tường
+- **FR-012**: Bảo trì MUST giữ các phiên bản cũ trong một **biên an toàn thời gian 10 phút** (hằng số có tên, truyền tường
   minh, không dựa mặc định thư viện) để truy vấn đang đọc đồng thời không mất tệp; MUST NOT dọn các tệp chưa được xác
   minh là thuộc phiên bản đã commit.
-- **FR-013**: Trước khi gộp, hệ thống MUST kiểm dung lượng trống của ổ chứa kho ≥ một hệ số × kích thước kho hiện tại;
+- **FR-013**: Trước khi gộp, hệ thống MUST kiểm dung lượng trống của ổ chứa kho ≥ 2 × kích thước kho hiện tại;
   thiếu ⇒ hoãn với lý do "thiếu dung lượng".
 - **FR-014**: Tắt app giữa lúc bảo trì MUST NOT làm hỏng kho (lần mở sau đọc được đầy đủ dữ liệu đã commit).
 - **FR-015**: Bảo trì MUST NOT tạo bất kỳ index nào (vector hay vô hướng) và MUST NOT đổi schema bảng, model nhúng,
@@ -184,7 +205,7 @@ INDEX có dòng mới.
 - **FR-016**: Mọi lỗi bảo trì MUST bị nuốt ở tầng bảo trì (không ném ra ngoài, không ảnh hưởng nạp/hỏi đáp/sao lưu),
   phân biệt "hoãn" (bận, xung đột, bảng chưa có, dưới ngưỡng, thiếu dung lượng — không tính lỗi) với "lỗi" (tính vào bộ
   đếm lỗi liên tiếp).
-- **FR-017**: Sau lỗi, lần thử lại MUST giãn dần (backoff); sau K lần lỗi liên tiếp MUST ngưng bảo trì cho tới lần khởi
+- **FR-017**: Sau lỗi, lần thử lại MUST giãn dần (backoff); sau K = 3 lần lỗi liên tiếp MUST ngưng bảo trì cho tới lần khởi
   động sau; một lần thành công đặt lại bộ đếm.
 - **FR-018**: Hệ thống MUST ghi nhật ký (theo quy ước nhật ký ứng dụng 088) các sự kiện bắt đầu/xong/bỏ qua-hoãn/lỗi của
   bảo trì với meta CHỈ gồm: nguyên nhân kích hoạt, lý do hoãn, số phân mảnh trước/sau, số phiên bản đã dọn, số byte giải
@@ -243,15 +264,16 @@ INDEX có dòng mới.
 
 ## Assumptions
 
-Các giá trị dưới đây là **đề xuất khuyên dùng từ intake**, sẽ được xác nhận hoặc thay ở `/speckit-clarify` và ghi vào
-`docs/04-decisions/2026-10-07-vector-maintenance-clarify.md`:
+Đã chốt ở `docs/04-decisions/2026-10-07-vector-maintenance-clarify.md`:
 
-- Debounce yên lặng ~60 s sau thao tác ghi cuối; bắt kịp sau khởi động trễ ~30–60 s; trần tần suất ~1 lần/10 phút.
-- Biên an toàn phiên bản cũ ~10 phút; không bật dọn tệp chưa xác minh.
-- K = 3 lần lỗi liên tiếp thì ngưng tới lần khởi động sau.
-- Ngưỡng kích hoạt (số phân mảnh / lượng thay đổi) và hệ số dung lượng trống chốt theo số đo ở bước plan (research).
-- Không hiển thị gì cho người dùng ở v1 (không dòng dung lượng vector, không nút "Dọn dẹp ngay").
-- Kiểm thử gồm: unit cho hàm lên lịch (đồng hồ tiêm vào), integration với kho thật trên thư mục tạm, và hồi quy bộ đo 108.
+- Debounce yên lặng 60 s sau thao tác ghi cuối; bắt kịp sau khởi động trễ 45 s; trần tần suất 1 lần/10 phút.
+- Biên an toàn phiên bản cũ 10 phút; không bật dọn tệp chưa xác minh.
+- K = 3 lần lỗi liên tiếp thì ngưng tới lần khởi động sau; backoff cấp số nhân giữa các lần lỗi.
+- Dung lượng trống tối thiểu = 2 × kích thước kho (hệ số có thể tinh chỉnh theo số đo ở plan).
+- Ngưỡng kích hoạt (số phân mảnh / lượng thay đổi tích luỹ) chốt theo số đo ở bước plan (research).
+- Không hiển thị gì cho người dùng (không dòng dung lượng vector, không nút "Dọn dẹp ngay"); README không đổi phần giao diện.
+- Kiểm thử gồm unit cho hàm lên lịch (đồng hồ tiêm vào), integration với kho thật quy mô nhỏ trong bộ test chính, và hồi
+  quy bộ đo 108 ở test gate.
 - Chữ ký/giá trị mặc định của thao tác gộp-dọn và cách đo số phân mảnh ở thư viện kho vector hiện dùng sẽ được xác minh ở
   bước plan; adapter kho vector vẫn loại khỏi coverage như hiện có.
 - Một bảng chung cho toàn app, xoá đồng bộ metadata↔vector, xoá bảng khi đổi model (ADR 011/059) giữ nguyên.
