@@ -23,18 +23,18 @@ ADR + glossary + gate.
 
 **Purpose**: PDF mẫu tự sinh, không vướng bản quyền (research R13, FR-022)
 
-- [ ] T001 Tạo `tests/fixtures/pdf/make-pdf.ts`: trình sinh PDF tối giản thuần TS (không dependency) — `makePdf(pages: FixturePage[]): Uint8Array` với `FixturePage { width, height, rotate?: 0|90, texts: {x,y,size,text,font?:"helv"|"vi",angle?:number}[], lines?: {x1,y1,x2,y2}[] }`; viết catalog/pages/content stream (`BT /F1 size Tf x y Td (…) Tj ET`, `m l S` cho đường kẻ), xref + trailer đúng offset
-- [ ] T002 Thêm font tiếng Việt vào `tests/fixtures/pdf/make-pdf.ts`: nhúng `node_modules/pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf` (TrueType `FontFile2`) + `/Encoding /Differences` (tên glyph `uniXXXX`, tối đa 255 ký tự) + `ToUnicode` CMap; ghi chú giấy phép SIL OFL (`LICENSE_LIBERATION`) ở đầu tệp
-- [ ] T003 Tạo `tests/fixtures/pdf/samples.ts`: `oneColumn()`, `twoColumns()`, `borderedTable()`, `borderlessTable()`, `tableAcrossPages()` (bảng trải 2 trang), `tocNotTable()` (mục lục dấu chấm dẫn), `bulletList()`, `vietnamese()` (có dấu, dạng tổ hợp), `rotatedPage()`, `hyphenated()`, `manyItems(n)`; mỗi mẫu kèm `expected` (văn bản/bảng kỳ vọng theo trang)
-- [ ] T004 Smoke test `tests/unit/pdf-fixture.test.ts`: `makePdf` mở được bằng `pdfjs-dist/legacy/build/pdf.mjs`; `getTextContent` trả đúng chuỗi cho mẫu Latin và mẫu tiếng Việt (so sau NFC). Font nhúng không ổn ⇒ chuyển sang `pdf-lib`+`fontkit` (devDependency) và ghi chú cho ADR
-- [ ] T005 (E2) Tạo snapshot TRƯỚC khi sửa chunker/pipeline: `tests/unit/ingestion-other-kinds-unchanged.test.ts` chạy pipeline (embedder giả, DI như `ingestion-pipeline.test.ts`) trên `tests/fixtures/sample.txt`, `sample.md`, `sample.docx`; ghi snapshot văn bản trang + chunk (text, ordinal, locator) bằng `toMatchSnapshot()` và commit snapshot từ trạng thái `main` (test phải xanh trên code hiện tại)
+- [X] T001 Tạo `tests/fixtures/pdf/make-pdf.ts`: trình sinh PDF tối giản thuần TS (không dependency) — `makePdf(pages: FixturePage[]): Uint8Array` với `FixturePage { width, height, rotate?: 0|90, texts: {x,y,size,text,font?:"helv"|"vi",angle?:number}[], lines?: {x1,y1,x2,y2}[] }`; viết catalog/pages/content stream (`BT /F1 size Tf x y Td (…) Tj ET`, `m l S` cho đường kẻ), xref + trailer đúng offset
+- [X] T002 Thêm font tiếng Việt vào `tests/fixtures/pdf/make-pdf.ts`: nhúng `node_modules/pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf` (TrueType `FontFile2`) + `/Encoding /Differences` (tên glyph `uniXXXX`, tối đa 255 ký tự) + `ToUnicode` CMap; ghi chú giấy phép SIL OFL (`LICENSE_LIBERATION`) ở đầu tệp — **Thực hiện:** KHÔNG cần nhúng font: Helvetica + `/Differences` + `/ToUnicode` CMap + `/Widths` cố định cho chữ tiếng Việt (NFC lẫn NFD); smoke test T004 xác nhận pdf.js trích đúng chuỗi
+- [X] T003 Tạo `tests/fixtures/pdf/samples.ts`: `oneColumn()`, `twoColumns()`, `borderedTable()`, `borderlessTable()`, `tableAcrossPages()` (bảng trải 2 trang), `tocNotTable()` (mục lục dấu chấm dẫn), `bulletList()`, `vietnamese()` (có dấu, dạng tổ hợp), `rotatedPage()`, `hyphenated()`, `manyItems(n)`; mỗi mẫu kèm `expected` (văn bản/bảng kỳ vọng theo trang)
+- [X] T004 Smoke test `tests/unit/pdf-fixture.test.ts`: `makePdf` mở được bằng `pdfjs-dist/legacy/build/pdf.mjs`; `getTextContent` trả đúng chuỗi cho mẫu Latin và mẫu tiếng Việt (so sau NFC). Font nhúng không ổn ⇒ chuyển sang `pdf-lib`+`fontkit` (devDependency) và ghi chú cho ADR
+- [X] T005 (E2) Tạo snapshot TRƯỚC khi sửa chunker/pipeline: `tests/unit/ingestion-other-kinds-unchanged.test.ts` chạy pipeline (embedder giả, DI như `ingestion-pipeline.test.ts`) trên `tests/fixtures/sample.txt`, `sample.md`, `sample.docx`; ghi snapshot văn bản trang + chunk (text, ordinal, locator) bằng `toMatchSnapshot()` và commit snapshot từ trạng thái `main` (test phải xanh trên code hiện tại)
 
 ---
 
 ## Phase 2: Foundational — kiểu dữ liệu bố cục
 
-- [ ] T006 Tạo `src/main/services/ingestion/pdf-layout/types.ts`: `LayoutItem {text,x,y,w,h,rotated}`, `PageGeometry {width,height}`, `LayoutResult {text, blocks:{start,end}[], fallback}`; hằng `MAX_LAYOUT_ITEMS_PER_PAGE = 5000`, `PARAGRAPH_GAP_RATIO = 1.5`, `LINE_OVERLAP_RATIO = 0.5`, `WORD_GAP_RATIO = 0.15`, `CELL_GAP_RATIO = 1`, `CELL_ALIGN_RATIO = 0.5`, `TABLE_MIN_ROWS = 3`, `TABLE_MIN_COLS = 2`, `COLUMN_GUTTER_MIN = 0.02`, `COLUMN_CROSS_MAX = 0.1`
-- [ ] T007 Tạo `tests/unit/helpers/layout-items.ts`: builder `LayoutItem[]` tổng hợp (dòng chữ, cột, lưới bảng) dùng chung cho test pdf-layout
+- [X] T006 Tạo `src/main/services/ingestion/pdf-layout/types.ts`: `LayoutItem {text,x,y,w,h,rotated}`, `PageGeometry {width,height}`, `LayoutResult {text, blocks:{start,end}[], fallback}`; hằng `MAX_LAYOUT_ITEMS_PER_PAGE = 5000`, `PARAGRAPH_GAP_RATIO = 1.5`, `LINE_OVERLAP_RATIO = 0.5`, `WORD_GAP_RATIO = 0.15`, `CELL_GAP_RATIO = 1`, `CELL_ALIGN_RATIO = 0.5`, `TABLE_MIN_ROWS = 3`, `TABLE_MIN_COLS = 2`, `COLUMN_GUTTER_MIN = 0.02`, `COLUMN_CROSS_MAX = 0.1`
+- [X] T007 Tạo `tests/unit/helpers/layout-items.ts`: builder `LayoutItem[]` tổng hợp (dòng chữ, cột, lưới bảng) dùng chung cho test pdf-layout
 
 **Checkpoint**: fixture + kiểu + snapshot hồi quy sẵn sàng.
 
