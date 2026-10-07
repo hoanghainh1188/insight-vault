@@ -57,7 +57,7 @@ export interface PipelineDeps {
   // 051: hash + size STREAMING (không nạp cả file vào RAM) — cho video/audio lớn ở bước add(). Tuỳ chọn:
   // thiếu thì fallback readFile+hashBytes (test harness cũ). sha256 hex khớp hashBytes → dedup nhất quán.
   hashFile?: (path: string) => Promise<{ hash: string; byteLength: number }>;
-  setOnline?: (online: boolean) => void;
+  setOnline?: (online: boolean, kind?: "url" | "model") => void;
   emit: (e: SourceProgressEvent) => void;
 }
 
@@ -116,11 +116,11 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     try {
       if (src.kind === "url") {
         if (!deps.parseUrl) throw new Error("URL chưa hỗ trợ");
-        deps.setOnline?.(true);
+        deps.setOnline?.(true, "url");
         try {
           result = await deps.parseUrl(sourceOrigin(src));
         } finally {
-          deps.setOnline?.(false);
+          deps.setOnline?.(false, "url");
         }
       } else if (src.kind === "video") {
         // 051: ffmpeg đọc thẳng file gốc theo path → KHÔNG nạp cả file (tới 1GB) vào RAM. Kiểm giới hạn

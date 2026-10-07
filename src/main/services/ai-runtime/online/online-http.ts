@@ -1,3 +1,4 @@
+import { withEgress } from "../../app-shell/privacy-state";
 import { errorForCause, errorForStatus } from "./online-error";
 
 // HTTP client JSON cho provider online (031, Constitution III: chỉ main). fetch tiêm vào để test; timeout
@@ -16,10 +17,21 @@ export interface CallJsonOptions {
   timeoutMs?: number;
   /** Nhãn provider để thêm vào thông báo lỗi. */
   providerLabel?: string;
+  /** 103: tính là egress (badge "đang gửi")? Mặc định true; Ollama (localhost) truyền false. */
+  egress?: boolean;
 }
 
-/** POST JSON, trả về JSON đã parse. Ném OnlineProviderError khi non-2xx / abort / mạng. */
-export async function callJson(opts: CallJsonOptions): Promise<unknown> {
+/**
+ * POST JSON, trả về JSON đã parse. Ném OnlineProviderError khi non-2xx / abort / mạng. 103: cả request + đọc body
+ * nằm trong withEgress ⇒ badge "Đang gửi dữ liệu ra ngoài…" đúng lúc dữ liệu thật sự rời máy.
+ */
+export function callJson(opts: CallJsonOptions): Promise<unknown> {
+  return opts.egress === false
+    ? callJsonInner(opts)
+    : withEgress(() => callJsonInner(opts));
+}
+
+async function callJsonInner(opts: CallJsonOptions): Promise<unknown> {
   const timeoutMs = opts.timeoutMs ?? DEFAULT_ONLINE_TIMEOUT_MS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -56,11 +68,23 @@ export interface StreamOptions {
   fetchFn: FetchFn;
   signal?: AbortSignal;
   providerLabel?: string;
+  /** 103: tính là egress (badge "đang gửi")? Mặc định true; Ollama (localhost) truyền false — KHÔNG rời máy. */
+  egress?: boolean;
 }
 
 /** POST + đọc body theo DÒNG (039). Gọi onLine mỗi dòng (NDJSON/SSE). Huỷ (abort) → dừng êm, giữ phần đã
- * nhận (không ném). Lỗi HTTP/mạng → OnlineProviderError. KHÔNG timeout (stream dài; dừng bằng signal). I/O. */
-export async function streamLines(
+ * nhận (không ném). Lỗi HTTP/mạng → OnlineProviderError. KHÔNG timeout (stream dài; dừng bằng signal). I/O.
+ * 103: egress tính tới khi ĐỌC HẾT body (fetch trả về ngay khi có header, dữ liệu còn chạy tiếp). */
+export function streamLines(
+  opts: StreamOptions,
+  onLine: (line: string) => void,
+): Promise<void> {
+  return opts.egress === false
+    ? streamLinesInner(opts, onLine)
+    : withEgress(() => streamLinesInner(opts, onLine));
+}
+
+async function streamLinesInner(
   opts: StreamOptions,
   onLine: (line: string) => void,
 ): Promise<void> {

@@ -143,6 +143,8 @@ export function createOllamaClient(
             fetchFn,
             signal: opts.signal,
             providerLabel: "Ollama",
+            // 103: Ollama chạy cục bộ (OLLAMA_HOST chỉ loopback) — KHÔNG phải dữ liệu rời máy, badge giữ nguyên.
+            egress: false,
           },
           (line) => {
             const delta = parseOllamaLine(line);

@@ -114,6 +114,8 @@ export const CHANNELS = {
   backupGetState: "backup:getState",
   backupCreate: "backup:create",
   backupProgress: "backup:progress", // event push main→renderer
+  // 103: trạng thái riêng tư đổi (local/online/sending) — event push main→renderer, không polling.
+  privacyChanged: "app:privacyChanged",
   restorePick: "restore:pick",
   restorePrepare: "restore:prepare",
   restoreConfirm: "restore:confirm",

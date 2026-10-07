@@ -60,7 +60,7 @@ export function createEmbedder(opts: {
   cacheDir: string;
   model?: string;
   /** Bật/tắt chỉ báo egress khi TẢI model lần đầu từ HF (Constitution I — badge khớp hành vi 045/031). */
-  setOnline?: (online: boolean) => void;
+  setOnline?: (online: boolean, kind?: "model") => void;
 }): Embedder {
   // Seam E2E: tránh tải model ~120MB trong test (offline, tất định). Chỉ khi harness đặt env VÀ app CHƯA
   // đóng gói (defense-in-depth: bản phát hành không thể bật nhầm dù ai đó set env — security review 059).
@@ -79,7 +79,7 @@ export function createEmbedder(opts: {
     if (pipePromise) return pipePromise;
     logEvent("embed.model.load", { model });
     // Lần đầu tải weight qua mạng (HF Hub) → báo egress; tắt khi xong (cache local).
-    opts.setOnline?.(true);
+    opts.setOnline?.(true, "model");
     pipePromise = pipeline("feature-extraction", model, {
       progress_callback: (p: unknown) => {
         const pr = p as { status?: string; progress?: number };
@@ -87,7 +87,7 @@ export function createEmbedder(opts: {
           onProgress?.((pr.progress / 100) * 0.5);
         }
       },
-    }).finally(() => opts.setOnline?.(false)) as Promise<Extractor>;
+    }).finally(() => opts.setOnline?.(false, "model")) as Promise<Extractor>;
     return pipePromise;
   };
 
