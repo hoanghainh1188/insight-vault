@@ -61,7 +61,16 @@ import type { ReindexStatus } from "@shared/ipc/types";
 import { homedir, release, totalmem } from "node:os";
 import { applyPendingRestore } from "./services/vault-backup/restore-swap";
 import { createBackupService } from "./services/vault-backup/backup-service";
-import { createVaultLock } from "./services/vault-backup/vault-lock";
+import {
+  createVaultLock,
+  isVaultBusy,
+} from "./services/vault-backup/vault-lock";
+import {
+  createVectorMaintenance,
+  type VectorMaintenance,
+} from "./services/vector-maintenance/maintenance";
+import { createFsOps } from "./services/app-shell/storage-fs";
+import { dirSize } from "./services/app-shell/storage-info";
 import { createElectronDialogs } from "./services/vault-backup/dialogs";
 
 // 049: đăng ký scheme iv-media:// là privileged (stream + fetch API) TRƯỚC khi app ready — cho <audio> phát
@@ -302,6 +311,8 @@ app
         if (!w.isDestroyed()) w.webContents.send(CHANNELS.sourceProgress, e);
       }
     };
+    // 116: tạo sau vaultLock (bên dưới); ingestion gọi qua ref lười như isVaultLocked.
+    let vectorMaintenance: VectorMaintenance | null = null;
     const ingestion = await createIngestion({
       db,
       dataDir: dataDir.path,
@@ -311,6 +322,8 @@ app
       setOnline: (online, kind) => setEgressActive(online, kind ?? "url"),
       // 112: gọi lúc hoán đổi dữ liệu của "Xử lý lại" (sau khi vaultLock đã được tạo bên dưới).
       isVaultLocked: () => vaultLock.isLocked(),
+      // 116: đếm ghi cho bảo trì kho vector (bộ điều phối tạo bên dưới, sau vaultLock).
+      onVectorWrite: () => vectorMaintenance?.notifyWrite(),
     });
 
     // 049 (2a-player): phục vụ file audio gốc cho <audio> qua iv-media:// (đọc file CHỈ main, tra sourceId→
@@ -439,6 +452,26 @@ app
         ingestion.pipeline.isReprocessing(),
       isReindexing: () => reindex.inProgress,
     });
+    // 116: bảo trì kho vector ngầm (gộp fragment + dọn phiên bản cũ) — chỉ chạy khi kho yên (isVaultBusy),
+    // không UI/IPC; quan sát qua main.log (vector.maintenance.*). Chỉ đo kích thước/dung lượng trống, không đọc nội dung.
+    const vectorsDir = join(dataDir.path, "vectors");
+    const fsOps = createFsOps();
+    vectorMaintenance = createVectorMaintenance({
+      store: ingestion.vectorStore,
+      isBusy: () => isVaultBusy(vaultLock),
+      freeBytes: async () => {
+        const st = await fsOps.statfs(dataDir.path);
+        return st.bavail * st.bsize;
+      },
+      storeBytes: () => dirSize(vectorsDir, fsOps),
+      now: () => Date.now(),
+      setTimer: (fn, ms) => setTimeout(fn, ms),
+      clearTimer: (h) => clearTimeout(h as NodeJS.Timeout),
+      log: logEvent,
+      logError,
+    });
+    const maintenance = vectorMaintenance;
+    app.on("will-quit", () => maintenance.dispose());
     const backupService = createBackupService({
       dataDir: dataDir.path,
       db,
@@ -557,6 +590,8 @@ app
     // - awaiting_embedding → tự nhúng tiếp khi runtime AI sẵn sàng (US4, FR-009).
     ingestion.pipeline.resumeInterrupted();
     void ingestion.pipeline.resumeAwaiting();
+    // 116: một lần bắt kịp sau khởi động (vault cũ chưa từng bảo trì) — trễ, không chặn cửa sổ.
+    maintenance.scheduleStartup();
 
     // 059: tái lập chỉ mục NỀN nếu đổi engine embedding (version lệch). Không chặn khởi động. Idempotent +
     // resume (bỏ chunk đã có vector). Trong lúc chạy, rag:ask báo "đang tái lập" (reindex.inProgress).
@@ -602,6 +637,8 @@ app
         .finally(() => {
           reindex.inProgress = false;
           emitReindex();
+          // 116: reindex ghi rất nhiều lô nhỏ ⇒ gộp ngay khi kho yên.
+          maintenance.notifyReindexDone();
         });
     }
     // Lưu ý: cài mới (chưa có chunk) → needsReindex=true nhưng runReindex chạy tức thì (0 chunk) rồi bump

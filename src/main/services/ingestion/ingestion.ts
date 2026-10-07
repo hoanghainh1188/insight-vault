@@ -23,6 +23,7 @@ import { createOcr } from "./image/ocr";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { createEmbedder, type Embedder } from "../embedding/embed-model";
 import { logEvent } from "../../logging";
+import { trackVectorWrites } from "../vector-maintenance/track-writes";
 
 // Ghép domain ingestion ở main: source-repo (SQLite) + vector-store (LanceDB) + pipeline (parse/chunk/
 // embed). Composition root — loại khỏi ngưỡng coverage (như ai-runtime.ts). Business logic thuần đã
@@ -65,11 +66,17 @@ export async function createIngestion(opts: {
   setOnline?: (online: boolean, kind?: "url" | "model") => void;
   /** 112: kho đang sao lưu/khôi phục ⇒ lần "Xử lý lại" không hoán đổi dữ liệu (giữ bản cũ). */
   isVaultLocked?: () => boolean;
+  /** 116: mỗi thao tác ghi vector thành công ⇒ báo bộ lên lịch bảo trì kho vector. */
+  onVectorWrite?: () => void;
 }): Promise<Ingestion> {
   const sourceRepo = createSourceRepo(opts.db);
-  const vectorStore = await createLanceVectorStore(
+  const lanceStore = await createLanceVectorStore(
     join(opts.dataDir, "vectors"),
   );
+  // 116: pipeline + reindex + xoá notebook cùng dùng bản bọc này ⇒ mọi điểm ghi đều được đếm (research R8).
+  const vectorStore = opts.onVectorWrite
+    ? trackVectorWrites(lanceStore, opts.onVectorWrite)
+    : lanceStore;
   // 045: Whisper (transformers.js) — model tải về data dir (một lần, sau chạy offline). Lazy: chỉ tải
   // khi nạp audio đầu tiên.
   const transcriber = createTranscriber({
