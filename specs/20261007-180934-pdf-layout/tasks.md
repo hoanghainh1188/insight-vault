@@ -141,12 +141,12 @@ ADR + glossary + gate.
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T052 Hiệu năng SC-006 — `tests/unit/pdf-parse-perf.test.ts`: PDF tự sinh ~50 trang 2 cột + bảng; đo `parsePdf` mới vs nối cũ (cùng tệp). (L3) Local: tỉ lệ ≤ 2 là điều kiện đạt; khi `process.env.CI` ⇒ chỉ log số đo, trừ khi `PDF_PERF_STRICT=1` thì mới assert
-- [ ] T053 Hồi quy 108: `EVAL_MODE=current npm run eval:retrieval` ⇒ "hồi quy OK" (ghi kết quả vào ADR)
-- [ ] T054 ADR `docs/04-decisions/2026-10-<dd>-pdf-layout.md` (thuật toán + ngưỡng, `extraction_version`, xử lý lại nguyên tử, trích dẫn cũ bằng `chunkId`, số đo SC-006, fixture/giấy phép font) + append 1 dòng `docs/04-decisions/INDEX.md` (KHÔNG chạy prettier lên INDEX); dòng tham chiếu trong ADR ingestion/source-viewer liên quan
-- [ ] T055 [P] (L1) Append `docs/00-glossary.md` (CHỈ thêm dòng, không định dạng lại bảng): lớp chữ, dựng dòng (`layoutPage`), thứ tự đọc, bảng Markdown (`blocks`), xử lý lại (`source:reprocess`), phiên bản trích xuất (`extraction_version` DB / `extractionVersion` TS), trích dẫn cũ (`citationValid`)
-- [ ] T056 [P] `vitest.config.ts`: `src/main/services/ingestion/pdf-layout/**`, `reprocess-guard.ts` nằm trong coverage; `parsers/pdf.ts` giữ nhóm I/O nếu đang loại
-- [ ] T057 Gate: `npm run lint && npm test && npm run build && npx playwright test` xanh, coverage ≥ 80%; chạy quickstart.md mục 4 trên app (`npm run dev`)
+- [X] T052 Hiệu năng SC-006 — `tests/unit/pdf-parse-perf.test.ts`: PDF tự sinh ~50 trang 2 cột + bảng; đo `parsePdf` mới vs nối cũ (cùng tệp). (L3) Local: tỉ lệ ≤ 2 là điều kiện đạt; khi `process.env.CI` ⇒ chỉ log số đo, trừ khi `PDF_PERF_STRICT=1` thì mới assert
+- [X] T053 Hồi quy 108: `EVAL_MODE=current npm run eval:retrieval` ⇒ "hồi quy OK" (ghi kết quả vào ADR)
+- [X] T054 ADR `docs/04-decisions/2026-10-<dd>-pdf-layout.md` (thuật toán + ngưỡng, `extraction_version`, xử lý lại nguyên tử, trích dẫn cũ bằng `chunkId`, số đo SC-006, fixture/giấy phép font) + append 1 dòng `docs/04-decisions/INDEX.md` (KHÔNG chạy prettier lên INDEX); dòng tham chiếu trong ADR ingestion/source-viewer liên quan
+- [X] T055 [P] (L1) Append `docs/00-glossary.md` (CHỈ thêm dòng, không định dạng lại bảng): lớp chữ, dựng dòng (`layoutPage`), thứ tự đọc, bảng Markdown (`blocks`), xử lý lại (`source:reprocess`), phiên bản trích xuất (`extraction_version` DB / `extractionVersion` TS), trích dẫn cũ (`citationValid`)
+- [X] T056 [P] `vitest.config.ts`: `src/main/services/ingestion/pdf-layout/**`, `reprocess-guard.ts` nằm trong coverage; `parsers/pdf.ts` giữ nhóm I/O nếu đang loại
+- [X] T057 Gate: `npm run lint && npm test && npm run build && npx playwright test` xanh, coverage ≥ 80%; chạy quickstart.md mục 4 trên app (`npm run dev`) — **Kết quả:** lint ✓, 1023 unit ✓ (coverage 95,1%), build ✓, 59/59 E2E ✓; quickstart mục 4 (thử tay trên `npm run dev`) chờ người dùng
 
 ---
 
