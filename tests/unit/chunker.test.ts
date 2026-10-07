@@ -86,3 +86,39 @@ describe("chunkPages", () => {
     expect(CHUNK_OVERLAP).toBe(150);
   });
 });
+
+// 112 (FR-019): văn bản PDF có bố cục (xuống dòng, đoạn, nhiều cột) vẫn giữ bất biến locator + tái dựng viewer.
+describe("chunkPages trên văn bản PDF có bố cục (112)", () => {
+  it("chunk.text === T.slice(charStart, charEnd) và reconstructText === joinPages", async () => {
+    const { layoutPage } =
+      await import("../../src/main/services/ingestion/pdf-layout/layout-page");
+    const { reconstructText } =
+      await import("../../src/main/services/source-viewer/reconstruct");
+    const { lines } = await import("./helpers/layout-items");
+    const para = (k: string) =>
+      Array.from(
+        { length: 14 },
+        (_, i) => `${k} column paragraph sentence ${i} here`,
+      );
+    const page = (n: number) => ({
+      page: n,
+      text: layoutPage(
+        [...lines(50, 60, para("Left")), ...lines(320, 60, para("Right"))],
+        { width: 600, height: 800 },
+      ).text,
+    });
+    const pages = [page(1), page(2), page(3)];
+    expect(pages[0].text).toContain("\n\n");
+    const T = joinPages(pages);
+    const drafts = chunkPages(pages, { size: 300, overlap: 50 });
+    expect(drafts.length).toBeGreaterThan(3);
+    for (const d of drafts) {
+      expect(d.text).toBe(T.slice(d.locator.charStart, d.locator.charEnd));
+    }
+    expect(
+      reconstructText(
+        drafts.map((d, i) => ({ ...d, id: `c${i}`, sourceId: "s" })),
+      ),
+    ).toBe(T);
+  });
+});

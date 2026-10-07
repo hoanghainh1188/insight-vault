@@ -117,7 +117,7 @@ export async function createIngestion(opts: {
     isRuntimeReady: async () => true,
     readFile: async (p) => new Uint8Array(await readFile(p)),
     parseFile: async (kind, bytes, onProgress) => {
-      if (kind === "pdf") return parsePdf(bytes);
+      if (kind === "pdf") return parsePdf(bytes, onProgress); // 112: tiến độ theo trang
       if (kind === "docx") return parseDocx(Buffer.from(bytes));
       if (kind === "audio") return parseAudio(bytes, transcriber, onProgress);
       return parseText(new TextDecoder().decode(bytes)); // txt/md

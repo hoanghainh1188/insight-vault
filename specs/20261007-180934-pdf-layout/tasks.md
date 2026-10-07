@@ -46,18 +46,18 @@ ADR + glossary + gate.
 
 **Independent Test**: `parsePdf(makePdf(twoColumns()))` ⇒ hết cột trái rồi cột phải, `\n\n` giữa đoạn; chunk tạo từ đó có `chunk.text === T.slice(...)`.
 
-- [ ] T008 [P] [US1] RED — `tests/unit/pdf-layout-lines.test.ts`: gom item chồng lấn dọc ≥ 50% thành một dòng; sắp theo x; đúng một dấu cách khi khe > 0,15·h (không trùng khi item đã có dấu cách); bỏ item rỗng; item `rotated` tách nhóm giữ thứ tự gốc
-- [ ] T009 [US1] GREEN — `src/main/services/ingestion/pdf-layout/lines.ts`: `buildLines(items) → Line[]`
-- [ ] T010 [P] [US1] RED — `tests/unit/pdf-layout-columns.test.ts`: 1 cột ⇒ 1 vùng; 2 cột ⇒ trái rồi phải; 3 cột; tiêu đề trải toàn trang ở trên + chân trang ở dưới giữ vị trí; khe < 2% hoặc bị > 10% dòng cắt ngang ⇒ không tách cột
-- [ ] T011 [US1] GREEN — `src/main/services/ingestion/pdf-layout/columns.ts`: `orderRegions(lines, geometry) → Line[][]` (XY-cut)
-- [ ] T012 [P] [US1] RED — `tests/unit/pdf-layout-paragraphs.test.ts`: dòng cùng đoạn nối bằng dấu cách; baseline cách > 1,5·h ⇒ `\n\n`; gạch nối cuối dòng + chữ thường đầu dòng sau ⇒ nối liền bỏ gạch; + chữ hoa ⇒ giữ gạch; U+00AD; tiếng Việt có dấu tổ hợp giữ nguyên
-- [ ] T013 [US1] GREEN — `src/main/services/ingestion/pdf-layout/paragraphs.ts`: `joinParagraphs(region) → string`
-- [ ] T014 [P] [US1] RED — `tests/unit/pdf-layout-page.test.ts` (không bảng): `layoutPage` ghép lines→regions→paragraphs; đầu/chân trang, số trang KHÔNG bị xoá; item xoay nối cuối trang; `cleanText(text) === text`; mọi ký tự không rỗng của item xuất hiện đúng một lần (trừ gạch nối bị nối/dấu cách); `items.length > MAX_LAYOUT_ITEMS_PER_PAGE` ⇒ `fallback: true` + văn bản nối cũ; hàm con ném ⇒ fallback trang đó
-- [ ] T015 [US1] GREEN — `src/main/services/ingestion/pdf-layout/layout-page.ts`: `layoutPage(items, geometry): LayoutResult` (`blocks: []` ở bước này), try/catch ⇒ fallback
-- [ ] T016 [US1] RED — `tests/unit/pdf-parse-layout.test.ts`: `parsePdf` trên `oneColumn()`, `twoColumns()`, `vietnamese()`, `hyphenated()`, `rotatedPage()`, `manyItems(6000)` ⇒ văn bản kỳ vọng; `pageCount` đúng; hợp đồng `ParseResult{pageCount,pages[{page,text}]}` giữ; (C1) `parsePdf(bytes, onProgress)` gọi `onProgress` tăng dần, giá trị cuối = 1
-- [ ] T017 [US1] GREEN — `src/main/services/ingestion/parsers/pdf.ts`: adapter `TextItem → LayoutItem` (y về gốc trên-trái theo `page.getViewport({scale:1})`, `rotated` khi `transform[1]≠0||transform[2]≠0`, `h` từ `height`/`transform[3]`) → `layoutPage`; tham số `onProgress?: (frac:number)=>void` gọi sau mỗi trang; trả `blocks` theo trang (US2 điền)
-- [ ] T018 [US1] (C1) `src/main/services/ingestion/ingestion.ts`: `parseFile` truyền `onProgress` vào `parsePdf(bytes, onProgress)`
-- [ ] T019 [US1] Cập nhật `tests/unit/chunker.test.ts` + `tests/unit/source-content.test.ts`: văn bản có `\n`/`\n\n` từ `layoutPage` ⇒ `chunk.text === T.slice(charStart,charEnd)` và `reconstructText(chunks) === joinPages(pages)` (Constitution II)
+- [X] T008 [P] [US1] RED — `tests/unit/pdf-layout-lines.test.ts`: gom item chồng lấn dọc ≥ 50% thành một dòng; sắp theo x; đúng một dấu cách khi khe > 0,15·h (không trùng khi item đã có dấu cách); bỏ item rỗng; item `rotated` tách nhóm giữ thứ tự gốc
+- [X] T009 [US1] GREEN — `src/main/services/ingestion/pdf-layout/lines.ts`: `buildLines(items) → Line[]`
+- [X] T010 [P] [US1] RED — `tests/unit/pdf-layout-columns.test.ts`: 1 cột ⇒ 1 vùng; 2 cột ⇒ trái rồi phải; 3 cột; tiêu đề trải toàn trang ở trên + chân trang ở dưới giữ vị trí; khe < 2% hoặc bị > 10% dòng cắt ngang ⇒ không tách cột
+- [X] T011 [US1] GREEN — `src/main/services/ingestion/pdf-layout/columns.ts`: `orderRegions(lines, geometry) → Line[][]` (XY-cut)
+- [X] T012 [P] [US1] RED — `tests/unit/pdf-layout-paragraphs.test.ts`: dòng cùng đoạn nối bằng dấu cách; baseline cách > 1,5·h ⇒ `\n\n`; gạch nối cuối dòng + chữ thường đầu dòng sau ⇒ nối liền bỏ gạch; + chữ hoa ⇒ giữ gạch; U+00AD; tiếng Việt có dấu tổ hợp giữ nguyên
+- [X] T013 [US1] GREEN — `src/main/services/ingestion/pdf-layout/paragraphs.ts`: `joinParagraphs(region) → string`
+- [X] T014 [P] [US1] RED — `tests/unit/pdf-layout-page.test.ts` (không bảng): `layoutPage` ghép lines→regions→paragraphs; đầu/chân trang, số trang KHÔNG bị xoá; item xoay nối cuối trang; `cleanText(text) === text`; mọi ký tự không rỗng của item xuất hiện đúng một lần (trừ gạch nối bị nối/dấu cách); `items.length > MAX_LAYOUT_ITEMS_PER_PAGE` ⇒ `fallback: true` + văn bản nối cũ; hàm con ném ⇒ fallback trang đó
+- [X] T015 [US1] GREEN — `src/main/services/ingestion/pdf-layout/layout-page.ts`: `layoutPage(items, geometry): LayoutResult` (`blocks: []` ở bước này), try/catch ⇒ fallback
+- [X] T016 [US1] RED — `tests/unit/pdf-parse-layout.test.ts`: `parsePdf` trên `oneColumn()`, `twoColumns()`, `vietnamese()`, `hyphenated()`, `rotatedPage()`, `manyItems(6000)` ⇒ văn bản kỳ vọng; `pageCount` đúng; hợp đồng `ParseResult{pageCount,pages[{page,text}]}` giữ; (C1) `parsePdf(bytes, onProgress)` gọi `onProgress` tăng dần, giá trị cuối = 1
+- [X] T017 [US1] GREEN — `src/main/services/ingestion/parsers/pdf.ts`: adapter `TextItem → LayoutItem` (y về gốc trên-trái theo `page.getViewport({scale:1})`, `rotated` khi `transform[1]≠0||transform[2]≠0`, `h` từ `height`/`transform[3]`) → `layoutPage`; tham số `onProgress?: (frac:number)=>void` gọi sau mỗi trang; trả `blocks` theo trang (US2 điền)
+- [X] T018 [US1] (C1) `src/main/services/ingestion/ingestion.ts`: `parseFile` truyền `onProgress` vào `parsePdf(bytes, onProgress)`
+- [X] T019 [US1] Cập nhật `tests/unit/chunker.test.ts` + `tests/unit/source-content.test.ts`: văn bản có `\n`/`\n\n` từ `layoutPage` ⇒ `chunk.text === T.slice(charStart,charEnd)` và `reconstructText(chunks) === joinPages(pages)` (Constitution II)
 
 **Checkpoint**: PDF mới nạp đúng thứ tự cột, có đoạn — MVP.
 
