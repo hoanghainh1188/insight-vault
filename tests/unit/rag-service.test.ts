@@ -5,6 +5,11 @@ import {
 } from "../../src/main/services/rag/rag-service";
 import type { Chunk, ChatMessage, RagAskInput } from "@shared/ipc/types";
 import type { VectorSearchHit } from "../../src/main/services/ingestion/vector-store";
+import {
+  NOT_FOUND_ANSWER,
+  NOT_FOUND_DISPLAY,
+  NOT_FOUND_HINT,
+} from "../../src/main/services/rag/constants";
 
 function chunk(id: string): Chunk {
   return {
@@ -123,7 +128,7 @@ describe("rag-service.ask", () => {
     };
     const res = await createRagService(deps).ask(ask());
     expect(res.notFound).toBe(true);
-    expect(res.answer).toBe("Không tìm thấy trong nguồn.");
+    expect(res.answer).toBe(NOT_FOUND_DISPLAY);
     expect(res.citations).toEqual([]);
     expect(chatCalled).toBe(false);
   });
@@ -137,15 +142,27 @@ describe("rag-service.ask", () => {
     expect(res.citations).toEqual([]);
   });
 
-  it("grounded có context, model trả lời thật nhưng KHÔNG chèn [n] (vd tóm tắt) → gắn NGUỒN ĐÃ TRUY HỒI làm citation (verifiable), KHÔNG ẩn", async () => {
+  it("(108 FR-015) grounded có context, model trả lời KHÔNG có [n] hợp lệ → notFound + gợi ý, KHÔNG gắn đoạn ngữ cảnh làm trích dẫn", async () => {
     const svc = createRagService(
       makeDeps({ chatReply: () => "Tài liệu nói về A và B." }),
     );
     const res = await svc.ask(ask());
-    expect(res.notFound).toBe(false);
-    expect(res.answer).toContain("A và B"); // câu trả lời được hiển thị
-    // nguồn dự phòng = chunk đã truy hồi (a) → người dùng mở/đối chiếu được
-    expect(res.citations.map((c) => c.chunkId)).toEqual(["a"]);
+    expect(res).toEqual({
+      answer: NOT_FOUND_DISPLAY,
+      citations: [],
+      notFound: true,
+      modeUsed: "grounded",
+    });
+  });
+
+  it("(108) grounded model chỉ chèn chip bịa [9] (0 [n] hợp lệ) → notFound", async () => {
+    const svc = createRagService(
+      makeDeps({ chatReply: () => "Theo tài liệu thì X [9]." }),
+    );
+    const res = await svc.ask(ask());
+    expect(res.notFound).toBe(true);
+    expect(res.citations).toEqual([]);
+    expect(res.answer).toBe(NOT_FOUND_DISPLAY);
   });
 
   it("grounded model tự nói 'không tìm thấy' (0 citation) → notFound", async () => {
@@ -154,7 +171,7 @@ describe("rag-service.ask", () => {
     );
     const res = await svc.ask(ask());
     expect(res.notFound).toBe(true);
-    expect(res.answer).toBe("Không tìm thấy trong nguồn.");
+    expect(res.answer).toBe(NOT_FOUND_DISPLAY);
     expect(res.citations).toEqual([]);
   });
 
@@ -248,5 +265,106 @@ describe("rag-service.askStream (039)", () => {
     const res = await svc.askStream(ask(), {});
     expect(res.answer).toContain("Một phần");
     expect(res.citations.map((c) => c.n)).toEqual([1]);
+  });
+});
+
+// 108: câu "Không tìm thấy" hiển thị kèm gợi ý (FR-016); lượt lưu đúng như người dùng thấy (FR-015).
+describe("rag-service — không tìm thấy + gợi ý (108)", () => {
+  it("NOT_FOUND_DISPLAY = câu gốc + gợi ý (chỉ đổi chữ)", () => {
+    expect(NOT_FOUND_DISPLAY.startsWith(NOT_FOUND_ANSWER)).toBe(true);
+    expect(NOT_FOUND_DISPLAY).toContain(NOT_FOUND_HINT);
+    expect(NOT_FOUND_HINT).toMatch(/cụ thể hơn/);
+    expect(NOT_FOUND_HINT).toMatch(/Mở rộng/);
+  });
+
+  it("model tự trả đúng câu prompt 'Không tìm thấy trong nguồn.' → hiển thị NOT_FOUND_DISPLAY", async () => {
+    const svc = createRagService(
+      makeDeps({ chatReply: () => NOT_FOUND_ANSWER }),
+    );
+    const res = await svc.ask(ask());
+    expect(res.answer).toBe(NOT_FOUND_DISPLAY);
+    expect(res.notFound).toBe(true);
+  });
+
+  it("grounded có [n] hợp lệ → không đổi (không thêm gợi ý)", async () => {
+    const res = await createRagService(makeDeps({})).ask(ask());
+    expect(res.notFound).toBe(false);
+    expect(res.answer).not.toContain(NOT_FOUND_HINT);
+  });
+
+  it("open + model không chèn [n] → không đổi (không notFound, không gợi ý)", async () => {
+    const svc = createRagService(
+      makeDeps({ chatReply: () => "Kiến thức chung (không dựa trên nguồn)." }),
+    );
+    const res = await svc.ask(ask({ mode: "open" }));
+    expect(res.notFound).toBe(false);
+    expect(res.answer).toBe("Kiến thức chung (không dựa trên nguồn).");
+  });
+
+  it("(E3/FR-014) Mở rộng + retrieve rỗng → VẪN gọi chat, không trả NOT_FOUND_DISPLAY", async () => {
+    let chatCalled = false;
+    const deps = makeDeps({ hits: [], chunks: [] });
+    deps.chat = async () => {
+      chatCalled = true;
+      return "Kiến thức chung (không dựa trên nguồn).";
+    };
+    const res = await createRagService(deps).ask(ask({ mode: "open" }));
+    expect(chatCalled).toBe(true);
+    expect(res.answer).not.toBe(NOT_FOUND_DISPLAY);
+    expect(res.notFound).toBe(false);
+  });
+
+  it("saveTurn lưu đúng NOT_FOUND_DISPLAY + notFound (cả nhánh không [n])", async () => {
+    const saved: { content: string; notFound: boolean }[] = [];
+    const deps = makeDeps({ chatReply: () => "Không có trích dẫn." });
+    deps.saveTurn = (_nb, _q, a) =>
+      saved.push({ content: a.content, notFound: a.notFound });
+    await createRagService(deps).ask(ask());
+    expect(saved).toEqual([{ content: NOT_FOUND_DISPLAY, notFound: true }]);
+  });
+
+  it("askStream cùng hành vi: không [n] hợp lệ → NOT_FOUND_DISPLAY, citations rỗng", async () => {
+    const svc = createRagService(
+      makeDeps({ chatReply: () => "Tóm tắt không kèm nguồn." }),
+    );
+    const res = await svc.askStream(ask(), {});
+    expect(res.answer).toBe(NOT_FOUND_DISPLAY);
+    expect(res.citations).toEqual([]);
+    expect(res.notFound).toBe(true);
+  });
+
+  it("askStream grounded retrieve rỗng → NOT_FOUND_DISPLAY", async () => {
+    const res = await createRagService(makeDeps({ hits: [] })).askStream(
+      ask(),
+      {},
+    );
+    expect(res.answer).toBe(NOT_FOUND_DISPLAY);
+  });
+});
+
+describe("rag-service — relevanceConfig (108, công cụ đo)", () => {
+  it("deps.relevanceConfig được truyền xuống retrieve() (ngưỡng chặt ⇒ không tìm thấy, không gọi chat)", async () => {
+    let chatCalled = false;
+    const deps = makeDeps({ hits: [{ id: "a", sourceId: "s-a", score: 0.3 }] });
+    deps.chat = async () => {
+      chatCalled = true;
+      return "x [1]";
+    };
+    deps.relevanceConfig = {
+      maxDistance: 0.2,
+      relativeDelta: null,
+      bm25Gate: "requireVector",
+      bm25VectorMaxDistance: null,
+      bm25MaxScore: null,
+    };
+    const res = await createRagService(deps).ask(ask());
+    expect(res.notFound).toBe(true);
+    expect(chatCalled).toBe(false);
+  });
+
+  it("không đặt relevanceConfig ⇒ dùng bản ghi hiệu chuẩn (0.3 ≤ 0.5 ⇒ có trả lời)", async () => {
+    const deps = makeDeps({ hits: [{ id: "a", sourceId: "s-a", score: 0.3 }] });
+    const res = await createRagService(deps).ask(ask());
+    expect(res.notFound).toBe(false);
   });
 });

@@ -19,6 +19,7 @@ export function chatDoneMessage({
   stopped,
 }: ChatDoneInput): string {
   if (stopped) return "Đã dừng. Giữ phần câu trả lời đã nhận.";
+  // 108: câu thông báo ngắn cho trình đọc màn hình — CỐ Ý không kèm gợi ý (gợi ý nằm trong câu trả lời hiển thị).
   if (notFound) return "Không tìm thấy thông tin trong nguồn.";
   return citationCount > 0
     ? `Đã có câu trả lời, ${citationCount} trích dẫn.`

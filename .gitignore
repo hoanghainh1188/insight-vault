@@ -22,3 +22,7 @@ playwright-report/
 
 # electron-builder output
 release/
+
+# 108 công cụ đo truy xuất (dev-only): cache mô hình + báo cáo
+tests/eval/.cache/
+tests/eval/reports/

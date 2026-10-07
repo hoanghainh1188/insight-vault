@@ -17,6 +17,7 @@
   theo `score` tăng dần (khoảng cách nhỏ = liên quan hơn). Lọc theo `notebook_id` (đã có cột ở LanceDB).
 - **Khoảng cách = COSINE** (`.distanceType("cosine")`, bị chặn [0,2]) — KHÔNG dùng L2 mặc định của LanceDB
   vì vector embedding (vd `nomic-embed-text`) không chuẩn hoá → L2 không có ngưỡng ổn định (sửa issue #15).
+- _(Đã thay thế bởi `2026-10-07-relevance-calibration.md` — ngưỡng nay nằm ở bản ghi hiệu chuẩn `RELEVANCE_CALIBRATION`, đo bằng bộ đánh giá.)_
 - **Ngưỡng liên quan** `RELEVANCE_MAX_DISTANCE = 0.75` (cosine distance ⇔ cosine similarity ≥ 0.25): hit
   vượt ngưỡng bị loại. Đặt LỎNG để nội dung thật lọt; tính "không bịa" dựa thêm grounded prompt + ép
   `notFound` khi câu trả lời không có citation hợp lệ nào (mục 4). Nếu sau lọc còn 0 hit → "không tìm thấy".
