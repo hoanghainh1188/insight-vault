@@ -127,8 +127,11 @@ const api = {
   ): Promise<import("@shared/ipc/types").SourceRelinkResult> =>
     ipcRenderer.invoke(CHANNELS.sourceRelink, id),
   // source-viewer (019)
-  sourceGetContent: (id: string): Promise<SourceContent | null> =>
-    ipcRenderer.invoke(CHANNELS.sourceGetContent, id),
+  // 112: kèm chunkId của trích dẫn ⇒ main trả thêm citationValid (trích dẫn cũ sau "Xử lý lại").
+  sourceGetContent: (
+    request: string | { sourceId: string; chunkId?: string },
+  ): Promise<SourceContent | null> =>
+    ipcRenderer.invoke(CHANNELS.sourceGetContent, request),
   /** 073: tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25). */
   sourceSearch: (
     notebookId: string,

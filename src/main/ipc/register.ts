@@ -38,7 +38,10 @@ import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
 import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
-import { getSourceContent } from "../services/source-viewer/source-content";
+import {
+  getSourceContent,
+  type SourceContentRequest,
+} from "../services/source-viewer/source-content";
 import { logError, logEvent } from "../logging";
 import { createRendererErrorReporter } from "../services/app-log/renderer-error";
 import type { CrashService } from "../services/crash-report/crash-service";
@@ -248,8 +251,9 @@ export function registerIpc({
     return relinkSource(id);
   });
   // source-viewer (019) — tái dựng toàn văn từ chunk đã lưu để hiển thị. CHỈ đọc; KHÔNG log content.
-  safeHandle(CHANNELS.sourceGetContent, (id) =>
-    getSourceContent(sourceRepo, id as string),
+  // 112: nhận id hoặc {sourceId, chunkId} — getSourceContent tự validate kiểu (sai ⇒ null).
+  safeHandle(CHANNELS.sourceGetContent, (req) =>
+    getSourceContent(sourceRepo, req as string | SourceContentRequest),
   );
   // content-search (073) — tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25). CHỈ đọc; KHÔNG log query.
   safeHandle(CHANNELS.sourceSearch, (input) => {

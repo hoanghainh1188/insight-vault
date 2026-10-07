@@ -382,6 +382,8 @@ export interface SourceContent {
   pageCount: number | null; // PDF: số trang; khác: null
   text: string; // toàn văn đã-làm-sạch tái dựng (== T gốc lúc chunk)
   pageBreaks: PageBreak[]; // chỉ PDF; non-PDF: []
+  /** 112: chỉ có khi yêu cầu kèm chunkId — false ⇒ trích dẫn cũ (nguồn đã được xử lý lại), không tô sáng. */
+  citationValid?: boolean;
 }
 
 // ===== studio (021) — nguồn: specs/.../studio/data-model.md =====

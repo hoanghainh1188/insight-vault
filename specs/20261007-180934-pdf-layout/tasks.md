@@ -90,11 +90,11 @@ ADR + glossary + gate.
 
 **Independent Test**: `getSourceContent` với `chunkId` không thuộc nguồn ⇒ `citationValid: false`; viewer (chip chat và chip Studio) không highlight + có ghi chú.
 
-- [ ] T030 [P] [US4] RED — `tests/unit/source-content.test.ts`: input string ⇒ như trước, không có `citationValid`; `{sourceId, chunkId}` thuộc nguồn ⇒ `true`; không thuộc ⇒ `false`; input sai kiểu ⇒ ném
-- [ ] T031 [US4] GREEN — `getSourceContent` trong `src/main/services/source-viewer/`: nhận `string | {sourceId, chunkId?}`, trả `citationValid`; `src/shared/ipc/types.ts`: `SourceContent.citationValid?`
-- [ ] T032 [US4] `src/main/ipc/register.ts` + `src/preload/index.ts`: `source:getContent` chấp nhận dạng object (cùng kênh whitelist); cập nhật `tests/unit/source-getcontent-whitelist.test.ts`
-- [ ] T033 [US4] RED — `tests/unit/source-viewer-stale.test.ts` (jsdom): `citationValid === false` ⇒ không highlight, cuộn tới `locator.page` nếu trong phạm vi, ghi chú "Nguồn đã được xử lý lại — vị trí trích dẫn cũ không còn chính xác" (`role="status"`); (L2) chip từ kết quả Studio đi qua `Workspace.openCitation` có cùng hành vi; `citationValid` true/thiếu ⇒ highlight như cũ
-- [ ] T034 [US4] GREEN — `src/renderer/features/source-viewer/useSourceViewer.ts` + `SourceViewer.tsx`: `openCitation` gửi `chunkId`; xử lý `citationValid` (giữ `pre-wrap`)
+- [X] T030 [P] [US4] RED — `tests/unit/source-content.test.ts`: input string ⇒ như trước, không có `citationValid`; `{sourceId, chunkId}` thuộc nguồn ⇒ `true`; không thuộc ⇒ `false`; input sai kiểu ⇒ ném — **Thực hiện:** input sai kiểu ⇒ trả `null` (giữ đúng hành vi cũ của kênh với id không hợp lệ) thay vì ném
+- [X] T031 [US4] GREEN — `getSourceContent` trong `src/main/services/source-viewer/`: nhận `string | {sourceId, chunkId?}`, trả `citationValid`; `src/shared/ipc/types.ts`: `SourceContent.citationValid?`
+- [X] T032 [US4] `src/main/ipc/register.ts` + `src/preload/index.ts`: `source:getContent` chấp nhận dạng object (cùng kênh whitelist); cập nhật `tests/unit/source-getcontent-whitelist.test.ts`
+- [X] T033 [US4] RED — `tests/unit/source-viewer-stale.test.ts` (jsdom): `citationValid === false` ⇒ không highlight, cuộn tới `locator.page` nếu trong phạm vi, ghi chú "Nguồn đã được xử lý lại — vị trí trích dẫn cũ không còn chính xác" (`role="status"`); (L2) chip từ kết quả Studio đi qua `Workspace.openCitation` có cùng hành vi; `citationValid` true/thiếu ⇒ highlight như cũ
+- [X] T034 [US4] GREEN — `src/renderer/features/source-viewer/useSourceViewer.ts` + `SourceViewer.tsx`: `openCitation` gửi `chunkId`; xử lý `citationValid` (giữ `pre-wrap`)
 
 **Checkpoint**: chip cũ an toàn — có thể merge trước US3.
 

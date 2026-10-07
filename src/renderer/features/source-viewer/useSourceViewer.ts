@@ -36,8 +36,13 @@ export function useSourceViewer() {
     setLoading(true);
     setMissing(false);
     setContent(null);
+    // 112: mở theo trích dẫn ⇒ gửi kèm chunkId để main báo trích dẫn còn hợp lệ không (citationValid).
     window.api
-      .sourceGetContent(target.sourceId)
+      .sourceGetContent(
+        target.citation
+          ? { sourceId: target.sourceId, chunkId: target.citation.chunkId }
+          : target.sourceId,
+      )
       .then((c) => {
         if (cancelled) return;
         setContent(c);

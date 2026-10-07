@@ -65,6 +65,12 @@
   font-size: 11px;
   color: var(--ink-faint);
 }
+/* 112: trích dẫn cũ — nguồn đã được xử lý lại, vị trí cũ không còn chính xác (không tô sáng). */
+.vstale {
+  font-size: 11px;
+  color: var(--warn-ink);
+  font-style: italic;
+}
 .vpager {
   display: flex;
   align-items: center;

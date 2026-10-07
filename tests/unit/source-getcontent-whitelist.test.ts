@@ -22,3 +22,20 @@ describe("source:getContent whitelist", () => {
     expect(isWhitelisted("source:readDisk")).toBe(false);
   });
 });
+
+// 112 (contracts/ipc-reprocess.md): kiểm tra trích dẫn cũ dùng LẠI kênh source:getContent (nhận thêm chunkId) —
+// không mở kênh mới; preload chỉ chuyển tiếp id/{sourceId, chunkId} (không đường dẫn tệp).
+describe("source:getContent nhận chunkId (112)", () => {
+  it("không có kênh riêng cho trích dẫn", () => {
+    expect(isWhitelisted("source:getContentWithCitation")).toBe(false);
+    expect(isWhitelisted("source:citationValid")).toBe(false);
+  });
+
+  it("preload sourceGetContent chấp nhận {sourceId, chunkId}", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/preload/index.ts", "utf8");
+    expect(src).toMatch(
+      /sourceGetContent:\s*\(\s*request:\s*string\s*\|\s*\{\s*sourceId:\s*string;\s*chunkId\?:\s*string\s*\}/,
+    );
+  });
+});
