@@ -95,6 +95,11 @@ export class OpenAIProvider implements LLMProvider {
     );
   }
 
+  /** 105: cửa sổ ngữ cảnh điển hình (GPT-4o/4.1) — Studio tự áp trần ký tự (chi phí/độ trễ trên key người dùng). */
+  async contextTokens(): Promise<number | null> {
+    return 128_000;
+  }
+
   async test(): Promise<RuntimeStatus> {
     return testOnlineChat(this, this.deps, LABEL);
   }

@@ -21,4 +21,6 @@ export interface LLMProvider {
   embed(req: EmbedRequest): Promise<EmbedResult>;
   /** Tự kiểm tra sẵn sàng (kết nối + model đang dùng tồn tại). */
   test(): Promise<RuntimeStatus>;
+  /** 105: cửa sổ ngữ cảnh (token) của model chat đang dùng; không rõ ⇒ null. */
+  contextTokens?(): Promise<number | null>;
 }

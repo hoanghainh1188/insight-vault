@@ -10,19 +10,29 @@ import { buildBalancedContext } from "./balanced-context";
 import { postprocessCitations, citationsFromMap } from "../rag/citation";
 import { STUDIO_CONTEXT_BUDGET, STUDIO_KINDS } from "./constants";
 import { systemPromptFor } from "./prompt";
+import { runMapReduce } from "./map-reduce";
 import type { StudioRepo } from "./studio-repo";
 
 // Điều phối Studio (studio:generate / studio:list). DI: nguồn chunk + chat + repo lưu.
-// Gom TOÀN BỘ chunk nguồn ready của notebook → buildContext(STUDIO_CONTEXT_BUDGET) đánh số [1..k] →
-// 1 lượt chat → hậu kiểm chip (Constitution II) → upsert. KHÔNG log nội dung (Constitution III).
+// 105 (ADR studio-large-clarify): ngân sách theo CỬA SỔ NGỮ CẢNH của model (contextInfo) + num_ctx tường minh.
+// Vừa ngân sách ⇒ 1 lượt (chia đều theo nguồn, #65); vượt ⇒ map-reduce với [n] TOÀN CỤC (chip vẫn trỏ đúng đoạn).
+// Hậu kiểm chip (Constitution II) → upsert. KHÔNG log nội dung (Constitution III).
 
 export interface StudioServiceDeps {
   /** Nguồn của notebook (011) — chỉ đọc. */
   listSources: (notebookId: string) => Source[];
   listChunks: (sourceId: string) => Chunk[];
   studioRepo: StudioRepo;
-  /** Gọi LLM chat với messages[], trả nội dung (wrap LLMProvider.chat → content). */
-  chat: (messages: ChatMessage[]) => Promise<string>;
+  /** Gọi LLM chat với messages[], trả nội dung (wrap LLMProvider.chat → content). numCtx: cửa sổ Ollama (105). */
+  chat: (
+    messages: ChatMessage[],
+    opts?: { numCtx?: number },
+  ) => Promise<string>;
+  /**
+   * 105: ngân sách ký tự cho phần đoạn nguồn + num_ctx theo model đang dùng. Thiếu ⇒ 16.000 ký tự, không ép num_ctx
+   * (hành vi cũ).
+   */
+  contextInfo?: () => Promise<{ budget: number; numCtx: number | null }>;
 }
 
 function isStudioKind(k: string): k is (typeof STUDIO_KINDS)[number] {
@@ -60,16 +70,29 @@ export function createStudioService(deps: StudioServiceDeps) {
       );
     }
 
-    const { contextText, map } = buildBalancedContext(
-      groups,
-      STUDIO_CONTEXT_BUDGET,
-    );
-    const messages: ChatMessage[] = [
-      { role: "system", content: systemPromptFor(kind) },
-      { role: "user", content: contextText },
-    ];
+    const ctx = deps.contextInfo
+      ? await deps.contextInfo()
+      : { budget: STUDIO_CONTEXT_BUDGET, numCtx: null };
+    const chatOpts = ctx.numCtx ? { numCtx: ctx.numCtx } : undefined;
+    const chat = (messages: ChatMessage[]): Promise<string> =>
+      deps.chat(messages, chatOpts);
 
-    const raw = await deps.chat(messages); // ném nếu runtime chưa sẵn sàng → bubble lên (không bịa)
+    // Vừa ngân sách (theo TỔNG độ dài thật — không theo round-robin, vốn nhận chunk đầu mọi nguồn bất chấp ngân
+    // sách) ⇒ 1 lượt như cũ. Vượt ⇒ map-reduce (ném nếu runtime chưa sẵn sàng → bubble lên, không bịa).
+    const single = buildBalancedContext(groups, Number.POSITIVE_INFINITY);
+    let raw: string;
+    let map = single.map;
+    let parts = 1;
+    let truncated = false;
+    if (single.contextText.length <= ctx.budget) {
+      raw = await chat([
+        { role: "system", content: systemPromptFor(kind) },
+        { role: "user", content: single.contextText },
+      ]);
+    } else {
+      const mr = await runMapReduce({ kind, groups, budget: ctx.budget, chat });
+      ({ raw, map, parts, truncated } = mr);
+    }
     const { answer, citations } = postprocessCitations(raw, map);
 
     if (answer.trim() === "") {
@@ -85,7 +108,7 @@ export function createStudioService(deps: StudioServiceDeps) {
       answer,
       finalCitations,
     );
-    return { ...saved, truncated: map.size < totalChunks };
+    return { ...saved, truncated, parts };
   }
 
   function list(notebookId: string): StudioResult[] {

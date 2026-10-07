@@ -8,6 +8,7 @@ import type {
 import { logEvent } from "../../logging";
 import type { ChatStreamOpts } from "./provider";
 import { streamLines } from "./online/online-http";
+import { parseOllamaContextLength } from "../studio/context-window";
 import { parseOllamaLine } from "./online/stream-parse";
 
 // HTTP client tới Ollama (Constitution III: chỉ chạy ở main). Nhận `fetchFn` tiêm vào để unit-test
@@ -55,6 +56,8 @@ export interface OllamaClientOptions {
 
 // Sinh câu trả lời LLM có thể mất hàng chục giây (model local 7B+) → timeout dài hơn nhiều ping (issue #15).
 const DEFAULT_CHAT_TIMEOUT_MS = 120_000;
+/** 105: lượt có prompt lớn (num_ctx tường minh — Studio) — nạp/prefill vài chục nghìn token trên máy cá nhân lâu. */
+export const LARGE_CHAT_TIMEOUT_MS = 300_000;
 const DEFAULT_EMBED_TIMEOUT_MS = 60_000;
 
 export interface OllamaClient {
@@ -64,6 +67,8 @@ export interface OllamaClient {
   ping(): Promise<boolean>;
   chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult>;
   embed(req: EmbedRequest): Promise<EmbedResult>;
+  /** 105: cửa sổ ngữ cảnh của model (POST /api/show). Lỗi/không rõ → null (không throw). */
+  contextLength(model: string): Promise<number | null>;
 }
 
 /** Suy đoán loại model từ tên (v1 heuristic — Ollama /api/tags không trả kind rõ ràng). */
@@ -75,6 +80,10 @@ interface RawTag {
   name: string;
   size?: number;
 }
+
+/** 105: num_ctx tường minh khi có (Ollama mặc định cửa sổ nhỏ — prompt dài bị cắt đầu âm thầm). */
+const ctxOptions = (req: ChatRequest): { options?: { num_ctx: number } } =>
+  req.numCtx ? { options: { num_ctx: req.numCtx } } : {};
 
 export function createOllamaClient(
   opts: OllamaClientOptions = {},
@@ -139,7 +148,12 @@ export function createOllamaClient(
           {
             url: `${baseUrl}/api/chat`,
             headers: {},
-            body: { model: req.model, messages: req.messages, stream: true },
+            body: {
+              model: req.model,
+              messages: req.messages,
+              stream: true,
+              ...ctxOptions(req),
+            },
             fetchFn,
             signal: opts.signal,
             providerLabel: "Ollama",
@@ -165,13 +179,31 @@ export function createOllamaClient(
             model: req.model,
             messages: req.messages,
             stream: false,
+            ...ctxOptions(req),
           }),
         },
-        chatTimeoutMs,
+        req.numCtx
+          ? Math.max(chatTimeoutMs, LARGE_CHAT_TIMEOUT_MS)
+          : chatTimeoutMs,
       );
       if (!res.ok) throw new Error(`Ollama chat lỗi: ${res.status}`);
       const data = (await res.json()) as { message?: { content?: string } };
       return { content: data.message?.content ?? "" };
+    },
+
+    async contextLength(model: string): Promise<number | null> {
+      try {
+        const res = await call("/api/show", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // gửi cả `name` cho Ollama bản cũ
+          body: JSON.stringify({ model, name: model }),
+        });
+        if (!res.ok) return null;
+        return parseOllamaContextLength(await res.json());
+      } catch {
+        return null;
+      }
     },
 
     async embed(req: EmbedRequest): Promise<EmbedResult> {

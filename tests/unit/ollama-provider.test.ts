@@ -9,8 +9,9 @@ function makeClient(over: Partial<OllamaClient> = {}): OllamaClient {
     listModels: async () => [],
     chat: vi.fn(async () => ({ content: "trả lời" })),
     embed: vi.fn(async () => ({ vector: [1, 2, 3] })),
+    contextLength: vi.fn(async () => 32768),
     ...over,
-  };
+  } as OllamaClient;
 }
 
 const sel = (over: Partial<ModelSelection> = {}): ModelSelection => ({
@@ -58,5 +59,29 @@ describe("OllamaProvider", () => {
 
   it("id là 'ollama'", () => {
     expect(new OllamaProvider(makeClient(), () => sel()).id).toBe("ollama");
+  });
+
+  it("105: contextTokens đọc cửa sổ model đang chọn, nhớ theo tên model", async () => {
+    const client = makeClient();
+    let selection = sel();
+    const p = new OllamaProvider(client, () => selection);
+    expect(await p.contextTokens()).toBe(32768);
+    expect(await p.contextTokens()).toBe(32768);
+    expect(client.contextLength).toHaveBeenCalledTimes(1);
+    selection = sel({ chatModel: "llama3.1:8b" });
+    await p.contextTokens();
+    expect(client.contextLength).toHaveBeenCalledTimes(2);
+    selection = sel({ chatModel: null as unknown as string });
+    expect(await p.contextTokens()).toBeNull();
+  });
+
+  it("105: không đọc được cửa sổ (Ollama chưa chạy) ⇒ KHÔNG nhớ null, lần sau đọc lại", async () => {
+    const contextLength = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(8192);
+    const p = new OllamaProvider(makeClient({ contextLength }), () => sel());
+    expect(await p.contextTokens()).toBeNull();
+    expect(await p.contextTokens()).toBe(8192);
   });
 });

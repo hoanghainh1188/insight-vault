@@ -131,6 +131,37 @@ describe("resolveBaseUrl (Constitution I: chỉ localhost)", () => {
     );
   });
 
+  it("105: numCtx ⇒ gửi options.num_ctx; không có ⇒ không gửi options", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const c = createOllamaClient({
+      fetchFn: fakeFetch((_u, init) => {
+        bodies.push(JSON.parse(String(init?.body)));
+        return { message: { content: "ok" } };
+      }),
+    });
+    await c.chat({ model: "m", messages: [], numCtx: 16384 });
+    await c.chat({ model: "m", messages: [] });
+    expect(bodies[0].options).toEqual({ num_ctx: 16384 });
+    // gửi cả model + name cho /api/show (Ollama bản cũ dùng 'name') — kiểm ở test contextLength
+    expect(bodies[1].options).toBeUndefined();
+  });
+
+  it("105: contextLength đọc /api/show; lỗi ⇒ null", async () => {
+    const ok = createOllamaClient({
+      fetchFn: fakeFetch(() => ({
+        model_info: {
+          "general.architecture": "qwen2",
+          "qwen2.context_length": 32768,
+        },
+      })),
+    });
+    expect(await ok.contextLength("qwen2.5:7b")).toBe(32768);
+    const bad = createOllamaClient({
+      fetchFn: fakeFetch(() => ({}), false, 404),
+    });
+    expect(await bad.contextLength("x")).toBeNull();
+  });
+
   it("103: chat stream qua Ollama (localhost) KHÔNG bật badge 'đang gửi ra ngoài'", async () => {
     const seen: string[] = [];
     const body = new ReadableStream<Uint8Array>({
@@ -154,5 +185,22 @@ describe("resolveBaseUrl (Constitution I: chỉ localhost)", () => {
     );
     expect(seen.length).toBeGreaterThan(0);
     expect(seen.every((m) => m === "local")).toBe(true);
+  });
+
+  it("105: lượt có numCtx (prompt lớn) dùng timeout dài; contextLength gửi cả model + name", async () => {
+    const seen: string[] = [];
+    const c = createOllamaClient({
+      chatTimeoutMs: 1,
+      fetchFn: fakeFetch((_u, init) => {
+        seen.push(String(init?.body));
+        return { message: { content: "ok" } };
+      }),
+    });
+    // timeout 1ms nhưng lượt numCtx dùng LARGE_CHAT_TIMEOUT_MS ⇒ không bị huỷ
+    await expect(
+      c.chat({ model: "m", messages: [], numCtx: 8192 }),
+    ).resolves.toEqual({ content: "ok" });
+    await c.contextLength("qwen");
+    expect(JSON.parse(seen[1])).toEqual({ model: "qwen", name: "qwen" });
   });
 });
