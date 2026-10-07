@@ -35,8 +35,8 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 - [ ] T005 [P] RED — `tests/unit/relevance-filter.test.ts`: theo `contracts/relevance-filter.md` — ngưỡng tuyệt đối; ngưỡng tương đối (min trên vHits TRƯỚC lọc); 4 chế độ `bm25Gate` (`none`/`requireVector`/`vectorWithin` thiếu distance ⇒ loại/`minScore`); giữ thứ tự, không thêm/đổi id; `validateRelevanceConfig` ném khi thiếu trường phụ / số không hữu hạn / âm (trừ `bm25MaxScore`)
 - [ ] T006 GREEN — `src/main/services/rag/relevance-filter.ts`: `RelevanceConfig`, `validateRelevanceConfig`, `selectRelevant` (thuần, không I/O)
 - [ ] T007 Tạo `src/main/services/rag/relevance-calibration.ts`: `RELEVANCE_CALIBRATION = { embeddingModelVersion: EMBEDDING_MODEL_VERSION, config: { maxDistance: 0.5, relativeDelta: null, bm25Gate: "none", bm25VectorMaxDistance: null, bm25MaxScore: null }, calibratedAt: null, datasetVersion: null, metrics: null }` (= hành vi hiện tại — BASELINE); export kiểu `RelevanceCalibration`
-- [ ] T008 RED — cập nhật `tests/unit/retrieval.test.ts` + `tests/unit/retrieval-hybrid.test.ts`: `retrieve()` nhận `cfg` tuỳ chọn; cfg baseline ⇒ kết quả như trước; `requireVector` ⇒ hit chỉ-BM25 bị loại; `vectorWithin` dùng distance tính từ vector của `getVectorsByIds` + vector câu hỏi; MMR vẫn dùng cùng `vecMap` (một lần gọi `getVectorsByIds`)
-- [ ] T009 GREEN — `src/main/services/rag/retrieval.ts`: thay lọc `h.score <= RELEVANCE_MAX_DISTANCE` bằng `selectRelevant(…, cfg ?? RELEVANCE_CALIBRATION.config)`; tính cosine distance cho `vectorWithin` từ vector đã lấy (gọi `getVectorsByIds` MỘT lần cho hợp tập vector ∪ BM25, dùng lại cho MMR); giữ chữ ký với `rag-service` (tham số cfg cuối, tuỳ chọn)
+- [ ] T008 RED — cập nhật `tests/unit/retrieval.test.ts` + `tests/unit/retrieval-hybrid.test.ts`: `retrieve()` nhận `cfg` tuỳ chọn; cfg baseline ⇒ kết quả như trước; `requireVector` ⇒ hit chỉ-BM25 bị loại; `vectorWithin` dùng distance tính từ vector của `getVectorsByIds` + vector câu hỏi; MMR vẫn dùng cùng `vecMap` (một lần gọi `getVectorsByIds`); (C1) hit chỉ-BM25 (gate `none`/`minScore`) có `score` = cosine distance thật, thiếu vector ⇒ `cfg.maxDistance`; (E2/FR-018) keyword search ném lỗi với gate `requireVector`/`vectorWithin` ⇒ vẫn trả kết quả vector đã lọc, không ném; có `history` ⇒ cfg áp lên câu đã viết lại; rewrite lỗi ⇒ dùng câu gốc và vẫn áp cfg
+- [ ] T009 GREEN — `src/main/services/rag/retrieval.ts`: thay lọc `h.score <= RELEVANCE_MAX_DISTANCE` bằng `selectRelevant(…, cfg ?? RELEVANCE_CALIBRATION.config)`; tính cosine distance cho `vectorWithin` từ vector đã lấy (gọi `getVectorsByIds` MỘT lần cho hợp tập vector ∪ BM25, dùng lại cho MMR); thay fallback `vScore.get(id) ?? RELEVANCE_MAX_DISTANCE` cho hit chỉ-BM25 bằng distance thật tính từ `getVectorsByIds`, thiếu vector ⇒ `cfg.maxDistance`; giữ nguyên nhánh `catch` của keyword search và rewrite; giữ chữ ký với `rag-service` (tham số cfg cuối, tuỳ chọn)
 - [ ] T010 Xoá `RELEVANCE_MAX_DISTANCE` khỏi `src/main/services/rag/constants.ts`; sửa mọi import (grep toàn repo) — một nguồn sự thật là `RELEVANCE_CALIBRATION`
 
 **Checkpoint**: `npm test` xanh, hành vi app y nguyên (cfg baseline).
@@ -49,11 +49,11 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 **Independent Test**: giả lập mô hình trả lời không `[n]` ở chế độ theo nguồn ⇒ `notFound: true`, `citations: []`, câu hiển thị có gợi ý; chế độ Mở rộng không đổi
 
-- [ ] T011 [P] [US3] RED — `tests/unit/rag-service.test.ts`: (a) grounded + mô hình trả lời không `[n]` hợp lệ, không chứa "không tìm thấy" ⇒ `{ answer: NOT_FOUND_DISPLAY, citations: [], notFound: true }` (trước đây: `citationsFromMap`); (b) grounded + retrieval rỗng ⇒ `NOT_FOUND_DISPLAY`; (c) mô hình tự trả "Không tìm thấy trong nguồn." ⇒ `NOT_FOUND_DISPLAY`; (d) grounded có `[n]` hợp lệ ⇒ không đổi; (e) open ⇒ không đổi; (f) `saveTurn` nhận đúng `NOT_FOUND_DISPLAY` + `notFound: true`; (g) stream (`askStream`) cùng hành vi
+- [ ] T011 [P] [US3] RED — `tests/unit/rag-service.test.ts`: (a) grounded + mô hình trả lời không `[n]` hợp lệ, không chứa "không tìm thấy" ⇒ `{ answer: NOT_FOUND_DISPLAY, citations: [], notFound: true }` (trước đây: `citationsFromMap`); (b) grounded + retrieval rỗng ⇒ `NOT_FOUND_DISPLAY`; (c) mô hình tự trả "Không tìm thấy trong nguồn." ⇒ `NOT_FOUND_DISPLAY`; (d) grounded có `[n]` hợp lệ ⇒ không đổi; (e) open ⇒ không đổi; (f) `saveTurn` nhận đúng `NOT_FOUND_DISPLAY` + `notFound: true`; (g) stream (`askStream`) cùng hành vi; (h) chế độ Mở rộng + `retrieve()` trả `[]` ⇒ VẪN gọi chat, không trả `NOT_FOUND_DISPLAY` (FR-014)
 - [ ] T012 [P] [US3] RED — `tests/unit/rag-prompt.test.ts`: prompt grounded vẫn yêu cầu nguyên văn `NOT_FOUND_ANSWER` (không chứa gợi ý)
 - [ ] T013 [US3] GREEN — `src/main/services/rag/constants.ts`: thêm `NOT_FOUND_HINT = "Thử hỏi cụ thể hơn, hoặc chuyển sang chế độ Mở rộng nếu chấp nhận nội dung ngoài tài liệu."` và `NOT_FOUND_DISPLAY = \`${NOT_FOUND_ANSWER} ${NOT_FOUND_HINT}\``; GIỮ `NOT_FOUND_ANSWER` cho prompt/nhận diện (research R7)
 - [ ] T014 [US3] GREEN — `src/main/services/rag/rag-service.ts`: mọi nhánh trả người dùng not-found dùng `NOT_FOUND_DISPLAY`; thay nhánh `citationsFromMap(built.map)` ở grounded bằng not-found (gỡ import nếu không còn dùng)
-- [ ] T015 [US3] Rà renderer/E2E có so khớp chuỗi "Không tìm thấy trong nguồn" (grep `src/renderer`, `tests/e2e`) — cập nhật kỳ vọng nếu cần (khớp tiền tố)
+- [ ] T015 [US3] Rà renderer/E2E có so khớp chuỗi "Không tìm thấy trong nguồn" (grep `src/renderer`, `tests/e2e`) — cập nhật kỳ vọng nếu cần (khớp tiền tố). Câu đọc a11y "Không tìm thấy thông tin trong nguồn." ở `src/renderer/shared/a11y/messages.ts` CỐ Ý giữ nguyên (FR-016 chỉ áp cho câu hiển thị)
 
 **Checkpoint**: US3 hoàn chỉnh, test xanh — có thể merge riêng.
 
@@ -67,13 +67,13 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 ### Tests (RED trước)
 
-- [ ] T016 [P] [US4] RED — `tests/unit/eval-dataset.test.ts` (dữ liệu giả nhỏ trong test): `normalizeForMatch` (NFC + gộp khoảng trắng + trim); `chunkContainsAnyQuote`; `validateManifest` (id trùng, thiếu giấy phép, < 8 tài liệu thật / < 2 nhiễu); `validateQuestions` (answerable phải có ≥1 trích đoạn ≤ 200 ký tự có NGUYÊN VĂN trong tài liệu nêu ở `docIds`; unanswerable không có trích đoạn; `lang`, `type`, `split` hợp lệ; id trùng); `isReviewed`
-- [ ] T017 [P] [US4] RED — `tests/unit/eval-metrics.test.ts`: `recallAtK(k=1,3,6)`, `mrr` (0 khi không trúng trong top-6), `correctRejectionRate`, `falseRejectionRate`, `wilson95`, `histogram` (20 bucket), `chooseConfig` theo FR-011/012 (lọc từ chối đúng ≥ 0.9 trên dev → Recall@6 cao nhất; ≥ 0.85 thì ưu tiên ít tham số rồi biên lớn nhất; < 0.75 ⇒ `null` + lý do), `configComplexity`
+- [ ] T016 [P] [US4] RED — `tests/unit/eval-dataset.test.ts` (dữ liệu giả nhỏ trong test): `normalizeForMatch` (NFC + gộp khoảng trắng + trim); `chunkContainsAnyQuote`; `validateManifest` (id trùng, thiếu giấy phép, < `MIN_CORPUS_DOCS` tài liệu thật / < `MIN_NOISE_DOCS` nhiễu — test import hằng số, không ghi số cứng); `validateQuestions` (answerable phải có ≥1 trích đoạn ≤ 200 ký tự có NGUYÊN VĂN trong tài liệu nêu ở `docIds`; unanswerable không có trích đoạn; `lang`, `type`, `split` hợp lệ; id trùng); `isReviewed`
+- [ ] T017 [P] [US4] RED — `tests/unit/eval-metrics.test.ts`: `recallAtK(k=1,3,6)`, `mrr` (0 khi không trúng trong top-6), `correctRejectionRate`, `falseRejectionRate`, `wilson95`, `histogram` (20 bucket), `chooseConfig` theo FR-011/012 (lọc từ chối đúng ≥ 0.9 trên dev → Recall@6 cao nhất; ≥ 0.85 thì ưu tiên ít tham số rồi biên lớn nhất; < 0.75 ⇒ `null` + lý do; CHỈ đọc số liệu dev), `configComplexity`, `confirmOnHoldout(metrics) → { pass, reasons[] }` (pass ⇔ từ chối đúng ≥ 0.9 VÀ Recall@6 ≥ 0.75; mỗi điều kiện trượt ⇒ 1 lý do)
 - [ ] T018 [P] [US4] RED — trong `tests/unit/eval-metrics.test.ts`: mọi cấu hình của `buildGrid()` vượt `validateRelevanceConfig`; lưới chứa cấu hình baseline
 
 ### Implementation
 
-- [ ] T019 [US4] GREEN — `tests/eval/lib/dataset.ts`: nạp `corpus/manifest.json` + tệp `.md` + `questions.json`, các hàm ở T016
+- [ ] T019 [US4] GREEN — `tests/eval/lib/dataset.ts`: nạp `corpus/manifest.json` + tệp `.md` + `questions.json`, các hàm ở T016; export `MIN_CORPUS_DOCS = 8`, `MIN_NOISE_DOCS = 2`
 - [ ] T020 [US4] GREEN — `tests/eval/lib/metrics.ts`: các hàm ở T017
 - [ ] T021 [US4] GREEN — `tests/eval/lib/grid.ts`: `buildGrid()` theo research R4 + baseline `{0.5, null, "none"}`
 - [ ] T022 [US4] `tests/eval/lib/harness.ts` (I/O): thư mục tạm `os.tmpdir()/iv-eval-*`; `openDatabase` + `runMigrations`; `createSourceRepo`, `createVectorStore`, `createKeywordStore`, `createIngestionPipeline` (parser md) + `createEmbedder({ cacheDir: EVAL_CACHE_DIR })`; nạp MỌI tài liệu (kể cả nhiễu) vào 1 notebook; với mỗi câu embed + tìm MỘT lần (cache deps) rồi gọi `retrieve(question, nb, cachedDeps, [], cfg)` cho từng cấu hình; đo thời gian `retrieve()`; xoá thư mục tạm
@@ -97,10 +97,10 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 **Independent Test**: `EVAL_MODE=current npm run eval:retrieval` ⇒ hold-out VN: từ chối đúng ≥ 90%
 
 - [ ] T031 [US1] Đo baseline (`EVAL_MODE=current`, cấu hình 0.5/none) — lưu báo cáo làm mốc SC-001 (ghi số vào ghi chú cho ADR)
-- [ ] T032 [US1] Quét lưới (`npm run eval:retrieval`): chọn trên dev theo `chooseConfig`, xác nhận trên hold-out. Nếu không cấu hình nào đạt sàn Recall@6 ≥ 75% với từ chối đúng ≥ 90% ⇒ **DỪNG, báo người dùng kèm số liệu** (không tự hạ mục tiêu)
+- [ ] T032 [US1] Quét lưới (`npm run eval:retrieval`): chọn trên dev theo `chooseConfig`, xác nhận trên hold-out bằng `confirmOnHoldout`. Nếu không cấu hình nào đạt sàn Recall@6 ≥ 75% với từ chối đúng ≥ 90% trên dev, HOẶC cấu hình được chọn trượt `confirmOnHoldout` ⇒ **DỪNG, báo người dùng kèm số liệu** (không tự hạ mục tiêu, KHÔNG chọn lại cấu hình dựa trên hold-out)
 - [ ] T033 [US1] Áp dụng: cập nhật `RELEVANCE_CALIBRATION` trong `src/main/services/rag/relevance-calibration.ts` (config, `calibratedAt`, `datasetVersion: "1"`, `metrics.dev`, `metrics.holdout`)
 - [ ] T034 [US1] Test theo cấu hình mới trong `tests/unit/retrieval-hybrid.test.ts`: câu chỉ trùng từ thông dụng, không có hỗ trợ ngữ nghĩa ⇒ `retrieve()` trả `[]`; `rag-service` grounded + retrieval rỗng ⇒ không gọi chat
-- [ ] T035 [US1] Kiểm hồi quy: `EVAL_MODE=current npm run eval:retrieval` khớp `RELEVANCE_CALIBRATION.metrics`
+- [ ] T035 [US1] Kiểm hồi quy: `EVAL_MODE=current npm run eval:retrieval` khớp `RELEVANCE_CALIBRATION.metrics`; (SC-006) so `avgRetrieveMs` cấu hình mới với baseline trong CÙNG lần chạy — tăng > 10% ⇒ báo người dùng + ghi vào ADR (T041)
 
 ---
 
