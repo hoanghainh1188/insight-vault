@@ -105,7 +105,7 @@ export function renderMarkdown(r: EvalReport): string {
     `- Mô hình embedding: \`${r.embeddingModelVersion}\` · bộ dữ liệu v${r.datasetVersion} · chế độ \`${r.mode}\``,
     `- Duyệt: ${r.reviewed ? `${r.reviewed.by} (${r.reviewed.date})` : "**CHƯA DUYỆT**"}`,
     `- Số cấu hình đã đo: ${r.configs.length} · độ trễ retrieve() không cache: ${r.coldRetrieveMs.toFixed(1)} ms/câu`,
-    ...r.warnings.map((w) => `- ⚠️ ${w}`),
+    ...r.warnings.map((w) => (w.startsWith("✓") ? `- ${w}` : `- ⚠️ ${w}`)),
     "",
   ];
   const chosen = r.chosen

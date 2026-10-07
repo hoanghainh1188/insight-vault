@@ -96,11 +96,11 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 **Independent Test**: `EVAL_MODE=current npm run eval:retrieval` ⇒ hold-out VN: từ chối đúng ≥ 90%
 
-- [ ] T031 [US1] Đo baseline (`EVAL_MODE=current`, cấu hình 0.5/none) — lưu báo cáo làm mốc SC-001 (ghi số vào ghi chú cho ADR)
-- [ ] T032 [US1] Quét lưới (`npm run eval:retrieval`): chọn trên dev theo `chooseConfig`, xác nhận trên hold-out bằng `confirmOnHoldout`. Nếu không cấu hình nào đạt sàn Recall@6 ≥ 75% với từ chối đúng ≥ 90% trên dev, HOẶC cấu hình được chọn trượt `confirmOnHoldout` ⇒ **DỪNG, báo người dùng kèm số liệu** (không tự hạ mục tiêu, KHÔNG chọn lại cấu hình dựa trên hold-out)
-- [ ] T033 [US1] Áp dụng: cập nhật `RELEVANCE_CALIBRATION` trong `src/main/services/rag/relevance-calibration.ts` (config, `calibratedAt`, `datasetVersion: "1"`, `metrics.dev`, `metrics.holdout`)
-- [ ] T034 [US1] Test theo cấu hình mới trong `tests/unit/retrieval-hybrid.test.ts`: câu chỉ trùng từ thông dụng, không có hỗ trợ ngữ nghĩa ⇒ `retrieve()` trả `[]`; `rag-service` grounded + retrieval rỗng ⇒ không gọi chat
-- [ ] T035 [US1] Kiểm hồi quy: `EVAL_MODE=current npm run eval:retrieval` khớp `RELEVANCE_CALIBRATION.metrics`; (SC-006) so `avgRetrieveMs` cấu hình mới với baseline trong CÙNG lần chạy — tăng > 10% ⇒ báo người dùng + ghi vào ADR (T041)
+- [X] T031 [US1] Đo baseline (`EVAL_MODE=current`, cấu hình 0.5/none) — lưu báo cáo làm mốc SC-001 (ghi số vào ghi chú cho ADR)
+- [X] T032 [US1] Quét lưới (`npm run eval:retrieval`): chọn trên dev theo `chooseConfig`, xác nhận trên hold-out bằng `confirmOnHoldout`. Nếu không cấu hình nào đạt sàn Recall@6 ≥ 75% với từ chối đúng ≥ 90% trên dev, HOẶC cấu hình được chọn trượt `confirmOnHoldout` ⇒ **DỪNG, báo người dùng kèm số liệu** (không tự hạ mục tiêu, KHÔNG chọn lại cấu hình dựa trên hold-out) — **Kết quả:** không cấu hình nào đạt ⇒ DỪNG, báo người dùng; Hải chọn giữ cấu hình hiện hành, tách việc (ADR 2026-10-07-relevance-calibration.md)
+- [X] T033 [US1] Áp dụng: cập nhật `RELEVANCE_CALIBRATION` trong `src/main/services/rag/relevance-calibration.ts` (config, `calibratedAt`, `datasetVersion: "1"`, `metrics.dev`, `metrics.holdout`) — **Kết quả:** giữ 0.5/none, ghi `calibratedAt`/`datasetVersion`/`metrics` của cấu hình này
+- [X] T034 [US1] Test theo cấu hình mới trong `tests/unit/retrieval-hybrid.test.ts`: câu chỉ trùng từ thông dụng, không có hỗ trợ ngữ nghĩa ⇒ `retrieve()` trả `[]`; `rag-service` grounded + retrieval rỗng ⇒ không gọi chat — **Kết quả:** cấu hình không đổi ⇒ không có test riêng; các case chặn BM25/từ thông dụng đã có ở T008
+- [X] T035 [US1] Kiểm hồi quy: `EVAL_MODE=current npm run eval:retrieval` khớp `RELEVANCE_CALIBRATION.metrics`; (SC-006) so `avgRetrieveMs` cấu hình mới với baseline trong CÙNG lần chạy — tăng > 10% ⇒ báo người dùng + ghi vào ADR (T041)
 
 ---
 
@@ -110,9 +110,9 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 **Independent Test**: báo cáo hold-out VN Recall@6 ≥ 85%; `content-search` + Studio test không đổi
 
-- [ ] T036 [P] [US2] Test trong `tests/unit/retrieval-hybrid.test.ts` với cấu hình đã chọn: câu đồng nghĩa (chỉ có hỗ trợ vector) vẫn giữ đoạn đúng; thuật ngữ hiếm có hỗ trợ ngữ nghĩa vẫn giữ; notebook 1 tài liệu ngắn — ngưỡng tương đối không loại đoạn đúng duy nhất (edge case)
-- [ ] T037 [US2] Ghi danh sách câu bị từ chối nhầm (hold-out) từ báo cáo vào ghi chú ADR (minh bạch đánh đổi)
-- [ ] T038 [P] [US2] Xác nhận không đổi hành vi ngoài phạm vi: `tests/unit/content-search.test.ts`, `tests/unit/keyword-store.test.ts`, `tests/unit/studio-*.test.ts` xanh không sửa; grep đảm bảo `relevance-filter` chỉ được import bởi `retrieval.ts` (+ công cụ đo)
+- [X] T036 [P] [US2] Test trong `tests/unit/retrieval-hybrid.test.ts` với cấu hình đã chọn: câu đồng nghĩa (chỉ có hỗ trợ vector) vẫn giữ đoạn đúng; thuật ngữ hiếm có hỗ trợ ngữ nghĩa vẫn giữ; notebook 1 tài liệu ngắn — ngưỡng tương đối không loại đoạn đúng duy nhất (edge case) — **Kết quả:** cấu hình không đổi ⇒ không áp dụng (Recall@6 hold-out 95,8%)
+- [X] T037 [US2] Ghi danh sách câu bị từ chối nhầm (hold-out) từ báo cáo vào ghi chú ADR (minh bạch đánh đổi) — **Kết quả:** từ chối nhầm = 0% với cấu hình giữ nguyên ⇒ không có câu cần liệt kê
+- [X] T038 [P] [US2] Xác nhận không đổi hành vi ngoài phạm vi: `tests/unit/content-search.test.ts`, `tests/unit/keyword-store.test.ts`, `tests/unit/studio-*.test.ts` xanh không sửa; grep đảm bảo `relevance-filter` chỉ được import bởi `retrieval.ts` (+ công cụ đo)
 
 ---
 
@@ -122,18 +122,18 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 **Independent Test**: đổi `EMBEDDING_MODEL_VERSION` tạm thời ⇒ test fail với thông báo rõ
 
-- [ ] T039 [P] [US5] RED — `tests/unit/relevance-calibration.test.ts`: `RELEVANCE_CALIBRATION.embeddingModelVersion === EMBEDDING_MODEL_VERSION` với thông báo "Đổi mô hình embedding ⇒ chạy `npm run eval:retrieval` và cập nhật relevance-calibration.ts"; `validateRelevanceConfig(RELEVANCE_CALIBRATION.config)` không ném; `metrics` có `dev`/`holdout` sau khi hiệu chuẩn
-- [ ] T040 [US5] GREEN — điều chỉnh `src/main/services/rag/relevance-calibration.ts` nếu cần để test đạt; thử đổi tạm phiên bản để xác nhận test fail rồi hoàn nguyên
+- [X] T039 [P] [US5] RED — `tests/unit/relevance-calibration.test.ts`: `RELEVANCE_CALIBRATION.embeddingModelVersion === EMBEDDING_MODEL_VERSION` với thông báo "Đổi mô hình embedding ⇒ chạy `npm run eval:retrieval` và cập nhật relevance-calibration.ts"; `validateRelevanceConfig(RELEVANCE_CALIBRATION.config)` không ném; `metrics` có `dev`/`holdout` sau khi hiệu chuẩn
+- [X] T040 [US5] GREEN — điều chỉnh `src/main/services/rag/relevance-calibration.ts` nếu cần để test đạt; thử đổi tạm phiên bản để xác nhận test fail rồi hoàn nguyên
 
 ---
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T041 ADR `docs/04-decisions/2026-10-<dd>-relevance-calibration.md`: số liệu baseline vs cấu hình chọn (dev/hold-out/en, khoảng tin cậy), các phương án đã quét, lý do chọn, câu bị từ chối nhầm, giới hạn (~100 câu); ghi rõ THAY THẾ phát biểu `RELEVANCE_MAX_DISTANCE = 0.75` của `2026-07-11-rag-retrieval-strategy.md` (thêm dòng "Superseded" vào ADR cũ); append `docs/04-decisions/INDEX.md`
-- [ ] T042 [P] Append thuật ngữ mới vào `docs/00-glossary.md` (bộ đánh giá, câu không có đáp án, trích đoạn đáp án, Recall@k, MRR, từ chối đúng/nhầm, chặn BM25, ngưỡng tương đối, bản ghi hiệu chuẩn, dev/hold-out, tài liệu nhiễu) — theo mục "Thuật ngữ mới" của intake
-- [ ] T043 [P] Thêm `tests/eval/lib/dataset.ts`, `tests/eval/lib/metrics.ts`, `tests/eval/lib/grid.ts` vào `coverage.include` của `vitest.config.ts` (`relevance-filter.ts`/`relevance-calibration.ts` đã nằm trong `src/main/services/**`)
-- [ ] T044 [P] `tests/eval/README.md`: cách chạy, biến môi trường, cách thêm câu hỏi, quy trình khi đổi mô hình/chunker (trỏ quickstart.md)
-- [ ] T045 Gate: `npm run lint && npm test && npm run build && npx playwright test` xanh, coverage ≥ 80%; chạy kịch bản `quickstart.md` mục 5 trên app (`npm run dev`)
+- [X] T041 ADR `docs/04-decisions/2026-10-<dd>-relevance-calibration.md`: số liệu baseline vs cấu hình chọn (dev/hold-out/en, khoảng tin cậy), các phương án đã quét, lý do chọn, câu bị từ chối nhầm, giới hạn (~100 câu); ghi rõ THAY THẾ phát biểu `RELEVANCE_MAX_DISTANCE = 0.75` của `2026-07-11-rag-retrieval-strategy.md` (thêm dòng "Superseded" vào ADR cũ); append `docs/04-decisions/INDEX.md`
+- [X] T042 [P] Append thuật ngữ mới vào `docs/00-glossary.md` (bộ đánh giá, câu không có đáp án, trích đoạn đáp án, Recall@k, MRR, từ chối đúng/nhầm, chặn BM25, ngưỡng tương đối, bản ghi hiệu chuẩn, dev/hold-out, tài liệu nhiễu) — theo mục "Thuật ngữ mới" của intake
+- [X] T043 [P] Thêm `tests/eval/lib/dataset.ts`, `tests/eval/lib/metrics.ts`, `tests/eval/lib/grid.ts` vào `coverage.include` của `vitest.config.ts` (`relevance-filter.ts`/`relevance-calibration.ts` đã nằm trong `src/main/services/**`)
+- [X] T044 [P] `tests/eval/README.md`: cách chạy, biến môi trường, cách thêm câu hỏi, quy trình khi đổi mô hình/chunker (trỏ quickstart.md)
+- [X] T045 Gate: `npm run lint && npm test && npm run build && npx playwright test` xanh, coverage ≥ 80%; chạy kịch bản `quickstart.md` mục 5 trên app (`npm run dev`)
 
 ---
 

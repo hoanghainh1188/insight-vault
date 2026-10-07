@@ -164,6 +164,32 @@ describe("eval:retrieval", () => {
             }
           : undefined;
 
+      // T035: chế độ current ⇒ so cấu hình hiện hành với số liệu đã ghi trong RELEVANCE_CALIBRATION (hồi quy).
+      const recorded = RELEVANCE_CALIBRATION.metrics;
+      const current = results.find(
+        (r) => key(r.config) === key(RELEVANCE_CALIBRATION.config),
+      );
+      if (mode === "current" && recorded && current) {
+        const fields = ["recallAt6", "correctRejection", "mrr"] as const;
+        const drift = (["dev", "holdout"] as const).flatMap((g) =>
+          fields
+            .filter((f) => Math.abs(current[g][f] - recorded[g][f]) > 0.001)
+            .map(
+              (f) =>
+                `${g}.${f}: đo ${current[g][f].toFixed(4)} ≠ ghi ${recorded[g][f]}`,
+            ),
+        );
+        if (drift.length > 0) {
+          warnings.push(
+            `Số liệu lệch bản ghi hiệu chuẩn — cần hiệu chuẩn lại: ${drift.join("; ")}`,
+          );
+        } else {
+          warnings.push(
+            "✓ Khớp số liệu ghi trong RELEVANCE_CALIBRATION (hồi quy OK)",
+          );
+        }
+      }
+
       const llm =
         process.env.EVAL_WITH_LLM === "1"
           ? await runWithLlm(

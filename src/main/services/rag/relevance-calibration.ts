@@ -33,7 +33,9 @@ export interface RelevanceCalibration {
   metrics: { dev: EvalMetrics; holdout: EvalMetrics } | null;
 }
 
-// BASELINE = hành vi trước 108 (vector ≤ 0.5, BM25 không chặn). Được thay bằng cấu hình đã quét ở T033.
+// Hiệu chuẩn 2026-10-07 (ADR docs/04-decisions/2026-10-07-relevance-calibration.md): quét 392 cấu hình — KHÔNG cấu hình
+// nào đạt từ chối đúng ≥ 90% với Recall@6 ≥ 75% (e5-small: khoảng cách câu không có đáp án chồng vùng đoạn đúng) ⇒ giữ
+// cấu hình hiện hành (vector ≤ 0.5, không chặn BM25). Số liệu dưới đây là của cấu hình này trên bộ đánh giá v1.
 export const RELEVANCE_CALIBRATION: RelevanceCalibration = {
   embeddingModelVersion: EMBEDDING_MODEL_VERSION,
   config: {
@@ -43,7 +45,30 @@ export const RELEVANCE_CALIBRATION: RelevanceCalibration = {
     bm25VectorMaxDistance: null,
     bm25MaxScore: null,
   },
-  calibratedAt: null,
-  datasetVersion: null,
-  metrics: null,
+  calibratedAt: "2026-10-07",
+  datasetVersion: "1",
+  metrics: {
+    dev: {
+      nAnswerable: 58,
+      nUnanswerable: 14,
+      recallAt1: 0.7586,
+      recallAt3: 0.8966,
+      recallAt6: 0.9655,
+      mrr: 0.8307,
+      correctRejection: 0,
+      falseRejection: 0,
+      ci95: { recallAt6: [0.8827, 0.9905], correctRejection: [0, 0.2153] },
+    },
+    holdout: {
+      nAnswerable: 24,
+      nUnanswerable: 6,
+      recallAt1: 0.875,
+      recallAt3: 0.9583,
+      recallAt6: 0.9583,
+      mrr: 0.9097,
+      correctRejection: 0,
+      falseRejection: 0,
+      ci95: { recallAt6: [0.7976, 0.9926], correctRejection: [0, 0.3903] },
+    },
+  },
 };

@@ -31,6 +31,10 @@ export default defineConfig({
         "src/main/services/rag/fusion.ts",
         "src/main/services/rag/rewrite.ts",
         "src/main/services/rag/retrieval.ts",
+        // 108: phần THUẦN của công cụ đo truy xuất (harness/report là I/O — không tính).
+        "tests/eval/lib/dataset.ts",
+        "tests/eval/lib/metrics.ts",
+        "tests/eval/lib/grid.ts",
         "src/main/services/ingestion/fts-fold.ts",
         "src/main/services/ingestion/keyword-store.ts",
         "src/renderer/shared/useModalA11y.ts",
