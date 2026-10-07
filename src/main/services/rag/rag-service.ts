@@ -8,10 +8,10 @@ import {
 import { retrieve, type RetrievalDeps } from "./retrieval";
 import { buildContext } from "./context-builder";
 import { systemPromptFor } from "./prompt";
-import { citationsFromMap, postprocessCitations } from "./citation";
+import { postprocessCitations } from "./citation";
 import {
   MAX_HISTORY_TURNS,
-  NOT_FOUND_ANSWER,
+  NOT_FOUND_DISPLAY,
   REINDEXING_ANSWER,
 } from "./constants";
 
@@ -44,6 +44,16 @@ export interface RagServiceDeps extends RetrievalDeps {
   ) => void;
 }
 
+// Mọi nhánh "không tìm thấy" ở chế độ theo nguồn trả CÙNG một câu hiển thị (kèm gợi ý — 108 FR-016).
+function notFoundResult(): RagAnswer {
+  return {
+    answer: NOT_FOUND_DISPLAY,
+    citations: [],
+    notFound: true,
+    modeUsed: "grounded",
+  };
+}
+
 export function createRagService(deps: RagServiceDeps) {
   // Tính câu trả lời (không side-effect persist) — gom mọi nhánh return vào đây. chatFn cho phép tái dùng
   // cho non-stream (deps.chat) và stream (deps.chatStream + onToken) — 039.
@@ -70,14 +80,7 @@ export function createRagService(deps: RagServiceDeps) {
     const scored = await retrieve(question, input.notebookId, deps, history);
 
     // Grounded + không có căn cứ → "không tìm thấy" (không gọi model, không bịa).
-    if (mode === "grounded" && scored.length === 0) {
-      return {
-        answer: NOT_FOUND_ANSWER,
-        citations: [],
-        notFound: true,
-        modeUsed: "grounded",
-      };
-    }
+    if (mode === "grounded" && scored.length === 0) return notFoundResult();
 
     const built = buildContext(scored);
     const system = systemPromptFor(mode, built.contextText);
@@ -95,24 +98,12 @@ export function createRagService(deps: RagServiceDeps) {
       return { answer, citations, notFound: false, modeUsed: "open" };
     }
 
-    // Grounded — đảm bảo "luôn kèm nguồn / kiểm chứng được" (Constitution II).
+    // Grounded — "luôn kèm nguồn / kiểm chứng được" (Constitution II). 108 (FR-015): không có [n] hợp lệ nào
+    // ⇒ KHÔNG trình bày như có căn cứ (trước đây gắn mọi đoạn ngữ cảnh làm trích dẫn) → "không tìm thấy".
     if (citations.length > 0) {
       return { answer, citations, notFound: false, modeUsed: "grounded" };
     }
-    if (answer.trim() === "" || /không tìm thấy/i.test(answer)) {
-      return {
-        answer: NOT_FOUND_ANSWER,
-        citations: [],
-        notFound: true,
-        modeUsed: "grounded",
-      };
-    }
-    return {
-      answer,
-      citations: citationsFromMap(built.map),
-      notFound: false,
-      modeUsed: "grounded",
-    };
+    return notFoundResult();
   }
 
   // Persist lượt (027) — best-effort: DB lỗi KHÔNG phá câu trả lời; KHÔNG log nội dung.

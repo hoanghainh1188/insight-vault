@@ -1,12 +1,10 @@
 import type { RagTurn } from "@shared/ipc/types";
 import type { VectorSearchHit } from "../ingestion/vector-store";
 import type { ScoredChunk } from "./rag-types";
-import {
-  RELEVANCE_MAX_DISTANCE,
-  RETRIEVAL_TOP_K,
-  HYBRID_BRANCH_TOPK,
-} from "./constants";
-import { reciprocalRankFusion, mmrSelect } from "./fusion";
+import { RETRIEVAL_TOP_K, HYBRID_BRANCH_TOPK } from "./constants";
+import { reciprocalRankFusion, mmrSelect, cosine } from "./fusion";
+import { selectRelevant, type RelevanceConfig } from "./relevance-filter";
+import { RELEVANCE_CALIBRATION } from "./relevance-calibration";
 
 // Truy hồi hybrid (055, nâng 013): rewrite câu hỏi → vector ∥ BM25 → RRF → MMR → ScoredChunk (GIỮ locator
 // — Constitution II). DI để test không cần LanceDB/FTS/Ollama.
@@ -35,6 +33,8 @@ export async function retrieve(
   notebookId: string,
   deps: RetrievalDeps,
   history: RagTurn[] = [],
+  // 108: cấu hình bộ lọc độ liên quan; công cụ đo (tests/eval) truyền vào để quét. Mặc định = bản ghi hiệu chuẩn.
+  cfg: RelevanceConfig = RELEVANCE_CALIBRATION.config,
 ): Promise<ScoredChunk[]> {
   // 1. Query rewriting — CHỈ khi CÓ hội thoại (giải đại từ/tham chiếu). Câu đầu (không history) DÙNG
   // NGUYÊN câu gốc: model local hay "phình" câu đã rõ → truy xuất tệ hơn (thực nghiệm). Chỉ đổi TRUY VẤN,
@@ -52,10 +52,6 @@ export async function retrieve(
   // 2. Hai nhánh: vector (ngữ nghĩa) + BM25 (từ khoá).
   const vector = await deps.embed(q);
   const vHits = await deps.search(vector, notebookId, HYBRID_BRANCH_TOPK);
-  // Lọc hit vector kém liên quan (013). BM25 không có distance → tin xếp hạng BM25 (giữ).
-  const vRelevant = vHits.filter((h) => h.score <= RELEVANCE_MAX_DISTANCE);
-  const vScore = new Map(vRelevant.map((h) => [h.id, h.score]));
-
   let kHits: { id: string; score: number }[] = [];
   if (deps.searchBm25) {
     try {
@@ -65,27 +61,37 @@ export async function retrieve(
     }
   }
 
-  // 3. Hợp nhất RRF theo rank hai nhánh.
+  // Vector chunk lấy MỘT lần cho hợp tập hai nhánh: dùng cho distance của hit BM25 (gate vectorWithin, điểm
+  // hiển thị) và dùng lại cho MMR (108, research R11).
+  const vecMap = deps.getVectorsByIds
+    ? await deps.getVectorsByIds(unionIds(vHits, kHits))
+    : new Map<string, number[]>();
+  const distanceOf = (id: string): number | undefined => {
+    const v = vecMap.get(id);
+    return v ? 1 - cosine(vector, v) : undefined;
+  };
+
+  // 3. Lọc độ liên quan (108): ngưỡng vector tuyệt đối/tương đối + chặn nhánh BM25 theo cấu hình đã hiệu chuẩn.
+  const kept = selectRelevant({ vHits, kHits, distanceOf }, cfg);
+  const vScore = new Map(kept.vector.map((h) => [h.id, h.score]));
+
+  // 4. Hợp nhất RRF theo rank hai nhánh.
   const fused = reciprocalRankFusion([
-    vRelevant.map((h) => h.id),
-    kHits.map((h) => h.id),
+    kept.vector.map((h) => h.id),
+    kept.keyword.map((h) => h.id),
   ]);
   if (fused.length === 0) return []; // → grounded "không tìm thấy" (013 giữ nguyên)
 
-  // 4. MMR đa dạng hoá (cần vector chunk; thiếu vector → giữ theo RRF order).
-  let order = fused;
-  if (deps.getVectorsByIds) {
-    const vecMap = await deps.getVectorsByIds(fused);
-    order = mmrSelect(
-      fused.map((id) => ({ id, vector: vecMap.get(id) })),
-      vector,
-      RETRIEVAL_TOP_K,
-    );
-  } else {
-    order = fused.slice(0, RETRIEVAL_TOP_K);
-  }
+  // 5. MMR đa dạng hoá (cần vector chunk; thiếu vector → giữ theo RRF order).
+  const order = deps.getVectorsByIds
+    ? mmrSelect(
+        fused.map((id) => ({ id, vector: vecMap.get(id) })),
+        vector,
+        RETRIEVAL_TOP_K,
+      )
+    : fused.slice(0, RETRIEVAL_TOP_K);
 
-  // 5. Lấy chunk (GIỮ locator) → ScoredChunk theo thứ tự MMR.
+  // 6. Lấy chunk (GIỮ locator) → ScoredChunk theo thứ tự MMR.
   const chunks = deps.getChunksByIds(order);
   const byId = new Map(chunks.map((c) => [c.id, c]));
   const scored: ScoredChunk[] = [];
@@ -95,8 +101,16 @@ export async function retrieve(
     scored.push({
       chunk,
       sourceTitle: deps.sourceTitle(chunk.sourceId),
-      score: vScore.get(id) ?? RELEVANCE_MAX_DISTANCE, // bm25-only: không có distance
+      // hit chỉ-BM25: distance thật từ vector chunk; thiếu vector ⇒ ngưỡng cấu hình (108 C1)
+      score: vScore.get(id) ?? distanceOf(id) ?? cfg.maxDistance,
     });
   }
   return scored;
+}
+
+function unionIds(
+  a: readonly { id: string }[],
+  b: readonly { id: string }[],
+): string[] {
+  return [...new Set([...a, ...b].map((h) => h.id))];
 }

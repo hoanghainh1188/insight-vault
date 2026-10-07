@@ -21,10 +21,10 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 **Purpose**: khung thư mục + lệnh chạy công cụ đo (không đổi hành vi app)
 
-- [ ] T001 Tạo thư mục `tests/eval/corpus/`, `tests/eval/lib/`; thêm `tests/eval/.cache/` và `tests/eval/reports/` vào `.gitignore`
-- [ ] T002 [P] Tạo `vitest.eval.config.ts`: `include: ["tests/eval/**/*.eval.ts"]`, `environment: "node"`, `testTimeout`/`hookTimeout` 30 phút, alias `@shared` như `vitest.config.ts`, KHÔNG coverage
-- [ ] T003 [P] Thêm script `"eval:retrieval": "vitest run -c vitest.eval.config.ts"` vào `package.json` (không đụng script `test`)
-- [ ] T004 [P] Xác nhận `tests/eval/**/*.ts` nằm trong phạm vi `prettier --check "tests/**/*.ts"`, eslint và `tsconfig.node.json` (bổ sung `include` nếu thiếu) để lint/typecheck phủ công cụ đo
+- [X] T001 Tạo thư mục `tests/eval/corpus/`, `tests/eval/lib/`; thêm `tests/eval/.cache/` và `tests/eval/reports/` vào `.gitignore`
+- [X] T002 [P] Tạo `vitest.eval.config.ts`: `include: ["tests/eval/**/*.eval.ts"]`, `environment: "node"`, `testTimeout`/`hookTimeout` 30 phút, alias `@shared` như `vitest.config.ts`, KHÔNG coverage
+- [X] T003 [P] Thêm script `"eval:retrieval": "vitest run -c vitest.eval.config.ts"` vào `package.json` (không đụng script `test`)
+- [X] T004 [P] Xác nhận `tests/eval/**/*.ts` nằm trong phạm vi `prettier --check "tests/**/*.ts"`, eslint và `tsconfig.node.json` (bổ sung `include` nếu thiếu) để lint/typecheck phủ công cụ đo
 
 ---
 
@@ -32,12 +32,12 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 **Purpose**: logic lọc thuần dùng chung app + công cụ đo; `retrieve()` nhận cấu hình nhưng hành vi MẶC ĐỊNH chưa đổi
 
-- [ ] T005 [P] RED — `tests/unit/relevance-filter.test.ts`: theo `contracts/relevance-filter.md` — ngưỡng tuyệt đối; ngưỡng tương đối (min trên vHits TRƯỚC lọc); 4 chế độ `bm25Gate` (`none`/`requireVector`/`vectorWithin` thiếu distance ⇒ loại/`minScore`); giữ thứ tự, không thêm/đổi id; `validateRelevanceConfig` ném khi thiếu trường phụ / số không hữu hạn / âm (trừ `bm25MaxScore`)
-- [ ] T006 GREEN — `src/main/services/rag/relevance-filter.ts`: `RelevanceConfig`, `validateRelevanceConfig`, `selectRelevant` (thuần, không I/O)
-- [ ] T007 Tạo `src/main/services/rag/relevance-calibration.ts`: `RELEVANCE_CALIBRATION = { embeddingModelVersion: EMBEDDING_MODEL_VERSION, config: { maxDistance: 0.5, relativeDelta: null, bm25Gate: "none", bm25VectorMaxDistance: null, bm25MaxScore: null }, calibratedAt: null, datasetVersion: null, metrics: null }` (= hành vi hiện tại — BASELINE); export kiểu `RelevanceCalibration`
-- [ ] T008 RED — cập nhật `tests/unit/retrieval.test.ts` + `tests/unit/retrieval-hybrid.test.ts`: `retrieve()` nhận `cfg` tuỳ chọn; cfg baseline ⇒ kết quả như trước; `requireVector` ⇒ hit chỉ-BM25 bị loại; `vectorWithin` dùng distance tính từ vector của `getVectorsByIds` + vector câu hỏi; MMR vẫn dùng cùng `vecMap` (một lần gọi `getVectorsByIds`); (C1) hit chỉ-BM25 (gate `none`/`minScore`) có `score` = cosine distance thật, thiếu vector ⇒ `cfg.maxDistance`; (E2/FR-018) keyword search ném lỗi với gate `requireVector`/`vectorWithin` ⇒ vẫn trả kết quả vector đã lọc, không ném; có `history` ⇒ cfg áp lên câu đã viết lại; rewrite lỗi ⇒ dùng câu gốc và vẫn áp cfg
-- [ ] T009 GREEN — `src/main/services/rag/retrieval.ts`: thay lọc `h.score <= RELEVANCE_MAX_DISTANCE` bằng `selectRelevant(…, cfg ?? RELEVANCE_CALIBRATION.config)`; tính cosine distance cho `vectorWithin` từ vector đã lấy (gọi `getVectorsByIds` MỘT lần cho hợp tập vector ∪ BM25, dùng lại cho MMR); thay fallback `vScore.get(id) ?? RELEVANCE_MAX_DISTANCE` cho hit chỉ-BM25 bằng distance thật tính từ `getVectorsByIds`, thiếu vector ⇒ `cfg.maxDistance`; giữ nguyên nhánh `catch` của keyword search và rewrite; giữ chữ ký với `rag-service` (tham số cfg cuối, tuỳ chọn)
-- [ ] T010 Xoá `RELEVANCE_MAX_DISTANCE` khỏi `src/main/services/rag/constants.ts`; sửa mọi import (grep toàn repo) — một nguồn sự thật là `RELEVANCE_CALIBRATION`
+- [X] T005 [P] RED — `tests/unit/relevance-filter.test.ts`: theo `contracts/relevance-filter.md` — ngưỡng tuyệt đối; ngưỡng tương đối (min trên vHits TRƯỚC lọc); 4 chế độ `bm25Gate` (`none`/`requireVector`/`vectorWithin` thiếu distance ⇒ loại/`minScore`); giữ thứ tự, không thêm/đổi id; `validateRelevanceConfig` ném khi thiếu trường phụ / số không hữu hạn / âm (trừ `bm25MaxScore`)
+- [X] T006 GREEN — `src/main/services/rag/relevance-filter.ts`: `RelevanceConfig`, `validateRelevanceConfig`, `selectRelevant` (thuần, không I/O)
+- [X] T007 Tạo `src/main/services/rag/relevance-calibration.ts`: `RELEVANCE_CALIBRATION = { embeddingModelVersion: EMBEDDING_MODEL_VERSION, config: { maxDistance: 0.5, relativeDelta: null, bm25Gate: "none", bm25VectorMaxDistance: null, bm25MaxScore: null }, calibratedAt: null, datasetVersion: null, metrics: null }` (= hành vi hiện tại — BASELINE); export kiểu `RelevanceCalibration`
+- [X] T008 RED — cập nhật `tests/unit/retrieval.test.ts` + `tests/unit/retrieval-hybrid.test.ts`: `retrieve()` nhận `cfg` tuỳ chọn; cfg baseline ⇒ kết quả như trước; `requireVector` ⇒ hit chỉ-BM25 bị loại; `vectorWithin` dùng distance tính từ vector của `getVectorsByIds` + vector câu hỏi; MMR vẫn dùng cùng `vecMap` (một lần gọi `getVectorsByIds`); (C1) hit chỉ-BM25 (gate `none`/`minScore`) có `score` = cosine distance thật, thiếu vector ⇒ `cfg.maxDistance`; (E2/FR-018) keyword search ném lỗi với gate `requireVector`/`vectorWithin` ⇒ vẫn trả kết quả vector đã lọc, không ném; có `history` ⇒ cfg áp lên câu đã viết lại; rewrite lỗi ⇒ dùng câu gốc và vẫn áp cfg
+- [X] T009 GREEN — `src/main/services/rag/retrieval.ts`: thay lọc `h.score <= RELEVANCE_MAX_DISTANCE` bằng `selectRelevant(…, cfg ?? RELEVANCE_CALIBRATION.config)`; tính cosine distance cho `vectorWithin` từ vector đã lấy (gọi `getVectorsByIds` MỘT lần cho hợp tập vector ∪ BM25, dùng lại cho MMR); thay fallback `vScore.get(id) ?? RELEVANCE_MAX_DISTANCE` cho hit chỉ-BM25 bằng distance thật tính từ `getVectorsByIds`, thiếu vector ⇒ `cfg.maxDistance`; giữ nguyên nhánh `catch` của keyword search và rewrite; giữ chữ ký với `rag-service` (tham số cfg cuối, tuỳ chọn)
+- [X] T010 Xoá `RELEVANCE_MAX_DISTANCE` khỏi `src/main/services/rag/constants.ts`; sửa mọi import (grep toàn repo) — một nguồn sự thật là `RELEVANCE_CALIBRATION`
 
 **Checkpoint**: `npm test` xanh, hành vi app y nguyên (cfg baseline).
 
@@ -49,11 +49,11 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 
 **Independent Test**: giả lập mô hình trả lời không `[n]` ở chế độ theo nguồn ⇒ `notFound: true`, `citations: []`, câu hiển thị có gợi ý; chế độ Mở rộng không đổi
 
-- [ ] T011 [P] [US3] RED — `tests/unit/rag-service.test.ts`: (a) grounded + mô hình trả lời không `[n]` hợp lệ, không chứa "không tìm thấy" ⇒ `{ answer: NOT_FOUND_DISPLAY, citations: [], notFound: true }` (trước đây: `citationsFromMap`); (b) grounded + retrieval rỗng ⇒ `NOT_FOUND_DISPLAY`; (c) mô hình tự trả "Không tìm thấy trong nguồn." ⇒ `NOT_FOUND_DISPLAY`; (d) grounded có `[n]` hợp lệ ⇒ không đổi; (e) open ⇒ không đổi; (f) `saveTurn` nhận đúng `NOT_FOUND_DISPLAY` + `notFound: true`; (g) stream (`askStream`) cùng hành vi; (h) chế độ Mở rộng + `retrieve()` trả `[]` ⇒ VẪN gọi chat, không trả `NOT_FOUND_DISPLAY` (FR-014)
-- [ ] T012 [P] [US3] RED — `tests/unit/rag-prompt.test.ts`: prompt grounded vẫn yêu cầu nguyên văn `NOT_FOUND_ANSWER` (không chứa gợi ý)
-- [ ] T013 [US3] GREEN — `src/main/services/rag/constants.ts`: thêm `NOT_FOUND_HINT = "Thử hỏi cụ thể hơn, hoặc chuyển sang chế độ Mở rộng nếu chấp nhận nội dung ngoài tài liệu."` và `NOT_FOUND_DISPLAY = \`${NOT_FOUND_ANSWER} ${NOT_FOUND_HINT}\``; GIỮ `NOT_FOUND_ANSWER` cho prompt/nhận diện (research R7)
-- [ ] T014 [US3] GREEN — `src/main/services/rag/rag-service.ts`: mọi nhánh trả người dùng not-found dùng `NOT_FOUND_DISPLAY`; thay nhánh `citationsFromMap(built.map)` ở grounded bằng not-found (gỡ import nếu không còn dùng)
-- [ ] T015 [US3] Rà renderer/E2E có so khớp chuỗi "Không tìm thấy trong nguồn" (grep `src/renderer`, `tests/e2e`) — cập nhật kỳ vọng nếu cần (khớp tiền tố). Câu đọc a11y "Không tìm thấy thông tin trong nguồn." ở `src/renderer/shared/a11y/messages.ts` CỐ Ý giữ nguyên (FR-016 chỉ áp cho câu hiển thị)
+- [X] T011 [P] [US3] RED — `tests/unit/rag-service.test.ts`: (a) grounded + mô hình trả lời không `[n]` hợp lệ, không chứa "không tìm thấy" ⇒ `{ answer: NOT_FOUND_DISPLAY, citations: [], notFound: true }` (trước đây: `citationsFromMap`); (b) grounded + retrieval rỗng ⇒ `NOT_FOUND_DISPLAY`; (c) mô hình tự trả "Không tìm thấy trong nguồn." ⇒ `NOT_FOUND_DISPLAY`; (d) grounded có `[n]` hợp lệ ⇒ không đổi; (e) open ⇒ không đổi; (f) `saveTurn` nhận đúng `NOT_FOUND_DISPLAY` + `notFound: true`; (g) stream (`askStream`) cùng hành vi; (h) chế độ Mở rộng + `retrieve()` trả `[]` ⇒ VẪN gọi chat, không trả `NOT_FOUND_DISPLAY` (FR-014)
+- [X] T012 [P] [US3] RED — `tests/unit/rag-prompt.test.ts`: prompt grounded vẫn yêu cầu nguyên văn `NOT_FOUND_ANSWER` (không chứa gợi ý)
+- [X] T013 [US3] GREEN — `src/main/services/rag/constants.ts`: thêm `NOT_FOUND_HINT = "Thử hỏi cụ thể hơn, hoặc chuyển sang chế độ Mở rộng nếu chấp nhận nội dung ngoài tài liệu."` và `NOT_FOUND_DISPLAY = \`${NOT_FOUND_ANSWER} ${NOT_FOUND_HINT}\``; GIỮ `NOT_FOUND_ANSWER` cho prompt/nhận diện (research R7)
+- [X] T014 [US3] GREEN — `src/main/services/rag/rag-service.ts`: mọi nhánh trả người dùng not-found dùng `NOT_FOUND_DISPLAY`; thay nhánh `citationsFromMap(built.map)` ở grounded bằng not-found (gỡ import nếu không còn dùng)
+- [X] T015 [US3] Rà renderer/E2E có so khớp chuỗi "Không tìm thấy trong nguồn" (grep `src/renderer`, `tests/e2e`) — cập nhật kỳ vọng nếu cần (khớp tiền tố). Câu đọc a11y "Không tìm thấy thông tin trong nguồn." ở `src/renderer/shared/a11y/messages.ts` CỐ Ý giữ nguyên (FR-016 chỉ áp cho câu hiển thị)
 
 **Checkpoint**: US3 hoàn chỉnh, test xanh — có thể merge riêng.
 
