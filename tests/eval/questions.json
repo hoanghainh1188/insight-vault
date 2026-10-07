@@ -1,6 +1,9 @@
 {
   "datasetVersion": "1",
-  "reviewed": null,
+  "reviewed": {
+    "by": "Hải",
+    "date": "2026-10-07"
+  },
   "questions": [
     {
       "id": "q-001",

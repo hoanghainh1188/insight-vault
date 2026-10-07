@@ -84,7 +84,7 @@ công cụ đo (`tests/eval/lib/harness.ts`, `report.ts`, entry `.eval.ts`) khô
 - [X] T027 [US4] Soạn `tests/eval/corpus/`: `README.md` (nguồn + giấy phép từng tài liệu, ghi CC BY-SA 4.0 cho Wikipedia), `manifest.json`, 8–12 tài liệu `.md` toàn văn (văn bản pháp luật VN + bài Wikipedia tiếng Việt, đa chủ đề) + 2–3 tài liệu nhiễu
 - [X] T028 [US4] Soạn `tests/eval/questions.json`: ~80 `answerable/vi` (trích đoạn nguyên văn ngắn), ~20 `unanswerable/vi` (gần chủ đề nhưng tài liệu không có — gồm câu trùng từ thông dụng), ~10 `en` tham khảo; chia dev/hold-out ~70/30 trong từng loại; `datasetVersion: "1"`, `reviewed: null`
 - [X] T029 [US4] Chạy `EVAL_MODE=current npm run eval:retrieval` để kiểm dữ liệu (mọi trích đoạn khớp, nạp được) và tính tất định (chạy 2 lần so sánh); sửa dữ liệu đến khi sạch
-- [ ] T030 [US4] ⛔ **DỪNG — NGƯỜI DÙNG DUYỆT** danh sách tài liệu (nguồn, giấy phép) + toàn bộ bộ câu hỏi (FR-003). Chỉ sau khi người dùng đồng ý mới ghi `reviewed: { by, date }` vào `tests/eval/questions.json`. **KHÔNG chạy T031 trở đi trước khi xong bước này.**
+- [X] T030 [US4] ⛔ **DỪNG — NGƯỜI DÙNG DUYỆT** danh sách tài liệu (nguồn, giấy phép) + toàn bộ bộ câu hỏi (FR-003). Chỉ sau khi người dùng đồng ý mới ghi `reviewed: { by, date }` vào `tests/eval/questions.json`. **KHÔNG chạy T031 trở đi trước khi xong bước này.**
 
 **Checkpoint**: công cụ đo chạy được, dữ liệu đã duyệt.
 
