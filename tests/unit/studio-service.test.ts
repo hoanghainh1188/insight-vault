@@ -96,6 +96,69 @@ describe("studio-service — ngân sách theo model", () => {
     for (const c of r.citations) expect(ids.has(c.chunkId)).toBe(true);
   });
 
+  it("nhiều nguồn ngắn (mỗi nguồn 1 đoạn) vượt ngân sách ⇒ KHÔNG gửi 1 prompt quá cửa sổ, chuyển map-reduce", async () => {
+    const calls: number[] = [];
+    const sources = Array.from({ length: 8 }, (_, i) => src(`S${i}`));
+    const svc = createStudioService({
+      listSources: () => sources,
+      listChunks: (id) => chunks(id, 1, 600),
+      studioRepo: {
+        upsert: (...a: unknown[]) => ({
+          id: "r",
+          notebookId: a[0],
+          kind: a[1],
+          content: a[2],
+          citations: a[3],
+          createdAt: 1,
+        }),
+        listByNotebook: () => [],
+      } as never,
+      chat: async (m: ChatMessage[]) => {
+        calls.push(m[1].content.length);
+        const ns = [...m[1].content.matchAll(/\[(\d+)\]/g)].map((x) =>
+          Number(x[1]),
+        );
+        return m[0].content.startsWith("Bạn trích GHI CHÚ")
+          ? `- ý [${ns[0]}]`
+          : `Kết luận [${ns[0]}].`;
+      },
+      contextInfo: async () => ({ budget: 1500, numCtx: 4096 }),
+    });
+    const r = await svc.generate({ notebookId: "nb1", kind: "summary" });
+    expect(r.parts).toBeGreaterThan(1);
+    expect(Math.max(...calls)).toBeLessThanOrEqual(1500);
+  });
+
+  it("map-reduce mà bước cuối không chèn [n] ⇒ chỉ dẫn các đoạn CÓ trong ghi chú, không phải cả notebook", async () => {
+    const svc = createStudioService({
+      listSources: () => [src("A"), src("B")],
+      listChunks: (id) => chunks(id, 6),
+      studioRepo: {
+        upsert: (...a: unknown[]) => ({
+          id: "r",
+          notebookId: a[0],
+          kind: a[1],
+          content: a[2],
+          citations: a[3],
+          createdAt: 1,
+        }),
+        listByNotebook: () => [],
+      } as never,
+      chat: async (m: ChatMessage[]) => {
+        const ns = [...m[1].content.matchAll(/\[(\d+)\]/g)].map((x) =>
+          Number(x[1]),
+        );
+        return m[0].content.startsWith("Bạn trích GHI CHÚ")
+          ? `- ý [${ns[0]}]`
+          : "Kết luận không kèm trích dẫn.";
+      },
+      contextInfo: async () => ({ budget: 1000, numCtx: 4096 }),
+    });
+    const r = await svc.generate({ notebookId: "nb1", kind: "summary" });
+    expect(r.citations.length).toBe(r.parts);
+    expect(r.citations.length).toBeLessThan(12);
+  });
+
   it("không có contextInfo ⇒ ngân sách cũ 16.000, không ép num_ctx", async () => {
     const calls: { numCtx?: number }[] = [];
     const svc = createStudioService({

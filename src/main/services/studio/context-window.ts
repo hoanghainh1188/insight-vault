@@ -2,8 +2,11 @@ import { STUDIO_CONTEXT_BUDGET } from "./constants";
 
 // 105 — ngân sách ký tự Studio theo CỬA SỔ NGỮ CẢNH thật của model (ADR 2026-10-07-studio-large-clarify). Thuần.
 
-/** Trần num_ctx cho Ollama — cửa sổ lớn tốn RAM/VRAM tỉ lệ thuận; giữ vừa máy cá nhân. */
-export const OLLAMA_MAX_NUM_CTX = 32768;
+/**
+ * Trần num_ctx cho Ollama — KV cache tốn RAM/VRAM tỉ lệ thuận (model 8B @32k ≈ 4GB+), prefill prompt lớn chậm trên
+ * máy cá nhân. 16K ≈ 33.000 ký tự tiếng Việt mỗi lượt (gấp đôi ngân sách cũ) — vượt thì map-reduce (review 105).
+ */
+export const OLLAMA_MAX_NUM_CTX = 16384;
 /** Trần ký tự cho provider online (cửa sổ rất lớn) — giới hạn chi phí/độ trễ trên key của người dùng. */
 export const ONLINE_MAX_CHARS = 120_000;
 /** Hệ số ký tự/token THẬN TRỌNG cho tiếng Việt (tokenizer chia nhỏ chữ có dấu). */

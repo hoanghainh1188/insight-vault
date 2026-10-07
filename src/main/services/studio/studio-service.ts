@@ -77,13 +77,14 @@ export function createStudioService(deps: StudioServiceDeps) {
     const chat = (messages: ChatMessage[]): Promise<string> =>
       deps.chat(messages, chatOpts);
 
-    // Vừa ngân sách ⇒ 1 lượt như cũ. Vượt ⇒ map-reduce (ném nếu runtime chưa sẵn sàng → bubble lên, không bịa).
-    const single = buildBalancedContext(groups, ctx.budget);
+    // Vừa ngân sách (theo TỔNG độ dài thật — không theo round-robin, vốn nhận chunk đầu mọi nguồn bất chấp ngân
+    // sách) ⇒ 1 lượt như cũ. Vượt ⇒ map-reduce (ném nếu runtime chưa sẵn sàng → bubble lên, không bịa).
+    const single = buildBalancedContext(groups, Number.POSITIVE_INFINITY);
     let raw: string;
     let map = single.map;
     let parts = 1;
     let truncated = false;
-    if (single.map.size >= totalChunks) {
+    if (single.contextText.length <= ctx.budget) {
       raw = await chat([
         { role: "system", content: systemPromptFor(kind) },
         { role: "user", content: single.contextText },

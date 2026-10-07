@@ -74,27 +74,69 @@ export function packBatches<T extends { text: string }>(
 const joined = (items: { text: string }[]): string =>
   items.map((i) => i.text).join("\n\n");
 
-/** Ghi chú → chỉ giữ dòng có ít nhất 1 [n] hợp lệ theo `map` (gỡ số bịa / ngoài lô). */
-function cleanNotes(raw: string, map: Map<number, RetrievedChunk>): string[] {
-  const { answer } = postprocessCitations(raw, map);
+/** Tách chip gộp "[1, 2]" / "[1,2,3]" thành "[1] [2]" — model hay viết gộp; regex hậu kiểm chỉ khớp [n]. */
+function splitGroupedCitations(text: string): string {
+  return text.replace(/\[(\d+(?:\s*,\s*\d+)+)\]/g, (_w, list: string) =>
+    list
+      .split(",")
+      .map((d) => `[${d.trim()}]`)
+      .join(" "),
+  );
+}
+
+/** Bảng con: chỉ các n THỰC SỰ có mặt trong `text` (đầu vào của bước đó). */
+function subsetIn(
+  text: string,
+  map: Map<number, RetrievedChunk>,
+): Map<number, RetrievedChunk> {
+  const out = new Map<number, RetrievedChunk>();
+  for (const m of text.matchAll(/\[(\d+)\]/g)) {
+    const n = Number(m[1]);
+    const rc = map.get(n);
+    if (rc) out.set(n, rc);
+  }
+  return out;
+}
+
+/** Ghi chú → chỉ giữ dòng có ít nhất 1 [n] hợp lệ theo `allowed` (gỡ số bịa / ngoài đầu vào của bước). */
+function cleanNotes(
+  raw: string,
+  allowed: Map<number, RetrievedChunk>,
+): string[] {
+  const { answer } = postprocessCitations(splitGroupedCitations(raw), allowed);
   return answer
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => /\[\d+\]/.test(l));
 }
 
-/** Rút gọn ghi chú theo lô tới khi vừa ngân sách (tối đa MAX_CONDENSE_ROUNDS vòng). */
+/** Gom ghi chú tham lam cho vừa ngân sách (phần dư bị bỏ ⇒ caller đánh dấu truncated). */
+function fitNotes(notes: string[], budget: number): string[] {
+  const out: string[] = [];
+  let used = 0;
+  for (const n of notes) {
+    if (used + n.length + 1 > budget) break;
+    out.push(n);
+    used += n.length + 1;
+  }
+  return out;
+}
+
+/**
+ * Rút gọn ghi chú theo lô tới khi vừa ngân sách (tối đa MAX_CONDENSE_ROUNDS vòng). Mỗi lô chỉ chấp nhận [n] CÓ
+ * trong ghi chú đầu vào của lô đó. Vẫn quá dài sau các vòng ⇒ cắt cho vừa và báo `cut`.
+ */
 async function condense(
   notes: string[],
   budget: number,
   map: Map<number, RetrievedChunk>,
   chat: Chat,
-): Promise<string[]> {
+): Promise<{ notes: string[]; cut: boolean }> {
+  const size = (ns: string[]): number => ns.join("\n").length;
   let cur = notes;
   for (
     let round = 0;
-    round < MAX_CONDENSE_ROUNDS &&
-    joined(cur.map((text) => ({ text }))).length > budget;
+    round < MAX_CONDENSE_ROUNDS && size(cur) > budget;
     round += 1
   ) {
     const next: string[] = [];
@@ -102,16 +144,18 @@ async function condense(
       cur.map((text) => ({ text })),
       budget,
     )) {
+      const input = batch.map((b) => b.text).join("\n");
       const raw = await chat([
         { role: "system", content: CONDENSE_PROMPT },
-        { role: "user", content: batch.map((b) => b.text).join("\n") },
+        { role: "user", content: input },
       ]);
-      next.push(...cleanNotes(raw, map));
+      next.push(...cleanNotes(raw, subsetIn(input, map)));
     }
     if (next.length === 0) break; // model trả rỗng ⇒ giữ ghi chú cũ (không mất nội dung)
     cur = next;
   }
-  return cur;
+  if (size(cur) <= budget) return { notes: cur, cut: false };
+  return { notes: fitNotes(cur, budget), cut: true };
 }
 
 export interface MapReduceInput {
@@ -126,11 +170,11 @@ export interface MapReduceInput {
 export interface MapReduceOutput {
   /** Câu trả lời thô của bước cuối (còn [n] — caller hậu kiểm bằng `map`). */
   raw: string;
-  /** Bảng n → đoạn thật TOÀN CỤC. */
+  /** Bảng n → đoạn thật — CHỈ các đoạn có trong ghi chú đưa vào bước cuối (hậu kiểm + dự phòng citation). */
   map: Map<number, RetrievedChunk>;
   /** Số phần (lượt map) đã tổng hợp. */
   parts: number;
-  /** true khi vượt số lượt map tối đa (phần cuối tài liệu không được tổng hợp). */
+  /** true khi có phần tài liệu không được tổng hợp (vượt số lượt, lô không trích được, ghi chú bị cắt). */
   truncated: boolean;
 }
 
@@ -146,28 +190,50 @@ export async function runMapReduce({
   const batches = allBatches.slice(0, maxMapCalls);
 
   let notes: string[] = [];
+  let emptyBatches = 0;
   for (const batch of batches) {
+    const input = joined(batch);
     const batchMap = new Map(
       batch.map((b) => [b.n, map.get(b.n)!] as [number, RetrievedChunk]),
     );
-    const raw = await chat([
+    const messages: ChatMessage[] = [
       { role: "system", content: MAP_PROMPT },
-      { role: "user", content: joined(batch) },
-    ]);
-    notes.push(...cleanNotes(raw, batchMap));
+      { role: "user", content: input },
+    ];
+    // Thử lại 1 lần khi lỗi tạm (Ollama vừa nạp lại…) hoặc ghi chú không có [n] hợp lệ — không mất cả lượt tạo.
+    let got: string[] = [];
+    for (let attempt = 0; attempt < 2 && got.length === 0; attempt += 1) {
+      try {
+        got = cleanNotes(await chat(messages), batchMap);
+      } catch (e) {
+        if (attempt === 1) throw e;
+      }
+    }
+    if (got.length === 0) emptyBatches += 1;
+    notes.push(...got);
+  }
+  if (notes.length === 0) {
+    // Không để bước cuối viết từ đầu vào rỗng (sẽ bịa) — báo rõ cho người dùng.
+    throw new Error(
+      "Mô hình không trích được ghi chú kèm trích dẫn từ tài liệu. Vui lòng thử lại hoặc chọn mô hình khác.",
+    );
   }
 
-  notes = await condense(notes, budget, map, chat);
+  const condensed = await condense(notes, budget, map, chat);
+  notes = condensed.notes;
+  const finalInput = notes.join("\n");
 
   const raw = await chat([
     { role: "system", content: `${systemPromptFor(kind)}\n\n${FROM_NOTES}` },
-    { role: "user", content: notes.join("\n") },
+    { role: "user", content: finalInput },
   ]);
 
   return {
     raw,
-    map,
+    // Bước cuối CHỈ được trích các đoạn có trong ghi chú nó nhận — không phải mọi đoạn của notebook.
+    map: subsetIn(finalInput, map),
     parts: batches.length,
-    truncated: allBatches.length > batches.length,
+    truncated:
+      allBatches.length > batches.length || emptyBatches > 0 || condensed.cut,
   };
 }

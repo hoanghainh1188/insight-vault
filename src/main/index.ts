@@ -52,7 +52,7 @@ import {
   pickProvider as pickProviderFor,
   type AiTarget,
 } from "./services/ai-runtime/ai-target";
-import { studioContextFor } from "./services/studio/context-window";
+import { numCtxFor, studioContextFor } from "./services/studio/context-window";
 import { runReindex, needsReindex } from "./services/embedding/reindex-runner";
 import { recommendChatModel } from "./services/ai/model-recommend";
 import { checkOllama } from "./services/ai/ollama-health";
@@ -327,6 +327,16 @@ app
     // 098 (ADR online-fallback-clarify): đích AI theo lượt — "local" lấy thẳng Ollama, không đổi provider đang bật.
     const pickProvider = (target: AiTarget) =>
       pickProviderFor(aiRuntime.registry, target);
+    // 105 (review S5): CÙNG num_ctx cho mọi lượt chat Ollama (hỏi đáp + Studio). Ollama nạp lại model khi num_ctx đổi
+    // ⇒ dùng chung tránh nạp lại mỗi lần chuyển Chat ↔ Studio; hỏi đáp cũng không bị cắt ở cửa sổ mặc định nhỏ.
+    const chatNumCtx = async (
+      target: AiTarget,
+    ): Promise<number | undefined> => {
+      const p = pickProvider(target);
+      if (p.id !== "ollama") return undefined;
+      const tokens = (await p.contextTokens?.().catch(() => null)) ?? null;
+      return numCtxFor(tokens) ?? undefined;
+    };
 
     const makeRagService = (target: AiTarget) =>
       createRagService({
@@ -355,13 +365,28 @@ app
             question,
             history,
             async (messages) =>
-              (await pickProvider(target).chat({ messages })).content,
+              (
+                await pickProvider(target).chat({
+                  messages,
+                  numCtx: await chatNumCtx(target),
+                })
+              ).content,
           ),
         chat: async (messages) =>
-          (await pickProvider(target).chat({ messages })).content,
+          (
+            await pickProvider(target).chat({
+              messages,
+              numCtx: await chatNumCtx(target),
+            })
+          ).content,
         // Streaming (039): cùng provider active, truyền onToken/signal xuống chat.
         chatStream: async (messages, opts) =>
-          (await pickProvider(target).chat({ messages }, opts)).content,
+          (
+            await pickProvider(target).chat(
+              { messages, numCtx: await chatNumCtx(target) },
+              opts,
+            )
+          ).content,
         saveTurn: (nb, userContent, assistant) =>
           chatRepo.saveTurn(nb, userContent, assistant),
       });

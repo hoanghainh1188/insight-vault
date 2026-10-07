@@ -145,3 +145,124 @@ describe("runMapReduce", () => {
     expect(postprocessCitations(out.raw, out.map).citations).toHaveLength(1);
   });
 });
+
+describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
+  it("bước cuối viết số HỢP LỆ TOÀN CỤC nhưng KHÔNG có trong ghi chú ⇒ bị gỡ (không trỏ đoạn model chưa đọc)", async () => {
+    let seenFinal: number[] = [];
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      const sys = messages[0].content;
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      if (sys.startsWith("Bạn trích GHI CHÚ")) return `- ý [${ns[0]}]`;
+      seenFinal = ns;
+      return `Kết luận [${ns[0]}] và [2].`; // [2] có trong notebook nhưng không có trong ghi chú
+    });
+    const out = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat,
+    });
+    expect(seenFinal).not.toContain(2);
+    const { citations } = postprocessCitations(out.raw, out.map);
+    expect(citations.map((c) => c.n)).toEqual([seenFinal[0]]);
+  });
+
+  it("chip dạng gộp [1, 2] trong ghi chú được tách ra (không mất ý)", async () => {
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      const sys = messages[0].content;
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      if (sys.startsWith("Bạn trích GHI CHÚ"))
+        return `- ý chung [${ns[0]}, ${ns[1]}]`;
+      return `Kết luận ${ns.map((n) => `[${n}]`).join(" ")}.`;
+    });
+    const out = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat,
+    });
+    expect(
+      postprocessCitations(out.raw, out.map).citations.length,
+    ).toBeGreaterThan(out.parts);
+  });
+
+  it("mọi lô không trích được ghi chú có [n] ⇒ ném lỗi rõ (không để bước cuối bịa)", async () => {
+    const chat = vi.fn(async () => "Không có gì để ghi chú.");
+    await expect(
+      runMapReduce({ kind: "summary", groups: groups(3), budget: 900, chat }),
+    ).rejects.toThrow(/trích dẫn/);
+    expect(chat).toHaveBeenCalledTimes(3 * 2); // mỗi lô thử lại 1 lần rồi mới bỏ
+  });
+
+  it("một lô rỗng ⇒ đánh dấu truncated (phần tài liệu đó không được tổng hợp)", async () => {
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      const sys = messages[0].content;
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      // lô đầu (đoạn [1]) luôn không trích được — kể cả lần thử lại
+      if (sys.startsWith("Bạn trích GHI CHÚ"))
+        return ns[0] === 1 ? "rỗng" : `- ý [${ns[0]}]`;
+      return `Kết luận ${ns.map((n) => `[${n}]`).join(" ")}.`;
+    });
+    const out = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat,
+    });
+    expect(out.truncated).toBe(true);
+  });
+
+  it("một lượt map lỗi ⇒ thử lại 1 lần rồi chạy tiếp", async () => {
+    let failed = false;
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      if (messages[0].content.startsWith("Bạn trích GHI CHÚ")) {
+        if (!failed) {
+          failed = true;
+          throw new Error("Ollama tạm lỗi");
+        }
+        return `- ý [${ns[0]}]`;
+      }
+      return `Kết luận [${ns[0]}].`;
+    });
+    const out = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat,
+    });
+    expect(out.truncated).toBe(false);
+    expect(postprocessCitations(out.raw, out.map).citations).toHaveLength(1);
+  });
+
+  it("rút gọn: [n] không thuộc lô ghi chú đầu vào bị gỡ; vẫn quá dài sau các vòng ⇒ cắt + truncated", async () => {
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      const sys = messages[0].content;
+      const input = messages[1].content;
+      const ns = [...input.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1]));
+      // model "không chịu rút gọn" + bịa thêm [2] (có trong notebook nhưng KHÔNG có trong ghi chú)
+      if (sys.startsWith("Rút gọn")) return `${input}\n- bịa [2]`;
+      if (sys.startsWith("Bạn trích GHI CHÚ"))
+        return `- ${"x ".repeat(300)}[${ns[0]}]`;
+      return `Kết luận ${ns.map((n) => `[${n}]`).join(" ")}.`;
+    });
+    const out = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat,
+    });
+    expect(out.truncated).toBe(true);
+    const finalUser = (chat.mock.calls.at(-1)![0] as ChatMessage[])[1].content;
+    expect(finalUser.length).toBeLessThanOrEqual(900);
+    expect(finalUser).not.toContain("[2]");
+  });
+});

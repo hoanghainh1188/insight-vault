@@ -31,3 +31,17 @@
 - Giới hạn số lượt map; vượt ⇒ vẫn `truncated` (minh bạch). UI ghi "Tổng hợp từ N phần".
 - _Loại bỏ:_ chỉ ngân sách theo model (notebook vượt cửa sổ vẫn cắt); chỉ map-reduce với 16.000 (chậm không cần
   thiết với notebook vừa-lớn).
+
+## Điều chỉnh sau review (2026-10-07)
+
+- **Hậu kiểm theo ĐẦU VÀO của từng bước** (không theo bảng toàn cục): lượt map chỉ nhận [n] của lô; lượt rút gọn chỉ
+  nhận [n] có trong ghi chú đầu vào; bước cuối chỉ nhận [n] có trong ghi chú nó nhận. Model không thể trích đoạn
+  nó chưa đọc. Dự phòng citation (khi bước cuối không chèn [n]) chỉ gồm các đoạn có trong ghi chú — không phải cả
+  notebook. Chip gộp "[1, 2]" được tách.
+- Mọi lô không trích được ghi chú có [n] ⇒ báo lỗi (không để bước cuối viết từ đầu vào rỗng). Lô lỗi tạm / rỗng ⇒
+  thử lại 1 lần; vẫn rỗng hoặc ghi chú phải cắt cho vừa ⇒ `truncated`.
+- Chọn 1 lượt hay map-reduce theo **tổng độ dài thật** (round-robin cũ nhận chunk đầu mọi nguồn bất chấp ngân sách).
+- **Trần num_ctx 16.384** (KV cache/RAM + thời gian prefill trên máy cá nhân); lượt có num_ctx dùng timeout 5 phút.
+- **Cùng num_ctx cho mọi lượt chat Ollama** (hỏi đáp + Studio): Ollama nạp lại model khi num_ctx đổi; hỏi đáp cũng
+  không bị cắt ở cửa sổ mặc định nhỏ.
+- Chưa có tiến độ i/N cho map-reduce (UI chỉ "Đang tạo…" + thông báo trình đọc màn hình bắt đầu/xong) — để sau.

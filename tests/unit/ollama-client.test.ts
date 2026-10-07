@@ -142,6 +142,7 @@ describe("resolveBaseUrl (Constitution I: chỉ localhost)", () => {
     await c.chat({ model: "m", messages: [], numCtx: 16384 });
     await c.chat({ model: "m", messages: [] });
     expect(bodies[0].options).toEqual({ num_ctx: 16384 });
+    // gửi cả model + name cho /api/show (Ollama bản cũ dùng 'name') — kiểm ở test contextLength
     expect(bodies[1].options).toBeUndefined();
   });
 
@@ -184,5 +185,22 @@ describe("resolveBaseUrl (Constitution I: chỉ localhost)", () => {
     );
     expect(seen.length).toBeGreaterThan(0);
     expect(seen.every((m) => m === "local")).toBe(true);
+  });
+
+  it("105: lượt có numCtx (prompt lớn) dùng timeout dài; contextLength gửi cả model + name", async () => {
+    const seen: string[] = [];
+    const c = createOllamaClient({
+      chatTimeoutMs: 1,
+      fetchFn: fakeFetch((_u, init) => {
+        seen.push(String(init?.body));
+        return { message: { content: "ok" } };
+      }),
+    });
+    // timeout 1ms nhưng lượt numCtx dùng LARGE_CHAT_TIMEOUT_MS ⇒ không bị huỷ
+    await expect(
+      c.chat({ model: "m", messages: [], numCtx: 8192 }),
+    ).resolves.toEqual({ content: "ok" });
+    await c.contextLength("qwen");
+    expect(JSON.parse(seen[1])).toEqual({ model: "qwen", name: "qwen" });
   });
 });

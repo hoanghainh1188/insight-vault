@@ -74,4 +74,14 @@ describe("OllamaProvider", () => {
     selection = sel({ chatModel: null as unknown as string });
     expect(await p.contextTokens()).toBeNull();
   });
+
+  it("105: không đọc được cửa sổ (Ollama chưa chạy) ⇒ KHÔNG nhớ null, lần sau đọc lại", async () => {
+    const contextLength = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(8192);
+    const p = new OllamaProvider(makeClient({ contextLength }), () => sel());
+    expect(await p.contextTokens()).toBeNull();
+    expect(await p.contextTokens()).toBe(8192);
+  });
 });

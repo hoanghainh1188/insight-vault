@@ -56,6 +56,8 @@ export interface OllamaClientOptions {
 
 // Sinh câu trả lời LLM có thể mất hàng chục giây (model local 7B+) → timeout dài hơn nhiều ping (issue #15).
 const DEFAULT_CHAT_TIMEOUT_MS = 120_000;
+/** 105: lượt có prompt lớn (num_ctx tường minh — Studio) — nạp/prefill vài chục nghìn token trên máy cá nhân lâu. */
+export const LARGE_CHAT_TIMEOUT_MS = 300_000;
 const DEFAULT_EMBED_TIMEOUT_MS = 60_000;
 
 export interface OllamaClient {
@@ -180,7 +182,9 @@ export function createOllamaClient(
             ...ctxOptions(req),
           }),
         },
-        chatTimeoutMs,
+        req.numCtx
+          ? Math.max(chatTimeoutMs, LARGE_CHAT_TIMEOUT_MS)
+          : chatTimeoutMs,
       );
       if (!res.ok) throw new Error(`Ollama chat lỗi: ${res.status}`);
       const data = (await res.json()) as { message?: { content?: string } };
@@ -192,7 +196,8 @@ export function createOllamaClient(
         const res = await call("/api/show", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model }),
+          // gửi cả `name` cho Ollama bản cũ
+          body: JSON.stringify({ model, name: model }),
         });
         if (!res.ok) return null;
         return parseOllamaContextLength(await res.json());
