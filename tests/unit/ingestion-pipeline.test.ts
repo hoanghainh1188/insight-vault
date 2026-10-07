@@ -466,3 +466,57 @@ function harnessWithFile(path: string, content: string) {
   });
   return { pipeline, repo, vs };
 }
+
+describe("101 — chọn lại tệp gốc rồi thử lại", () => {
+  it("retry đọc ĐƯỜNG DẪN MỚI sau updateOrigin (không dùng đường dẫn cũ nhớ trong phiên)", async () => {
+    const db = openDatabase(":memory:");
+    runMigrations(db);
+    db.prepare(
+      "INSERT INTO notebook (id, name, color, created_at, updated_at) VALUES (?,?,?,?,?)",
+    ).run("nb1", "N", "#4F46E5", 1, 1);
+    let n = 0;
+    const repo = createSourceRepo(db, {
+      now: () => 1,
+      uuid: () => `id-${++n}`,
+    });
+    const files: Record<string, string> = { "/cu/doc.txt": bigText };
+    const reads: string[] = [];
+    let parseThrows = true;
+    const pipeline = createIngestionPipeline({
+      sourceRepo: repo,
+      vectorStore: fakeVectorStore().store,
+      getProvider: () => ({ embed: async () => ({ vector: [1, 2, 3] }) }),
+      isRuntimeReady: async () => true,
+      readFile: async (p) => {
+        reads.push(p);
+        if (!(p in files))
+          throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+        return enc(files[p]);
+      },
+      parseFile: async (_k, bytes) => {
+        if (parseThrows) throw new Error("parse lỗi");
+        return parseText(new TextDecoder().decode(bytes));
+      },
+      emit: () => {},
+    });
+    const { source } = await pipeline.add({
+      notebookId: "nb1",
+      kind: "txt",
+      filePath: "/cu/doc.txt",
+    });
+    await pipeline.whenIdle();
+    expect(repo.getById(source.id)!.status).toBe("error");
+
+    // Người dùng chuyển tệp sang chỗ mới rồi "Chọn lại tệp…" (relink cập nhật origin trong DB).
+    files["/moi/doc.txt"] = files["/cu/doc.txt"];
+    delete files["/cu/doc.txt"];
+    repo.updateOrigin(source.id, "/moi/doc.txt");
+    parseThrows = false;
+    reads.length = 0;
+
+    await pipeline.retry(source.id);
+    await pipeline.whenIdle();
+    expect(reads).toEqual(["/moi/doc.txt"]);
+    expect(repo.getById(source.id)!.status).toBe("ready");
+  });
+});

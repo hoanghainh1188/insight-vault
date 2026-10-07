@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRelink } from "../sources/useRelink";
 import { buildSegments } from "./highlight";
 import type { SourceViewerState } from "./useSourceViewer";
 
 // Trình xem nguồn (prototype S4) — OVERLAY panel phủ trên Workspace (A3). Render text + highlight đoạn
 // trích dẫn (buildSegments — thuần), auto-scroll tới đoạn. Render bằng React text node (không innerHTML).
+
+const mediaSrcFor = (sourceId: string, rev: number): string =>
+  `iv-media://source/${encodeURIComponent(sourceId)}${rev > 0 ? `?r=${rev}` : ""}`;
 
 export function SourceViewer({
   viewer,
@@ -17,6 +21,14 @@ export function SourceViewer({
   const audioRef = useRef<HTMLMediaElement | null>(null); // 049 audio + 051 video (cùng HTMLMediaElement)
   const [currentPage, setCurrentPage] = useState(1);
   const [audioError, setAudioError] = useState(false); // 049: file gốc mất/không phát được
+  // 101: chọn lại tệp gốc ⇒ tăng rev để <audio>/<video>/<img> nạp lại (src đổi).
+  const [mediaRev, setMediaRev] = useState(0);
+  const mediaSrc = (sourceId: string): string =>
+    mediaSrcFor(sourceId, mediaRev);
+  const onRelinked = (): void => {
+    setAudioError(false);
+    setMediaRev((r) => r + 1);
+  };
 
   const citation = target?.citation ?? null;
   const segments = useMemo(() => {
@@ -165,7 +177,7 @@ export function SourceViewer({
                 preload="metadata"
                 className="vvideo-el"
                 data-testid="viewer-video-el"
-                src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
+                src={mediaSrc(target.sourceId)}
                 onError={() => setAudioError(true)}
               />
             ) : (
@@ -176,7 +188,7 @@ export function SourceViewer({
                 controls
                 preload="metadata"
                 className="vaudio-el"
-                src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
+                src={mediaSrc(target.sourceId)}
                 onError={() => setAudioError(true)}
               />
             )}
@@ -187,6 +199,13 @@ export function SourceViewer({
                 được.
               </p>
             )}
+            {audioError && (
+              <RelinkPrompt
+                key={target.sourceId}
+                sourceId={target.sourceId}
+                onRelinked={onRelinked}
+              />
+            )}
           </div>
         )}
         {!loading && !missing && content && isImage && target && (
@@ -195,7 +214,7 @@ export function SourceViewer({
               <img
                 className="vimage-el"
                 data-testid="viewer-image-el"
-                src={`iv-media://source/${encodeURIComponent(target.sourceId)}`}
+                src={mediaSrc(target.sourceId)}
                 alt={content.title}
                 onError={() => setAudioError(true)}
               />
@@ -217,6 +236,13 @@ export function SourceViewer({
                 Không mở được ảnh gốc (có thể đã bị xoá hoặc di chuyển). Bản bóc
                 băng bên dưới vẫn xem được.
               </p>
+            )}
+            {audioError && (
+              <RelinkPrompt
+                key={target.sourceId}
+                sourceId={target.sourceId}
+                onRelinked={onRelinked}
+              />
             )}
           </div>
         )}
@@ -258,5 +284,36 @@ export function SourceViewer({
         )}
       </div>
     </aside>
+  );
+}
+
+/**
+ * 101: nút "Chọn lại tệp gốc…" + giải thích khi tệp chọn không khớp. Hook nằm TRONG component và gắn `key=sourceId`
+ * ⇒ thông báo của nguồn trước không dính sang nguồn khác. Thông báo đã được announce() đọc (091) nên không đặt
+ * role=alert (tránh đọc 2 lần).
+ */
+function RelinkPrompt({
+  sourceId,
+  onRelinked,
+}: {
+  sourceId: string;
+  onRelinked: () => void;
+}): JSX.Element {
+  const { relink, busy, message } = useRelink();
+  return (
+    <div className="vrelink">
+      <button
+        type="button"
+        className="btn-outline-sm"
+        disabled={busy}
+        onClick={() =>
+          void relink(sourceId).then((s) => s === "ok" && onRelinked())
+        }
+        data-testid="viewer-relink"
+      >
+        {busy ? "Đang kiểm tra tệp…" : "Chọn lại tệp gốc…"}
+      </button>
+      {message && <p className="vrelink-msg">{message}</p>}
+    </div>
   );
 }
