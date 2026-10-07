@@ -160,9 +160,9 @@ chậm hơn).
   kênh mới được **whitelist ở `preload`, không nhận tham số** (main tự quyết bảng/đường dẫn), tôn trọng `vaultLock`;
   dòng dung lượng chỉ là trường chỉ-đọc bổ sung vào `app:getStorageInfo` hiện có (không kênh mới).
 - **Quyết định hoãn ANN:** ghi một ADR mới kèm số liệu đo (số vector, độ trễ brute-force theo quy mô, so sánh có/không
-  index, kết quả index bitmap làm chậm), nêu ngưỡng/điều kiện xem lại việc dùng ANN, và thay thế đoạn "IVF_PQ lazily
-  > 50k" của `2026-07-11-lancedb-integration.md`; mọi quyết định của clarify sẽ chốt ở
-  > `docs/04-decisions/2026-10-07-vector-maintenance-clarify.md`.
+  index, kết quả index bitmap làm chậm), nêu ngưỡng/điều kiện xem lại việc dùng ANN, và thay thế đoạn "IVF_PQ lazily khi
+  vượt 50k" của `2026-07-11-lancedb-integration.md`; mọi quyết định của clarify sẽ chốt ở
+  `docs/04-decisions/2026-10-07-vector-maintenance-clarify.md`.
 
 **Ràng buộc bất biến phải giữ (Constitution):**
 
