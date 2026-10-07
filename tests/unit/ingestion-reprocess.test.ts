@@ -62,6 +62,14 @@ function harness() {
       return new Map();
     },
     async dropTable() {},
+    // 116: bảo trì kho — mock không có bảng.
+    async stats() {
+      return null;
+    },
+    async optimize() {
+      return null;
+    },
+    activeReads: () => 0,
     async close() {},
   };
   const events: SourceProgressEvent[] = [];

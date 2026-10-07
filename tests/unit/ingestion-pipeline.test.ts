@@ -44,6 +44,14 @@ function fakeVectorStore() {
     async dropTable() {
       rows.clear();
     },
+    // 116: bảo trì kho — mock không có bảng.
+    async stats() {
+      return null;
+    },
+    async optimize() {
+      return null;
+    },
+    activeReads: () => 0,
     async close() {},
   };
   return { store, rows };
