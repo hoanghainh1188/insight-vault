@@ -1,113 +1,113 @@
-# InsightVault — Trợ lý tri thức cục bộ (local-first)
+# InsightVault — a local-first knowledge assistant
 
-Ứng dụng **desktop Electron** tổng hợp tri thức bằng AI **chạy cục bộ** (kiểu NotebookLM nhưng offline).
-Nạp tài liệu vào các "notebook", app xử lý & lập chỉ mục **ngay trên máy**, rồi hỏi đáp / tóm tắt bằng
-LLM local với **trích dẫn nguồn kiểm chứng được**. Có tùy chọn dùng AI online bằng API key của chính
-người dùng. Chạy trên **macOS + Windows**.
+**English** · [Tiếng Việt](README.vi.md)
 
-> Dành cho người xử lý nhiều tài liệu và coi trọng quyền riêng tư — nhà nghiên cứu, luật sư, nhà báo,
-> sinh viên, kỹ sư — đặc biệt với dữ liệu nhạy cảm không muốn tải lên máy chủ bên thứ ba.
+InsightVault is a **desktop app (macOS + Windows)** for asking questions about your own documents with AI —
+like NotebookLM, but **running entirely on your machine**. Add documents to a notebook; InsightVault parses
+and indexes them locally, then answers questions and writes summaries with a local LLM. Every answer carries
+**verifiable citations**: click a `[n]` chip and the source opens at the exact page, passage or timestamp,
+highlighted.
 
-## Điểm khác biệt cốt lõi (bất biến)
+> Built for people who work with many documents and care about privacy — researchers, lawyers, journalists,
+> students, engineers — especially with sensitive material you don't want to upload to a third-party server.
 
-- **Local-first:** dữ liệu không rời máy ở chế độ mặc định — lý do sản phẩm tồn tại.
-- **Kiểm chứng được:** mọi câu trả lời trích dẫn về đúng đoạn nguồn gốc (trang / timestamp / đoạn).
-- **Offline & tự chủ:** chạy được không cần Internet; người dùng kiểm soát mô hình và chi phí.
+## Core principles
 
-### Sao lưu & khôi phục
+- **Local-first** — your data never leaves your machine in the default mode.
+- **Verifiable** — every answer cites the exact source passage (page / timestamp / text span), and the
+  model is not allowed to make up citations: if nothing in your sources answers the question, it says so.
+- **Offline & self-sufficient** — works without an Internet connection; you control the models and the cost.
 
-**Cài đặt → Lưu trữ cục bộ → Sao lưu… / Khôi phục…** xuất toàn bộ vault (notebook, nguồn đã xử lý, lịch sử chat,
-kết quả Studio, chỉ mục, cấu hình) ra 1 file `.ivbackup`, tuỳ chọn **mã hoá bằng mật khẩu** (AES-256-GCM, quên
-mật khẩu = không mở được). Khôi phục **thay toàn bộ** vault hiện tại — app tự sao lưu vault cũ vào
-`<thư mục dữ liệu>/backups/` (giữ 3 bản) rồi khởi động lại. Bản sao lưu **không gồm** file gốc (PDF, audio,
-video, ảnh — phát/xem media cần file gốc còn đúng chỗ), mô hình AI đã tải và khoá API online (nhập lại trên máy
-mới). Toàn bộ chạy cục bộ, không kết nối mạng.
+## Features
 
-Chi tiết yêu cầu sản phẩm & ràng buộc: [`docs/OVERVIEW.md`](docs/OVERVIEW.md).
-Nguyên tắc kỹ thuật bất di bất dịch: [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
+- **Sources:** PDF (reading order and tables preserved, multi-column layouts), `.docx`, `.txt`, `.md`,
+  web pages (URL), **audio** (`.wav` `.mp3` `.flac` `.ogg` `.m4a` `.aac` — transcribed locally with Whisper),
+  **video** (`.mp4` `.mov` `.webm` `.mkv`), **images** (`.png` `.jpg` `.webp` `.bmp` `.tiff` — local OCR,
+  Vietnamese + English).
+- **Chat with citations** — streamed answers, hybrid retrieval (vector + full-text), "grounded" mode that
+  refuses to answer outside your sources, or "extended" mode that is clearly labelled.
+- **Source viewer** — opens the cited passage highlighted; audio/video jump to the cited timestamp; images
+  show the recognised text region.
+- **Studio** — summary, key points, FAQ and outline across a whole notebook (large notebooks are processed
+  in parts while keeping citations exact). Copy or export to Markdown.
+- **Optional online AI** — use Claude, Gemini or OpenAI with **your own API key** (stored in the OS
+  keychain). A privacy badge shows whenever anything is sent off the machine; one click falls back to the
+  local model.
+- **Backup & restore** — export the whole vault to one `.ivbackup` file, optionally encrypted with a
+  password (AES-256-GCM).
+- Full-text search across sources, chat history, keyboard shortcuts, screen-reader announcements.
 
-## Tech stack
+> The user interface is currently **Vietnamese only**; English UI is planned.
 
-| Tầng                    | Công nghệ                                               |
-| ----------------------- | ------------------------------------------------------- |
-| Desktop shell           | Electron + electron-vite                                |
-| UI                      | React 18 + TypeScript + Vite · Zustand · TanStack Query |
-| Metadata                | SQLite (better-sqlite3, main process)                   |
-| Vector store            | LanceDB (embedded)                                      |
-| LLM/embedding local     | Ollama (qua `ProviderRegistry`)                         |
-| Trích dẫn/viewer        | pdf.js (map chip `[n]` → trang/đoạn)                    |
-| Secret (API key online) | keytar (OS keychain)                                    |
-| Test                    | Vitest (unit) · Playwright `_electron` (e2e)            |
+## Install
 
-Quyết định stack đầy đủ: [`docs/04-decisions/2026-07-10-tech-stack.md`](docs/04-decisions/2026-07-10-tech-stack.md).
+1. Download the latest installer from [Releases](https://github.com/hoanghainh1188/insight-vault/releases/latest):
+   `InsightVault-<version>-arm64.dmg` (macOS, Apple Silicon) or `InsightVault-<version>-Setup.exe` (Windows x64).
+2. Install [Ollama](https://ollama.com) and pull a chat model, for example `ollama pull qwen2.5:7b`
+   (the app suggests models that fit your RAM). Embeddings, transcription and OCR run inside the app —
+   their models are downloaded once on first use.
+3. The builds are **not code-signed yet**:
+   - macOS: right-click the app → **Open**, or run `xattr -dr com.apple.quarantine /Applications/InsightVault.app`.
+   - Windows: SmartScreen → **More info → Run anyway**.
 
-**Ranh giới bảo mật (bất biến):** renderer `sandbox`/`contextIsolation`/`nodeIntegration:false`; mọi truy
-cập FS/DB/model/mạng ở **main process**, expose qua `preload` contextBridge whitelisted; mặc định
-**không network egress**.
-
-## Bắt đầu (development)
+## Development
 
 ```bash
 npm install
-npm run dev        # mở cửa sổ Electron (HMR renderer)
+npm run dev        # Electron window with renderer HMR
 ```
 
-| Lệnh               | Việc                                             |
-| ------------------ | ------------------------------------------------ |
-| `npm run lint`     | prettier --check + eslint + tsc                  |
-| `npm test`         | Vitest unit + coverage (≥ 80% business logic)    |
-| `npm run build`    | electron-vite build (main/preload/renderer)      |
-| `npm run test:e2e` | Playwright `_electron` (cần bản build + display) |
+| Command                  | What it does                                           |
+| ------------------------ | ------------------------------------------------------ |
+| `npm run lint`           | prettier --check + eslint + tsc                        |
+| `npm test`               | Vitest unit tests + coverage (≥ 80% business logic)    |
+| `npm run build`          | lint + electron-vite build (main / preload / renderer) |
+| `npm run test:e2e`       | Playwright `_electron` (needs a build and a display)   |
+| `npm run eval:retrieval` | retrieval-quality evaluation on a public test corpus   |
+| `npm run dist`           | package installers with electron-builder               |
 
-> Lõi hỏi-đáp cần **Ollama** chạy local (feature `002-ai-runtime`). Vỏ ứng dụng (`001-app-shell`) chạy độc lập.
+### Tech stack
 
-## Cấu trúc dự án
+| Layer                  | Technology                                                         |
+| ---------------------- | ------------------------------------------------------------------ |
+| Desktop shell          | Electron + electron-vite                                           |
+| UI                     | React 18 + TypeScript + Vite · Zustand · TanStack Query            |
+| Metadata + full-text   | SQLite (FTS5), main process                                        |
+| Vector store           | LanceDB (embedded)                                                 |
+| Embeddings / ASR / OCR | transformers.js (multilingual-e5-small, Whisper) · tesseract.js    |
+| Chat LLM               | Ollama (local) · optional Claude / Gemini / OpenAI                 |
+| Parsing & viewer       | pdf.js · mammoth · Readability + turndown · ffmpeg (audio extract) |
+| Secrets                | keytar (OS keychain)                                               |
+| Tests                  | Vitest · Playwright `_electron`                                    |
+
+**Security boundary:** the renderer runs with `sandbox`, `contextIsolation` and no Node integration; all
+file-system, database, model and network access lives in the **main process** behind a whitelisted
+`preload` bridge. There is **no network egress by default**.
+
+### Project layout
 
 ```
 src/
-├── main/            # Electron main (Node): index, ipc/, services/<feature>/, logging
-├── preload/         # contextBridge API (typed, whitelisted)
-├── renderer/        # React: app/, features/<feature>/, shared/ (UI kit)
-└── shared/          # types + IPC channel contract (dùng chung main↔renderer)
-tests/               # unit/ (Vitest) · e2e/ (Playwright)
-docs/                # OVERVIEW, glossary, design gốc, decisions, intake, UI prototype
-specs/               # Spec Kit sinh mỗi feature (spec/plan/tasks/…)
-.specify/            # constitution + template Spec Kit
+├── main/        # Electron main process: ipc/, services/<feature>/
+├── preload/     # typed, whitelisted contextBridge API
+├── renderer/    # React: app/, features/<feature>/, shared/ (UI kit)
+└── shared/      # shared types + IPC channel contract
+tests/           # unit/ (Vitest) · e2e/ (Playwright) · eval/ (retrieval evaluation)
+docs/            # product overview, glossary, decisions (ADRs), feature intakes
+specs/           # per-feature spec / plan / tasks (GitHub Spec Kit)
 ```
 
-Cô lập theo feature: `src/main/services/<slug>/` + `src/renderer/features/<slug>/`.
+Design documents, decision records (ADRs) and feature specs are written in **Vietnamese**; the glossary
+[`docs/00-glossary.md`](docs/00-glossary.md) maps every domain term to its English name used in code.
 
-## Cách làm việc (spec-driven)
+## Contributing
 
-Dự án dùng **[GitHub Spec Kit](https://github.com/github/spec-kit)** + runbook `/design-to-code` để đi từ
-tài liệu thiết kế → spec → plan → tasks → code, kèm 4 subagent (`design-intake`, `code-reviewer`,
-`security-reviewer`, `glossary-steward`). Mỗi feature:
+Bug reports and ideas are welcome — issues can be written in English or Vietnamese.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-1. Tạo **GitHub issue** → branch `NNN-<slug>` (`NNN` = số issue, zero-pad ≥ 3 chữ số).
-2. Đặt tài liệu nguồn vào `docs/01-basic-design/<slug>/`, `docs/02-detail-design/<slug>/`,
-   `docs/03-ui/<slug>/` (UI reference — prototype/Figma).
-3. Chạy `/design-to-code` trong Claude Code và theo checkpoint.
+## License
 
-Quy ước & lộ trình pha: [`CLAUDE.md`](CLAUDE.md). Làm việc nhóm: [`docs/TEAM-WORKFLOW.md`](docs/TEAM-WORKFLOW.md).
+MIT — see [`LICENSE`](LICENSE).
 
-### Lộ trình (theo pha)
-
-**Pha 1 (MVP):** `001 app-shell` → `002 ai-runtime` → `003 notebooks` → `004 ingestion` →
-`005 rag-qa` ⭐ → `006 source-viewer` → `007 studio` → `008 online-provider`.
-**Pha 2:** `009 audio-video` (transcription) · `010 image` (OCR + vision).
-
-## Giấy phép
-
-MIT — xem [`LICENSE`](LICENSE).
-
-### Thành phần bên thứ ba
-
-- **ffmpeg** (đóng gói kèm qua `ffmpeg-static`, dùng để tách audio khỏi video ở Pha 2b): phát hành theo
-  **GPL**. Bản build + giấy phép nằm trong `node_modules/ffmpeg-static/` (`ffmpeg.LICENSE`) và được đưa vào
-  bản đóng gói. Khi phân phối InsightVault, thông báo giấy phép GPL của ffmpeg được kèm theo. _(Nếu sau này
-  làm tầng trả phí độc quyền, cân nhắc chuyển sang build ffmpeg LGPL — xem `docs/04-decisions/2026-07-13-video-clarify.md`.)_
-
----
-
-> Dự án này khởi tạo từ template **spec-driven-jp** (Spec Kit + đọc tài liệu thiết kế). Hạ tầng template
-> (`plugin/`, `.claude-plugin/`, CI `pipeline-config-check`) được giữ lại; nội dung đã chỉnh cho InsightVault.
+**Third-party:** ffmpeg is bundled via `ffmpeg-static` (used to extract audio from video) and is licensed
+under the **GPL**; its licence is shipped with the app (`node_modules/ffmpeg-static/ffmpeg.LICENSE`).
