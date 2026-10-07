@@ -10,6 +10,8 @@ export const CHUNK_OVERLAP = 150; // ký tự chồng lấn giữa 2 chunk liề
 export interface PageText {
   page: number | null;
   text: string;
+  /** 112: khoảng ký tự [start,end) của các bảng trong `text` (chỉ PDF có bố cục) — chunker không cắt ngang bảng. */
+  blocks?: { start: number; end: number }[];
 }
 
 /** Chunk nháp (chưa có id) — locator trỏ vào TOÀN văn bản (các trang nối bằng "\n\n"). */
@@ -43,8 +45,54 @@ function findBreak(text: string, from: number, to: number): number {
   return to;
 }
 
-/** Chia một chuỗi thành các range [start,end) ~size ký tự, overlap, cắt theo ranh giới. */
-function splitRanges(text: string, size: number, overlap: number): Range[] {
+type Block = { start: number; end: number };
+
+const inside = (b: Block, x: number): boolean => x > b.start && x < b.end;
+
+/**
+ * 112 (FR-008): điều chỉnh điểm cắt cho không rơi giữa bảng. Bảng ngắn (≤ size) ⇒ cắt trước bảng (nếu vẫn tiến) hoặc
+ * sau hết bảng; bảng dài ⇒ cắt tại ranh giới hàng (ngay sau "\n") gần nhất trong cửa sổ.
+ */
+function adjustEnd(
+  text: string,
+  pos: number,
+  end: number,
+  size: number,
+  blocks: Block[],
+): number {
+  const b = blocks.find((x) => inside(x, end));
+  if (!b) return end;
+  if (b.end - b.start <= size) return b.start > pos ? b.start : b.end;
+  const nl = text.lastIndexOf("\n", end - 1);
+  if (nl >= Math.max(pos, b.start)) return nl + 1;
+  const next = text.indexOf("\n", end);
+  return next >= 0 && next < b.end ? next + 1 : b.end;
+}
+
+/**
+ * Điểm bắt đầu chunk kế (sau overlap) rơi giữa bảng ⇒ bảng ngắn: dời về đầu bảng (nếu vẫn tiến) hoặc ngay sau bảng
+ * (chunk kế không mở đầu bằng nửa bảng mất hàng tiêu đề); bảng dài: dời về đầu hàng.
+ */
+function adjustStart(
+  text: string,
+  start: number,
+  pos: number,
+  size: number,
+  blocks: Block[],
+): number {
+  const b = blocks.find((x) => inside(x, start));
+  if (!b) return start;
+  if (b.end - b.start <= size) return b.start > pos ? b.start : b.end;
+  return Math.max(b.start, text.lastIndexOf("\n", start - 1) + 1);
+}
+
+/** Chia một chuỗi thành các range [start,end) ~size ký tự, overlap, cắt theo ranh giới (và không cắt giữa bảng). */
+function splitRanges(
+  text: string,
+  size: number,
+  overlap: number,
+  blocks: Block[] = [],
+): Range[] {
   const len = text.length;
   if (len === 0) return [];
   if (len <= size) return [{ start: 0, end: len }];
@@ -61,11 +109,17 @@ function splitRanges(text: string, size: number, overlap: number): Range[] {
       const minBreak = pos + Math.floor(size / 2);
       end = findBreak(text, minBreak, hardEnd);
       if (end <= pos) end = hardEnd; // an toàn: luôn tiến
+      if (blocks.length > 0) end = adjustEnd(text, pos, end, size, blocks);
     }
     ranges.push({ start: pos, end });
     if (end >= len) break;
     // Lùi lại overlap ký tự cho chunk kế; đảm bảo luôn tiến ít nhất 1.
-    pos = Math.max(end - overlap, pos + 1);
+    let next = Math.max(end - overlap, pos + 1);
+    if (blocks.length > 0) {
+      next = adjustStart(text, next, pos, size, blocks);
+      if (next <= pos) next = end;
+    }
+    pos = next;
   }
   return ranges;
 }
@@ -85,7 +139,7 @@ export function chunkPages(
   let ordinal = 0;
 
   pages.forEach((pg, idx) => {
-    for (const r of splitRanges(pg.text, size, overlap)) {
+    for (const r of splitRanges(pg.text, size, overlap, pg.blocks)) {
       drafts.push({
         ordinal: ordinal++,
         text: pg.text.slice(r.start, r.end),

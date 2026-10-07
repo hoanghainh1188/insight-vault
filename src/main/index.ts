@@ -46,6 +46,7 @@ import {
 } from "./services/crash-report/crash-fs";
 import { createCrashService } from "./services/crash-report/crash-service";
 import { createRelink } from "./services/ingestion/relink";
+import { createReprocessRequest } from "./services/ingestion/reprocess-request";
 import { pickSourceFile } from "./services/ingestion/relink-dialog";
 import { hashFileStreaming } from "./services/ingestion/ingestion";
 import {
@@ -308,6 +309,8 @@ app
       emit: emitProgress,
       // bật chỉ báo khi fetch URL (FR-019) / tải model lần đầu — 103: loại egress quyết định nhãn badge.
       setOnline: (online, kind) => setEgressActive(online, kind ?? "url"),
+      // 112: gọi lúc hoán đổi dữ liệu của "Xử lý lại" (sau khi vaultLock đã được tạo bên dưới).
+      isVaultLocked: () => vaultLock.isLocked(),
     });
 
     // 049 (2a-player): phục vụ file audio gốc cho <audio> qua iv-media:// (đọc file CHỈ main, tra sourceId→
@@ -431,7 +434,9 @@ app
     const vaultLock = createVaultLock({
       hasActiveSources: () =>
         ingestion.sourceRepo.listByStatus("queued").length > 0 ||
-        ingestion.sourceRepo.listByStatus("processing").length > 0,
+        ingestion.sourceRepo.listByStatus("processing").length > 0 ||
+        // 112: "Xử lý lại" giữ nguồn ở `ready` ⇒ phải hỏi pipeline (đang ghi vector/chunk mới).
+        ingestion.pipeline.isReprocessing(),
       isReindexing: () => reindex.inProgress,
     });
     const backupService = createBackupService({
@@ -525,6 +530,14 @@ app
         realpath: (p) => realpath(p),
         isLocked: () => vaultLock.isLocked(),
         log: logEvent,
+      }),
+      // 112: xử lý lại PDF — kiểm tệp gốc còn + cùng nội dung (cùng hàm băm lúc nạp) rồi xếp hàng.
+      reprocessSource: createReprocessRequest({
+        repo: ingestion.sourceRepo,
+        pipeline: ingestion.pipeline,
+        isVaultLocked: () => vaultLock.isLocked(),
+        fileExists: async (p) => existsSync(p),
+        hashFile: hashFileStreaming,
       }),
     });
 

@@ -31,11 +31,13 @@ export function SourceViewer({
   };
 
   const citation = target?.citation ?? null;
+  // 112 (FR-017): trích dẫn cũ — nguồn đã được xử lý lại (chunk của trích dẫn không còn) ⇒ KHÔNG tô sáng sai chỗ.
+  const stale = citation !== null && content?.citationValid === false;
   const segments = useMemo(() => {
     if (!content) return [];
     return buildSegments(
       content.text,
-      citation
+      citation && !stale
         ? {
             charStart: citation.locator.charStart,
             charEnd: citation.locator.charEnd,
@@ -43,7 +45,7 @@ export function SourceViewer({
         : null,
       content.pageBreaks,
     );
-  }, [content, citation]);
+  }, [content, citation, stale]);
 
   const firstHlIndex = segments.findIndex((s) => s.kind === "highlight");
   const isPdf =
@@ -60,11 +62,17 @@ export function SourceViewer({
 
   // Auto-scroll: tới đoạn highlight (nếu có), ngược lại lên đầu. Đặt trang hiện tại theo trích dẫn.
   useEffect(() => {
+    // 112: trích dẫn cũ ⇒ không có vùng tô sáng; cuộn tới trang của trích dẫn (nếu còn trong phạm vi).
+    if (stale && citation?.locator.page != null) {
+      pageRefs.current
+        .get(citation.locator.page)
+        ?.scrollIntoView({ block: "start" });
+    }
     pageRefs.current.clear();
     setCurrentPage(citation?.locator.page ?? 1);
     if (hlRef.current) hlRef.current.scrollIntoView({ block: "center" });
     else if (bodyRef.current) bodyRef.current.scrollTop = 0;
-  }, [segments, citation]);
+  }, [segments, citation, stale]);
 
   // 049: đổi nguồn → reset cờ lỗi audio (thử phát lại nguồn mới).
   useEffect(() => {
@@ -128,6 +136,15 @@ export function SourceViewer({
           </span>
           {citation && (
             <span className="vcite">Nguồn của trích dẫn [{citation.n}]</span>
+          )}
+          {stale && (
+            <span
+              className="vstale"
+              role="status"
+              data-testid="viewer-stale-note"
+            >
+              Nguồn đã được xử lý lại — vị trí trích dẫn cũ không còn chính xác
+            </span>
           )}
         </div>
         {isPdf && (

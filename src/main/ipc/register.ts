@@ -18,6 +18,7 @@ import type {
   OllamaHealth,
   ReindexStatus,
   SourceRelinkResult,
+  SourceReprocessResult,
 } from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
 import { computeStorageInfo } from "../services/app-shell/storage-info";
@@ -38,7 +39,10 @@ import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
 import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
-import { getSourceContent } from "../services/source-viewer/source-content";
+import {
+  getSourceContent,
+  type SourceContentRequest,
+} from "../services/source-viewer/source-content";
 import { logError, logEvent } from "../logging";
 import { createRendererErrorReporter } from "../services/app-log/renderer-error";
 import type { CrashService } from "../services/crash-report/crash-service";
@@ -81,6 +85,8 @@ interface RegisterDeps {
   crashService: CrashService;
   // 101 — chọn lại tệp gốc.
   relinkSource: (id: unknown) => Promise<SourceRelinkResult>;
+  // 112 — xử lý lại PDF (kiểm khoá kho / quy tắc / tệp gốc trong handler).
+  reprocessSource: (id: unknown) => Promise<SourceReprocessResult>;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
@@ -116,6 +122,7 @@ export function registerIpc({
   logsDir,
   crashService,
   relinkSource,
+  reprocessSource,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -247,9 +254,18 @@ export function registerIpc({
     assertVaultWritable();
     return relinkSource(id);
   });
+  // 112: xử lý lại PDF — là thao tác GHI vault ⇒ chặn khi đang sao lưu/khôi phục (kiểm lại lúc hoán đổi).
+  safeHandle(CHANNELS.sourceReprocess, (id) => {
+    assertVaultWritable();
+    return reprocessSource(id);
+  });
+  safeHandle(CHANNELS.sourceReprocessCancel, (id) => ({
+    cancelled: typeof id === "string" && pipeline.cancelReprocess(id),
+  }));
   // source-viewer (019) — tái dựng toàn văn từ chunk đã lưu để hiển thị. CHỈ đọc; KHÔNG log content.
-  safeHandle(CHANNELS.sourceGetContent, (id) =>
-    getSourceContent(sourceRepo, id as string),
+  // 112: nhận id hoặc {sourceId, chunkId} — getSourceContent tự validate kiểu (sai ⇒ null).
+  safeHandle(CHANNELS.sourceGetContent, (req) =>
+    getSourceContent(sourceRepo, req as string | SourceContentRequest),
   );
   // content-search (073) — tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25). CHỈ đọc; KHÔNG log query.
   safeHandle(CHANNELS.sourceSearch, (input) => {

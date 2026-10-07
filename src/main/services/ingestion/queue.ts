@@ -14,8 +14,11 @@ export interface SerialQueue {
   ): void;
   /** Đang chờ hoặc đang chạy? */
   has(id: string): boolean;
-  /** Đánh dấu huỷ: bỏ khỏi hàng đợi nếu chưa chạy; báo signal.cancelled nếu đang chạy. */
-  cancel(id: string): void;
+  /**
+   * Huỷ: bỏ khỏi hàng đợi nếu chưa chạy ("dropped" — task sẽ KHÔNG chạy, bên gọi tự kết thúc trạng thái);
+   * báo signal.cancelled nếu đang chạy ("running"); "none" nếu không có.
+   */
+  cancel(id: string): "dropped" | "running" | "none";
   size(): number;
   /** Chờ tới khi hàng đợi rỗng (test/đồng bộ). */
   whenIdle(): Promise<void>;
@@ -23,7 +26,6 @@ export interface SerialQueue {
 
 export function createSerialQueue(): SerialQueue {
   const items: QueueItem[] = [];
-  const cancelled = new Set<string>();
   let running = false;
   let current: { id: string; signal: { cancelled: boolean } } | null = null;
   let idleResolvers: (() => void)[] = [];
@@ -38,10 +40,6 @@ export function createSerialQueue(): SerialQueue {
     running = true;
     while (items.length > 0) {
       const item = items.shift()!;
-      if (cancelled.has(item.id)) {
-        cancelled.delete(item.id);
-        continue;
-      }
       const signal = { cancelled: false };
       current = { id: item.id, signal };
       try {
@@ -50,7 +48,6 @@ export function createSerialQueue(): SerialQueue {
         // Lỗi từng nguồn KHÔNG chặn hàng đợi (FR-013). Pipeline đã tự set trạng thái error.
       }
       current = null;
-      cancelled.delete(item.id);
     }
     running = false;
     settleIdle();
@@ -65,8 +62,14 @@ export function createSerialQueue(): SerialQueue {
       return current?.id === id || items.some((i) => i.id === id);
     },
     cancel(id) {
-      cancelled.add(id);
-      if (current?.id === id) current.signal.cancelled = true;
+      if (current?.id === id) {
+        current.signal.cancelled = true;
+        return "running";
+      }
+      const idx = items.findIndex((i) => i.id === id);
+      if (idx < 0) return "none";
+      items.splice(idx, 1);
+      return "dropped";
     },
     size() {
       return items.length + (current ? 1 : 0);

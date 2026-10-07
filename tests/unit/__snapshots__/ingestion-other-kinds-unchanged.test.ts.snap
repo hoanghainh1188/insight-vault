@@ -1,0 +1,261 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`các loại nguồn khác PDF không đổi (snapshot từ main) > long.txt (tự sinh, nhiều chunk) 1`] = `
+[
+  {
+    "locator": {
+      "charEnd": 938,
+      "charStart": 0,
+      "page": null,
+    },
+    "ordinal": 0,
+    "text": "Doan 0 cau 0 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 1 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 2 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 3 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 4 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 5 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 6 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 7 co noi dung thu nghiem du dai de chia.
+Doan 0 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 1 cau 0 co noi dung thu nghiem du dai de chia. Doan 1 cau 1 co noi dung thu nghiem du dai de chia. Doan 1 cau 2 co noi dung thu nghiem du dai de chia. Doan 1 cau 3 co noi dung thu nghiem du dai de chia. Doan 1 cau 4 co noi dung thu nghiem du dai de chia. Doan 1 cau 5 co noi dung thu nghiem du dai de chia. Doan 1 cau 6 co noi dung thu nghiem du dai de chia. Doan 1 cau 7 co noi dung thu nghiem du dai de chia. Doan 1 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 1407,
+      "charStart": 788,
+      "page": null,
+    },
+    "ordinal": 1,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia. Doan 1 cau 7 co noi dung thu nghiem du dai de chia. Doan 1 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 2 cau 0 co noi dung thu nghiem du dai de chia. Doan 2 cau 1 co noi dung thu nghiem du dai de chia. Doan 2 cau 2 co noi dung thu nghiem du dai de chia. Doan 2 cau 3 co noi dung thu nghiem du dai de chia. Doan 2 cau 4 co noi dung thu nghiem du dai de chia. Doan 2 cau 5 co noi dung thu nghiem du dai de chia. Doan 2 cau 6 co noi dung thu nghiem du dai de chia. Doan 2 cau 7 co noi dung thu nghiem du dai de chia. Doan 2 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 1876,
+      "charStart": 1257,
+      "page": null,
+    },
+    "ordinal": 2,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia. Doan 2 cau 7 co noi dung thu nghiem du dai de chia. Doan 2 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 3 cau 0 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 1 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 2 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 3 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 4 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 5 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 6 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 7 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 2345,
+      "charStart": 1726,
+      "page": null,
+    },
+    "ordinal": 3,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 7 co noi dung thu nghiem du dai de chia.
+Doan 3 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 4 cau 0 co noi dung thu nghiem du dai de chia. Doan 4 cau 1 co noi dung thu nghiem du dai de chia. Doan 4 cau 2 co noi dung thu nghiem du dai de chia. Doan 4 cau 3 co noi dung thu nghiem du dai de chia. Doan 4 cau 4 co noi dung thu nghiem du dai de chia. Doan 4 cau 5 co noi dung thu nghiem du dai de chia. Doan 4 cau 6 co noi dung thu nghiem du dai de chia. Doan 4 cau 7 co noi dung thu nghiem du dai de chia. Doan 4 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 2814,
+      "charStart": 2195,
+      "page": null,
+    },
+    "ordinal": 4,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia. Doan 4 cau 7 co noi dung thu nghiem du dai de chia. Doan 4 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 5 cau 0 co noi dung thu nghiem du dai de chia. Doan 5 cau 1 co noi dung thu nghiem du dai de chia. Doan 5 cau 2 co noi dung thu nghiem du dai de chia. Doan 5 cau 3 co noi dung thu nghiem du dai de chia. Doan 5 cau 4 co noi dung thu nghiem du dai de chia. Doan 5 cau 5 co noi dung thu nghiem du dai de chia. Doan 5 cau 6 co noi dung thu nghiem du dai de chia. Doan 5 cau 7 co noi dung thu nghiem du dai de chia. Doan 5 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 3283,
+      "charStart": 2664,
+      "page": null,
+    },
+    "ordinal": 5,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia. Doan 5 cau 7 co noi dung thu nghiem du dai de chia. Doan 5 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 6 cau 0 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 1 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 2 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 3 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 4 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 5 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 6 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 7 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 3752,
+      "charStart": 3133,
+      "page": null,
+    },
+    "ordinal": 6,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 7 co noi dung thu nghiem du dai de chia.
+Doan 6 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 7 cau 0 co noi dung thu nghiem du dai de chia. Doan 7 cau 1 co noi dung thu nghiem du dai de chia. Doan 7 cau 2 co noi dung thu nghiem du dai de chia. Doan 7 cau 3 co noi dung thu nghiem du dai de chia. Doan 7 cau 4 co noi dung thu nghiem du dai de chia. Doan 7 cau 5 co noi dung thu nghiem du dai de chia. Doan 7 cau 6 co noi dung thu nghiem du dai de chia. Doan 7 cau 7 co noi dung thu nghiem du dai de chia. Doan 7 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 4221,
+      "charStart": 3602,
+      "page": null,
+    },
+    "ordinal": 7,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia. Doan 7 cau 7 co noi dung thu nghiem du dai de chia. Doan 7 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 8 cau 0 co noi dung thu nghiem du dai de chia. Doan 8 cau 1 co noi dung thu nghiem du dai de chia. Doan 8 cau 2 co noi dung thu nghiem du dai de chia. Doan 8 cau 3 co noi dung thu nghiem du dai de chia. Doan 8 cau 4 co noi dung thu nghiem du dai de chia. Doan 8 cau 5 co noi dung thu nghiem du dai de chia. Doan 8 cau 6 co noi dung thu nghiem du dai de chia. Doan 8 cau 7 co noi dung thu nghiem du dai de chia. Doan 8 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 4690,
+      "charStart": 4071,
+      "page": null,
+    },
+    "ordinal": 8,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia. Doan 8 cau 7 co noi dung thu nghiem du dai de chia. Doan 8 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 9 cau 0 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 1 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 2 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 3 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 4 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 5 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 6 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 7 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 5168,
+      "charStart": 4540,
+      "page": null,
+    },
+    "ordinal": 9,
+    "text": "cau 6 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 7 co noi dung thu nghiem du dai de chia.
+Doan 9 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 10 cau 0 co noi dung thu nghiem du dai de chia. Doan 10 cau 1 co noi dung thu nghiem du dai de chia. Doan 10 cau 2 co noi dung thu nghiem du dai de chia. Doan 10 cau 3 co noi dung thu nghiem du dai de chia. Doan 10 cau 4 co noi dung thu nghiem du dai de chia. Doan 10 cau 5 co noi dung thu nghiem du dai de chia. Doan 10 cau 6 co noi dung thu nghiem du dai de chia. Doan 10 cau 7 co noi dung thu nghiem du dai de chia. Doan 10 cau 8 co noi dung thu nghiem du dai de chia.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 5644,
+      "charStart": 5018,
+      "page": null,
+    },
+    "ordinal": 10,
+    "text": "u 6 co noi dung thu nghiem du dai de chia. Doan 10 cau 7 co noi dung thu nghiem du dai de chia. Doan 10 cau 8 co noi dung thu nghiem du dai de chia.
+
+Doan 11 cau 0 co noi dung thu nghiem du dai de chia. Doan 11 cau 1 co noi dung thu nghiem du dai de chia. Doan 11 cau 2 co noi dung thu nghiem du dai de chia. Doan 11 cau 3 co noi dung thu nghiem du dai de chia. Doan 11 cau 4 co noi dung thu nghiem du dai de chia. Doan 11 cau 5 co noi dung thu nghiem du dai de chia. Doan 11 cau 6 co noi dung thu nghiem du dai de chia. Doan 11 cau 7 co noi dung thu nghiem du dai de chia. Doan 11 cau 8 co noi dung thu nghiem du dai de chia.",
+  },
+]
+`;
+
+exports[`các loại nguồn khác PDF không đổi (snapshot từ main) > sample.docx 1`] = `
+[
+  {
+    "locator": {
+      "charEnd": 125,
+      "charStart": 0,
+      "page": null,
+    },
+    "ordinal": 0,
+    "text": "Doan van docx mau so mot cho InsightVault kiem thu trich xuat.
+
+Doan van docx thu hai de bao dam co nhieu doan de chia chunk.",
+  },
+]
+`;
+
+exports[`các loại nguồn khác PDF không đổi (snapshot từ main) > sample.md 1`] = `
+[
+  {
+    "locator": {
+      "charEnd": 536,
+      "charStart": 0,
+      "page": null,
+    },
+    "ordinal": 0,
+    "text": "# Tieu de
+
+InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon.
+
+## Muc hai
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 1047,
+      "charStart": 386,
+      "page": null,
+    },
+    "ordinal": 1,
+    "text": "o nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon.
+
+## Muc hai
+
+InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon.",
+  },
+]
+`;
+
+exports[`các loại nguồn khác PDF không đổi (snapshot từ main) > sample.txt 1`] = `
+[
+  {
+    "locator": {
+      "charEnd": 769,
+      "charStart": 0,
+      "page": null,
+    },
+    "ordinal": 0,
+    "text": "InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon.
+
+",
+  },
+  {
+    "locator": {
+      "charEnd": 1536,
+      "charStart": 619,
+      "page": null,
+    },
+    "ordinal": 1,
+    "text": " hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon.
+
+InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon. InsightVault la ung dung ghi chu nghien cuu chay hoan toan tren may. No giup ban nap tai lieu, chia doan va hoi dap theo nguon.",
+  },
+]
+`;

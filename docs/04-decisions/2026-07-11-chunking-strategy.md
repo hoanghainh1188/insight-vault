@@ -50,3 +50,5 @@ cảnh và hiển thị.
   `page`/`char_start`/`char_end` tách cột), `source_id` (FK CASCADE).
 - `005-rag-qa` dùng lại `Locator` để render chip trích dẫn; `006-source-viewer` dùng `charStart/charEnd`
   (+ `page`) để highlight — KHÔNG tự chunk lại.
+
+> **112 (2026-10-07):** `PageText.blocks` (vùng bảng) — chunker không cắt ngang bảng ngắn, bảng dài cắt theo hàng; không có `blocks` ⇒ hành vi như trên. Xem `2026-10-07-pdf-layout.md`.

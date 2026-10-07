@@ -101,6 +101,12 @@ describe("LiveRegion — hàng đợi", () => {
 });
 
 describe("SourceItem — thanh tiến độ tra được", () => {
+  beforeEach(() => {
+    // 112: SourceItem nghe tiến độ "Xử lý lại" qua window.api.onSourceProgress.
+    (window as unknown as { api: unknown }).api = {
+      onSourceProgress: () => () => {},
+    };
+  });
   const src: Source = {
     id: "s1",
     notebookId: "n1",

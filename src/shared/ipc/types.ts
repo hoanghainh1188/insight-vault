@@ -234,7 +234,12 @@ export interface Source {
   pageCount: number | null;
   createdAt: number;
   updatedAt: number;
+  /** 112: cách trích đã dùng cho văn bản/chunk hiện tại (1 = trước 112; PDF bố cục = PDF_EXTRACTION_VERSION). */
+  extractionVersion: number;
 }
+
+/** 112: phiên bản cách trích PDF có bố cục (dòng/cột/bảng). PDF có version thấp hơn ⇒ gợi ý "Xử lý lại". */
+export const PDF_EXTRACTION_VERSION = 2;
 
 /** Chunk (đoạn) — đơn vị embed & trích dẫn. */
 export interface Chunk {
@@ -271,7 +276,16 @@ export interface SourceProgressEvent {
   step: IngestStep;
   progress: number; // 0..1
   errorLabel?: string;
+  /** 112: sự kiện của một lần "Xử lý lại" — nguồn vẫn `ready` (dùng dữ liệu cũ) trong lúc chạy. */
+  reprocess?: true;
 }
+
+/**
+ * 112: kết quả yêu cầu "Xử lý lại" (contracts/ipc-reprocess.md). queued = đã xếp hàng (theo dõi qua source:progress
+ * có `reprocess`); missing = tệp gốc không còn ⇒ dẫn sang "Chọn lại tệp gốc…"; mismatch = tệp gốc đã bị sửa ⇒ chặn.
+ */
+export type SourceReprocessResult =
+  { status: "queued" } | { status: "missing" } | { status: "mismatch" };
 
 /**
  * Kết quả "chọn lại tệp gốc" (101). mismatch = tệp khác nội dung tệp đã nạp (trích dẫn sẽ sai ⇒ từ chối);
@@ -382,6 +396,8 @@ export interface SourceContent {
   pageCount: number | null; // PDF: số trang; khác: null
   text: string; // toàn văn đã-làm-sạch tái dựng (== T gốc lúc chunk)
   pageBreaks: PageBreak[]; // chỉ PDF; non-PDF: []
+  /** 112: chỉ có khi yêu cầu kèm chunkId — false ⇒ trích dẫn cũ (nguồn đã được xử lý lại), không tô sáng. */
+  citationValid?: boolean;
 }
 
 // ===== studio (021) — nguồn: specs/.../studio/data-model.md =====

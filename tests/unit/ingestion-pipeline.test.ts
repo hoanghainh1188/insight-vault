@@ -19,6 +19,9 @@ function fakeVectorStore() {
     async deleteBySource(sid) {
       for (const [k, v] of rows) if (v.sourceId === sid) rows.delete(k);
     },
+    async deleteByIds(ids) {
+      for (const id of ids) rows.delete(id);
+    },
     async deleteByNotebook(nid) {
       for (const [k, v] of rows) if (v.notebookId === nid) rows.delete(k);
     },
