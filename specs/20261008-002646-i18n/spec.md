@@ -29,6 +29,35 @@ tìm thấy' đã lưu hiển thị theo ngôn ngữ hiện tại; nội dung LL
 3. Chat trả lời **theo ngôn ngữ câu hỏi**; Studio **theo ngôn ngữ giao diện** lúc tạo; lời nhắc hệ thống viết lại không phụ
    thuộc tiếng Việt; "không tìm thấy" giữ cơ chế không phụ thuộc ngôn ngữ; kiểm hồi quy bằng bộ đánh giá 108.
 
+## Clarifications
+
+### Session 2026-10-08
+
+Chốt đủ 17 mục ở `docs/04-decisions/2026-10-08-i18n-clarify.md` (người dùng chọn toàn bộ phương án khuyên dùng của
+intake + 2 câu riêng):
+
+- Q: Thư viện dịch? → A: Từ điển tự viết có kiểu, dùng chung hai tầng, không thêm thư viện; tiếng Việt là ngôn ngữ nguồn.
+- Q: "Tự động" lưu thế nào? → A: Lưu `auto`, tính lại theo hệ điều hành mỗi lần mở; không đi theo sao lưu/khôi phục.
+- Q: Ai dịch chuỗi tầng nền? → A: Tầng nền gửi mã + tham số, giao diện dịch; riêng hộp thoại hệ thống và báo lỗi soạn sẵn
+  do tầng nền dịch theo ngôn ngữ hiện tại (hộp thoại lỗi khởi động theo ngôn ngữ hệ điều hành).
+- Q: Nhãn lỗi cũ? → A: Chuyển một lần sang mã khi nâng cấp dữ liệu + ánh xạ phòng thủ khi đọc (lạ ⇒ nhãn lỗi chung); câu
+  "không tìm thấy" cũ dịch theo cờ đã có, không chuyển dữ liệu.
+- Q: Lời nhắc và ngôn ngữ trả lời? → A: Chỉ dẫn "trả lời theo ngôn ngữ câu hỏi cuối" + chỉ định tường minh khi nhận ra chắc
+  chắn vi/en; một bản lời nhắc English duy nhất nếu số đo không kém hơn; bỏ yêu cầu câu "không tìm thấy" nguyên văn, không
+  thêm mã đánh dấu; chế độ Mở rộng ghi chú "ngoài nguồn" theo ngôn ngữ câu trả lời; viết lại câu hỏi giữ ngôn ngữ gốc.
+- Q: Studio? → A: Không gắn nhãn ngôn ngữ; tạo lại ghi đè như cũ; tên tệp xuất theo ngôn ngữ giao diện + ngày ISO.
+- Q: Định dạng? → A: Quy ước `vi-VN` / `en-US`.
+- Q: Báo lỗi soạn sẵn? → A: Phần gửi nhà phát triển cố định English; hộp thoại cho người dùng theo giao diện; nhật ký không dịch.
+- Q: Mô hình không tuân thủ ngôn ngữ? → A: Cố gắng tốt nhất, không dịch lại, không chặn; ghi vào giới hạn đã biết.
+- Q: Kiểm thử? → A: Kiểm khoá + tham số, quét chuỗi Việt cứng trong bộ test chính (có danh sách ngoại lệ), test cũ dùng
+  helper khoá tiếng Việt, đầu-cuối cố định tiếng Việt + 1 kịch bản English + 1 kịch bản đổi ngôn ngữ, test nâng cấp dữ liệu
+  cũ, ảnh chụp kiểm tràn chữ.
+- Q: Tên English hai chế độ? → A: "Sources only" / "Extended"; badge "Extended · may go beyond sources".
+- Q: Đo lời nhắc (SC-006)? → A: Thêm ~20 câu English (có/không có đáp án) vào bộ đánh giá, người dùng duyệt; chạy có mô
+  hình tham chiếu trước/sau; ghi số vào ADR; không chạy trong CI.
+- Q: Chia việc? → A: Một nhánh, commit theo lớp; bản English là bản dịch phát sinh, prototype không sửa; menu hệ điều hành
+  mặc định và trình cài đặt ngoài phạm vi.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Người dùng không nói tiếng Việt dùng được app ngay lần đầu (Priority: P1)
@@ -108,7 +137,7 @@ không kém bản trước khi viết lại lời nhắc; số liệu truy xuấ
 3. **Given** chế độ Theo nguồn và câu hỏi không có đáp án trong nguồn, **When** hỏi bằng bất kỳ ngôn ngữ nào, **Then** hiện
    "không tìm thấy" + gợi ý **bằng ngôn ngữ giao diện**, không có nội dung bịa.
 4. **Given** chế độ Mở rộng, **When** câu trả lời dùng kiến thức ngoài nguồn, **Then** phần đó vẫn được đánh dấu là ngoài
-   nguồn bằng ngôn ngữ của câu trả lời, và nhãn giao diện "Mở rộng · có thể ngoài nguồn" theo ngôn ngữ giao diện.
+   nguồn bằng ngôn ngữ của câu trả lời, và nhãn giao diện "Mở rộng · có thể ngoài nguồn" / "Extended · may go beyond sources" theo ngôn ngữ giao diện.
 5. **Given** câu hỏi nối tiếp có đại từ (cần viết lại câu hỏi từ lịch sử), **When** hỏi bằng tiếng Anh, **Then** câu hỏi
    viết lại vẫn bằng tiếng Anh và truy xuất không xấu đi so với hỏi trực tiếp.
 
@@ -254,8 +283,8 @@ người dùng tiếng Việt thấy như hiện nay ("3 phút trước").
   tham chiếu khoá dịch); MUST có ít nhất một kịch bản đầu-cuối chạy app bằng English và một kịch bản đổi ngôn ngữ trong Cài
   đặt rồi kiểm giao diện đổi ngay.
 - **FR-027**: Hồi quy truy xuất của bộ đánh giá 108 MUST không đổi số liệu; tác động của lời nhắc mới lên tuân thủ `[n]`,
-  tỉ lệ từ chối đúng và ngôn ngữ câu trả lời MUST được đo trên câu hỏi tiếng Việt và English (cách đo chốt ở clarify) và ghi
-  kết quả vào quyết định.
+  tỉ lệ từ chối đúng và ngôn ngữ câu trả lời MUST được đo trên câu hỏi tiếng Việt và ~20 câu English mới (có và
+  không có đáp án, người dùng duyệt) với mô hình tham chiếu trước/sau khi đổi lời nhắc, và ghi kết quả vào quyết định.
 
 ### Key Entities _(include if feature involves data)_
 
@@ -300,7 +329,7 @@ người dùng tiếng Việt thấy như hiện nay ("3 phút trước").
 - Mô hình cục bộ nhỏ có thể không tuân thủ ngôn ngữ câu trả lời tuyệt đối; app không dịch lại hay chặn câu trả lời sai ngôn
   ngữ (SC-006 đặt ngưỡng chất lượng, không phải bảo đảm tuyệt đối).
 - Menu hệ điều hành mặc định, trình cài đặt (dmg/exe) và hộp thoại do chính hệ điều hành dịch nằm ngoài phạm vi.
-- Phần khung kỹ thuật của báo lỗi soạn sẵn (dành cho nhà phát triển) có thể giữ English cố định; quyết định ở clarify.
+- Phần khung kỹ thuật của báo lỗi soạn sẵn (dành cho nhà phát triển) giữ English cố định; phần người dùng đọc theo giao diện.
 - Không cần thêm thư viện tải từ mạng lúc chạy; lựa chọn thư viện hay giải pháp tự viết thuộc bước lập kế hoạch.
 - Ngoài phạm vi: dịch tài liệu thiết kế/ADR/specs/README; ngôn ngữ thứ ba (khung sẵn sàng); chữ viết phải-sang-trái; dịch
   nội dung nguồn; đổi ngôn ngữ nhận dạng chữ/bóc băng; dịch lại nội dung AI đã sinh; đổi thuật toán truy xuất hay ngưỡng.
