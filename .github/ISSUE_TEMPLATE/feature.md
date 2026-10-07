@@ -1,49 +1,52 @@
 ---
-name: Feature
-about: Khởi tạo 1 feature mới — số issue này sẽ là ID feature (branch NNN-<slug>)
-title: "[feature] <slug ngắn gọn>"
+name: Feature (maintainers)
+about: Start a new spec-driven feature — this issue number becomes the feature ID (branch NNN-<slug>)
+title: "[feature] <short slug>"
 labels: feature
 ---
 
 <!--
-Số issue này = FEATURE ID. Sau khi tạo, branch làm feature đặt tên:
-    <NNN>-<slug>    với NNN = số issue zero-pad tối thiểu 3 chữ số
-    VD issue #42 → branch 042-user-reservation
-Xem docs/TEAM-WORKFLOW.md.
+This issue number = FEATURE ID. After creating it, name the working branch:
+    <NNN>-<slug>    where NNN = issue number zero-padded to at least 3 digits
+    e.g. issue #42 → branch 042-user-reservation
+See docs/TEAM-WORKFLOW.md.
 -->
 
-## Slug đề xuất
-<!-- kebab-case, ngắn, tra docs/00-glossary.md cho nhất quán nghiệp vụ. VD: user-reservation
-     → branch 042-user-reservation; thư mục design docs/01-03/user-reservation/ (cùng slug). -->
+## Proposed slug
 
-## Tài liệu design nguồn
-- Basic design (基本設計): `docs/01-basic-design/<slug>/...`
-- Detail design (詳細設計): `docs/02-detail-design/<slug>/...`
-- Figma (link + node): `docs/03-ui/<slug>/figma-links.md`
-  (`<slug>` = phần sau `NNN-` trên branch — khớp `src/features/<slug>/` và intake.)
+<!-- kebab-case, short; check docs/00-glossary.md for consistent domain terms. e.g. user-reservation
+     → branch 042-user-reservation; design folders docs/01-03/user-reservation/ (same slug). -->
+
+## Source design documents
+
+- Basic design: `docs/01-basic-design/<slug>/...`
+- Detail design: `docs/02-detail-design/<slug>/...`
+- UI reference (prototype / Figma link + node): `docs/03-ui/<slug>/`
 
 ## Owner / Assignee
-<!-- Ai sở hữu feature này END-TO-END (1 người, xem TEAM-WORKFLOW mục 3). Gán luôn GitHub Assignee
-     cho đúng người này để cả team biết ai đang cầm feature. -->
 
-## Claim feature (sau khi tạo branch)
-<!-- Ngay sau `git checkout -b NNN-<slug>`:
-     1. Xác nhận Assignee = owner ở trên
-     2. Gắn label in-progress lên issue này (tạo label một lần trong repo nếu chưa có)
-     Gỡ label in-progress khi PR merge / issue đóng. -->
+<!-- One person owns this feature END-TO-END (see TEAM-WORKFLOW section 3). Set the GitHub Assignee too. -->
+
+## Claim the feature (after creating the branch)
+
+<!-- Right after `git checkout -b NNN-<slug>`:
+     1. Confirm Assignee = owner above
+     2. Add the in-progress label to this issue (remove it when the PR merges / the issue closes) -->
 
 ## Blocked by
-<!-- Liệt kê issue phải xong TRƯỚC (VD "#12 auth module"). Để trống nếu độc lập.
-     Giúp xếp thứ tự merge, giảm rebase/conflict chồng chéo. -->
+
+<!-- Issues that must land FIRST (e.g. "#12 auth module"). Leave empty if independent. -->
 
 ## Affected domains / shared surface
-<!-- Feature này chạm domain/module nào? Có đụng vùng DÙNG CHUNG không?
-     (src/shared/, config, router, docs/00-glossary.md, constitution…)
-     Càng nhiều feature cùng chạm 1 surface → càng dễ conflict/drift (TEAM-WORKFLOW mục 4–5).
-     VD: "domain 予約; append glossary; KHÔNG đụng src/shared". -->
 
-## Tóm tắt acceptance
-<!-- Chức năng làm gì, cho ai, tiêu chí "xong" chính -->
+<!-- Which modules does this touch? Any SHARED surface (src/shared/, config, docs/00-glossary.md, constitution…)?
+     The more features touch one surface, the more conflicts/drift (TEAM-WORKFLOW sections 4–5). -->
 
-## Ghi chú
-<!-- Ràng buộc từ khách? Mâu thuẫn đã thấy trong tài liệu? -->
+## Acceptance summary
+
+<!-- What it does, for whom, and the main "done" criteria -->
+
+## Notes
+
+<!-- Constraints? Contradictions already spotted in the documents? -->
+<!-- Full process: docs/TEAM-WORKFLOW.md -->
