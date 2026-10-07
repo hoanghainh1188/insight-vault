@@ -37,6 +37,10 @@ lọc. Truy hồi: LanceDB trả `id` gần nhất → JOIN sang SQLite lấy te
 **Tìm kiếm.** MVP dùng brute-force (LanceDB mặc định khi chưa tạo index) — đủ nhanh ở quy mô cá nhân. Tạo
 index ANN (IVF_PQ) **lazily** khi số vector vượt ngưỡng (vd > 50k) — để dành, không bắt buộc cho MVP.
 
+> **Đã thay thế (2026-10-07, 116)** bởi `2026-10-07-vector-maintenance.md`: giữ brute-force, **hoãn ANN** (đo được ANN
+> chỉ nhanh hơn vài ms nhưng mất Recall; index bitmap `notebook_id` chậm hơn). Thay vào đó bảo trì tự động
+> `optimize` (gộp fragment + dọn phiên bản cũ). Điều kiện xem lại ANN ghi trong ADR mới.
+
 ## Lý do
 
 - LanceDB embedded, không server, dữ liệu nằm trên máy (Constitution I) — đúng tinh thần local-first.

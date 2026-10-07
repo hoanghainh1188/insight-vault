@@ -32,6 +32,8 @@ Không đổi schema SQLite hay bảng LanceDB `chunks`. Mọi trạng thái m�
 | `lastRunAt`           | number \| null  | thời điểm BẮT ĐẦU lần chạy gần nhất (done hoặc error)             |
 | `followUpAt`          | number \| null  | hẹn kiểm lại để dọn phiên bản sau biên (khi lần trước có gộp)     |
 | `pendingReason`       | Trigger \| null | lý do kích hoạt đang chờ (`write`/`startup`/`reindex`/`followUp`) |
+| `pendingDueAt`        | number \| null | mốc sớm nhất được chạy lý do đang chờ (debounce / trễ khởi động / hoãn bận / backoff) |
+| `runTrigger` / `runStartedAt` / `runDirtyAtStart` | — | thông tin lần đang chạy (để `applyOutcome` biết trigger, `lastRunAt`, số ghi đã bao trọn) |
 | `consecutiveFailures` | number          | reset về 0 khi "done"                                             |
 | `disabled`            | boolean         | true sau `MAX_CONSECUTIVE_FAILURES` lỗi — tới lần khởi động sau   |
 | `running`             | boolean         | single-flight                                                     |
@@ -50,7 +52,7 @@ Input: `{ busy, stats: VectorStoreStats | null, freeBytes, storeBytes }`.
 
 - `{ run: true }` khi không bận, bảng có, `freeBytes ≥ FREE_SPACE_FACTOR × storeBytes` và
   (`fragmentCount ≥ FRAGMENT_THRESHOLD` ∨ `prunableVersions ≥ PRUNABLE_VERSIONS_THRESHOLD`).
-- `{ run: false, reason }` với `reason ∈ "busy" | "noTable" | "lowDisk" | "belowThreshold"` (thứ tự ưu tiên như liệt kê).
+- `{ run: false, reason }` với `reason ∈ "busy" | "noTable" | "belowThreshold" | "lowDisk"` (thứ tự ưu tiên như liệt kê — dưới ngưỡng thì không cần đo đĩa).
 
 ## MaintenanceOutcome (vào `applyOutcome(state, outcome, now)`)
 

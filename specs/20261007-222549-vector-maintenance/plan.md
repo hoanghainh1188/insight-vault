@@ -115,7 +115,7 @@ waitVectorIdle: () => maintenance.whenIdle(BACKUP_WAIT_TIMEOUT_MS) })` → sau `
 3. **`stats(retentionMs)`**: `stats()` + `listVersions()`; `prunableVersions` = số phiên bản có `timestamp` <
    `Date.now() − retentionMs`, trừ phiên bản mới nhất.
 4. **Phân loại lỗi**: `classifyOptimizeError(e)` ⇒ `{ kind: "conflict" }` nếu tên/thông điệp (chỉ dùng để phân loại,
-   KHÔNG log) khớp `/conflict|retryable|commit/i`; ngược lại `{ kind: "error", errorType: constructor.name }`.
+   KHÔNG log) khớp `/conflict|retryable/i`; ngược lại `{ kind: "error", errorType: constructor.name }`.
 5. **Busy log không spam**: `skip` cùng `reason` liên tiếp chỉ log lần đầu.
 6. **Vault phình sẵn**: `scheduleStartup` bắt kịp; lần đầu chỉ gộp, lần follow-up (11 phút sau) dọn phiên bản.
 

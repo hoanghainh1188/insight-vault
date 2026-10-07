@@ -45,7 +45,7 @@ description: "Task list — 116 bảo trì kho vector (gộp phân mảnh + dọ
 ### Tests (viết trước, phải FAIL)
 
 - [X] T006 [P] [US1] `tests/unit/vector-maintenance-track-writes.test.ts` (C2): `add` (records>0), `deleteBySource`, `deleteByIds` (ids>0), `deleteByNotebook`, `dropTable` thành công ⇒ `onWrite` 1 lần; `add([])`/`deleteByIds([])` ⇒ không gọi; thao tác lỗi ⇒ ném lại nguyên lỗi, không gọi; `onWrite` ném ⇒ bị nuốt; phương thức đọc chuyển tiếp nguyên kết quả; không sửa object gốc
-- [X] T007 [P] [US1] `tests/unit/vector-maintenance-schedule.test.ts` (C3, data-model): `initialState` idle; `recordWrite` ⇒ `wait` tới `lastWriteAt+DEBOUNCE_MS`, ghi tiếp dời mốc; `requestRun("startup"|"reindex")` ⇒ `check` ngay (nếu qua `MIN_INTERVAL_MS`); trần tần suất ⇒ `wait` tới `lastRunAt+MIN_INTERVAL_MS`; `running`/`disabled` ⇒ `idle`; `evaluateGate`: thứ tự lý do `busy` > `noTable` > `lowDisk` (`freeBytes < 2×storeBytes`) > `belowThreshold`; chạy khi `fragmentCount ≥ 64` hoặc `prunableVersions ≥ 20`; `applyOutcome(done)` reset `dirtyWrites`/`consecutiveFailures`, đặt `followUpAt=now+FOLLOW_UP_MS` chỉ khi đã gộp; `followUpAt` tới ⇒ `check` với `trigger:"followUp"`; mọi hàm trả object mới (không mutate input)
+- [X] T007 [P] [US1] `tests/unit/vector-maintenance-schedule.test.ts` (C3, data-model): `initialState` idle; `recordWrite` ⇒ `wait` tới `lastWriteAt+DEBOUNCE_MS`, ghi tiếp dời mốc; `requestRun("startup"|"reindex")` ⇒ `check` ngay (nếu qua `MIN_INTERVAL_MS`); trần tần suất ⇒ `wait` tới `lastRunAt+MIN_INTERVAL_MS`; `running`/`disabled` ⇒ `idle`; `evaluateGate`: thứ tự lý do `busy` > `noTable` > `belowThreshold` > `lowDisk` (`freeBytes < 2×storeBytes`); chạy khi `fragmentCount ≥ 64` hoặc `prunableVersions ≥ 20`; `applyOutcome(done)` reset `dirtyWrites`/`consecutiveFailures`, đặt `followUpAt=now+FOLLOW_UP_MS` chỉ khi đã gộp; `followUpAt` tới ⇒ `check` với `trigger:"followUp"`; mọi hàm trả object mới (không mutate input)
 
 ### Implementation
 
@@ -68,9 +68,9 @@ description: "Task list — 116 bảo trì kho vector (gộp phân mảnh + dọ
 
 **Independent Test**: T002(c) + hồi quy eval 108.
 
-- [ ] T015 [US2] Bổ sung `tests/unit/vector-store-optimize.test.ts`: truy vấn trên ≥ 2 notebook với nhiều vector truy vấn (≥ 5) ⇒ danh sách `{id, sourceId, score}` giống hệt trước/sau `optimize`; `fragmentCount` sau < trước (tiêu chí SC-002/SC-003 ở quy mô test)
-- [ ] T016 [US2] Chạy `EVAL_MODE=current npm run eval:retrieval` ⇒ in "hồi quy OK" (không sửa `tests/eval/`); ghi kết quả vào ADR (T025)
-- [ ] T017 [US2] Commit phase (nếu có thay đổi): `test(116): kết quả truy vấn tương đương trước/sau bảo trì`
+- [X] T015 [US2] Bổ sung `tests/unit/vector-store-optimize.test.ts`: truy vấn trên ≥ 2 notebook với nhiều vector truy vấn (≥ 5) ⇒ danh sách `{id, sourceId, score}` giống hệt trước/sau `optimize`; `fragmentCount` sau < trước (tiêu chí SC-002/SC-003 ở quy mô test)
+- [X] T016 [US2] Chạy `EVAL_MODE=current npm run eval:retrieval` ⇒ in "hồi quy OK" (không sửa `tests/eval/`); ghi kết quả vào ADR (T025)
+- [X] T017 [US2] Commit phase (nếu có thay đổi): `test(116): kết quả truy vấn tương đương trước/sau bảo trì`
 
 ---
 
@@ -97,10 +97,10 @@ description: "Task list — 116 bảo trì kho vector (gộp phân mảnh + dọ
 
 ## Phase 6: User Story 4 — ADR hoãn ANN (P2)
 
-- [ ] T025 [P] [US4] ADR mới `docs/04-decisions/2026-10-07-vector-maintenance.md`: quyết định giữ brute-force/hoãn ANN; bảng số liệu issue #116 (2,1/5,5/12,8 ms; IVF_PQ Recall 0,34; HNSW_SQ 0,98; bitmap chậm hơn) + research R2/R3/R4/R5; tham số bảo trì (R10); điều kiện xem lại (p95 > 50 ms sau bảo trì hoặc ~1 triệu vector/notebook, đo lại Recall bằng harness 108); kết quả hồi quy T016
-- [ ] T026 [P] [US4] Thêm ghi chú "Đã thay thế bởi `2026-10-07-vector-maintenance.md` (116)" cạnh đoạn IVF_PQ lazily trong `docs/04-decisions/2026-07-11-lancedb-integration.md` và cạnh dòng 30 của `docs/04-decisions/2026-07-11-ingestion-clarify.md` (không xoá nội dung cũ)
-- [ ] T027 [US4] Chèn 1 dòng ADR vào `docs/04-decisions/INDEX.md` bằng chèn thô (KHÔNG chạy prettier lên file này)
-- [ ] T028 [US4] Commit phase: `docs(116): ADR hoãn ANN kèm số liệu + ghi chú thay thế`
+- [X] T025 [P] [US4] ADR mới `docs/04-decisions/2026-10-07-vector-maintenance.md`: quyết định giữ brute-force/hoãn ANN; bảng số liệu issue #116 (2,1/5,5/12,8 ms; IVF_PQ Recall 0,34; HNSW_SQ 0,98; bitmap chậm hơn) + research R2/R3/R4/R5; tham số bảo trì (R10); điều kiện xem lại (p95 > 50 ms sau bảo trì hoặc ~1 triệu vector/notebook, đo lại Recall bằng harness 108); kết quả hồi quy T016
+- [X] T026 [P] [US4] Thêm ghi chú "Đã thay thế bởi `2026-10-07-vector-maintenance.md` (116)" cạnh đoạn IVF_PQ lazily trong `docs/04-decisions/2026-07-11-lancedb-integration.md` và cạnh dòng 30 của `docs/04-decisions/2026-07-11-ingestion-clarify.md` (không xoá nội dung cũ)
+- [X] T027 [US4] Chèn 1 dòng ADR vào `docs/04-decisions/INDEX.md` bằng chèn thô (KHÔNG chạy prettier lên file này)
+- [X] T028 [US4] Commit phase: `docs(116): ADR hoãn ANN kèm số liệu + ghi chú thay thế`
 
 ---
 

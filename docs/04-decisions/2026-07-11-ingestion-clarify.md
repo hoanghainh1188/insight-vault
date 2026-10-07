@@ -28,6 +28,7 @@ trang PDF** (để `locator.page` đơn trị); offset ký tự tính theo toàn
 (prebuilt napi, không tự rebuild); store ở `app.getPath('userData')/vectors/`; một bảng `chunks`
 (id, notebook_id, source_id, vector, dim); xoá theo `source_id`/`notebook_id` để đồng bộ cascade với SQLite;
 MVP dùng brute-force search, tạo index ANN sau khi đủ lớn.
+> **Đã thay thế (2026-10-07, 116)**: không tạo index ANN — xem `2026-10-07-vector-maintenance.md` (giữ brute-force + bảo trì `optimize` tự động, điều kiện xem lại ANN theo độ trễ đo được).
 
 **4. ⭐ Hàng đợi xử lý — TUẦN TỰ, 1 nguồn/lần (người dùng chọn).** FIFO, xử lý xong 1 nguồn mới sang nguồn
 kế. Tránh nghẽn CPU/RAM khi parse+embed nặng, tiến độ dễ hiểu, đủ cho desktop cá nhân. Cho phép **huỷ/xoá**
