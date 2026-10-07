@@ -69,6 +69,7 @@ import {
   createVectorMaintenance,
   type VectorMaintenance,
 } from "./services/vector-maintenance/maintenance";
+import { BACKUP_WAIT_TIMEOUT_MS } from "./services/vector-maintenance/constants";
 import { createFsOps } from "./services/app-shell/storage-fs";
 import { dirSize } from "./services/app-shell/storage-info";
 import { createElectronDialogs } from "./services/vault-backup/dialogs";
@@ -494,6 +495,8 @@ app
         app.exit(0);
       },
       log: logEvent,
+      // 116: không chụp vectors/ giữa lúc bảo trì kho vector đang chạy.
+      waitVectorIdle: () => maintenance.whenIdle(BACKUP_WAIT_TIMEOUT_MS),
     });
 
     // Renderer reload/crash giữa phiên khôi phục ⇒ huỷ phiên để nút không kẹt "bận" (code review S1).

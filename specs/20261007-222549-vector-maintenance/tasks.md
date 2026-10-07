@@ -83,15 +83,15 @@ description: "Task list — 116 bảo trì kho vector (gộp phân mảnh + dọ
 ### Tests (viết trước, phải FAIL)
 
 - [X] T018 [P] [US3] (đã chuyển lên T012a — analyze I1) Không còn việc; giữ ID để ổn định đánh số
-- [ ] T019 [P] [US3] `tests/unit/vault-backup-service.test.ts`: `waitVectorIdle` được gọi trong khoá trước khi chụp; trả `false` ⇒ `createBackup` trả `busy`, không gọi snapshot, khoá nhả; trả `true` ⇒ hành vi cũ; không truyền ⇒ hành vi cũ; áp dụng cả bản tự sao lưu trước khi khôi phục (`confirmRestore`)
+- [X] T019 [P] [US3] `tests/unit/vault-backup-service.test.ts`: `waitVectorIdle` được gọi trong khoá trước khi chụp; trả `false` ⇒ `createBackup` trả `busy`, không gọi snapshot, khoá nhả; trả `true` ⇒ hành vi cũ; không truyền ⇒ hành vi cũ; áp dụng cả bản tự sao lưu trước khi khôi phục (`confirmRestore`)
 - [X] T020 [P] [US3] `tests/unit/vector-maintenance-classify-error.test.ts`: lỗi tên/thông điệp chứa conflict/retryable/commit ⇒ `{kind:"conflict"}`; khác ⇒ `{kind:"error", errorType: constructor.name}`; giá trị không phải Error ⇒ `errorType: typeof`
-- [ ] T021 [US3] Bổ sung test `tests/unit/vector-maintenance-schedule.test.ts` + `tests/unit/vector-maintenance.test.ts`: bận ⇒ `skip busy` + thử lại sau `DEBOUNCE_MS`, không `optimize`; `activeReads()>0` ⇒ bận; `skip busy` lặp lại chỉ log 1 lần; `lowDisk` ⇒ `skip lowDisk`; `conflict` ⇒ hoãn (không tăng lỗi); lỗi ⇒ `vector.maintenance.error` (logError, meta `errorType`/`consecutiveFailures`/`disabled`, KHÔNG `message`), backoff 10 → 20 phút, lỗi thứ 3 ⇒ `disabled`, sau đó mọi kích hoạt ⇒ không chạy; thành công reset bộ đếm; `whenIdle` resolve ngay khi rảnh, chờ lần đang chạy (kể cả khi đang ở pha đo trước `optimize`), `false` khi quá timeout; bận phát sinh giữa lúc đo ⇒ không gọi `optimize`, `skip busy` (analyze U1); không phương thức nào ném dù store/`freeBytes` ném
+- [X] T021 [US3] Bổ sung test `tests/unit/vector-maintenance-schedule.test.ts` + `tests/unit/vector-maintenance.test.ts`: bận ⇒ `skip busy` + thử lại sau `DEBOUNCE_MS`, không `optimize`; `activeReads()>0` ⇒ bận; `skip busy` lặp lại chỉ log 1 lần; `lowDisk` ⇒ `skip lowDisk`; `conflict` ⇒ hoãn (không tăng lỗi); lỗi ⇒ `vector.maintenance.error` (logError, meta `errorType`/`consecutiveFailures`/`disabled`, KHÔNG `message`), backoff 10 → 20 phút, lỗi thứ 3 ⇒ `disabled`, sau đó mọi kích hoạt ⇒ không chạy; thành công reset bộ đếm; `whenIdle` resolve ngay khi rảnh, chờ lần đang chạy (kể cả khi đang ở pha đo trước `optimize`), `false` khi quá timeout; bận phát sinh giữa lúc đo ⇒ không gọi `optimize`, `skip busy` (analyze U1); không phương thức nào ném dù store/`freeBytes` ném
 
 ### Implementation
 
 - [X] T022 [P] [US3] `src/main/services/vector-maintenance/classify-error.ts` ⇒ T020 PASS
-- [ ] T023 [US3] `waitVectorIdle?` trong `src/main/services/vault-backup/backup-service.ts` (C6) ⇒ T019 PASS; `applyOutcome(error)`/backoff/disabled trong `schedule.ts` + nhánh bận/lỗi/`whenIdle` trong `maintenance.ts` ⇒ T021 PASS; `index.ts` truyền `waitVectorIdle: () => maintenance.whenIdle(BACKUP_WAIT_TIMEOUT_MS)` vào `createBackupService`
-- [ ] T024 [US3] Commit phase: `feat(116): bảo trì hoãn khi bận, sao lưu chờ bảo trì, backoff + ngưng sau 3 lỗi`
+- [X] T023 [US3] `waitVectorIdle?` trong `src/main/services/vault-backup/backup-service.ts` (C6) ⇒ T019 PASS; `applyOutcome(error)`/backoff/disabled trong `schedule.ts` + nhánh bận/lỗi/`whenIdle` trong `maintenance.ts` ⇒ T021 PASS; `index.ts` truyền `waitVectorIdle: () => maintenance.whenIdle(BACKUP_WAIT_TIMEOUT_MS)` vào `createBackupService`
+- [X] T024 [US3] Commit phase: `feat(116): bảo trì hoãn khi bận, sao lưu chờ bảo trì, backoff + ngưng sau 3 lỗi`
 
 ---
 
