@@ -25,7 +25,7 @@ export function createTranscriber(opts: {
   cacheDir: string;
   model?: string;
   /** Bật/tắt chỉ báo egress khi TẢI model lần đầu từ HF (Constitution I — badge khớp hành vi). */
-  setOnline?: (online: boolean) => void;
+  setOnline?: (online: boolean, kind?: "model") => void;
 }): Transcriber {
   const model = opts.model ?? DEFAULT_WHISPER_MODEL;
   // Model tải về data dir; không cho phép model local tuỳ tiện ngoài cache (kiểm soát nguồn).
@@ -37,7 +37,7 @@ export function createTranscriber(opts: {
       if (!pipePromise) {
         logEvent("audio.whisper.load", { model });
         // Lần đầu tải weight model qua mạng (HF Hub) → báo egress; tắt khi tải xong (cache local).
-        opts.setOnline?.(true);
+        opts.setOnline?.(true, "model");
         pipePromise = pipeline("automatic-speech-recognition", model, {
           progress_callback: (p: unknown) => {
             const pr = p as { status?: string; progress?: number };
@@ -45,7 +45,7 @@ export function createTranscriber(opts: {
               onProgress?.((pr.progress / 100) * 0.5);
             }
           },
-        }).finally(() => opts.setOnline?.(false));
+        }).finally(() => opts.setOnline?.(false, "model"));
       }
       const transcriber = (await pipePromise) as (
         input: Float32Array,

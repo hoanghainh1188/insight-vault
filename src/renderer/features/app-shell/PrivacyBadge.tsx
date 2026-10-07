@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import type { PrivacyState } from "@shared/ipc/types";
 import { PRIVACY_CHANGED_EVENT } from "../ai-runtime/useOnlineProviders";
 
-// Badge đọc trạng thái TỪ main (getPrivacyState) — động, không hard-code (FR-002). Nạp lại khi bật/tắt
-// provider online (031) qua sự kiện PRIVACY_CHANGED_EVENT.
+// Badge đọc trạng thái TỪ main (getPrivacyState) — động, không hard-code (FR-002). 103: cập nhật TỨC THÌ theo sự
+// kiện main đẩy (onPrivacyChanged) mỗi khi mode đổi — gồm lúc đang gửi dữ liệu ra ngoài (Constitution I). Vẫn nghe
+// PRIVACY_CHANGED_EVENT (031) để nạp lại ngay sau khi người dùng bật/tắt provider.
 export function PrivacyBadge(): JSX.Element {
   const [state, setState] = useState<PrivacyState | null>(null);
 
@@ -22,16 +23,20 @@ export function PrivacyBadge(): JSX.Element {
     };
     refresh();
     window.addEventListener(PRIVACY_CHANGED_EVENT, refresh);
+    const off = window.api.onPrivacyChanged((s) => {
+      if (alive) setState(s);
+    });
     return () => {
       alive = false;
       window.removeEventListener(PRIVACY_CHANGED_EVENT, refresh);
+      off();
     };
   }, []);
 
-  const online = state?.mode === "online";
+  const mode = state?.mode ?? "local";
   return (
     <span
-      className={`privacy-badge${online ? " online" : ""}`}
+      className={`privacy-badge${mode === "local" ? "" : ` ${mode}`}`}
       data-testid="privacy-badge"
     >
       <span className="dot" />

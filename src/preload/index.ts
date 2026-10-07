@@ -142,6 +142,17 @@ const api = {
     ipcRenderer.on(CHANNELS.sourceProgress, listener);
     return () => ipcRenderer.removeListener(CHANNELS.sourceProgress, listener);
   },
+  /** 103: nhận trạng thái riêng tư mới mỗi khi main đổi mode (badge cập nhật tức thì). Trả hàm huỷ. */
+  onPrivacyChanged: (
+    cb: (s: import("@shared/ipc/types").PrivacyState) => void,
+  ): (() => void) => {
+    const listener = (
+      _e: unknown,
+      payload: import("@shared/ipc/types").PrivacyState,
+    ): void => cb(payload);
+    ipcRenderer.on(CHANNELS.privacyChanged, listener);
+    return () => ipcRenderer.removeListener(CHANNELS.privacyChanged, listener);
+  },
   /** Lấy đường dẫn tuyệt đối của một File (kéo-thả/chọn) để gửi cho main đọc (sandbox-safe). */
   getFilePath: (file: File): string => webUtils.getPathForFile(file),
   // rag-qa (013)
