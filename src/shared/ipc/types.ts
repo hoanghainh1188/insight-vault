@@ -276,6 +276,8 @@ export interface SourceProgressEvent {
   step: IngestStep;
   progress: number; // 0..1
   errorLabel?: string;
+  /** 112: sự kiện của một lần "Xử lý lại" — nguồn vẫn `ready` (dùng dữ liệu cũ) trong lúc chạy. */
+  reprocess?: true;
 }
 
 /**

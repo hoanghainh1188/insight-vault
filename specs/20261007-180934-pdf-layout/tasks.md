@@ -118,10 +118,10 @@ ADR + glossary + gate.
 
 ### Quy tắc chặn + pipeline
 
-- [ ] T042 [P] [US3] RED — `tests/unit/reprocess-guard.test.ts`: `checkReprocessable(source, {queued, vaultLocked})` ⇒ lỗi đúng thông điệp contract: không tồn tại / không phải PDF / đang trong hàng đợi / trạng thái khác `ready|error` / vault khoá; hợp lệ ⇒ ok
-- [ ] T043 [US3] GREEN — `src/main/services/ingestion/reprocess-guard.ts`: `checkReprocessable`
-- [ ] T044 [US3] RED — `tests/unit/ingestion-reprocess.test.ts` (DI giả): thành công ⇒ thứ tự `vectorStore.add(new)` → `replaceChunks` → `deleteByIds(old)`, version 2, trạng thái giữ `ready` suốt quá trình, sự kiện `reprocess: true` + tiến độ parse theo trang; nguồn `error` ⇒ như retry bằng cách mới; LỖI ở parse / embed / `add` / `replaceChunks` ⇒ chunk + vector cũ nguyên, vector mới (nếu đã thêm) bị xoá, nguồn `ready`, lỗi "Xử lý lại thất bại — vẫn dùng bản cũ"; lỗi `deleteByIds` ⇒ vẫn thành công + log sự kiện (không nội dung); HUỶ trước swap ⇒ không đổi gì; `isVaultLocked()` true lúc swap ⇒ huỷ, giữ cũ, báo lỗi; nguồn bị xoá giữa chừng ⇒ không ghi gì; (E1) `resumeInterrupted` sau khi app đóng giữa lần xử lý lại: nguồn `ready` ⇒ vẫn `ready` dữ liệu cũ, không tự chạy tiếp; nguồn `error` đang xử lý lại ⇒ về `error`
-- [ ] T045 [US3] GREEN — `src/main/services/ingestion/pipeline.ts`: `reprocess(id)` + `cancelReprocess(id)` trên hàng đợi tuần tự (dùng lại `parseAndClean`, chunk, embed trong RAM); (C2) `PipelineDeps.isVaultLocked: () => boolean`
+- [X] T042 [P] [US3] RED — `tests/unit/reprocess-guard.test.ts`: `checkReprocessable(source, {queued, vaultLocked})` ⇒ lỗi đúng thông điệp contract: không tồn tại / không phải PDF / đang trong hàng đợi / trạng thái khác `ready|error` / vault khoá; hợp lệ ⇒ ok
+- [X] T043 [US3] GREEN — `src/main/services/ingestion/reprocess-guard.ts`: `checkReprocessable`
+- [X] T044 [US3] RED — `tests/unit/ingestion-reprocess.test.ts` (DI giả): thành công ⇒ thứ tự `vectorStore.add(new)` → `replaceChunks` → `deleteByIds(old)`, version 2, trạng thái giữ `ready` suốt quá trình, sự kiện `reprocess: true` + tiến độ parse theo trang; nguồn `error` ⇒ như retry bằng cách mới; LỖI ở parse / embed / `add` / `replaceChunks` ⇒ chunk + vector cũ nguyên, vector mới (nếu đã thêm) bị xoá, nguồn `ready`, lỗi "Xử lý lại thất bại — vẫn dùng bản cũ"; lỗi `deleteByIds` ⇒ vẫn thành công + log sự kiện (không nội dung); HUỶ trước swap ⇒ không đổi gì; `isVaultLocked()` true lúc swap ⇒ huỷ, giữ cũ, báo lỗi; nguồn bị xoá giữa chừng ⇒ không ghi gì; (E1) `resumeInterrupted` sau khi app đóng giữa lần xử lý lại: nguồn `ready` ⇒ vẫn `ready` dữ liệu cũ, không tự chạy tiếp; nguồn `error` đang xử lý lại ⇒ về `error`
+- [X] T045 [US3] GREEN — `src/main/services/ingestion/pipeline.ts`: `reprocess(id)` + `cancelReprocess(id)` trên hàng đợi tuần tự (dùng lại `parseAndClean`, chunk, embed trong RAM); (C2) `PipelineDeps.isVaultLocked: () => boolean`
 
 ### IPC + preload
 

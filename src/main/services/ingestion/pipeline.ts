@@ -21,6 +21,8 @@ import { errorLabelForStep } from "./status";
 import { SizeLimitError, assertWithinLimit } from "./size-limits";
 import { hashBytes, urlContentHash } from "./dedup";
 import { createSerialQueue } from "./queue";
+import { REPROCESS_ERRORS } from "./reprocess-guard";
+import { randomUUID } from "node:crypto";
 
 // Điều phối pipeline nạp nguồn (FR-004..010). TUẦN TỰ 1 nguồn/lần (queue). Toàn bộ DI → unit-test
 // không cần Electron/LanceDB thật. KHÔNG log nội dung tài liệu (Constitution III).
@@ -60,11 +62,24 @@ export interface PipelineDeps {
   hashFile?: (path: string) => Promise<{ hash: string; byteLength: number }>;
   setOnline?: (online: boolean, kind?: "url" | "model") => void;
   emit: (e: SourceProgressEvent) => void;
+  /** 112: kho đang sao lưu/khôi phục (085) ⇒ không hoán đổi dữ liệu của lần xử lý lại. */
+  isVaultLocked?: () => boolean;
+  /** 112: sinh id chunk mới cho lần xử lý lại (test cố định; mặc định randomUUID). */
+  newChunkId?: () => string;
+  /** 112: ghi sự kiện chẩn đoán (KHÔNG nội dung tài liệu). */
+  logEvent?: (event: string) => void;
 }
 
 export interface IngestionPipeline {
   add(input: AddSourceInput): Promise<AddSourceResult>;
   retry(id: string): Promise<Source>;
+  /**
+   * 112: xử lý lại nguồn PDF bằng cách trích hiện hành. Nguồn `ready`: dựng chunk + vector mới trong RAM rồi hoán đổi
+   * nguyên tử (giữ bản cũ khi lỗi/huỷ). Nguồn `error`: như retry. Ném nếu nguồn đang trong hàng đợi.
+   */
+  reprocess(id: string): Promise<void>;
+  /** 112: huỷ lần xử lý lại đang chờ/chạy; false nếu không có. */
+  cancelReprocess(id: string): boolean;
   remove(id: string): Promise<{ deleted: true }>;
   resumeAwaiting(): Promise<void>;
   /** Đánh dấu nguồn kẹt queued/processing sau restart → error (retry được). Gọi lúc khởi động. */
@@ -92,9 +107,15 @@ function cleanPage(p: PageText): PageText {
     : { page: p.page, text };
 }
 
+/** 112: thông báo khi xử lý lại thất bại (nguồn vẫn dùng bản cũ). */
+export const REPROCESS_FAILED_LABEL = "Xử lý lại thất bại — vẫn dùng bản cũ.";
+
 export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
   const { sourceRepo, vectorStore, emit } = deps;
   const queue = createSerialQueue();
+
+  // 112: id đang "Xử lý lại" (nguồn ready) ⇒ mọi sự kiện của nó gắn cờ reprocess.
+  const reprocessing = new Set<string>();
 
   const send = (
     s: Source,
@@ -109,6 +130,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       step,
       progress,
       ...(errorLabel ? { errorLabel } : {}),
+      ...(reprocessing.has(s.id) ? { reprocess: true as const } : {}),
     });
   };
 
@@ -249,6 +271,100 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     return true;
   };
 
+  // 112: nhúng văn bản chunk TRONG RAM (không ghi gì) — dùng cho xử lý lại. Ném StepError("embed") khi lỗi.
+  const embedInMemory = async (
+    src: Source,
+    texts: string[],
+  ): Promise<{ vectors: number[][]; dim: number }> => {
+    const provider = deps.getProvider();
+    if (!(await deps.isRuntimeReady()) || !provider) {
+      throw new StepError("embed", errorLabelForStep("embed", src.kind));
+    }
+    const onEmbedProgress = (done: number, total: number): void => {
+      const s = reload(src.id);
+      if (s) send(s, "embed", total ? done / total : 1);
+    };
+    try {
+      return deps.embedBatch
+        ? await deps.embedBatch(texts, onEmbedProgress)
+        : await embedTexts(provider, texts, onEmbedProgress);
+    } catch {
+      throw new StepError("embed", errorLabelForStep("embed", src.kind));
+    }
+  };
+
+  /**
+   * 112 (FR-015, research R10): xử lý lại nguồn READY — nguồn giữ `ready` (dữ liệu cũ dùng được) tới khi bản mới dựng
+   * xong: parse → chunk → embed trong RAM → add vector mới → replaceChunks (1 transaction) → xoá vector cũ. Lỗi/huỷ
+   * trước hoán đổi ⇒ không đổi gì (vector mới đã thêm bị xoá).
+   */
+  const reprocessReady = async (
+    id: string,
+    signal: { cancelled: boolean },
+  ): Promise<void> => {
+    const finish = (errorLabel?: string): void => {
+      const s = reload(id);
+      if (s) send(s, "done", errorLabel ? 0 : 1, errorLabel);
+      reprocessing.delete(id);
+    };
+    const src = reload(id);
+    if (!src || signal.cancelled) return finish();
+    let newIds: string[] = [];
+    let added = false;
+    try {
+      const { pages, pageCount } = await parseAndClean(src);
+      if (signal.cancelled || !reload(id)) return finish();
+      const drafts = chunkPages(pages);
+      send(src, "chunk", 0.4);
+      newIds = drafts.map(() => (deps.newChunkId ?? randomUUID)());
+      const { vectors, dim } = await embedInMemory(
+        src,
+        drafts.map((d) => d.text),
+      );
+      if (signal.cancelled || !reload(id)) return finish();
+      if (deps.isVaultLocked?.()) {
+        throw new StepError("store", REPROCESS_ERRORS.vaultLocked);
+      }
+      const oldIds = sourceRepo.chunkIds(id);
+      added = true;
+      await vectorStore.add(
+        drafts.map((_, i) => ({
+          id: newIds[i],
+          notebookId: src.notebookId,
+          sourceId: id,
+          vector: vectors[i],
+          dim,
+        })),
+      );
+      if (signal.cancelled || !reload(id)) {
+        await vectorStore.deleteByIds(newIds).catch(() => {});
+        return finish();
+      }
+      sourceRepo.replaceChunks(id, drafts, newIds, {
+        extractionVersion: PDF_EXTRACTION_VERSION,
+        pageCount,
+      });
+      added = false; // từ đây vector mới là dữ liệu chính thức
+      try {
+        await vectorStore.deleteByIds(oldIds);
+      } catch {
+        // Vector mồ côi (chunk cũ không còn) vô hại cho đúng đắn; dọn ở lần xoá/xử lý lại sau.
+        deps.logEvent?.("ingest.reprocess.orphanVectors");
+      }
+      finish();
+    } catch (e) {
+      if (added) await vectorStore.deleteByIds(newIds).catch(() => {});
+      if (signal.cancelled) return finish();
+      const vault =
+        e instanceof StepError && e.label === REPROCESS_ERRORS.vaultLocked;
+      finish(
+        vault
+          ? `${REPROCESS_ERRORS.vaultLocked} Xử lý lại bị huỷ, vẫn dùng bản cũ.`
+          : REPROCESS_FAILED_LABEL,
+      );
+    }
+  };
+
   const finishReady = (src: Source): void => {
     sourceRepo.updateStatus(src.id, "ready");
     const s = reload(src.id);
@@ -324,7 +440,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     }
   };
 
-  return {
+  const api: IngestionPipeline = {
     async add(input) {
       // Validate Ở BOUNDARY (không tin thẳng renderer — Constitution III, coding-style "validate at boundaries").
       if (
@@ -415,6 +531,35 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       return queued;
     },
 
+    async reprocess(id) {
+      const src = sourceRepo.getById(id);
+      if (!src) throw new Error(REPROCESS_ERRORS.notFound);
+      if (queue.has(id)) throw new Error(REPROCESS_ERRORS.busy);
+      // Nguồn lỗi (chưa từng sẵn sàng) ⇒ thử lại bằng cách trích hiện hành (processFull ghi phiên bản mới).
+      if (src.status === "error") {
+        await api.retry(id);
+        return;
+      }
+      if (src.status !== "ready") throw new Error(REPROCESS_ERRORS.badStatus);
+      reprocessing.add(id);
+      send(src, "parse", 0.05);
+      queue.enqueue(id, (signal) => reprocessReady(id, signal));
+    },
+
+    cancelReprocess(id) {
+      if (!reprocessing.has(id) || !queue.has(id)) return false;
+      queue.cancel(id);
+      // Hàng đợi bỏ việc chưa chạy mà không gọi lại ⇒ tự kết thúc sự kiện ở đây (việc đang chạy tự kết thúc).
+      queueMicrotask(() => {
+        if (reprocessing.has(id) && !queue.has(id)) {
+          const s = reload(id);
+          if (s) send(s, "done", 1);
+          reprocessing.delete(id);
+        }
+      });
+      return true;
+    },
+
     async remove(id) {
       queue.cancel(id);
       await vectorStore.deleteBySource(id);
@@ -465,4 +610,5 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
 
     whenIdle: () => queue.whenIdle(),
   };
+  return api;
 }
