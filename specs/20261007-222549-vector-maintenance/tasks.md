@@ -106,10 +106,10 @@ description: "Task list — 116 bảo trì kho vector (gộp phân mảnh + dọ
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T029 APPEND thuật ngữ mới vào `docs/00-glossary.md` (vector maintenance, fragment, compaction, prune/dọn phiên bản, brute-force, ANN) — chỉ thêm dòng, không sửa term cũ, không prettier
-- [ ] T030 `npm run lint`, `npm test` (coverage ≥ 80%, các file `vector-maintenance/*` được tính), `npm run build`
-- [ ] T031 Rà `grep -rn "vector.maintenance" src` ⇒ mọi meta chỉ dùng khoá trong C4; không log đường dẫn/`message`
-- [ ] T032 Commit: `chore(116): glossary + polish`
+- [X] T029 APPEND thuật ngữ mới vào `docs/00-glossary.md` (vector maintenance, fragment, compaction, prune/dọn phiên bản, brute-force, ANN) — chỉ thêm dòng, không sửa term cũ, không prettier
+- [X] T030 `npm run lint`, `npm test` (coverage ≥ 80%, các file `vector-maintenance/*` được tính), `npm run build`
+- [X] T031 Rà `grep -rn "vector.maintenance" src` ⇒ mọi meta chỉ dùng khoá trong C4; không log đường dẫn/`message`
+- [X] T032 Commit: `chore(116): glossary + polish`
 
 ---
 
