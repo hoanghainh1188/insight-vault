@@ -6,6 +6,7 @@ import {
   validateQuestion,
 } from "./question-validation";
 import { retrieve, type RetrievalDeps } from "./retrieval";
+import type { RelevanceConfig } from "./relevance-filter";
 import { buildContext } from "./context-builder";
 import { systemPromptFor } from "./prompt";
 import { postprocessCitations } from "./citation";
@@ -31,6 +32,11 @@ export interface RagServiceDeps extends RetrievalDeps {
    * đã nhúng lại xong vẫn hỏi đáp được dù các notebook khác còn dở. Async vì cần đếm vector (LanceDB).
    */
   reindexing?: (notebookId: string) => Promise<boolean>;
+  /**
+   * 108: cấu hình bộ lọc độ liên quan cho retrieve(). Chỉ công cụ đo (tests/eval, phần LLM tham khảo) đặt; app để
+   * trống ⇒ dùng RELEVANCE_CALIBRATION.config.
+   */
+  relevanceConfig?: RelevanceConfig;
   /** Lưu bền lượt hỏi–đáp (027-chat-history). Best-effort; KHÔNG log nội dung. */
   saveTurn?: (
     notebookId: string,
@@ -77,7 +83,13 @@ export function createRagService(deps: RagServiceDeps) {
     }
 
     // 055: truyền history cho query rewriting (giải tham chiếu hội thoại).
-    const scored = await retrieve(question, input.notebookId, deps, history);
+    const scored = await retrieve(
+      question,
+      input.notebookId,
+      deps,
+      history,
+      deps.relevanceConfig,
+    );
 
     // Grounded + không có căn cứ → "không tìm thấy" (không gọi model, không bịa).
     if (mode === "grounded" && scored.length === 0) return notFoundResult();

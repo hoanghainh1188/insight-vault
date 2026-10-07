@@ -1,0 +1,57 @@
+name: eval-retrieval
+
+# 108: đo chất lượng truy xuất hỏi đáp trên bộ đánh giá công khai (tests/eval/). CHỈ chạy khi bấm tay
+# (Actions → eval-retrieval → Run workflow). KHÔNG chặn PR, KHÔNG thêm vào required checks (FR-009).
+# Chạy mô hình e5 thật (tải ~120MB lần đầu, cache theo phiên bản) + LanceDB/FTS5 thật trên thư mục tạm.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "sweep = quét lưới cấu hình · current = chỉ đo cấu hình đang dùng + baseline"
+        type: choice
+        options: [sweep, current]
+        default: sweep
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Cài dependencies (từ lockfile)
+        run: npm ci
+
+      - name: Khoá cache theo phiên bản mô hình embedding
+        id: model
+        run: |
+          v=$(sed -n 's/^export const EMBEDDING_MODEL_VERSION = "\(.*\)";/\1/p' src/main/services/embedding/model-version.ts)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Cache mô hình e5
+        uses: actions/cache@v4
+        with:
+          path: tests/eval/.cache/models
+          key: eval-model-${{ steps.model.outputs.version }}
+
+      - name: Đo truy xuất
+        env:
+          EVAL_MODE: ${{ inputs.mode }}
+        run: npm run eval:retrieval
+
+      - name: Lưu báo cáo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: tests/eval/reports/**
+          if-no-files-found: warn

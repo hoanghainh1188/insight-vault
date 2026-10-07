@@ -341,3 +341,30 @@ describe("rag-service — không tìm thấy + gợi ý (108)", () => {
     expect(res.answer).toBe(NOT_FOUND_DISPLAY);
   });
 });
+
+describe("rag-service — relevanceConfig (108, công cụ đo)", () => {
+  it("deps.relevanceConfig được truyền xuống retrieve() (ngưỡng chặt ⇒ không tìm thấy, không gọi chat)", async () => {
+    let chatCalled = false;
+    const deps = makeDeps({ hits: [{ id: "a", sourceId: "s-a", score: 0.3 }] });
+    deps.chat = async () => {
+      chatCalled = true;
+      return "x [1]";
+    };
+    deps.relevanceConfig = {
+      maxDistance: 0.2,
+      relativeDelta: null,
+      bm25Gate: "requireVector",
+      bm25VectorMaxDistance: null,
+      bm25MaxScore: null,
+    };
+    const res = await createRagService(deps).ask(ask());
+    expect(res.notFound).toBe(true);
+    expect(chatCalled).toBe(false);
+  });
+
+  it("không đặt relevanceConfig ⇒ dùng bản ghi hiệu chuẩn (0.3 ≤ 0.5 ⇒ có trả lời)", async () => {
+    const deps = makeDeps({ hits: [{ id: "a", sourceId: "s-a", score: 0.3 }] });
+    const res = await createRagService(deps).ask(ask());
+    expect(res.notFound).toBe(false);
+  });
+});
