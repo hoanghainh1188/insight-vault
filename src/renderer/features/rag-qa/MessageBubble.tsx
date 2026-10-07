@@ -75,6 +75,16 @@ export function MessageBubble({
           Mở rộng · có thể ngoài nguồn
         </span>
       )}
+      {/* 098: trả lời bằng AI cục bộ sau lỗi online (người dùng chọn) — minh bạch nguồn trả lời. */}
+      {!isUser && message.answeredLocally && (
+        <span
+          className="local-answer"
+          data-testid="local-badge"
+          title="Lượt này được trả lời bằng AI cục bộ (Ollama) vì AI online gặp lỗi."
+        >
+          AI cục bộ
+        </span>
+      )}
       {isUser ? (
         <p className="bubble-text">{message.content}</p>
       ) : message.streaming ? (

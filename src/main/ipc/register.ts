@@ -41,6 +41,11 @@ import { getSourceContent } from "../services/source-viewer/source-content";
 import { logError, logEvent } from "../logging";
 import { createRendererErrorReporter } from "../services/app-log/renderer-error";
 import type { CrashService } from "../services/crash-report/crash-service";
+import {
+  parseAiTarget,
+  rethrowForIpc,
+  type AiTarget,
+} from "../services/ai-runtime/ai-target";
 import type { BackupService } from "../services/vault-backup/backup-service";
 import type { VaultLock } from "../services/vault-backup/vault-lock";
 import {
@@ -57,9 +62,10 @@ interface RegisterDeps {
   pipeline: IngestionPipeline;
   vectorStore: VectorStore;
   aiRuntime: AiRuntime;
-  ragService: RagService;
+  // 098: theo đích AI của lượt — active (provider đang bật) / local (Ollama).
+  ragServices: Record<AiTarget, RagService>;
   chatRepo: ChatRepo;
-  studioService: StudioService;
+  studioServices: Record<AiTarget, StudioService>;
   contentSearch: ContentSearch;
   // 059 — gợi ý model theo RAM + health Ollama + trạng thái reindex.
   recommendChatModel: () => ModelRecommendation;
@@ -95,9 +101,9 @@ export function registerIpc({
   pipeline,
   vectorStore,
   aiRuntime,
-  ragService,
+  ragServices,
   chatRepo,
-  studioService,
+  studioServices,
   contentSearch,
   recommendChatModel,
   ollamaHealth,
@@ -246,7 +252,15 @@ export function registerIpc({
   });
 
   // rag-qa (013) — embed/search/chat CHỈ ở đây (main). KHÔNG log payload (câu hỏi/nội dung — Constitution III).
-  safeHandle(CHANNELS.ragAsk, (input) => ragService.ask(input as RagAskInput));
+  // 098: đích AI theo lượt (input.target) + lỗi provider online gắn thẻ để renderer hiện nút "AI cục bộ".
+  safeHandle(CHANNELS.ragAsk, async (input) => {
+    const target = parseAiTarget(input);
+    try {
+      return await ragServices[target].ask(input as RagAskInput);
+    } catch (e) {
+      return rethrowForIpc(e);
+    }
+  });
 
   // streaming (039) — Chat trả lời chạy dần. Token đẩy qua rag:streamToken (webContents.send); huỷ qua
   // rag:stop (AbortController theo streamId). KHÔNG log token/nội dung.
@@ -261,13 +275,17 @@ export function registerIpc({
     if (typeof streamId !== "string" || streamId === "") {
       throw new Error("streamId không hợp lệ.");
     }
+    // Kiểm đích AI TRƯỚC khi giữ controller — ném ở đây không để lại entry mồ côi trong streamControllers.
+    const target = parseAiTarget(input);
     const controller = new AbortController();
     streamControllers.set(streamId, controller);
     try {
-      return await ragService.askStream(input as RagAskStreamInput, {
+      return await ragServices[target].askStream(input as RagAskStreamInput, {
         onToken: (delta) => emitToken({ streamId, delta }),
         signal: controller.signal,
       });
+    } catch (e) {
+      return rethrowForIpc(e);
     } finally {
       streamControllers.delete(streamId);
     }
@@ -301,10 +319,19 @@ export function registerIpc({
   });
 
   // studio (021) — tổng hợp toàn notebook (đọc chunk + chat CHỈ ở main). KHÔNG log content/citations.
-  safeHandle(CHANNELS.studioGenerate, (input) =>
-    studioService.generate(input as StudioGenerateInput),
+  safeHandle(CHANNELS.studioGenerate, async (input) => {
+    const target = parseAiTarget(input);
+    try {
+      return await studioServices[target].generate(
+        input as StudioGenerateInput,
+      );
+    } catch (e) {
+      return rethrowForIpc(e);
+    }
+  });
+  safeHandle(CHANNELS.studioList, (id) =>
+    studioServices.active.list(id as string),
   );
-  safeHandle(CHANNELS.studioList, (id) => studioService.list(id as string));
   // studio export (025) — ghi .md qua save dialog (main). KHÔNG log content.
   safeHandle(CHANNELS.studioExport, (input) => {
     const { content, suggestedName } = input as {

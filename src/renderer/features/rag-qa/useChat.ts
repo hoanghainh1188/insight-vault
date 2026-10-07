@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Citation, RagMode, RagTurn } from "@shared/ipc/types";
+import type { AiTarget, Citation, RagMode, RagTurn } from "@shared/ipc/types";
+import { parseIpcError } from "@shared/online-error-tag";
 import { announce } from "../../shared/a11y/announcer";
 import {
   CHAT_CANCELLED,
@@ -18,6 +19,13 @@ export interface ChatMessage {
   /** 071: chế độ đã dùng — "open" → badge "không dựa trên nguồn". */
   modeUsed?: RagMode;
   streaming?: boolean; // 039: đang nhận token (render text thô, chưa chip)
+  /** 098: trả lời bằng AI cục bộ sau lỗi online (người dùng bấm) — nhãn minh bạch, chỉ trong phiên. */
+  answeredLocally?: boolean;
+}
+
+/** 098: lượt lỗi do provider online, chờ người dùng chọn "AI cục bộ" hoặc "Thử lại". */
+export interface FailedTurn {
+  question: string;
 }
 
 export function useChat(notebookId: string) {
@@ -25,6 +33,7 @@ export function useChat(notebookId: string) {
   const [mode, setMode] = useState<RagMode>("grounded");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failedTurn, setFailedTurn] = useState<FailedTurn | null>(null);
   const [runtimeReady, setRuntimeReady] = useState<boolean | null>(null);
   const [hasReadySources, setHasReadySources] = useState(false);
   // 039: id stream đang chạy (để hiện nút Dừng); ref để listener token lọc đúng lượt.
@@ -61,6 +70,7 @@ export function useChat(notebookId: string) {
       announce(CHAT_CANCELLED);
     }
     setError(null);
+    setFailedTurn(null);
     setMessages([]);
     window.api
       .chatHistory(notebookId)
@@ -85,6 +95,9 @@ export function useChat(notebookId: string) {
   }, [notebookId]);
 
   const clearHistory = useCallback(() => {
+    // 098: xoá hội thoại thì bỏ luôn lượt lỗi đang chờ chọn (không còn câu hỏi để hỏi lại).
+    setFailedTurn(null);
+    setError(null);
     window.api
       .chatClear(notebookId)
       .then(() => setMessages([]))
@@ -117,7 +130,10 @@ export function useChat(notebookId: string) {
   const canSend = runtimeReady === true && hasReadySources && !loading;
 
   const send = useCallback(
-    async (question: string) => {
+    async (
+      question: string,
+      opts: { target?: AiTarget; retry?: boolean } = {},
+    ) => {
       const q = question.trim();
       if (!q || !canSend) return;
       // Defense-in-depth (FR-007): huỷ stream cũ nếu còn (ngoài việc UI đã khoá nút khi loading).
@@ -125,7 +141,17 @@ export function useChat(notebookId: string) {
         void window.api.ragStop(activeStreamRef.current).catch(() => {});
       }
       setError(null);
-      const history: RagTurn[] = messages.map((m) => ({
+      setFailedTurn(null);
+      // 098: hỏi lại lượt lỗi ⇒ câu hỏi (và phần trả lời dở nếu lỗi giữa stream) đã nằm cuối thread — cắt bỏ từ câu
+      // hỏi đó trở đi để không nhân đôi và không gửi chúng vào lịch sử.
+      const retryAt = opts.retry
+        ? messages
+            .map((m) => m.role === "user" && m.content === q)
+            .lastIndexOf(true)
+        : -1;
+      const base = retryAt >= 0 ? messages.slice(0, retryAt) : messages;
+      const local = opts.target === "local";
+      const history: RagTurn[] = base.map((m) => ({
         role: m.role,
         content: m.content,
       }));
@@ -133,8 +159,8 @@ export function useChat(notebookId: string) {
       activeStreamRef.current = streamId;
       setStreamingId(streamId);
       // Thêm câu hỏi + bong bóng assistant rỗng (streaming) để nối token.
-      setMessages((prev) => [
-        ...prev,
+      setMessages(() => [
+        ...base,
         { role: "user", content: q },
         { role: "assistant", content: "", streaming: true },
       ]);
@@ -148,6 +174,7 @@ export function useChat(notebookId: string) {
           mode,
           history,
           streamId,
+          ...(local ? { target: "local" as const } : {}),
         });
         // Lượt đã bị huỷ/đổi notebook giữa chừng → không ghi đè (streamId không còn active).
         if (activeStreamRef.current !== streamId) return;
@@ -171,12 +198,18 @@ export function useChat(notebookId: string) {
               citations: res.citations,
               notFound: res.notFound,
               modeUsed: res.modeUsed,
+              ...(local ? { answeredLocally: true } : {}),
             },
           ];
         });
       } catch (e) {
         if (activeStreamRef.current === streamId) {
-          setError(e instanceof Error ? e.message : "Không hỏi được.");
+          // 098: tách thẻ lỗi online (main gắn) — lỗi provider online ⇒ giữ lượt để người dùng chọn AI cục bộ.
+          const parsed = parseIpcError(
+            e instanceof Error ? e.message : "Không hỏi được.",
+          );
+          setError(parsed.message);
+          if (parsed.onlineKind && !local) setFailedTurn({ question: q });
           // Lỗi mạng giữa stream (khác Dừng): GIỮ phần đã nhận (token đã tới bong bóng) — chỉ chốt lại
           // (streaming:false) để người dùng không mất phần đã đọc; bong bóng rỗng thì gỡ. (spec Edge Case)
           setMessages((prev) => {
@@ -202,6 +235,27 @@ export function useChat(notebookId: string) {
     [canSend, messages, mode, notebookId],
   );
 
+  /** 098: chạy lại lượt lỗi online — "local" (Ollama) hoặc "active" (thử lại provider đang bật). */
+  const retryFailed = useCallback(
+    async (target: AiTarget) => {
+      if (!failedTurn) return;
+      // Không gửi được (Ollama ngừng chạy giữa phiên…) ⇒ báo rõ thay vì bấm mà không có gì xảy ra (ADR 098).
+      if (!canSend) {
+        setError(
+          target === "local"
+            ? "AI cục bộ (Ollama) chưa sẵn sàng. Mở Cài đặt để bật/chọn mô hình."
+            : "Chưa gửi được — kiểm tra AI trong Cài đặt rồi thử lại.",
+        );
+        return;
+      }
+      await send(failedTurn.question, {
+        target: target === "local" ? "local" : undefined,
+        retry: true,
+      });
+    },
+    [canSend, failedTurn, send],
+  );
+
   // Dừng stream đang chạy (039) — main abort → ragAskStream resolve với phần đã nhận → finalize bình thường.
   const stop = useCallback(() => {
     const id = activeStreamRef.current;
@@ -216,6 +270,8 @@ export function useChat(notebookId: string) {
     setMode,
     loading,
     error,
+    failedTurn,
+    retryFailed,
     runtimeReady,
     hasReadySources,
     canSend,
