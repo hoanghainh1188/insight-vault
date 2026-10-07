@@ -22,7 +22,7 @@ import {
 type LogFn = (event: string, meta: Record<string, unknown>) => void;
 
 export interface VectorMaintenanceDeps {
-  store: Pick<VectorStore, "stats" | "optimize" | "activeReads">;
+  store: Pick<VectorStore, "stats" | "optimize" | "activeOperations">;
   /** Bận theo định nghĩa chung của vault (isVaultBusy) — nguồn đang xử lý, reindex, sao lưu/khôi phục. */
   isBusy: () => boolean;
   freeBytes: () => Promise<number>;
@@ -58,9 +58,11 @@ export function createVectorMaintenance(
   let disposed = false;
   /** Lý do "skip" vừa log — cùng lý do lặp lại không log nữa (tránh spam mỗi phút khi bận lâu). */
   let lastSkip: string | null = null;
-  let idleWaiters: (() => void)[] = [];
+  /** Người chờ whenIdle: gọi với true khi lần chạy xong, false khi dispose. */
+  let idleWaiters: ((idle: boolean) => void)[] = [];
 
-  const busyNow = (): boolean => deps.isBusy() || deps.store.activeReads() > 0;
+  const busyNow = (): boolean =>
+    deps.isBusy() || deps.store.activeOperations() > 0;
 
   const skip = (trigger: Trigger, reason: string): void => {
     if (reason === lastSkip) return;
@@ -76,10 +78,17 @@ export function createVectorMaintenance(
     if (!needsMaintenance(stats)) {
       return { kind: "deferred", reason: "belowThreshold" };
     }
-    const [freeBytes, storeBytes] = await Promise.all([
-      deps.freeBytes(),
-      deps.storeBytes(),
-    ]);
+    let freeBytes: number;
+    let storeBytes: number;
+    try {
+      [freeBytes, storeBytes] = await Promise.all([
+        deps.freeBytes(),
+        deps.storeBytes(),
+      ]);
+    } catch {
+      // Không đo được dung lượng (quyền, ổ ngắt…) ⇒ không đủ chắc để gộp: hoãn, KHÔNG tính lỗi (review 116).
+      return { kind: "deferred", reason: "lowDisk" };
+    }
     // Kiểm bận lần nữa NGAY trước optimize: sao lưu có thể vừa lấy khoá trong lúc đo (analyze U1).
     const gate = evaluateGate({
       busy: busyNow(),
@@ -155,11 +164,15 @@ export function createVectorMaintenance(
     } catch {
       // Ghi nhật ký lỗi không được làm kẹt bộ điều phối.
     }
+    releaseWaiters(true);
+    safely(reschedule);
+  };
+
+  function releaseWaiters(idle: boolean): void {
     const waiters = idleWaiters;
     idleWaiters = [];
-    for (const w of waiters) w();
-    reschedule();
-  };
+    for (const w of waiters) w(idle);
+  }
 
   function reschedule(): void {
     if (timer !== null) {
@@ -169,7 +182,8 @@ export function createVectorMaintenance(
     if (disposed) return;
     const d = nextAction(state, deps.now());
     if (d.kind === "check") {
-      void runCheck();
+      // runCheck tự nuốt lỗi; .catch là chốt chặn cuối để không có unhandled rejection (review 116).
+      runCheck().catch(() => undefined);
     } else if (d.kind === "wait") {
       timer = deps.setTimer(() => {
         timer = null;
@@ -220,11 +234,11 @@ export function createVectorMaintenance(
           settled = true;
           resolve(false);
         }, timeoutMs);
-        idleWaiters.push(() => {
+        idleWaiters.push((idle) => {
           if (settled) return;
           settled = true;
           deps.clearTimer(handle);
-          resolve(true);
+          resolve(idle);
         });
       });
     },
@@ -234,6 +248,7 @@ export function createVectorMaintenance(
         deps.clearTimer(timer);
         timer = null;
       }
+      releaseWaiters(false);
     },
   };
 }

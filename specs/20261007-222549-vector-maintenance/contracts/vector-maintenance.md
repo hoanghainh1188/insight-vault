@@ -12,8 +12,8 @@ Giữ nguyên mọi phương thức cũ. THÊM (bắt buộc):
 stats(retentionMs: number): Promise<VectorStoreStats | null>;
 /** 116: gộp fragment + dọn phiên bản cũ hơn `retentionMs`. KHÔNG bật deleteUnverified. Bảng chưa có ⇒ null. */
 optimize(retentionMs: number): Promise<VectorOptimizeResult | null>;
-/** 116: số thao tác đọc (search/getVectorsByIds/countBy*) đang chạy — bảo trì không bắt đầu khi > 0. */
-activeReads(): number;
+/** 116: số thao tác đọc/ghi (search/getVectorsByIds/countBy*/add/deleteBy*/dropTable) đang chạy — bảo trì không bắt đầu khi > 0. */
+activeOperations(): number;
 ```
 
 - `optimize`/`stats` dùng handle `table` cache sẵn (không mở handle mới); `dropTable` vẫn reset handle.
@@ -44,7 +44,7 @@ Ngữ nghĩa: xem `data-model.md`. Không I/O, không `Date.now()` bên trong.
 
 ```ts
 interface VectorMaintenanceDeps {
-  store: Pick<VectorStore, "stats" | "optimize" | "activeReads">;
+  store: Pick<VectorStore, "stats" | "optimize" | "activeOperations">;
   isBusy: () => boolean; // isVaultBusy(vaultLock)
   freeBytes: () => Promise<number>; // statfs(dataDir)
   storeBytes: () => Promise<number>; // dirSize(vectors/)
@@ -92,3 +92,12 @@ interface VectorMaintenance {
 ## C7 — `createIngestion` thêm `onVectorWrite?: () => void`
 
 Nếu có: `ingestion.vectorStore = trackVectorWrites(lance, onVectorWrite)` và pipeline dùng bản bọc đó.
+
+## Điều chỉnh sau review (code-reviewer + security-reviewer, 2026-10-07)
+
+- `activeReads()` đổi tên thành `activeOperations()` và đếm cả thao tác GHI đang chạy (security S2).
+- `conflict`: không tính lỗi nhưng đặt `lastRunAt` ⇒ chịu trần `MIN_INTERVAL_MS` (security S1).
+- Đo `freeBytes`/`storeBytes` ném lỗi ⇒ `deferred` `lowDisk`, không tính lỗi (security S3 / code review S1).
+- `runCheck` có `.catch` chốt chặn và `reschedule` bọc `safely` (code review S2); `dispose()` trả `false` cho mọi
+  `whenIdle` đang chờ và huỷ hẹn giờ của chúng (code review S3).
+- Lỗi phân loại "conflict" theo `/conflict|retryable/i`.

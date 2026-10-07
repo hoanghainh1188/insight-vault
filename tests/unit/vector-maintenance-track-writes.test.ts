@@ -21,7 +21,7 @@ function fakeStore(fail = false): VectorStore {
     getVectorsByIds: async () => new Map([["a", [1]]]),
     stats: async () => ({ fragmentCount: 2, rowCount: 5, prunableVersions: 1 }),
     optimize: async () => null,
-    activeReads: () => 7,
+    activeOperations: () => 7,
     close: async () => undefined,
   };
 }
@@ -89,7 +89,7 @@ describe("trackVectorWrites", () => {
       prunableVersions: 1,
     });
     expect(await vs.optimize(0)).toBeNull();
-    expect(vs.activeReads()).toBe(7);
+    expect(vs.activeOperations()).toBe(7);
     await vs.close();
     expect(onWrite).not.toHaveBeenCalled();
   });

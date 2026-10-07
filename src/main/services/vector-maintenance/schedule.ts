@@ -192,11 +192,19 @@ export function applyOutcome(
   }
   if (outcome.kind === "deferred") {
     // Bận/xung đột là tạm thời ⇒ thử lại khi kho yên; các lý do khác chờ kích hoạt mới.
-    const transient =
-      outcome.reason === "busy" || outcome.reason === "conflict";
-    return transient
-      ? { ...base, ...retryLater(s, trigger, now + DEBOUNCE_MS) }
-      : base;
+    if (outcome.reason === "busy") {
+      return { ...base, ...retryLater(s, trigger, now + DEBOUNCE_MS) };
+    }
+    if (outcome.reason === "conflict") {
+      // optimize ĐÃ chạy (rồi thua commit) ⇒ tính vào trần tần suất để xung đột lặp lại không quét kho mỗi phút
+      // (security review 116); không tính lỗi.
+      return {
+        ...base,
+        lastRunAt: s.runStartedAt ?? now,
+        ...retryLater(s, trigger, now + DEBOUNCE_MS),
+      };
+    }
+    return base;
   }
   const failures = s.consecutiveFailures + 1;
   const disabled = failures >= MAX_CONSECUTIVE_FAILURES;

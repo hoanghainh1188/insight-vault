@@ -144,20 +144,32 @@ describe("applyOutcome", () => {
     expect(nextAction(s, at + 10 * FOLLOW_UP_MS)).toEqual({ kind: "idle" });
   });
 
-  it("deferred busy/conflict ⇒ thử lại sau DEBOUNCE_MS, không tính lỗi, không tính là đã chạy", () => {
-    for (const reason of ["busy", "conflict"] as const) {
-      const s = ranAt(requestRun(initialState(), "reindex", T0), T0, {
-        kind: "deferred",
-        reason,
-      });
-      expect(s.consecutiveFailures).toBe(0);
-      expect(s.lastRunAt).toBeNull();
-      expect(nextAction(s, T0)).toEqual({
-        kind: "wait",
-        delayMs: DEBOUNCE_MS,
-        trigger: "reindex",
-      });
-    }
+  it("deferred busy ⇒ thử lại sau DEBOUNCE_MS, không tính lỗi, không tính là đã chạy", () => {
+    const s = ranAt(requestRun(initialState(), "reindex", T0), T0, {
+      kind: "deferred",
+      reason: "busy",
+    });
+    expect(s.consecutiveFailures).toBe(0);
+    expect(s.lastRunAt).toBeNull();
+    expect(nextAction(s, T0)).toEqual({
+      kind: "wait",
+      delayMs: DEBOUNCE_MS,
+      trigger: "reindex",
+    });
+  });
+
+  it("conflict ⇒ không tính lỗi nhưng optimize đã chạy ⇒ áp trần tần suất (security review)", () => {
+    const s = ranAt(requestRun(initialState(), "reindex", T0), T0, {
+      kind: "deferred",
+      reason: "conflict",
+    });
+    expect(s.consecutiveFailures).toBe(0);
+    expect(s.lastRunAt).toBe(T0);
+    expect(nextAction(s, T0)).toEqual({
+      kind: "wait",
+      delayMs: MIN_INTERVAL_MS,
+      trigger: "reindex",
+    });
   });
 
   it("deferred noTable/belowThreshold/lowDisk ⇒ hết việc chờ", () => {

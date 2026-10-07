@@ -74,7 +74,7 @@ Bảng 20 000 vector ghi theo lô 32 (đúng cỡ lô `embedAndStore`/reindex), 
 
 - **Decision**: thêm hàm thuần `isVaultBusy(lock)` = `lock.getState().busy || lock.isLocked()` trong `vault-lock.ts`
   (bao trọn: nguồn queued/processing/reprocessing, reindex nền, thao tác sao lưu/khôi phục đang mở, khoá chụp, khoá
-  vĩnh viễn sau xác nhận khôi phục). Bảo trì dùng `isVaultBusy(vaultLock) || vectorStore.activeReads() > 0`.
+  vĩnh viễn sau xác nhận khôi phục). Bảo trì dùng `isVaultBusy(vaultLock) || vectorStore.activeOperations() > 0`.
 - **Alternatives**: định nghĩa song song trong module bảo trì — loại (dễ lệch).
 
 ## R7 — Sao lưu/khôi phục không chụp `vectors/` giữa lúc bảo trì

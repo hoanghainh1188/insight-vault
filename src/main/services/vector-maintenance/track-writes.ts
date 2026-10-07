@@ -44,7 +44,7 @@ export function trackVectorWrites(
     getVectorsByIds: (ids) => store.getVectorsByIds(ids),
     stats: (retentionMs) => store.stats(retentionMs),
     optimize: (retentionMs) => store.optimize(retentionMs),
-    activeReads: () => store.activeReads(),
+    activeOperations: () => store.activeOperations(),
     close: () => store.close(),
   };
 }

@@ -64,8 +64,8 @@ export interface VectorStore {
    * giao dịch dở). Không đổi id/vector/kết quả truy vấn. Bảng chưa tồn tại → null.
    */
   optimize(retentionMs: number): Promise<VectorOptimizeResult | null>;
-  /** 116: số thao tác đọc đang chạy — bảo trì không bắt đầu khi > 0. */
-  activeReads(): number;
+  /** 116: số thao tác đọc/ghi đang chạy — bảo trì không bắt đầu khi > 0. */
+  activeOperations(): number;
   close(): Promise<void>;
 }
 
@@ -123,15 +123,15 @@ export async function createLanceVectorStore(
   const lancedb = await import("@lancedb/lancedb");
   const conn = (await lancedb.connect(dir)) as unknown as LanceConn;
   let table: LanceTable | null = null;
-  let reads = 0;
+  let inflight = 0;
 
-  /** Đếm thao tác đọc đang bay (116: bảo trì chờ kho yên). */
-  const reading = async <T>(fn: () => Promise<T>): Promise<T> => {
-    reads += 1;
+  /** Đếm thao tác đọc/ghi đang bay (116: bảo trì chỉ bắt đầu khi kho yên). */
+  const tracked = async <T>(fn: () => Promise<T>): Promise<T> => {
+    inflight += 1;
     try {
       return await fn();
     } finally {
-      reads -= 1;
+      inflight -= 1;
     }
   };
 
@@ -188,57 +188,68 @@ export async function createLanceVectorStore(
     return map;
   };
 
+  const addRows = async (records: VectorRecord[]): Promise<void> => {
+    if (records.length === 0) return;
+    const rows = records.map(toRow);
+    const t = await getTable();
+    if (t) {
+      await t.add(rows);
+    } else {
+      table = await conn.createTable(TABLE, rows);
+    }
+  };
+
+  const deleteWhere = async (predicate: string): Promise<void> => {
+    const t = await getTable();
+    if (t) await t.delete(predicate);
+  };
+
+  const deleteIds = async (ids: string[]): Promise<void> => {
+    if (ids.length === 0) return;
+    const t = await getTable();
+    if (!t) return;
+    // Chia lô để biểu thức IN không quá dài (PDF lớn có thể vài nghìn chunk).
+    for (let i = 0; i < ids.length; i += 500) {
+      const inList = ids
+        .slice(i, i + 500)
+        .map((id) => `'${q(id)}'`)
+        .join(",");
+      await t.delete(`id IN (${inList})`);
+    }
+  };
+
   return {
-    async add(records) {
-      if (records.length === 0) return;
-      const rows = records.map(toRow);
-      const t = await getTable();
-      if (t) {
-        await t.add(rows);
-      } else {
-        table = await conn.createTable(TABLE, rows);
-      }
+    add(records) {
+      return tracked(() => addRows(records));
     },
-    async deleteBySource(sourceId) {
-      const t = await getTable();
-      if (t) await t.delete(`source_id = '${q(sourceId)}'`);
+    deleteBySource(sourceId) {
+      return tracked(() => deleteWhere(`source_id = '${q(sourceId)}'`));
     },
-    async deleteByIds(ids) {
-      if (ids.length === 0) return;
-      const t = await getTable();
-      if (!t) return;
-      // Chia lô để biểu thức IN không quá dài (PDF lớn có thể vài nghìn chunk).
-      for (let i = 0; i < ids.length; i += 500) {
-        const inList = ids
-          .slice(i, i + 500)
-          .map((id) => `'${q(id)}'`)
-          .join(",");
-        await t.delete(`id IN (${inList})`);
-      }
+    deleteByIds(ids) {
+      return tracked(() => deleteIds(ids));
     },
-    async deleteByNotebook(notebookId) {
-      const t = await getTable();
-      if (t) await t.delete(`notebook_id = '${q(notebookId)}'`);
+    deleteByNotebook(notebookId) {
+      return tracked(() => deleteWhere(`notebook_id = '${q(notebookId)}'`));
     },
     countBySource(sourceId) {
-      return reading(async () => {
+      return tracked(async () => {
         const t = await getTable();
         if (!t) return 0;
         return t.countRows(`source_id = '${q(sourceId)}'`);
       });
     },
     countByNotebook(notebookId) {
-      return reading(async () => {
+      return tracked(async () => {
         const t = await getTable();
         if (!t) return 0;
         return t.countRows(`notebook_id = '${q(notebookId)}'`);
       });
     },
     search(queryVector, notebookId, topK) {
-      return reading(() => searchRows(queryVector, notebookId, topK));
+      return tracked(() => searchRows(queryVector, notebookId, topK));
     },
     getVectorsByIds(ids) {
-      return reading(() => vectorsByIds(ids));
+      return tracked(() => vectorsByIds(ids));
     },
     async stats(retentionMs) {
       const t = await getTable();
@@ -268,13 +279,15 @@ export async function createLanceVectorStore(
         bytesFreed: r.prune.bytesRemoved,
       };
     },
-    activeReads: () => reads,
-    async dropTable() {
-      const names = await conn.tableNames();
-      if (names.includes(TABLE)) {
-        await conn.dropTable(TABLE);
-      }
-      table = null; // buộc mở/tạo lại (dim mới) ở lần add tiếp theo
+    activeOperations: () => inflight,
+    dropTable() {
+      return tracked(async () => {
+        const names = await conn.tableNames();
+        if (names.includes(TABLE)) {
+          await conn.dropTable(TABLE);
+        }
+        table = null; // buộc mở/tạo lại (dim mới) ở lần add tiếp theo
+      });
     },
     async close() {
       table = null;

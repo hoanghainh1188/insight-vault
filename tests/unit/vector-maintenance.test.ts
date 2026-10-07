@@ -34,7 +34,7 @@ interface Harness {
   store: {
     stats: ReturnType<typeof vi.fn>;
     optimize: ReturnType<typeof vi.fn>;
-    activeReads: ReturnType<typeof vi.fn>;
+    activeOperations: ReturnType<typeof vi.fn>;
   };
   busy: { value: boolean };
   freeBytes: ReturnType<typeof vi.fn>;
@@ -70,7 +70,7 @@ function setup(
   const store = {
     stats: vi.fn(async () => (opts.stats === undefined ? dirty : opts.stats)),
     optimize: vi.fn(async () => merged),
-    activeReads: vi.fn(() => 0),
+    activeOperations: vi.fn(() => 0),
   };
   const freeBytes = vi.fn(async () => opts.free ?? 1e12);
   const m = createVectorMaintenance({
@@ -238,9 +238,9 @@ describe("US3 — không cản trở người dùng", () => {
     expect(h.store.optimize).toHaveBeenCalledTimes(1);
   });
 
-  it("có truy vấn đang chạy (activeReads > 0) ⇒ coi là bận", async () => {
+  it("có thao tác đọc/ghi đang chạy (activeOperations > 0) ⇒ coi là bận", async () => {
     const h = setup();
-    h.store.activeReads.mockReturnValue(1);
+    h.store.activeOperations.mockReturnValue(1);
     h.m.notifyReindexDone();
     await vi.advanceTimersByTimeAsync(0);
     expect(h.store.optimize).not.toHaveBeenCalled();
@@ -267,7 +267,7 @@ describe("US3 — không cản trở người dùng", () => {
     expect(h.events[0]!.meta["reason"]).toBe("lowDisk");
   });
 
-  it("xung đột commit ⇒ skip conflict, không tính lỗi, thử lại sau DEBOUNCE_MS", async () => {
+  it("xung đột commit ⇒ skip conflict, không tính lỗi, thử lại sau MIN_INTERVAL_MS", async () => {
     const h = setup();
     h.store.optimize.mockRejectedValueOnce(
       new Error("Retryable commit conflict for version 9"),
@@ -282,8 +282,25 @@ describe("US3 — không cản trở người dùng", () => {
       trigger: "reindex",
       reason: "conflict",
     });
-    await vi.advanceTimersByTimeAsync(MIN_INTERVAL_MS);
+    await vi.advanceTimersByTimeAsync(MIN_INTERVAL_MS - 1);
+    expect(h.store.optimize).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
     expect(h.store.optimize).toHaveBeenCalledTimes(2);
+  });
+
+  it("đo dung lượng trống lỗi (statfs ném) ⇒ hoãn lowDisk, không tính lỗi (security review)", async () => {
+    const h = setup();
+    h.freeBytes.mockRejectedValue(new Error("EIO"));
+    h.m.notifyReindexDone();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.store.optimize).not.toHaveBeenCalled();
+    expect(h.events).toEqual([
+      {
+        level: "info",
+        event: "vector.maintenance.skip",
+        meta: { trigger: "reindex", reason: "lowDisk" },
+      },
+    ]);
   });
 
   it("lỗi ⇒ logError (không message), backoff 10 → 20 phút, lỗi thứ 3 ⇒ ngưng; không bao giờ ném", async () => {
@@ -368,5 +385,42 @@ describe("US3 — không cản trở người dùng", () => {
     releaseStats(dirty);
     await vi.advanceTimersByTimeAsync(0);
     expect(await idle).toBe(true);
+  });
+
+  it("dispose ⇒ whenIdle đang chờ trả false ngay (không treo lúc thoát)", async () => {
+    const h = setup();
+    h.store.optimize.mockImplementation(() => new Promise(() => undefined));
+    h.m.notifyReindexDone();
+    await vi.advanceTimersByTimeAsync(0);
+    const idle = h.m.whenIdle(60_000);
+    h.m.dispose();
+    expect(await idle).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("setTimer ném sau một lần chạy ⇒ không unhandled rejection (code review)", async () => {
+    let calls = 0;
+    const m = createVectorMaintenance({
+      store: {
+        stats: async () => dirty,
+        optimize: async () => merged,
+        activeOperations: () => 0,
+      },
+      isBusy: () => false,
+      freeBytes: async () => 1e12,
+      storeBytes: async () => 1e6,
+      now: () => Date.now(),
+      setTimer: () => {
+        calls += 1;
+        throw new Error("timer");
+      },
+      clearTimer: () => undefined,
+      log: () => undefined,
+      logError: () => undefined,
+    });
+    expect(() => m.notifyReindexDone()).not.toThrow();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(calls).toBe(1); // follow-up được hẹn (và ném) — bị nuốt
+    expect(m.isRunning()).toBe(false);
   });
 });

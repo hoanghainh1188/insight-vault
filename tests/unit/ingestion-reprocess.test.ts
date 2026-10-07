@@ -69,7 +69,7 @@ function harness() {
     async optimize() {
       return null;
     },
-    activeReads: () => 0,
+    activeOperations: () => 0,
     async close() {},
   };
   const events: SourceProgressEvent[] = [];

@@ -75,7 +75,7 @@ src/main/services/
 │   ├── classify-error.ts            # lỗi optimize ⇒ "conflict" (hoãn) | errorType (lỗi)
 │   └── maintenance.ts               # bộ điều phối DI (C4): hẹn giờ, single-flight, log, whenIdle
 ├── ingestion/
-│   ├── vector-store.ts              # + stats / optimize / activeReads (C1)
+│   ├── vector-store.ts              # + stats / optimize / activeOperations (C1)
 │   └── ingestion.ts                 # + onVectorWrite ⇒ trackVectorWrites (C7)
 └── vault-backup/
     ├── vault-lock.ts                # + isVaultBusy (C5)
@@ -89,7 +89,7 @@ tests/unit/
 ├── vector-maintenance-classify-error.test.ts# MỚI
 ├── vector-store-optimize.test.ts            # MỚI — LanceDB thật
 ├── vault-lock.test.ts / vault-backup-*.test.ts  # + isVaultBusy, waitVectorIdle
-└── ingestion-*.test.ts, embed-reindex-runner.test.ts  # cập nhật mock VectorStore (optimize/stats/activeReads)
+└── ingestion-*.test.ts, embed-reindex-runner.test.ts  # cập nhật mock VectorStore (optimize/stats/activeOperations)
 
 docs/04-decisions/
 ├── 2026-10-07-vector-maintenance.md         # ADR MỚI: hoãn ANN + số liệu + tham số bảo trì
@@ -111,7 +111,7 @@ isVaultBusy(vaultLock), freeBytes: statfs(dataDir), storeBytes: dirSize(vectors/
 waitVectorIdle: () => maintenance.whenIdle(BACKUP_WAIT_TIMEOUT_MS) })` → sau `resumeAwaiting()` gọi
    `maintenance.scheduleStartup()`; trong `runReindex(...).finally` gọi `maintenance.notifyReindexDone()`;
    `app.on("will-quit", () => maintenance.dispose())`.
-2. **`activeReads`**: adapter tăng/giảm bộ đếm quanh `search`, `getVectorsByIds`, `countBy*` (try/finally).
+2. **`activeOperations`**: adapter tăng/giảm bộ đếm quanh `search`, `getVectorsByIds`, `countBy*` (try/finally).
 3. **`stats(retentionMs)`**: `stats()` + `listVersions()`; `prunableVersions` = số phiên bản có `timestamp` <
    `Date.now() − retentionMs`, trừ phiên bản mới nhất.
 4. **Phân loại lỗi**: `classifyOptimizeError(e)` ⇒ `{ kind: "conflict" }` nếu tên/thông điệp (chỉ dùng để phân loại,

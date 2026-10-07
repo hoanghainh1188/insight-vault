@@ -51,7 +51,7 @@ function fakeVectorStore() {
     async optimize() {
       return null;
     },
-    activeReads: () => 0,
+    activeOperations: () => 0,
     async close() {},
   };
   return { store, rows };

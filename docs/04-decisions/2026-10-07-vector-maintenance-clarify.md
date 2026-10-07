@@ -31,3 +31,12 @@
   thế bởi" vào đoạn "IVF_PQ lazily khi > 50k" của `2026-07-11-lancedb-integration.md` và dòng 30 của
   `2026-07-11-ingestion-clarify.md` (không xoá lịch sử).
 - Thuật ngữ mới (vector maintenance, fragment, compaction, …) append vào `docs/00-glossary.md` trong branch feature.
+
+## Ghi chú triển khai (2026-10-07, sau implement)
+
+- #2: hàm "bận" dùng chung được đặt tên **`isVaultBusy`** (trong `vault-lock.ts`), không phải `isStoreBusy`. Phần "không có
+  `search` đang bay" mở rộng thành **`activeOperations()`**: đếm cả thao tác đọc lẫn ghi đang chạy (security review).
+- #7: chữ ký thật là `stats(retentionMs)` / `optimize(retentionMs)` (+ `activeOperations()`), xem
+  `specs/20261007-222549-vector-maintenance/contracts/vector-maintenance.md`.
+- #8: không đo được dung lượng (statfs/dirSize lỗi) ⇒ hoãn `lowDisk` (không tính lỗi). Lưu ý: `lowDisk`/`belowThreshold`
+  không tự thử lại — lần kiểm kế tiếp đến từ thao tác ghi mới, follow-up, hoặc lần khởi động sau.

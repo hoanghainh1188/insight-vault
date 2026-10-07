@@ -81,7 +81,7 @@ ngưỡng độ liên quan, và **không** dùng index vô hướng trên `noteb
 
 ## Hệ quả
 
-- `VectorStore` có thêm `stats(retentionMs)`, `optimize(retentionMs)`, `activeReads()` (bắt buộc). `ReindexVectorStore`
+- `VectorStore` có thêm `stats(retentionMs)`, `optimize(retentionMs)`, `activeOperations()` (bắt buộc). `ReindexVectorStore`
   giữ nguyên.
 - Thêm module mới `src/main/services/vector-maintenance/`. `createIngestion({ onVectorWrite })` bọc kho để đếm số lần
   ghi.

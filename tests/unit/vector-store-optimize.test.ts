@@ -73,12 +73,12 @@ async function snapshot(vs: VectorStore, queries: number[][]) {
 }
 
 describe("LanceVectorStore stats/optimize (116)", () => {
-  it("bảng chưa tồn tại ⇒ stats/optimize trả null, activeReads = 0", async () => {
+  it("bảng chưa tồn tại ⇒ stats/optimize trả null, activeOperations = 0", async () => {
     dir = mkdtempSync(join(tmpdir(), "iv-vopt-"));
     const vs = await createLanceVectorStore(dir);
     expect(await vs.stats(0)).toBeNull();
     expect(await vs.optimize(0)).toBeNull();
-    expect(vs.activeReads()).toBe(0);
+    expect(vs.activeOperations()).toBe(0);
     await vs.close();
   });
 
@@ -134,12 +134,17 @@ describe("LanceVectorStore stats/optimize (116)", () => {
     await vs.close();
   });
 
-  it("activeReads > 0 trong lúc một truy vấn đang chạy", async () => {
+  it("activeOperations đếm cả đọc lẫn ghi đang chạy", async () => {
     const vs = await fragmentedStore();
     const p = vs.search(Array.from({ length: DIM }, rnd), "nb0", 6);
-    expect(vs.activeReads()).toBe(1);
+    expect(vs.activeOperations()).toBe(1);
     await p;
-    expect(vs.activeReads()).toBe(0);
+    expect(vs.activeOperations()).toBe(0);
+    const w = vs.add([rec(20_000)]);
+    const d = vs.deleteBySource("s9");
+    expect(vs.activeOperations()).toBe(2);
+    await Promise.all([w, d]);
+    expect(vs.activeOperations()).toBe(0);
     await vs.close();
   });
 });
