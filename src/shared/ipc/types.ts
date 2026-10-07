@@ -111,6 +111,8 @@ export interface ChatMessage {
 export interface ChatRequest {
   messages: ChatMessage[];
   model?: string;
+  /** 105: cửa sổ ngữ cảnh (token) ép cho Ollama (`options.num_ctx`); provider online bỏ qua. */
+  numCtx?: number;
 }
 export interface ChatResult {
   content: string;
@@ -394,7 +396,9 @@ export interface StudioResult {
   content: string; // text kèm token [n]
   citations: Citation[]; // đã hậu kiểm; rỗng chỉ khi content rỗng (không lưu bản rỗng)
   createdAt: number;
-  truncated?: boolean; // true khi số chunk đưa vào context < tổng chunk notebook (chỉ tổng hợp phần đầu)
+  truncated?: boolean; // true khi còn phần tài liệu KHÔNG được tổng hợp (vượt số phần tối đa)
+  /** 105: số phần đã tổng hợp (>1 ⇒ map-reduce; chip [n] vẫn trỏ đúng đoạn). Chỉ có ở kết quả vừa tạo. */
+  parts?: number;
 }
 
 /** Input sinh 1 bản tổng hợp cho notebook theo loại. */

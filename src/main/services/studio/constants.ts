@@ -1,8 +1,8 @@
 // Hằng số Studio (ADR 2026-07-11-studio-context-strategy). Một nơi duy nhất — dễ tinh chỉnh.
 
-// Ngân sách ký tự ghép ngữ cảnh tổng hợp toàn notebook. Rộng hơn CONTEXT_CHAR_BUDGET (rag hỏi-đáp = 6000)
-// vì Studio tóm lược cả tài liệu. Nới 8000→16000 (025-workspace-enhance) để bao phủ notebook lớn hơn trong
-// 1 lượt (giữ chip [n] chính xác — KHÔNG map-reduce), vẫn dưới context window model local (~8k–32k token).
+// Ngân sách ký tự MẶC ĐỊNH ghép ngữ cảnh tổng hợp toàn notebook — dùng khi KHÔNG đọc được cửa sổ ngữ cảnh của
+// model. 105 (ADR studio-large-clarify): ngân sách thật tính theo cửa sổ model (context-window.ts) + num_ctx tường
+// minh; vượt thì map-reduce với [n] toàn cục (map-reduce.ts) — chip vẫn trỏ đúng đoạn.
 export const STUDIO_CONTEXT_BUDGET = 16000;
 
 // 4 loại tổng hợp (khác nhau ở system prompt, chung kiến trúc).

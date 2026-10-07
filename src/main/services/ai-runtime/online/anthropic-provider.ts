@@ -122,6 +122,11 @@ export class AnthropicProvider implements LLMProvider {
     );
   }
 
+  /** 105: cửa sổ ngữ cảnh điển hình (Claude) — Studio tự áp trần ký tự (chi phí/độ trễ trên key người dùng). */
+  async contextTokens(): Promise<number | null> {
+    return 200_000;
+  }
+
   async test(): Promise<RuntimeStatus> {
     return testOnlineChat(this, this.deps, LABEL);
   }

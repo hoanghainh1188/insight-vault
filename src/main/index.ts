@@ -49,6 +49,7 @@ import {
   pickProvider as pickProviderFor,
   type AiTarget,
 } from "./services/ai-runtime/ai-target";
+import { studioContextFor } from "./services/studio/context-window";
 import { runReindex, needsReindex } from "./services/embedding/reindex-runner";
 import { recommendChatModel } from "./services/ai/model-recommend";
 import { checkOllama } from "./services/ai/ollama-health";
@@ -374,8 +375,15 @@ app
         listSources: (nb) => ingestion.sourceRepo.listByNotebook(nb),
         listChunks: (sid) => ingestion.sourceRepo.listChunks(sid),
         studioRepo: createStudioRepo(db),
-        chat: async (messages) =>
-          (await pickProvider(target).chat({ messages })).content,
+        chat: async (messages, o) =>
+          (await pickProvider(target).chat({ messages, numCtx: o?.numCtx }))
+            .content,
+        // 105: ngân sách + num_ctx theo cửa sổ ngữ cảnh của model đang dùng (ADR studio-large-clarify).
+        contextInfo: async () => {
+          const p = pickProvider(target);
+          const tokens = (await p.contextTokens?.().catch(() => null)) ?? null;
+          return studioContextFor(p.id, tokens);
+        },
       });
     const studioServices = {
       active: makeStudioService("active"),

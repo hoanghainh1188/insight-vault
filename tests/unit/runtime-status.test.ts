@@ -14,6 +14,7 @@ function client(opts: { reachable: boolean; models?: string[] }): OllamaClient {
       })),
     chat: async () => ({ content: "" }),
     embed: async () => ({ vector: [] }),
+    contextLength: async () => null,
   };
 }
 

@@ -120,10 +120,17 @@ export function StudioResultCard({
           onCite={onCite}
         />
       </div>
+      {/* 105: tổng hợp nhiều phần (map-reduce) — chip [n] vẫn trỏ đúng đoạn nguồn (ADR studio-large-clarify). */}
+      {(result.parts ?? 1) > 1 && (
+        <p className="studio-truncated" data-testid="studio-parts">
+          Tổng hợp từ {result.parts} phần của tài liệu — mỗi trích dẫn [n] vẫn
+          trỏ đúng đoạn nguồn.
+        </p>
+      )}
       {result.truncated && (
         <p className="studio-truncated" data-testid="studio-truncated">
-          Dựa trên một phần mỗi nguồn (nội dung dài đã được rút gọn cân đối theo
-          giới hạn).
+          Tài liệu quá dài nên phần cuối chưa được tổng hợp — hãy lọc theo từng
+          nguồn để tổng hợp đầy đủ.
         </p>
       )}
       {result.citations.length > 0 && (

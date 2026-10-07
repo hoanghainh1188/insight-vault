@@ -129,4 +129,34 @@ describe("resolveBaseUrl (Constitution I: chỉ localhost)", () => {
       "http://127.0.0.1:2",
     );
   });
+
+  it("105: numCtx ⇒ gửi options.num_ctx; không có ⇒ không gửi options", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const c = createOllamaClient({
+      fetchFn: fakeFetch((_u, init) => {
+        bodies.push(JSON.parse(String(init?.body)));
+        return { message: { content: "ok" } };
+      }),
+    });
+    await c.chat({ model: "m", messages: [], numCtx: 16384 });
+    await c.chat({ model: "m", messages: [] });
+    expect(bodies[0].options).toEqual({ num_ctx: 16384 });
+    expect(bodies[1].options).toBeUndefined();
+  });
+
+  it("105: contextLength đọc /api/show; lỗi ⇒ null", async () => {
+    const ok = createOllamaClient({
+      fetchFn: fakeFetch(() => ({
+        model_info: {
+          "general.architecture": "qwen2",
+          "qwen2.context_length": 32768,
+        },
+      })),
+    });
+    expect(await ok.contextLength("qwen2.5:7b")).toBe(32768);
+    const bad = createOllamaClient({
+      fetchFn: fakeFetch(() => ({}), false, 404),
+    });
+    expect(await bad.contextLength("x")).toBeNull();
+  });
 });

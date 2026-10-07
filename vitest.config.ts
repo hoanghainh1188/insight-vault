@@ -89,7 +89,6 @@ export default defineConfig({
         "src/main/services/ingestion/parsers/docx.ts",
         "src/main/services/ingestion/parsers/url.ts",
         "src/main/services/source-viewer/source-content.ts",
-        "src/main/services/studio/studio-service.ts",
         "src/main/services/studio/export.ts",
         // online-provider (031): adapter I/O HTTP + native keytar loader — phủ qua provider tests (fetch giả)
         // + e2e/thủ công, không phải logic thuần đo ngưỡng.
