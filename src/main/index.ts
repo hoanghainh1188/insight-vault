@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { realpath } from "node:fs/promises";
 import {
   app,
   BrowserWindow,
@@ -41,6 +42,9 @@ import {
   restrictDumpDir,
 } from "./services/crash-report/crash-fs";
 import { createCrashService } from "./services/crash-report/crash-service";
+import { createRelink } from "./services/ingestion/relink";
+import { pickSourceFile } from "./services/ingestion/relink-dialog";
+import { hashFileStreaming } from "./services/ingestion/ingestion";
 import {
   pickProvider as pickProviderFor,
   type AiTarget,
@@ -476,6 +480,15 @@ app
       vaultLock,
       logsDir,
       crashService,
+      // 101: chọn lại tệp gốc — hộp thoại ở main + kiểm cùng nội dung (cùng hàm băm lúc nạp).
+      relinkSource: createRelink({
+        repo: ingestion.sourceRepo,
+        pickFile: pickSourceFile,
+        hashFile: hashFileStreaming,
+        realpath: (p) => realpath(p),
+        isLocked: () => vaultLock.isLocked(),
+        log: logEvent,
+      }),
     });
 
     installSecurity();

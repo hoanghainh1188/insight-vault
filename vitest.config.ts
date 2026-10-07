@@ -80,6 +80,8 @@ export default defineConfig({
         "src/main/services/app-log/log-fs.ts",
         // 093: adapter node:fs cho báo lỗi (tệp đánh dấu phiên, đọc đuôi nhật ký, liệt kê minidump).
         "src/main/services/crash-report/crash-fs.ts",
+        // 101: hộp thoại Electron chọn lại tệp gốc (I/O native) — phủ bởi e2e (IV_E2E_DIALOG_PATH).
+        "src/main/services/ingestion/relink-dialog.ts",
         "src/main/services/ai-runtime/ai-runtime.ts",
         "src/main/services/ingestion/ingestion.ts",
         "src/main/services/ingestion/vector-store.ts",

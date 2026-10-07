@@ -27,6 +27,27 @@ import { createEmbedder, type Embedder } from "../embedding/embed-model";
 // embed). Composition root — loại khỏi ngưỡng coverage (như ai-runtime.ts). Business logic thuần đã
 // phủ ở chunker/cleaning/dedup/size-limits/status/source-repo/queue/pipeline test (DI).
 
+/**
+ * sha256 + kích thước STREAMING (051). Dùng chung cho nạp nguồn (content_hash) và 101 "chọn lại tệp gốc" — cùng
+ * một hàm băm ⇒ so khớp nội dung chắc chắn nhất quán.
+ */
+export function hashFileStreaming(
+  p: string,
+): Promise<{ hash: string; byteLength: number }> {
+  return new Promise((resolve, reject) => {
+    const h = createHash("sha256");
+    let byteLength = 0;
+    const rs = createReadStream(p);
+    rs.on("data", (c: string | Buffer) => {
+      const b = typeof c === "string" ? Buffer.from(c) : c;
+      byteLength += b.length;
+      h.update(b);
+    });
+    rs.on("error", reject);
+    rs.on("end", () => resolve({ hash: h.digest("hex"), byteLength }));
+  });
+}
+
 export interface Ingestion {
   sourceRepo: SourceRepo;
   vectorStore: VectorStore;
@@ -130,19 +151,7 @@ export async function createIngestion(opts: {
     },
     statSize: async (p) => (await stat(p)).size,
     // 051: hash sha256 + size STREAMING (không nạp cả file — kể cả video 1GB — vào RAM ở bước add()).
-    hashFile: (p) =>
-      new Promise((resolve, reject) => {
-        const h = createHash("sha256");
-        let byteLength = 0;
-        const rs = createReadStream(p);
-        rs.on("data", (c: string | Buffer) => {
-          const b = typeof c === "string" ? Buffer.from(c) : c;
-          byteLength += b.length;
-          h.update(b);
-        });
-        rs.on("error", reject);
-        rs.on("end", () => resolve({ hash: h.digest("hex"), byteLength }));
-      }),
+    hashFile: hashFileStreaming,
     parseUrl: (url) => fetchAndParseUrl(url),
     setOnline: opts.setOnline,
     emit: opts.emit,

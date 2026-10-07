@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import type { Source } from "@shared/ipc/types";
 import { statClass, statusLabel, stepLabel } from "./source-status";
 import { progressValueText } from "../../shared/a11y/messages";
+import { useRelink } from "./useRelink";
 import type { SourceProgress } from "./useSources";
 
 const KIND_ICON: Record<Source["kind"], string> = {
@@ -45,6 +47,19 @@ export function SourceItem({
   const showProgress =
     progress != null && source.status !== "ready" && source.status !== "error";
   const pct = showProgress ? Math.round((progress?.progress ?? 0) * 100) : 0;
+  // 101: nguồn TỆP lỗi (thường do tệp gốc bị di chuyển) ⇒ chọn lại tệp rồi tự thử lại.
+  const {
+    relink,
+    busy: relinking,
+    message: relinkMsg,
+    clear: clearRelinkMsg,
+  } = useRelink();
+  // Trạng thái nguồn đổi (thử lại/đang xử lý/sẵn sàng) ⇒ thông báo cũ không còn đúng.
+  useEffect(() => clearRelinkMsg(), [source.status, clearRelinkMsg]);
+  const canRelink = source.status === "error" && source.kind !== "url";
+  const relinkThenRetry = async (): Promise<void> => {
+    if ((await relink(source.id)) === "ok") onRetry(source.id);
+  };
   return (
     <li className="src" data-testid={`source-${source.id}`}>
       <span className={`src-icon kind-${source.kind}`}>
@@ -90,6 +105,11 @@ export function SourceItem({
             {statusLabel(source)} · {subLabel(source)}
           </span>
         )}
+        {relinkMsg && (
+          <span className="src-relink-msg" data-testid="source-relink-msg">
+            {relinkMsg}
+          </span>
+        )}
       </div>
       <div className="src-actions">
         {source.status === "error" && (
@@ -100,6 +120,18 @@ export function SourceItem({
             data-testid="source-retry"
           >
             Thử lại
+          </button>
+        )}
+        {canRelink && (
+          <button
+            type="button"
+            className="nb-icon-btn"
+            disabled={relinking}
+            aria-label={`Chọn lại tệp gốc cho ${source.title}`}
+            onClick={() => void relinkThenRetry()}
+            data-testid="source-relink"
+          >
+            Chọn lại tệp gốc…
           </button>
         )}
         <button

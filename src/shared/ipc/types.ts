@@ -270,6 +270,23 @@ export interface SourceProgressEvent {
   errorLabel?: string;
 }
 
+/**
+ * Kết quả "chọn lại tệp gốc" (101). mismatch = tệp khác nội dung tệp đã nạp (trích dẫn sẽ sai ⇒ từ chối);
+ * wrongType = đuôi không thuộc loại nguồn; notApplicable = nguồn URL/không tồn tại; busy = nguồn đang xếp hàng/xử
+ * lý hoặc đang có 1 lần chọn lại khác; locked = vault đang sao lưu/khôi phục.
+ */
+export type SourceRelinkResult = {
+  status:
+    | "ok"
+    | "cancelled"
+    | "mismatch"
+    | "wrongType"
+    | "notApplicable"
+    | "busy"
+    | "locked"
+    | "error";
+};
+
 // ===== rag-qa (013) — nguồn: specs/.../rag-qa/data-model.md =====
 
 /** Chế độ trả lời: theo nguồn (grounded, không bịa) / mở rộng (open, dùng thêm kiến thức chung). */

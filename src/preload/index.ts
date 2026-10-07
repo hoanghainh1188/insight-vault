@@ -121,6 +121,11 @@ const api = {
     ipcRenderer.invoke(CHANNELS.sourceDelete, id),
   sourceRetry: (id: string): Promise<Source> =>
     ipcRenderer.invoke(CHANNELS.sourceRetry, id),
+  // 101: chọn lại tệp gốc — chỉ gửi id; hộp thoại + kiểm nội dung ở main.
+  sourceRelink: (
+    id: string,
+  ): Promise<import("@shared/ipc/types").SourceRelinkResult> =>
+    ipcRenderer.invoke(CHANNELS.sourceRelink, id),
   // source-viewer (019)
   sourceGetContent: (id: string): Promise<SourceContent | null> =>
     ipcRenderer.invoke(CHANNELS.sourceGetContent, id),

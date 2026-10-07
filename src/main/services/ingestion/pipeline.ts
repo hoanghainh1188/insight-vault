@@ -175,11 +175,11 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     };
   };
 
-  // origin (đường dẫn/URL) KHÔNG nằm trong Source (không lộ renderer). Cache RAM cho phiên hiện tại,
-  // fallback đọc cột `origin` từ SQLite → resume sau restart vẫn có origin để parse lại (B3).
-  const originCache = new Map<string, string>();
+  // origin (đường dẫn/URL) KHÔNG nằm trong Source (không lộ renderer). LUÔN đọc cột `origin` từ SQLite (rẻ) —
+  // nguồn sự thật duy nhất: resume sau restart (B3) và "chọn lại tệp gốc" (101, đổi origin giữa phiên) đều đúng.
+  // (Trước 101 có cache RAM theo phiên ⇒ retry sau khi chọn lại tệp vẫn đọc đường dẫn cũ.)
   const sourceOrigin = (src: Source): string =>
-    originCache.get(src.id) ?? sourceRepo.getOrigin(src.id) ?? "";
+    sourceRepo.getOrigin(src.id) ?? "";
 
   // Embed + lưu vector cho các chunk đã có trong SQLite. Ném StepError nếu lỗi.
   // Nhận `signal` để KHÔNG ghi vector nếu nguồn đã bị huỷ/xoá giữa chừng (B2 — tránh vector mồ côi).
@@ -373,7 +373,6 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         contentHash,
         pageCount,
       });
-      originCache.set(source.id, origin);
 
       if (sizeError) {
         sourceRepo.updateStatus(source.id, "error", "Tệp quá lớn");

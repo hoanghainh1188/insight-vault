@@ -103,6 +103,15 @@ export interface SourceRepo {
   getById(id: string): Source | null;
   /** Đường dẫn tệp/URL gốc (KHÔNG expose ra renderer; chỉ main dùng để parse/resume). */
   getOrigin(id: string): string | null;
+  /** 101: thông tin để liên kết lại file gốc (loại + đường dẫn hiện tại + băm nội dung đã nạp). */
+  getRelinkInfo(id: string): {
+    kind: SourceKind;
+    origin: string;
+    contentHash: string;
+    status: SourceStatus;
+  } | null;
+  /** 101: cập nhật đường dẫn file gốc (sau khi đã kiểm cùng nội dung). */
+  updateOrigin(id: string, origin: string): void;
   listByNotebook(notebookId: string): Source[];
   listByStatus(status: SourceStatus): Source[];
   countByNotebook(notebookId: string): number;
@@ -167,6 +176,35 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
         .prepare("SELECT origin FROM source WHERE id = ?")
         .get(id) as unknown as { origin: string } | undefined;
       return row?.origin ?? null;
+    },
+
+    getRelinkInfo(id) {
+      const row = db
+        .prepare(
+          "SELECT kind, origin, content_hash, status FROM source WHERE id = ?",
+        )
+        .get(id) as unknown as
+        | {
+            kind: SourceKind;
+            origin: string;
+            content_hash: string;
+            status: SourceStatus;
+          }
+        | undefined;
+      return row
+        ? {
+            kind: row.kind,
+            origin: row.origin,
+            contentHash: row.content_hash,
+            status: row.status,
+          }
+        : null;
+    },
+
+    updateOrigin(id, origin) {
+      db.prepare(
+        "UPDATE source SET origin = ?, updated_at = ? WHERE id = ?",
+      ).run(origin, now(), id);
     },
 
     listByNotebook(notebookId) {

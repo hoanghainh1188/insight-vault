@@ -451,3 +451,12 @@
   color: var(--accent-ink);
   text-decoration: underline;
 }
+
+/* 101: giải thích khi tệp chọn lại không khớp (dưới dòng trạng thái nguồn). */
+.src-relink-msg {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--danger);
+}

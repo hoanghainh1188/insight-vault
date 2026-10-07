@@ -17,6 +17,7 @@ import type {
   ModelRecommendation,
   OllamaHealth,
   ReindexStatus,
+  SourceRelinkResult,
 } from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
 import { computeStorageInfo } from "../services/app-shell/storage-info";
@@ -78,6 +79,8 @@ interface RegisterDeps {
   logsDir: string;
   // 093 — báo lỗi opt-in.
   crashService: CrashService;
+  // 101 — chọn lại tệp gốc.
+  relinkSource: (id: unknown) => Promise<SourceRelinkResult>;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
@@ -112,6 +115,7 @@ export function registerIpc({
   vaultLock,
   logsDir,
   crashService,
+  relinkSource,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -237,6 +241,11 @@ export function registerIpc({
   safeHandle(CHANNELS.sourceRetry, (id) => {
     assertVaultWritable();
     return pipeline.retry(id as string);
+  });
+  // 101: chọn lại tệp gốc (đổi origin) — là thao tác GHI vault ⇒ chặn khi đang sao lưu/khôi phục.
+  safeHandle(CHANNELS.sourceRelink, (id) => {
+    assertVaultWritable();
+    return relinkSource(id);
   });
   // source-viewer (019) — tái dựng toàn văn từ chunk đã lưu để hiển thị. CHỈ đọc; KHÔNG log content.
   safeHandle(CHANNELS.sourceGetContent, (id) =>

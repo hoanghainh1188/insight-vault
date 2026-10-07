@@ -44,6 +44,13 @@ const EXT_KIND: Record<string, SourceKind> = {
   tiff: "image",
 };
 
+/** 101: các đuôi tệp thuộc 1 loại nguồn (lọc hộp thoại "chọn lại tệp gốc"). Cùng bảng EXT_KIND ⇒ không lệch. */
+export function extensionsForKind(kind: SourceKind): string[] {
+  return Object.entries(EXT_KIND)
+    .filter(([, k]) => k === kind)
+    .map(([ext]) => ext);
+}
+
 /** Suy loại nguồn từ đuôi tệp (thuần, unit-test được). Ném nếu không hỗ trợ. */
 export function detectKindFromPath(
   filePath: string,
