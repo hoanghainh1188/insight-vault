@@ -50,8 +50,13 @@ export async function parsePdf(
     const items = content.items.flatMap((it) =>
       "str" in it ? [toLayoutItem(it as PdfTextItem, y1)] : [],
     );
-    const { text } = layoutPage(items, { width: x1 - x0, height: y1 - y0 });
-    pages.push({ page: p, text });
+    const { text, blocks } = layoutPage(items, {
+      width: x1 - x0,
+      height: y1 - y0,
+    });
+    pages.push(
+      blocks.length > 0 ? { page: p, text, blocks } : { page: p, text },
+    );
     onProgress?.(p / doc.numPages);
   }
   const numPages = doc.numPages;

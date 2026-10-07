@@ -80,6 +80,17 @@ class StepError extends Error {
   }
 }
 
+/**
+ * Làm sạch một trang. 112 (FR-008, research R7): giữ `blocks` (vùng bảng) CHỈ khi làm sạch không đổi văn bản —
+ * nếu đổi thì offset của blocks không còn đúng ⇒ bỏ blocks (chunk vẫn hợp lệ, chỉ mất ưu tiên không cắt bảng).
+ */
+function cleanPage(p: PageText): PageText {
+  const text = cleanText(p.text);
+  return p.blocks && p.blocks.length > 0 && text === p.text
+    ? { page: p.page, text, blocks: p.blocks }
+    : { page: p.page, text };
+}
+
 export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
   const { sourceRepo, vectorStore, emit } = deps;
   const queue = createSerialQueue();
@@ -159,7 +170,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       throw new StepError("parse", errorLabelForStep("parse", src.kind));
     }
     const cleaned = result.pages
-      .map((p) => ({ page: p.page, text: cleanText(p.text) }))
+      .map((p) => cleanPage(p))
       .filter((p) => p.text.length > 0);
     // Video no-audio (051) / ảnh không chữ (053) → transcript rỗng: VẪN nạp thành công (ready, 0 chunk,
     // media vẫn xem được — FR-011/FR-010). Các loại khác rỗng = lỗi parse.

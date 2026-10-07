@@ -122,3 +122,83 @@ describe("chunkPages trên văn bản PDF có bố cục (112)", () => {
     ).toBe(T);
   });
 });
+
+// 112 (FR-008): chunker tôn trọng vùng bảng (PageText.blocks).
+describe("chunkPages với blocks (bảng) — 112", () => {
+  const para = (n: number) =>
+    Array.from(
+      { length: n },
+      (_, i) => `Sentence ${i} of filler prose text.`,
+    ).join(" ");
+  const table = (rows: number) =>
+    [
+      "| Item | Qty | Price |",
+      "|---|---|---|",
+      ...Array.from(
+        { length: rows },
+        (_, i) => `| Row ${i} name | ${i} | ${i}.00 |`,
+      ),
+    ].join("\n");
+
+  function pageWith(before: string, tbl: string, after: string) {
+    const text = `${before}\n\n${tbl}\n\n${after}`;
+    const start = before.length + 2;
+    return { page: 1, text, blocks: [{ start, end: start + tbl.length }] };
+  }
+  const SIZE = 300;
+  const OVERLAP = 50;
+
+  it("bảng ngắn hơn một chunk ⇒ nằm trọn trong một chunk", () => {
+    const pg = pageWith(para(7), table(4), para(6));
+    const b = pg.blocks[0];
+    expect(b.end - b.start).toBeLessThan(SIZE);
+    const drafts = chunkPages([pg], { size: SIZE, overlap: OVERLAP });
+    expect(
+      drafts.some(
+        (d) => d.locator.charStart <= b.start && d.locator.charEnd >= b.end,
+      ),
+    ).toBe(true);
+    for (const d of drafts) {
+      const { charStart: s, charEnd: e } = d.locator;
+      expect(e > b.start && e < b.end).toBe(false); // không kết thúc giữa bảng
+      expect(d.text).toBe(pg.text.slice(s, e));
+    }
+  });
+
+  it("bảng dài hơn một chunk ⇒ chỉ cắt giữa hai hàng; chunk kế bắt đầu ở đầu hàng", () => {
+    const pg = pageWith(para(2), table(30), para(2));
+    const b = pg.blocks[0];
+    expect(b.end - b.start).toBeGreaterThan(SIZE);
+    const drafts = chunkPages([pg], { size: SIZE, overlap: OVERLAP });
+    for (const d of drafts) {
+      const { charStart: s, charEnd: e } = d.locator;
+      if (e > b.start && e < b.end) expect(pg.text[e - 1]).toBe("\n");
+      if (s > b.start && s < b.end) expect(pg.text[s - 1]).toBe("\n");
+      expect(d.text).toBe(pg.text.slice(s, e));
+    }
+    // phủ kín văn bản, luôn tiến
+    expect(drafts[0].locator.charStart).toBe(0);
+    expect(drafts.at(-1)!.locator.charEnd).toBe(pg.text.length);
+  });
+
+  it("bảng hai trang ⇒ không chunk nào vắt trang; offset nối trang đúng", () => {
+    const p1 = pageWith(para(1), table(5), "");
+    const p2 = { ...pageWith("", table(5), para(1)), page: 2 };
+    const drafts = chunkPages([p1, p2], { size: SIZE, overlap: OVERLAP });
+    const T = joinPages([p1, p2]);
+    for (const d of drafts) {
+      expect([1, 2]).toContain(d.locator.page);
+      expect(d.text).toBe(T.slice(d.locator.charStart, d.locator.charEnd));
+    }
+  });
+
+  it("blocks rỗng/không có ⇒ y hệt hành vi cũ", () => {
+    const text = `${para(20)}\n${para(15)}\n\n${para(25)}`;
+    const a = chunkPages([{ page: 1, text }], { size: SIZE, overlap: OVERLAP });
+    const b = chunkPages([{ page: 1, text, blocks: [] }], {
+      size: SIZE,
+      overlap: OVERLAP,
+    });
+    expect(b).toEqual(a);
+  });
+});

@@ -126,3 +126,28 @@ describe("layoutPage — hàm con ném lỗi ⇒ fallback trang đó", () => {
     vi.doUnmock("../../src/main/services/ingestion/pdf-layout/columns");
   });
 });
+
+describe("layoutPage — bảng (US2)", () => {
+  it("trang có bảng ⇒ bảng Markdown + blocks trỏ đúng khoảng ký tự", async () => {
+    const { grid } = await import("./helpers/layout-items");
+    const rows = [
+      ["Item", "Qty", "Price"],
+      ["Apple", "3", "1.20"],
+      ["Banana", "12", "0.50"],
+    ];
+    const r = layoutPage(
+      [
+        ...lines(50, 60, ["Prices are listed below."]),
+        ...grid(rows, [50, 200, 350], 90),
+        ...lines(50, 160, ["Closing note."]),
+      ],
+      PAGE,
+    );
+    const md =
+      "| Item | Qty | Price |\n|---|---|---|\n| Apple | 3 | 1.20 |\n| Banana | 12 | 0.50 |";
+    expect(r.text).toBe(`Prices are listed below.\n\n${md}\n\nClosing note.`);
+    expect(r.blocks).toHaveLength(1);
+    expect(r.text.slice(r.blocks[0].start, r.blocks[0].end)).toBe(md);
+    expect(cleanText(r.text)).toBe(r.text);
+  });
+});

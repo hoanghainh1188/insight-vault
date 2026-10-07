@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { parsePdf } from "../../src/main/services/ingestion/parsers/pdf";
 import { makePdf } from "../fixtures/pdf/make-pdf";
 import {
+  borderedTable,
+  borderlessTable,
+  bulletList,
+  tableAcrossPages,
+  tocNotTable,
   hyphenated,
   manyItems,
   oneColumn,
@@ -53,5 +58,35 @@ describe("parsePdf — bố cục văn bản", () => {
     expect(seen).toHaveLength(3);
     expect(seen).toEqual([...seen].sort((a, b) => a - b));
     expect(seen.at(-1)).toBe(1);
+  });
+});
+
+describe("parsePdf — bảng (US2)", () => {
+  it.each([
+    ["bảng không viền", borderlessTable],
+    ["bảng có viền (đường kẻ bị bỏ qua)", borderedTable],
+    ["bảng trải 2 trang ⇒ mỗi trang một bảng", tableAcrossPages],
+    ["mục lục dấu chấm dẫn ⇒ không phải bảng", tocNotTable],
+    ["danh sách đầu dòng ⇒ không phải bảng", bulletList],
+  ] as const)("%s", async (_n, make) => {
+    const s = make();
+    expect(await texts(s)).toEqual(s.expected);
+  });
+
+  it("trả blocks theo trang, trỏ đúng vùng bảng; trang không có bảng ⇒ không có blocks", async () => {
+    const s = tableAcrossPages();
+    const r = await parsePdf(makePdf([...s.pages, ...oneColumn().pages]));
+    for (const p of r.pages.slice(0, 2)) {
+      expect(p.blocks).toHaveLength(1);
+      const b = p.blocks![0];
+      expect(
+        p.text.slice(b.start, b.end).startsWith("| Item | Qty | Price |"),
+      ).toBe(true);
+      expect(p.text.slice(b.end)).toBe("");
+    }
+    expect(r.pages[2].blocks).toBeUndefined();
+    expect(
+      (await parsePdf(makePdf(tocNotTable().pages))).pages[0].blocks,
+    ).toBeUndefined();
   });
 });

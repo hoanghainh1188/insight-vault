@@ -69,16 +69,16 @@ ADR + glossary + gate.
 
 **Independent Test**: `parsePdf` trên `borderedTable()`/`borderlessTable()` ⇒ bảng Markdown đúng hàng/cột/ô; `tocNotTable()`/`bulletList()` ⇒ không có bảng; chia đoạn không cắt ngang bảng ngắn; snapshot T005 vẫn xanh.
 
-- [ ] T020 [P] [US2] RED — `tests/unit/pdf-layout-tables.test.ts`: ≥ 3 dòng × ≥ 2 ô thẳng hàng (≤ 0,5·h), cùng số cột ≥ 80% dòng ⇒ bảng; 2 dòng ⇒ không; mục lục `\.{4,}` ⇒ không; danh sách đầu dòng ⇒ không; ô nhiều dòng nối dấu cách; render `| a | b |` + `|---|---|` sau hàng đầu; ô rỗng `| |`; `|` ⇒ `\|`; bảng cách văn bản `\n\n`; `cleanText(render(t)) === render(t)`
-- [ ] T021 [US2] GREEN — `src/main/services/ingestion/pdf-layout/tables.ts`: `detectTables(region) → Segment[]` + `renderTable(rows: string[][]) → string`
-- [ ] T022 [US2] RED — mở rộng `tests/unit/pdf-layout-page.test.ts`: trang có bảng ⇒ `text` chứa bảng Markdown, `blocks` trỏ đúng khoảng ký tự từng bảng
-- [ ] T023 [US2] GREEN — `src/main/services/ingestion/pdf-layout/layout-page.ts`: tích hợp `detectTables`, tính `blocks`
-- [ ] T024 [US2] RED — `tests/unit/pdf-parse-layout.test.ts`: `borderedTable()`, `borderlessTable()` ⇒ bảng đúng; `tocNotTable()`, `bulletList()` ⇒ 0 bảng; (E1) `tableAcrossPages()` ⇒ mỗi trang một bảng riêng, `blocks` riêng theo trang; `parsePdf` trả `blocks`
-- [ ] T025 [US2] (F1) RED — `tests/unit/chunker.test.ts`: `PageText.blocks` — bảng ngắn nằm trọn một chunk; bảng dài chỉ cắt tại `\n` giữa hai hàng; overlap không bắt đầu giữa hàng; `chunk.text === T.slice(...)`; không chunk nào vắt trang với bảng trải 2 trang; KHÔNG có `blocks` ⇒ kết quả y hệt trước
-- [ ] T026 [US2] (F1) GREEN — `src/main/services/ingestion/chunker.ts`: `PageText.blocks?`; `splitRanges` tôn trọng bảng (lùi về trước bảng ngắn hoặc tới hết bảng; bảng dài cắt theo hàng; dời điểm bắt đầu sau overlap về đầu hàng)
-- [ ] T027 [US2] (D1) RED — `tests/unit/ingestion-pipeline.test.ts`: pipeline truyền `blocks` từ parse sang `chunkPages`; độ dài vùng bảng lệch sau `cleanText` ⇒ bỏ `blocks` của trang đó (chunk vẫn hợp lệ)
-- [ ] T028 [US2] (D1) GREEN — `src/main/services/ingestion/pipeline.ts`: truyền + xác minh `blocks`
-- [ ] T029 [US2] (E2) Chạy `tests/unit/ingestion-other-kinds-unchanged.test.ts` — snapshot T005 KHÔNG đổi (không cập nhật snapshot)
+- [X] T020 [P] [US2] RED — `tests/unit/pdf-layout-tables.test.ts`: ≥ 3 dòng × ≥ 2 ô thẳng hàng (≤ 0,5·h), cùng số cột ≥ 80% dòng ⇒ bảng; 2 dòng ⇒ không; mục lục `\.{4,}` ⇒ không; danh sách đầu dòng ⇒ không; ô nhiều dòng nối dấu cách; render `| a | b |` + `|---|---|` sau hàng đầu; ô rỗng `| |`; `|` ⇒ `\|`; bảng cách văn bản `\n\n`; `cleanText(render(t)) === render(t)`
+- [X] T021 [US2] GREEN — `src/main/services/ingestion/pdf-layout/tables.ts`: `detectTables(region) → Segment[]` + `renderTable(rows: string[][]) → string`
+- [X] T022 [US2] RED — mở rộng `tests/unit/pdf-layout-page.test.ts`: trang có bảng ⇒ `text` chứa bảng Markdown, `blocks` trỏ đúng khoảng ký tự từng bảng
+- [X] T023 [US2] GREEN — `src/main/services/ingestion/pdf-layout/layout-page.ts`: tích hợp `detectTables`, tính `blocks`
+- [X] T024 [US2] RED — `tests/unit/pdf-parse-layout.test.ts`: `borderedTable()`, `borderlessTable()` ⇒ bảng đúng; `tocNotTable()`, `bulletList()` ⇒ 0 bảng; (E1) `tableAcrossPages()` ⇒ mỗi trang một bảng riêng, `blocks` riêng theo trang; `parsePdf` trả `blocks`
+- [X] T025 [US2] (F1) RED — `tests/unit/chunker.test.ts`: `PageText.blocks` — bảng ngắn nằm trọn một chunk; bảng dài chỉ cắt tại `\n` giữa hai hàng; overlap không bắt đầu giữa hàng; `chunk.text === T.slice(...)`; không chunk nào vắt trang với bảng trải 2 trang; KHÔNG có `blocks` ⇒ kết quả y hệt trước
+- [X] T026 [US2] (F1) GREEN — `src/main/services/ingestion/chunker.ts`: `PageText.blocks?`; `splitRanges` tôn trọng bảng (lùi về trước bảng ngắn hoặc tới hết bảng; bảng dài cắt theo hàng; dời điểm bắt đầu sau overlap về đầu hàng)
+- [X] T027 [US2] (D1) RED — `tests/unit/ingestion-pipeline.test.ts`: pipeline truyền `blocks` từ parse sang `chunkPages`; độ dài vùng bảng lệch sau `cleanText` ⇒ bỏ `blocks` của trang đó (chunk vẫn hợp lệ)
+- [X] T028 [US2] (D1) GREEN — `src/main/services/ingestion/pipeline.ts`: truyền + xác minh `blocks`
+- [X] T029 [US2] (E2) Chạy `tests/unit/ingestion-other-kinds-unchanged.test.ts` — snapshot T005 KHÔNG đổi (không cập nhật snapshot)
 
 **Checkpoint**: bảng giữ được; các loại nguồn khác không đổi.
 

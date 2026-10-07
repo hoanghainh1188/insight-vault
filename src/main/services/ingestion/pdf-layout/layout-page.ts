@@ -2,6 +2,7 @@ import { cleanText } from "../cleaning";
 import { orderRegions } from "./columns";
 import { buildLines } from "./lines";
 import { joinParagraphs } from "./paragraphs";
+import { detectTables, renderTable } from "./tables";
 import {
   MAX_LAYOUT_ITEMS_PER_PAGE,
   type LayoutItem,
@@ -44,10 +45,13 @@ function layout(
   page: PageGeometry,
 ): LayoutResult {
   const { lines, rotated } = buildLines(items);
-  const parts: Part[] = orderRegions(lines, page).map((region) => ({
-    text: cleanText(joinParagraphs(region)),
-    table: false,
-  }));
+  const parts: Part[] = orderRegions(lines, page).flatMap((region) =>
+    detectTables(region, page).map((p) =>
+      p.kind === "table"
+        ? { text: renderTable(p.rows), table: true }
+        : { text: cleanText(joinParagraphs(p.lines)), table: false },
+    ),
+  );
   if (rotated.length > 0) {
     parts.push({ text: cleanText(legacyJoin(rotated)), table: false });
   }
