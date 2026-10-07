@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { performance } from "node:perf_hooks";
-import { openDatabase } from "../../../src/main/db/database";
+import { openDatabase, type Db } from "../../../src/main/db/database";
 import { runMigrations } from "../../../src/main/db/migrations";
 import { createNotebookRepo } from "../../../src/main/services/notebooks/notebook-repo";
 import { createSourceRepo } from "../../../src/main/services/ingestion/source-repo";
@@ -109,6 +109,26 @@ export async function buildIndex(
 ): Promise<EvalIndex> {
   const dir = mkdtempSync(join(tmpdir(), "iv-eval-"));
   const db = openDatabase(join(dir, "insightvault.db"));
+  const close = async (): Promise<void> => {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  };
+  try {
+    return await populate(ds, corpusDir, cacheDir, dir, db, close);
+  } catch (e) {
+    await close(); // lỗi giữa chừng ⇒ vẫn dọn thư mục tạm + đóng DB
+    throw e;
+  }
+}
+
+async function populate(
+  ds: Dataset,
+  corpusDir: string,
+  cacheDir: string,
+  dir: string,
+  db: Db,
+  close: () => Promise<void>,
+): Promise<EvalIndex> {
   runMigrations(db);
   const notebook = createNotebookRepo(db).create({
     name: "eval",
@@ -176,10 +196,7 @@ export async function buildIndex(
     bm25Scores: [],
     distances: { answerHit: [], answerMiss: [], unanswerable: [] },
     coldRetrieveMs: 0,
-    close: async () => {
-      db.close();
-      rmSync(dir, { recursive: true, force: true });
-    },
+    close,
   };
 }
 

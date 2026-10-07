@@ -3,6 +3,9 @@
 Đo chất lượng bước **chọn đoạn** của hỏi đáp có trích dẫn trên một bộ đánh giá công khai. Dev-only: không đóng gói
 vào bản cài, không đọc/ghi dữ liệu người dùng. Quyết định và số liệu: `docs/04-decisions/2026-10-07-relevance-calibration.md`.
 
+> **Giấy phép:** tài liệu trong `tests/eval/corpus/` theo giấy phép riêng của từng nguồn (bài Wikipedia: CC BY-SA 4.0;
+> văn bản luật: không thuộc đối tượng bảo hộ quyền tác giả) — **không** theo giấy phép của repo. Xem `corpus/README.md`.
+
 ## Chạy
 
 ```bash
