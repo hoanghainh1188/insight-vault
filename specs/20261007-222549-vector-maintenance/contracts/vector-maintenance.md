@@ -66,7 +66,8 @@ interface VectorMaintenance {
 ```
 
 - **Không bao giờ ném** ra ngoài (mọi phương thức + callback hẹn giờ bọc try/catch).
-- Single-flight: tối đa 1 `optimize` đang chạy.
+- Single-flight: tối đa 1 lần bảo trì; cờ `running` bật từ ĐẦU lần kiểm (trước khi đo) và `whenIdle` dựa trên cờ này;
+  kiểm lại `isBusy()` ngay trước `optimize` (bận ⇒ `skip busy`) — đóng kẽ hở với `withLock` của sao lưu.
 
 ### Sự kiện nhật ký (088, `logEvent`/`logError`)
 
