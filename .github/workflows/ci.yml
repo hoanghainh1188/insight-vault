@@ -53,9 +53,11 @@ jobs:
 
       - name: Cài thư viện hệ thống + xvfb cho Electron headless
         timeout-minutes: 10
+        # Chỉ deps của Chromium (Electron dùng chung) + GTK/NSS/ALSA cho Electron + xvfb — KHÔNG cài deps của
+        # mọi trình duyệt (~126 MB font/gstreamer/codec) để ít phụ thuộc tốc độ mirror apt.
         run: |
-          npx playwright install-deps
-          sudo apt-get install -y xvfb
+          npx playwright install-deps chromium
+          sudo apt-get install -y --no-install-recommends xvfb libgtk-3-0t64 libnss3 libasound2t64
 
       - name: E2E (Playwright _electron qua xvfb)
         run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:e2e
