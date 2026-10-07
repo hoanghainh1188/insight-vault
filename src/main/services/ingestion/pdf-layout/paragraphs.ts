@@ -4,7 +4,7 @@ import { PARAGRAPH_GAP_RATIO, type Line } from "./types";
 // đoạn mới; nối từ bị ngắt bằng gạch nối cuối dòng. Không nhận diện heading. Hàm thuần.
 
 const HARD_HYPHEN = /(\p{L})-$/u;
-const SOFT_HYPHEN = /­$/;
+const SOFT_HYPHEN = /\u00AD$/; // soft hyphen (U+00AD)
 const STARTS_LOWER = /^\p{Ll}/u;
 
 export const lineText = (l: Line): string =>

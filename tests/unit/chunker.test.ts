@@ -202,3 +202,32 @@ describe("chunkPages với blocks (bảng) — 112", () => {
     expect(b).toEqual(a);
   });
 });
+
+describe("chunkPages — overlap không bắt đầu giữa bảng ngắn (112 review)", () => {
+  it("chunk kế không bắt đầu bên trong một bảng ngắn", () => {
+    const filler = Array.from(
+      { length: 30 },
+      (_, i) => `Filler sentence ${i} here.`,
+    ).join(" ");
+    const tbl = [
+      "| A | B |",
+      "|---|---|",
+      "| 1 | 2 |",
+      "| 3 | 4 |",
+      "| 5 | 6 |",
+    ].join("\n");
+    const before = filler.slice(0, 100);
+    const text = `${before}\n\n${tbl}\n\n${filler}`;
+    const start = before.length + 2;
+    const b = { start, end: start + tbl.length };
+    const drafts = chunkPages([{ page: 1, text, blocks: [b] }], {
+      size: 300,
+      overlap: 30,
+    });
+    for (const d of drafts) {
+      const s = d.locator.charStart;
+      expect(s > b.start && s < b.end).toBe(false);
+      expect(d.text).toBe(text.slice(s, d.locator.charEnd));
+    }
+  });
+});

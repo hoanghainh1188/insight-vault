@@ -434,7 +434,9 @@ app
     const vaultLock = createVaultLock({
       hasActiveSources: () =>
         ingestion.sourceRepo.listByStatus("queued").length > 0 ||
-        ingestion.sourceRepo.listByStatus("processing").length > 0,
+        ingestion.sourceRepo.listByStatus("processing").length > 0 ||
+        // 112: "Xử lý lại" giữ nguồn ở `ready` ⇒ phải hỏi pipeline (đang ghi vector/chunk mới).
+        ingestion.pipeline.isReprocessing(),
       isReindexing: () => reindex.inProgress,
     });
     const backupService = createBackupService({

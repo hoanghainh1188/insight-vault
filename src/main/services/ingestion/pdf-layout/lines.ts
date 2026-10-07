@@ -10,6 +10,9 @@ import {
 // 112 (FR-001, research R2): gom item pdf.js thành dòng theo baseline, tách segment khi khe ngang lớn (ô bảng /
 // cột). Hàm thuần — không đổi chữ, chỉ chèn dấu cách giữa item khi có khe.
 
+/** chặn chia cho 0 khi item có chiều cao 0 (pdf.js đôi khi trả height = 0) */
+const MIN_H = 1e-3;
+
 export interface LinesResult {
   lines: Line[];
   /** item có chữ xoay — giữ thứ tự gốc, xử lý riêng (nối cuối trang) */
@@ -20,7 +23,7 @@ export interface LinesResult {
 function overlapRatio(it: LayoutItem, line: { y: number; h: number }): number {
   const top = Math.max(it.y - it.h, line.y - line.h);
   const bottom = Math.min(it.y, line.y);
-  return Math.max(0, bottom - top) / Math.min(it.h, line.h);
+  return Math.max(0, bottom - top) / Math.max(Math.min(it.h, line.h), MIN_H);
 }
 
 function joinItems(a: string, b: string, gap: number, h: number): string {

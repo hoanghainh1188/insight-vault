@@ -64,3 +64,11 @@ describe("joinParagraphs", () => {
     expect(joinParagraphs([])).toBe("");
   });
 });
+
+describe("joinParagraphs — giới hạn đã biết (112 review)", () => {
+  it("từ ghép có gạch nối đúng ở cuối dòng (long-/term) bị nối liền — đúng FR-002, ghi trong ADR", () => {
+    expect(run(lines(50, 100, ["a long-", "term plan"]))).toBe(
+      "a longterm plan",
+    );
+  });
+});

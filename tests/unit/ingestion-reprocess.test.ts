@@ -30,6 +30,7 @@ function harness() {
     text: "Old flat text of the document page one",
     vaultLocked: false,
     gate: null as Promise<void> | null,
+    fileBytes: new Uint8Array([1]),
   };
   const store: VectorStore = {
     async add(recs) {
@@ -75,7 +76,7 @@ function harness() {
       return { vectors: texts.map(() => [1, 0]), dim: 2 };
     },
     isRuntimeReady: async () => true,
-    readFile: async () => new Uint8Array([1]),
+    readFile: async () => ctl.fileBytes,
     parseFile: async (_k, _b, onProgress): Promise<ParseResult> => {
       if (ctl.fail === "parse") throw new Error("parse fail");
       onProgress?.(0.5);
@@ -118,7 +119,17 @@ function harness() {
     vectorIds: [...vectors.keys()].sort(),
     source: repo.getById(id),
   });
-  return { repo, pipeline, ctl, calls, events, vectors, ingestOld, snapshot };
+  return {
+    repo,
+    pipeline,
+    ctl,
+    calls,
+    events,
+    vectors,
+    ingestOld,
+    snapshot,
+    store,
+  };
 }
 
 describe("pipeline.reprocess — thành công", () => {
@@ -291,5 +302,105 @@ describe("resumeInterrupted sau khi app đóng giữa lần xử lý lại (E1)"
     h.repo.updateStatus(id, "processing");
     h.pipeline.resumeInterrupted();
     expect(h.repo.getById(id)!.status).toBe("error");
+  });
+});
+
+// 112 — sửa theo review.
+describe("pipeline.reprocess — sửa theo review (112)", () => {
+  it("(B1) huỷ việc đang CHỜ sau một việc khác ⇒ phát done ngay, dọn cờ reprocess", async () => {
+    const h = harness();
+    const a = await h.ingestOld();
+    const { source } = await h.pipeline.add({
+      notebookId: "nb1",
+      kind: "pdf",
+      filePath: "/b.pdf",
+    });
+    await h.pipeline.whenIdle();
+    const b = source.id;
+    let release!: () => void;
+    h.ctl.gate = new Promise((r) => (release = r));
+    await h.pipeline.reprocess(a); // a chạy, kẹt ở embed
+    await h.pipeline.reprocess(b); // b chờ sau a
+    h.events.length = 0;
+    expect(h.pipeline.cancelReprocess(b)).toBe(true);
+    const doneB = h.events.filter((e) => e.sourceId === b && e.step === "done");
+    expect(doneB).toHaveLength(1);
+    expect(doneB[0].reprocess).toBe(true);
+    expect(h.pipeline.isReprocessing()).toBe(true); // a vẫn chạy
+    release();
+    await h.pipeline.whenIdle();
+    expect(h.pipeline.isReprocessing()).toBe(false);
+    // sự kiện sau này của b không còn cờ reprocess
+    h.events.length = 0;
+    h.repo.updateStatus(b, "error", "x");
+    await h.pipeline.retry(b);
+    await h.pipeline.whenIdle();
+    expect(
+      h.events.filter((e) => e.sourceId === b).every((e) => !e.reprocess),
+    ).toBe(true);
+  });
+
+  it("(B2) khoá kho bật trong lúc ghi vector mới ⇒ không hoán đổi, xoá vector mới, giữ bản cũ", async () => {
+    const h = harness();
+    const id = await h.ingestOld();
+    const before = h.snapshot(id);
+    const realAdd = h.store.add.bind(h.store);
+    h.store.add = async (recs) => {
+      h.ctl.vaultLocked = true; // sao lưu bắt đầu đúng lúc này
+      await realAdd(recs);
+    };
+    await h.pipeline.reprocess(id);
+    await h.pipeline.whenIdle();
+    expect(h.snapshot(id)).toEqual(before);
+    expect(h.events.at(-1)!.errorLabel).toMatch(/sao lưu|khôi phục/);
+  });
+
+  it("(B2) isReprocessing() true khi có lần xử lý lại đang chờ/chạy (sao lưu coi là bận)", async () => {
+    const h = harness();
+    const id = await h.ingestOld();
+    expect(h.pipeline.isReprocessing()).toBe(false);
+    let release!: () => void;
+    h.ctl.gate = new Promise((r) => (release = r));
+    await h.pipeline.reprocess(id);
+    expect(h.pipeline.isReprocessing()).toBe(true);
+    release();
+    await h.pipeline.whenIdle();
+    expect(h.pipeline.isReprocessing()).toBe(false);
+  });
+
+  it("(nên sửa 1) tệp bị sửa trong lúc chờ (hash lúc đọc ≠ content_hash) ⇒ huỷ, giữ bản cũ, báo đã bị sửa", async () => {
+    const h = harness();
+    const id = await h.ingestOld();
+    const before = h.snapshot(id);
+    h.ctl.fileBytes = new Uint8Array([9, 9, 9]);
+    await h.pipeline.reprocess(id);
+    await h.pipeline.whenIdle();
+    expect(h.snapshot(id)).toEqual(before);
+    expect(h.events.at(-1)!.errorLabel).toMatch(/đã bị sửa/);
+  });
+
+  it("(nên sửa 2) pipeline.reprocess từ chối nguồn không phải PDF", async () => {
+    const h = harness();
+    const { source } = await h.pipeline.add({
+      notebookId: "nb1",
+      kind: "txt",
+      filePath: "/a.txt",
+    });
+    await h.pipeline.whenIdle();
+    await expect(h.pipeline.reprocess(source.id)).rejects.toThrow(
+      "Chỉ xử lý lại nguồn PDF.",
+    );
+  });
+
+  it("(nên sửa 8) xoá nguồn đang xử lý lại ⇒ dọn cờ reprocess", async () => {
+    const h = harness();
+    const id = await h.ingestOld();
+    let release!: () => void;
+    h.ctl.gate = new Promise((r) => (release = r));
+    await h.pipeline.reprocess(id);
+    await h.pipeline.remove(id);
+    expect(h.pipeline.isReprocessing()).toBe(false);
+    release();
+    await h.pipeline.whenIdle();
   });
 });

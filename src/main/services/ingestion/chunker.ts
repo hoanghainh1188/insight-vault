@@ -69,10 +69,20 @@ function adjustEnd(
   return next >= 0 && next < b.end ? next + 1 : b.end;
 }
 
-/** Điểm bắt đầu chunk kế (sau overlap) rơi giữa một hàng bảng ⇒ dời về đầu hàng đó. */
-function adjustStart(text: string, start: number, blocks: Block[]): number {
+/**
+ * Điểm bắt đầu chunk kế (sau overlap) rơi giữa bảng ⇒ bảng ngắn: dời về đầu bảng (nếu vẫn tiến) hoặc ngay sau bảng
+ * (chunk kế không mở đầu bằng nửa bảng mất hàng tiêu đề); bảng dài: dời về đầu hàng.
+ */
+function adjustStart(
+  text: string,
+  start: number,
+  pos: number,
+  size: number,
+  blocks: Block[],
+): number {
   const b = blocks.find((x) => inside(x, start));
   if (!b) return start;
+  if (b.end - b.start <= size) return b.start > pos ? b.start : b.end;
   return Math.max(b.start, text.lastIndexOf("\n", start - 1) + 1);
 }
 
@@ -106,7 +116,7 @@ function splitRanges(
     // Lùi lại overlap ký tự cho chunk kế; đảm bảo luôn tiến ít nhất 1.
     let next = Math.max(end - overlap, pos + 1);
     if (blocks.length > 0) {
-      next = adjustStart(text, next, blocks);
+      next = adjustStart(text, next, pos, size, blocks);
       if (next <= pos) next = end;
     }
     pos = next;

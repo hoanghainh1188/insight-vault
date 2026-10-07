@@ -79,3 +79,13 @@ describe("buildLines", () => {
     expect(r.lines[0].y).toBe(101);
   });
 });
+
+describe("buildLines — item có chiều cao 0 (112 review)", () => {
+  it("không chia cho 0 / NaN: vẫn gom được dòng", () => {
+    const r = buildLines([item("a", 50, 100, 0), item("b", 80, 100, 10)]);
+    expect(
+      r.lines.flatMap((l) => l.segments.map((s) => s.text)).sort(),
+    ).toEqual(["a", "b"]);
+    for (const l of r.lines) expect(Number.isFinite(l.h)).toBe(true);
+  });
+});

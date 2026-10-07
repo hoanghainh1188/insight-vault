@@ -8,24 +8,27 @@ import type { LayoutItem } from "../pdf-layout/types";
 // 112: adapter MỎNG — chuyển item pdf.js sang LayoutItem (toạ độ gốc trên-trái) rồi dựng bố cục bằng hàm thuần
 // layoutPage (dòng / cột / đoạn / bảng). Mọi logic bố cục nằm ở pdf-layout/ (có test riêng).
 
-interface PdfTextItem {
+export interface PdfTextItem {
   str: string;
   transform: number[];
   width: number;
   height: number;
 }
 
-const EPS = 1e-6;
+/** sin(góc) tối thiểu để coi là chữ XOAY (~17°): chữ nghiêng (shear, chỉ c ≠ 0) và lệch nhỏ vẫn là chữ thường. */
+const ROTATION_MIN_SIN = 0.3;
 
-function toLayoutItem(it: PdfTextItem, viewTop: number): LayoutItem {
-  const [, b, c, d, e, f] = it.transform;
+/** 112: TextItem pdf.js → LayoutItem (gốc trên-trái; `viewTop` = đỉnh trang theo page.view). */
+export function toLayoutItem(it: PdfTextItem, viewTop: number): LayoutItem {
+  const [a, b, c, d, e, f] = it.transform;
+  const scale = Math.hypot(a, b);
   return {
     text: it.str,
     x: e,
     y: viewTop - f,
     w: it.width,
     h: it.height > 0 ? it.height : Math.hypot(c, d),
-    rotated: Math.abs(b) > EPS || Math.abs(c) > EPS,
+    rotated: scale > 0 && Math.abs(b) / scale > ROTATION_MIN_SIN,
   };
 }
 

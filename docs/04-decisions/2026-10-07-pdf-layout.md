@@ -45,7 +45,7 @@ y hệt cũ — snapshot txt/md/docx + văn bản dài chụp từ `main` trư�
   `vectorStore.add(mới)` → `replaceChunks` (MỘT transaction SQLite: xoá chunk cũ + FTS, chèn chunk mới với id định trước,
   version + page_count) → `deleteByIds(cũ)`. Lỗi/huỷ trước hoán đổi ⇒ không đổi gì (vector mới đã thêm bị xoá); khoá kho
   lúc hoán đổi ⇒ huỷ + báo. Lỗi xoá vector cũ ⇒ vector mồ côi vô hại (chunk không còn ⇒ `getChunksByIds` bỏ qua), ghi sự
-  kiện `ingest.reprocess.orphanVectors`. Nguồn `error` ⇒ như "Thử lại" bằng cách trích mới. App đóng giữa chừng ⇒ nguồn
+  kiện `ingest.reprocess.orphanVectors`. Kiểm khoá kho thêm lần nữa NGAY TRƯỚC `replaceChunks` (sau khi ghi vector); lần xử lý lại đang chờ/chạy được tính là "bận" với sao lưu (`pipeline.isReprocessing()`). Nội dung tệp được băm lại lúc đọc — khác `content_hash` (tệp bị sửa khi đang chờ) ⇒ huỷ, giữ bản cũ. Huỷ việc còn trong hàng đợi ⇒ kết thúc ngay (`SerialQueue.cancel` trả `dropped`). Nguồn `error` ⇒ như "Thử lại" bằng cách trích mới. App đóng giữa chừng ⇒ nguồn
   ready giữ dữ liệu cũ; nguồn đang thử lại về `error` (như cũ).
 - UI: nút "Xử lý lại" cạnh "Thử lại"/"Xoá" (cột Nguồn dùng nút, không có menu), hộp xác nhận nội tuyến
   (`role="alertdialog"`) nêu hệ quả với trích dẫn cũ, thanh tiến độ theo trang + Huỷ, thông báo cho trình đọc màn hình.
@@ -64,10 +64,17 @@ không nhúng font nào (đơn giản hơn kế hoạch nhúng LiberationSans; p
 
 ## Số liệu
 
-- SC-006: PDF tự sinh 50 trang (2 cột + bảng) — cách mới ≈ 0,9–1,0× cách cũ (≤ 2×). Thời gian chủ yếu ở pdf.js.
+- SC-006: PDF tự sinh 50 trang (2 cột + bảng) — cách mới ≈ 0,9–1,4× cách cũ tuỳ tải máy (≤ 2×). Thời gian chủ yếu ở pdf.js.
 - Bộ đánh giá 108 (`EVAL_MODE=current`): "hồi quy OK" (toàn Markdown — không đổi).
 
 ## Giới hạn
+
+- Từ ghép có gạch nối rơi đúng cuối dòng ("long-" / "term") bị nối thành "longterm" (đúng FR-002, chấp nhận; văn bản
+  vẫn là chính tắc nên trích dẫn không lệch).
+- Bảng neo theo mép TRÁI ô ⇒ cột số căn phải (bảng tài chính) thường không được nhận là bảng — giữ văn bản dòng (thà bỏ
+  sót).
+- Chữ xoay chỉ khi góc ≳ 17° (sin > 0,3); chữ nghiêng (shear) và lệch nhỏ là chữ thường. Trang có `/Rotate` chưa được
+  xoay toạ độ riêng (toạ độ theo hệ của nội dung).
 
 - Best-effort: bảng không căn thẳng cột, ô gộp, bảng xoay, trang > 4 cột, chữ bao quanh hình có thể đọc chưa đúng; nhận
   diện bảng ưu tiên bỏ sót hơn nhận nhầm. PDF quét (OCR) ngoài phạm vi.
