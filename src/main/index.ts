@@ -41,6 +41,10 @@ import {
   restrictDumpDir,
 } from "./services/crash-report/crash-fs";
 import { createCrashService } from "./services/crash-report/crash-service";
+import {
+  pickProvider as pickProviderFor,
+  type AiTarget,
+} from "./services/ai-runtime/ai-target";
 import { runReindex, needsReindex } from "./services/embedding/reindex-runner";
 import { recommendChatModel } from "./services/ai/model-recommend";
 import { checkOllama } from "./services/ai/ollama-health";
@@ -311,51 +315,68 @@ app
     // 059: trạng thái tái lập chỉ mục (đổi engine embedding). rag:ask báo "đang tái lập" khi inProgress.
     const reindex: ReindexStatus = { inProgress: false, done: 0, total: 0 };
 
-    const ragService = createRagService({
-      // 059: embed CÂU TRUY VẤN in-process (e5 query) — thay Ollama. Dùng CHUNG embedder với ingestion
-      // (passage) → cùng không gian vector, nhất quán index. Không cần Ollama cho embed.
-      embed: async (text) =>
-        (await ingestion.embedder.embed([text], "query"))[0],
-      // 059 PER-NOTEBOOK (research R4): chỉ chặn notebook CHƯA nhúng đủ vector. Notebook đã xong (số vector =
-      // số chunk) hỏi đáp bình thường dù reindex toàn cục còn chạy. Notebook rỗng (0 chunk) → không chặn.
-      reindexing: async (nb) => {
-        if (!reindex.inProgress) return false;
-        const chunks = ingestion.sourceRepo.countChunksByNotebook(nb);
-        if (chunks === 0) return false;
-        const vectors = await ingestion.vectorStore.countByNotebook(nb);
-        return vectors < chunks;
-      },
-      search: (v, nb, k) => ingestion.vectorStore.search(v, nb, k),
-      getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
-      sourceTitle: (sid) => ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
-      // 055 hybrid: BM25 keyword (FTS5) + vector cho MMR. rewrite qua provider active (badge egress 031).
-      searchBm25: (nb, query, k) => keywordStore.searchBm25(nb, query, k),
-      getVectorsByIds: (ids) => ingestion.vectorStore.getVectorsByIds(ids),
-      rewrite: (question, history) =>
-        rewriteQuery(
-          question,
-          history,
-          async (messages) =>
-            (await aiRuntime.registry.getActive().chat({ messages })).content,
-        ),
-      chat: async (messages) =>
-        (await aiRuntime.registry.getActive().chat({ messages })).content,
-      // Streaming (039): cùng provider active, truyền onToken/signal xuống chat.
-      chatStream: async (messages, opts) =>
-        (await aiRuntime.registry.getActive().chat({ messages }, opts)).content,
-      saveTurn: (nb, userContent, assistant) =>
-        chatRepo.saveTurn(nb, userContent, assistant),
-    });
+    // 098 (ADR online-fallback-clarify): đích AI theo lượt — "local" lấy thẳng Ollama, không đổi provider đang bật.
+    const pickProvider = (target: AiTarget) =>
+      pickProviderFor(aiRuntime.registry, target);
+
+    const makeRagService = (target: AiTarget) =>
+      createRagService({
+        // 059: embed CÂU TRUY VẤN in-process (e5 query) — thay Ollama. Dùng CHUNG embedder với ingestion
+        // (passage) → cùng không gian vector, nhất quán index. Không cần Ollama cho embed.
+        embed: async (text) =>
+          (await ingestion.embedder.embed([text], "query"))[0],
+        // 059 PER-NOTEBOOK (research R4): chỉ chặn notebook CHƯA nhúng đủ vector. Notebook đã xong (số vector =
+        // số chunk) hỏi đáp bình thường dù reindex toàn cục còn chạy. Notebook rỗng (0 chunk) → không chặn.
+        reindexing: async (nb) => {
+          if (!reindex.inProgress) return false;
+          const chunks = ingestion.sourceRepo.countChunksByNotebook(nb);
+          if (chunks === 0) return false;
+          const vectors = await ingestion.vectorStore.countByNotebook(nb);
+          return vectors < chunks;
+        },
+        search: (v, nb, k) => ingestion.vectorStore.search(v, nb, k),
+        getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
+        sourceTitle: (sid) =>
+          ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
+        // 055 hybrid: BM25 keyword (FTS5) + vector cho MMR. rewrite qua provider active (badge egress 031).
+        searchBm25: (nb, query, k) => keywordStore.searchBm25(nb, query, k),
+        getVectorsByIds: (ids) => ingestion.vectorStore.getVectorsByIds(ids),
+        rewrite: (question, history) =>
+          rewriteQuery(
+            question,
+            history,
+            async (messages) =>
+              (await pickProvider(target).chat({ messages })).content,
+          ),
+        chat: async (messages) =>
+          (await pickProvider(target).chat({ messages })).content,
+        // Streaming (039): cùng provider active, truyền onToken/signal xuống chat.
+        chatStream: async (messages, opts) =>
+          (await pickProvider(target).chat({ messages }, opts)).content,
+        saveTurn: (nb, userContent, assistant) =>
+          chatRepo.saveTurn(nb, userContent, assistant),
+      });
+    // 098: bản "active" (provider đang bật) + bản "local" (Ollama cho MỌI lệnh LLM, kể cả rewrite) — người dùng
+    // bấm "Trả lời bằng AI cục bộ" sau lỗi online. Provider chọn LÚC GỌI ⇒ đổi provider trong Cài đặt có hiệu lực ngay.
+    const ragServices = {
+      active: makeRagService("active"),
+      local: makeRagService("local"),
+    };
 
     // studio (021): tổng hợp toàn notebook. Gom chunk qua source-repo (011), chat qua provider active (007),
     // lưu bền vào studio_result (migration #3). KHÔNG log nội dung.
-    const studioService = createStudioService({
-      listSources: (nb) => ingestion.sourceRepo.listByNotebook(nb),
-      listChunks: (sid) => ingestion.sourceRepo.listChunks(sid),
-      studioRepo: createStudioRepo(db),
-      chat: async (messages) =>
-        (await aiRuntime.registry.getActive().chat({ messages })).content,
-    });
+    const makeStudioService = (target: AiTarget) =>
+      createStudioService({
+        listSources: (nb) => ingestion.sourceRepo.listByNotebook(nb),
+        listChunks: (sid) => ingestion.sourceRepo.listChunks(sid),
+        studioRepo: createStudioRepo(db),
+        chat: async (messages) =>
+          (await pickProvider(target).chat({ messages })).content,
+      });
+    const studioServices = {
+      active: makeStudioService("active"),
+      local: makeStudioService("local"),
+    };
 
     // content-search (073): tìm toàn văn nội dung nguồn (BM25 FTS5) → chunk → ContentSearchHit. Chỉ đọc.
     const contentSearch = createContentSearch({
@@ -437,9 +458,9 @@ app
       pipeline: ingestion.pipeline,
       vectorStore: ingestion.vectorStore,
       aiRuntime,
-      ragService,
+      ragServices,
       chatRepo,
-      studioService,
+      studioServices,
       contentSearch,
       // 059 — gợi ý model theo RAM (thuần) + health Ollama (ping + /api/tags) + trạng thái reindex.
       recommendChatModel: () => recommendChatModel(totalmem()),

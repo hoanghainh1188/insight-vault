@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Citation } from "@shared/ipc/types";
 import { useChat } from "./useChat";
 import { MessageBubble } from "./MessageBubble";
@@ -21,6 +21,8 @@ export function ChatColumn({
     setMode,
     loading,
     error,
+    failedTurn,
+    retryFailed,
     runtimeReady,
     hasReadySources,
     canSend,
@@ -30,6 +32,12 @@ export function ChatColumn({
     clearHistory,
   } = useChat(notebookId);
   const [draft, setDraft] = useState("");
+  // 098: khối lỗi (chứa nút vừa bấm) biến mất khi hỏi lại ⇒ đưa focus về vùng hội thoại, không để rơi ra <body>.
+  const threadRef = useRef<HTMLDivElement>(null);
+  const retry = (target: "local" | "active"): void => {
+    threadRef.current?.focus();
+    void retryFailed(target);
+  };
   const [chatModel, setChatModel] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,7 +80,13 @@ export function ChatColumn({
         )}
       </header>
 
-      <div className="chat-thread" data-testid="chat-thread">
+      <div
+        className="chat-thread"
+        data-testid="chat-thread"
+        ref={threadRef}
+        tabIndex={-1}
+        aria-label="Hội thoại"
+      >
         {messages.length === 0 && !loading && (
           <p className="chat-empty">
             Đặt câu hỏi về các nguồn trong notebook này.
@@ -94,9 +108,33 @@ export function ChatColumn({
       </div>
 
       {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
+        <div className="form-error chat-error">
+          <p role="alert">{error}</p>
+          {/* 098 (ADR online-fallback-clarify): lỗi AI online ⇒ người dùng CHỌN trả lời lượt này bằng AI cục bộ
+              hoặc thử lại — không tự đổi provider. */}
+          {failedTurn && (
+            <div className="fallback-actions">
+              <button
+                type="button"
+                className="btn-primary-sm"
+                disabled={loading}
+                onClick={() => retry("local")}
+                data-testid="chat-local-retry"
+              >
+                Trả lời bằng AI cục bộ
+              </button>
+              <button
+                type="button"
+                className="btn-outline-sm"
+                disabled={loading}
+                onClick={() => retry("active")}
+                data-testid="chat-retry"
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="chat-composer">

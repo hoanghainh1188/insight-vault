@@ -23,6 +23,13 @@ export class ProviderRegistry {
     return this.providers.get(this.activeId)!;
   }
 
+  /** Provider theo id (098: lượt "AI cục bộ" lấy thẳng Ollama, không đổi provider đang bật). */
+  get(id: string): LLMProvider {
+    const p = this.providers.get(id);
+    if (!p) throw new Error(`Provider chưa đăng ký: ${id}`);
+    return p;
+  }
+
   list(): string[] {
     return [...this.providers.keys()];
   }

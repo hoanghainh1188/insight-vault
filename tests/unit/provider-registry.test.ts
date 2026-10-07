@@ -37,4 +37,15 @@ describe("ProviderRegistry", () => {
     r.register(fakeProvider("ollama", "x"));
     expect(() => r.setActive("khong-co")).toThrow();
   });
+
+  it("get(id) lấy đúng provider đã đăng ký (098 — lượt 'AI cục bộ'), id lạ ⇒ ném", () => {
+    const r = new ProviderRegistry();
+    const a = { id: "ollama" } as unknown as LLMProvider;
+    const b = { id: "anthropic" } as unknown as LLMProvider;
+    r.register(a);
+    r.register(b, { activate: true });
+    expect(r.getActive()).toBe(b);
+    expect(r.get("ollama")).toBe(a);
+    expect(() => r.get("x")).toThrow();
+  });
 });

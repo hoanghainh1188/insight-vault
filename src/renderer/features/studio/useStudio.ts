@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Source, StudioKind, StudioResult } from "@shared/ipc/types";
+import type {
+  AiTarget,
+  Source,
+  StudioKind,
+  StudioResult,
+} from "@shared/ipc/types";
+import { parseIpcError } from "@shared/online-error-tag";
 
 // Hook cột Studio: nạp kết quả đã lưu khi mở notebook (studio:list) + sinh mới theo loại (studio:generate).
 // State theo TỪNG loại (results/loading/error) để 4 nút độc lập (US2). Đổi notebook → nạp lại.
@@ -12,6 +18,9 @@ export function useStudio(notebookId: string) {
   const [results, setResults] = useState<StudioResultMap>({});
   const [loading, setLoading] = useState<StudioFlagMap>({});
   const [errors, setErrors] = useState<StudioErrorMap>({});
+  // 098: loại nào vừa lỗi do provider online (hiện nút "Tạo bằng AI cục bộ") / kết quả nào tạo bằng AI cục bộ (nhãn).
+  const [onlineFailed, setOnlineFailed] = useState<StudioFlagMap>({});
+  const [localKinds, setLocalKinds] = useState<StudioFlagMap>({});
   const [ollamaReady, setOllamaReady] = useState<boolean | null>(null);
   const [readySources, setReadySources] = useState<Source[]>([]);
   const hasReadySources = readySources.length > 0;
@@ -47,6 +56,8 @@ export function useStudio(notebookId: string) {
     setResults({});
     setErrors({});
     setLoading({});
+    setOnlineFailed({});
+    setLocalKinds({});
     window.api
       .studioList(notebookId)
       .then((list) => {
@@ -65,24 +76,37 @@ export function useStudio(notebookId: string) {
 
   const generate = useCallback(
     // 091: trả true khi tạo xong (để tầng UI báo trình đọc màn hình); lỗi đã nằm ở errors[kind].
-    async (kind: StudioKind, sourceId?: string): Promise<boolean> => {
+    // 098: target "local" = tạo bằng Ollama sau lỗi online (người dùng bấm).
+    async (
+      kind: StudioKind,
+      sourceId?: string,
+      target?: AiTarget,
+    ): Promise<boolean> => {
       const stale = (): boolean => notebookRef.current !== notebookId;
+      const local = target === "local";
       setLoading((p) => ({ ...p, [kind]: true }));
       setErrors((p) => ({ ...p, [kind]: undefined }));
+      setOnlineFailed((p) => ({ ...p, [kind]: false }));
       try {
         const res = await window.api.studioGenerate({
           notebookId,
           kind,
           sourceId,
+          ...(local ? { target: "local" as const } : {}),
         });
         if (stale()) return false;
         setResults((p) => ({ ...p, [kind]: res }));
+        setLocalKinds((p) => ({ ...p, [kind]: local }));
         return true;
       } catch (e) {
         if (stale()) return false;
-        setErrors((p) => ({
+        const parsed = parseIpcError(
+          e instanceof Error ? e.message : "Không tạo được Studio.",
+        );
+        setErrors((p) => ({ ...p, [kind]: parsed.message }));
+        setOnlineFailed((p) => ({
           ...p,
-          [kind]: e instanceof Error ? e.message : "Không tạo được Studio.",
+          [kind]: parsed.onlineKind !== null && !local,
         }));
         return false;
       } finally {
@@ -96,6 +120,8 @@ export function useStudio(notebookId: string) {
     results,
     loading,
     errors,
+    onlineFailed,
+    localKinds,
     generate,
     ollamaReady,
     hasReadySources,

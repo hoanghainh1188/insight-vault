@@ -281,11 +281,15 @@ export interface RagTurn {
   content: string;
 }
 
+/** Đích AI của 1 lượt (098): mặc định provider đang bật; "local" = Ollama (sau lỗi online, người dùng chọn). */
+export type AiTarget = "active" | "local";
+
 export interface RagAskInput {
   notebookId: string;
   question: string;
   mode: RagMode;
   history: RagTurn[];
+  target?: AiTarget;
 }
 
 /** Trích dẫn: số [n] trong câu trả lời → chunk/nguồn/vị trí thật (dữ liệu cho source-viewer 006). */
@@ -381,6 +385,7 @@ export interface StudioGenerateInput {
   notebookId: string;
   kind: StudioKind;
   sourceId?: string; // 025: lọc theo 1 nguồn; bỏ trống = toàn bộ nguồn ready
+  target?: AiTarget; // 098: "local" = tạo bằng Ollama sau lỗi online
 }
 
 /** Input xuất kết quả Studio ra tệp .md (025). */

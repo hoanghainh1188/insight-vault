@@ -18,6 +18,8 @@ interface StudioResultCardProps {
   regenerating: boolean;
   onRegenerate: () => void;
   onCite?: (c: Citation) => void;
+  /** 098: kết quả tạo bằng AI cục bộ sau lỗi online (người dùng chọn) ⇒ nhãn minh bạch. */
+  local?: boolean;
 }
 
 export function StudioResultCard({
@@ -25,6 +27,7 @@ export function StudioResultCard({
   regenerating,
   onRegenerate,
   onCite,
+  local,
 }: StudioResultCardProps): JSX.Element {
   const citeByN = new Map(result.citations.map((c) => [c.n, c]));
   const [copied, setCopied] = useState(false);
@@ -62,7 +65,18 @@ export function StudioResultCard({
   return (
     <article className="studio-card" data-testid={`studio-card-${result.kind}`}>
       <header className="studio-card-head">
-        <h3 className="studio-card-title">{KIND_LABEL[result.kind]}</h3>
+        <h3 className="studio-card-title">
+          {KIND_LABEL[result.kind]}
+          {local && (
+            <span
+              className="local-answer"
+              data-testid={`studio-local-${result.kind}`}
+              title="Kết quả này được tạo bằng AI cục bộ (Ollama) vì AI online gặp lỗi."
+            >
+              AI cục bộ
+            </span>
+          )}
+        </h3>
         <div className="studio-card-actions">
           <button
             type="button"

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Citation, StudioKind } from "@shared/ipc/types";
+import { useRef, useState } from "react";
+import type { AiTarget, Citation, StudioKind } from "@shared/ipc/types";
 import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
 import { announce } from "../../shared/a11y/announcer";
@@ -29,6 +29,8 @@ export function StudioColumn({
     results,
     loading,
     errors,
+    onlineFailed,
+    localKinds,
     generate,
     ollamaReady,
     hasReadySources,
@@ -45,11 +47,19 @@ export function StudioColumn({
         ? "Nạp nguồn để tạo Studio."
         : null;
   const disabled = blockReason !== null;
+  // 098: khối lỗi (chứa nút vừa bấm) biến mất khi tạo lại ⇒ đưa focus về tiêu đề cột Studio.
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
-  const run = async (kind: StudioKind, label: string): Promise<void> => {
+  // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
+  const run = async (
+    kind: StudioKind,
+    label: string,
+    target?: AiTarget,
+  ): Promise<void> => {
     announce(studioMessage(label, "start"));
-    if (await generate(kind, scopeId)) announce(studioMessage(label, "done"));
+    if (await generate(kind, scopeId, target))
+      announce(studioMessage(label, "done"));
   };
 
   return (
@@ -58,7 +68,9 @@ export function StudioColumn({
       aria-label="Studio"
       data-testid="studio-col"
     >
-      <h2 className="studio-title">Studio</h2>
+      <h2 className="studio-title" ref={titleRef} tabIndex={-1}>
+        Studio
+      </h2>
       <p className="col-hint">Tạo nhanh bản tổng hợp từ nguồn của notebook.</p>
 
       {blockReason && (
@@ -122,14 +134,42 @@ export function StudioColumn({
           }
           if (err) {
             return (
-              <p
+              <div
                 key={kind}
                 className="studio-error"
-                role="alert"
                 data-testid={`studio-error-${kind}`}
               >
-                {err}
-              </p>
+                <p role="alert">{err}</p>
+                {/* 098: lỗi AI online ⇒ người dùng chọn tạo bằng AI cục bộ cho lượt này, hoặc thử lại. */}
+                {onlineFailed[kind] && (
+                  <div className="fallback-actions">
+                    <button
+                      type="button"
+                      className="btn-primary-sm"
+                      aria-label={`Tạo ${label} bằng AI cục bộ`}
+                      onClick={() => {
+                        titleRef.current?.focus();
+                        void run(kind, label, "local");
+                      }}
+                      data-testid={`studio-local-retry-${kind}`}
+                    >
+                      Tạo bằng AI cục bộ
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-outline-sm"
+                      aria-label={`Thử lại ${label}`}
+                      onClick={() => {
+                        titleRef.current?.focus();
+                        void run(kind, label);
+                      }}
+                      data-testid={`studio-retry-${kind}`}
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           }
           if (!res) return null;
@@ -140,6 +180,7 @@ export function StudioColumn({
               regenerating={loading[kind] === true}
               onRegenerate={() => void run(kind, label)}
               onCite={onCite}
+              local={localKinds[kind] === true}
             />
           );
         })}
