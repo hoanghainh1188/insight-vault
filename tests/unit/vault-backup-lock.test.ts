@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { createVaultLock } from "../../src/main/services/vault-backup/vault-lock";
+import {
+  createVaultLock,
+  isVaultBusy,
+} from "../../src/main/services/vault-backup/vault-lock";
 import { VaultBackupFailure } from "../../src/main/services/vault-backup/errors";
 
 function make(active = false, reindexing = false) {
@@ -58,5 +61,41 @@ describe("vault-backup lock + busy", () => {
     lock.lockUntilExit();
     await lock.withLock(async () => undefined);
     expect(lock.isLocked()).toBe(true);
+  });
+});
+
+// 116 (contracts C5): định nghĩa "bận" dùng chung cho bảo trì kho vector.
+describe("isVaultBusy", () => {
+  it("rảnh ⇒ false", () => {
+    expect(isVaultBusy(make().lock)).toBe(false);
+  });
+
+  it("nguồn đang xử lý / reindex ⇒ true", () => {
+    expect(isVaultBusy(make(true).lock)).toBe(true);
+    expect(isVaultBusy(make(false, true).lock)).toBe(true);
+  });
+
+  it("đang có thao tác sao lưu/khôi phục ⇒ true; kết thúc ⇒ false", () => {
+    const { lock } = make();
+    lock.beginOperation("backup");
+    expect(isVaultBusy(lock)).toBe(true);
+    lock.endOperation();
+    expect(isVaultBusy(lock)).toBe(false);
+  });
+
+  it("đang giữ khoá chụp (withLock) ⇒ true", async () => {
+    const { lock } = make();
+    let seen = false;
+    await lock.withLock(async () => {
+      seen = isVaultBusy(lock);
+    });
+    expect(seen).toBe(true);
+    expect(isVaultBusy(lock)).toBe(false);
+  });
+
+  it("khoá vĩnh viễn sau xác nhận khôi phục ⇒ true", () => {
+    const { lock } = make();
+    lock.lockUntilExit();
+    expect(isVaultBusy(lock)).toBe(true);
   });
 });

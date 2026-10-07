@@ -61,3 +61,14 @@ export function createVaultLock(deps: VaultLockDeps): VaultLock {
     },
   };
 }
+
+/**
+ * 116 (contracts C5, research R6): kho "bận" theo MỘT định nghĩa dùng chung — nguồn queued/processing/
+ * reprocessing, reindex nền, thao tác sao lưu/khôi phục đang mở, khoá chụp, hoặc khoá vĩnh viễn sau xác nhận
+ * khôi phục. Bảo trì kho vector chỉ bắt đầu khi hàm này trả false.
+ */
+export function isVaultBusy(
+  lock: Pick<VaultLock, "getState" | "isLocked">,
+): boolean {
+  return lock.getState().busy || lock.isLocked();
+}

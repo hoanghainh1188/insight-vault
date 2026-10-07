@@ -53,6 +53,11 @@ export interface BackupServiceDeps {
   now?: () => Date;
   /** Chỉ để test chạy nhanh; production dùng DEFAULT_KDF. */
   kdf?: KdfParams;
+  /**
+   * 116: chờ bảo trì kho vector đang chạy xong (có trần thời gian) trước khi chụp `vectors/`. Gọi TRONG khoá ⇒
+   * không lần bảo trì mới nào bắt đầu được. false ⇒ báo bận. Không truyền ⇒ hành vi cũ.
+   */
+  waitVectorIdle?: () => Promise<boolean>;
 }
 
 interface PendingRestore {
@@ -116,8 +121,11 @@ export function createBackupService(deps: BackupServiceDeps): BackupService {
     await mkdir(join(deps.dataDir, "tmp"), { recursive: true, mode: 0o700 });
     try {
       deps.emit({ op, step: "snapshot" });
-      await deps.lock.withLock(() =>
-        createSnapshot({
+      await deps.lock.withLock(async () => {
+        if (deps.waitVectorIdle && !(await deps.waitVectorIdle())) {
+          throw new VaultBackupFailure("busy");
+        }
+        await createSnapshot({
           db: deps.db,
           dataDir: deps.dataDir,
           // Chỉ khoá cấu hình đã biết (security S1) — không mang theo khoá lạ trong store.
@@ -126,8 +134,8 @@ export function createBackupService(deps: BackupServiceDeps): BackupService {
           appVersion: deps.appVersion,
           encrypted: password !== undefined,
           now: now(),
-        }),
-      );
+        });
+      });
       deps.emit({ op, step: "pack" });
       const { sizeBytes } = await packToFile(tmp, outPath, {
         password,

@@ -406,3 +406,65 @@ describe("backup-service: khôi phục (US2/US3)", () => {
     expect(h.deps.lock.isLocked()).toBe(false);
   });
 });
+
+// 116 (contracts C6, research R7): sao lưu không chụp vectors/ giữa lúc bảo trì kho vector đang chạy.
+describe("backup-service: chờ bảo trì kho vector (116)", () => {
+  it("waitVectorIdle được gọi TRONG khoá, trước khi chụp; true ⇒ sao lưu bình thường", async () => {
+    const h = harness();
+    const seen: boolean[] = [];
+    const svc = createBackupService({
+      ...h.deps,
+      waitVectorIdle: async () => {
+        seen.push(h.deps.lock.isLocked());
+        expect(h.steps.map((s) => s.step)).toEqual(["snapshot"]);
+        return true;
+      },
+    });
+    const r = await svc.createBackup({});
+    expect(r.status).toBe("ok");
+    expect(seen).toEqual([true]);
+  });
+
+  it("false (quá hạn chờ) ⇒ busy, không tạo tệp, nhả khoá + hết busy", async () => {
+    const h = harness();
+    const svc = createBackupService({
+      ...h.deps,
+      waitVectorIdle: async () => false,
+    });
+    expect(await svc.createBackup({})).toEqual({
+      status: "error",
+      code: "busy",
+    });
+    expect(existsSync(join(outDir, "my.ivbackup"))).toBe(false);
+    expect(h.steps.map((s) => s.step)).toEqual(["snapshot"]);
+    expect(h.deps.lock.isLocked()).toBe(false);
+    expect(svc.getState()).toEqual({ busy: false, reason: null });
+  });
+
+  it("áp dụng cho bản tự sao lưu trước khôi phục: false ⇒ busy, giữ phiên, không relaunch", async () => {
+    const h = harness();
+    const file = join(outDir, "my.ivbackup");
+    expect((await createBackupService(h.deps).createBackup({})).status).toBe(
+      "ok",
+    );
+    let idle = false;
+    const svc = createBackupService({
+      ...h.deps,
+      waitVectorIdle: async () => idle,
+    });
+    h.dialog.open = file;
+    const pick = await svc.pickRestore();
+    const token = pick.status === "ok" ? pick.token : "";
+    await svc.prepareRestore({ token });
+    expect(await svc.confirmRestore({ token })).toEqual({
+      status: "error",
+      code: "busy",
+    });
+    expect(h.relaunch).not.toHaveBeenCalled();
+    expect(h.deps.lock.isLocked()).toBe(false);
+    idle = true;
+    expect(await svc.confirmRestore({ token })).toEqual({
+      status: "relaunching",
+    });
+  });
+});
