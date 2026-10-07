@@ -22,6 +22,7 @@ function audioSource(id: string): Source {
     pageCount: null,
     createdAt: 0,
     updatedAt: 0,
+    extractionVersion: 1,
   };
 }
 

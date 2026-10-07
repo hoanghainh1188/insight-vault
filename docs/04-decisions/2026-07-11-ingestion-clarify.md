@@ -97,3 +97,5 @@ chỉ ghi log server-side (redact, không log nội dung tài liệu — Constit
   `@lancedb/lancedb` (native prebuilt).
 - `security-reviewer` bắt buộc chạy (feature đụng fetch mạng URL + FS + DB) — soi SSRF (mục 6), giới hạn
   kích thước (mục 7), không log nội dung (mục 14).
+
+> **112 (2026-10-07):** PDF trích có bố cục (dòng/cột/bảng) + phiên bản trích `extraction_version` + "Xử lý lại" nguyên tử. Xem `2026-10-07-pdf-layout.md`.

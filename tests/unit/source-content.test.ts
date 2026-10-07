@@ -107,3 +107,59 @@ describe("getSourceContent", () => {
     expect(getSourceContent(repo, "")).toBeNull();
   });
 });
+
+// 112 (FR-017, research R12): trích dẫn cũ nhận diện bằng chunkId không còn thuộc nguồn (đã xử lý lại).
+describe("getSourceContent — citationValid (112)", () => {
+  function seeded() {
+    const repo = setup();
+    const src = repo.create({
+      notebookId: "nb1",
+      kind: "pdf",
+      title: "doc.pdf",
+      origin: "/p",
+      contentHash: "h",
+      pageCount: 1,
+    });
+    const ids = repo.insertChunks(
+      src.id,
+      chunkPages([{ page: 1, text: lorem(80) }]),
+    );
+    return { repo, src, ids };
+  }
+
+  it("input string (cũ) ⇒ như trước, không có citationValid", () => {
+    const { repo, src } = seeded();
+    const c = getSourceContent(repo, src.id)!;
+    expect(c).not.toHaveProperty("citationValid");
+  });
+
+  it("{sourceId, chunkId} thuộc nguồn ⇒ true; không thuộc ⇒ false", () => {
+    const { repo, src, ids } = seeded();
+    expect(
+      getSourceContent(repo, { sourceId: src.id, chunkId: ids[0] })!
+        .citationValid,
+    ).toBe(true);
+    expect(
+      getSourceContent(repo, { sourceId: src.id, chunkId: "chunk-cu-da-xoa" })!
+        .citationValid,
+    ).toBe(false);
+  });
+
+  it("{sourceId} không kèm chunkId ⇒ không có citationValid", () => {
+    const { repo, src } = seeded();
+    expect(getSourceContent(repo, { sourceId: src.id })).not.toHaveProperty(
+      "citationValid",
+    );
+  });
+
+  it("input sai kiểu ⇒ null (không ném, giữ hành vi cũ với id rỗng)", () => {
+    const { repo } = seeded();
+    expect(getSourceContent(repo, { sourceId: "" })).toBeNull();
+    expect(getSourceContent(repo, 42 as unknown as string)).toBeNull();
+    expect(
+      getSourceContent(repo, { sourceId: "x", chunkId: 5 } as unknown as {
+        sourceId: string;
+      }),
+    ).toBeNull();
+  });
+});

@@ -79,3 +79,5 @@ Văn bản đã-làm-sạch `T` của một nguồn được khôi phục từ c
   - assembly đọc repo. Kênh `source:getContent`. Renderer `features/source-viewer/` (overlay panel +
     highlight). Nối `onCite` (013) + `onOpen` cột Nguồn (011).
 - Feature sau (nếu cần hiển thị nguồn) tái dùng `getContent` + `reconstructText`.
+
+> **112 (2026-10-07):** `source:getContent` nhận `{sourceId, chunkId}` ⇒ `citationValid`; trích dẫn cũ (nguồn đã xử lý lại) không tô sáng + ghi chú. Xem `2026-10-07-pdf-layout.md`.

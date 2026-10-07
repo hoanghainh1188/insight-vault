@@ -68,3 +68,27 @@ describe("SerialQueue", () => {
     expect(sawCancel).toBe(true);
   });
 });
+
+// 112 (review B1): cancel báo kết quả để bên gọi biết việc chưa chạy đã bị bỏ (không có callback nào chạy cho nó).
+describe("SerialQueue.cancel — kết quả (112)", () => {
+  it("việc đang chờ ⇒ 'dropped', has() false ngay, task không bao giờ chạy; đang chạy ⇒ 'running'; không có ⇒ 'none'", async () => {
+    const q = createSerialQueue();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const ran: string[] = [];
+    q.enqueue("a", async () => {
+      ran.push("a");
+      await gate;
+    });
+    q.enqueue("b", async () => {
+      ran.push("b");
+    });
+    expect(q.cancel("b")).toBe("dropped");
+    expect(q.has("b")).toBe(false);
+    expect(q.cancel("a")).toBe("running");
+    expect(q.cancel("zzz")).toBe("none");
+    release();
+    await q.whenIdle();
+    expect(ran).toEqual(["a"]);
+  });
+});

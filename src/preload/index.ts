@@ -126,9 +126,19 @@ const api = {
     id: string,
   ): Promise<import("@shared/ipc/types").SourceRelinkResult> =>
     ipcRenderer.invoke(CHANNELS.sourceRelink, id),
+  // 112: xử lý lại PDF — chỉ gửi id; kiểm tệp gốc + khoá kho ở main.
+  sourceReprocess: (
+    id: string,
+  ): Promise<import("@shared/ipc/types").SourceReprocessResult> =>
+    ipcRenderer.invoke(CHANNELS.sourceReprocess, id),
+  sourceReprocessCancel: (id: string): Promise<{ cancelled: boolean }> =>
+    ipcRenderer.invoke(CHANNELS.sourceReprocessCancel, id),
   // source-viewer (019)
-  sourceGetContent: (id: string): Promise<SourceContent | null> =>
-    ipcRenderer.invoke(CHANNELS.sourceGetContent, id),
+  // 112: kèm chunkId của trích dẫn ⇒ main trả thêm citationValid (trích dẫn cũ sau "Xử lý lại").
+  sourceGetContent: (
+    request: string | { sourceId: string; chunkId?: string },
+  ): Promise<SourceContent | null> =>
+    ipcRenderer.invoke(CHANNELS.sourceGetContent, request),
   /** 073: tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25). */
   sourceSearch: (
     notebookId: string,

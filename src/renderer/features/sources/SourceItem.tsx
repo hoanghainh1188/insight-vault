@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import type { Source } from "@shared/ipc/types";
+import { useEffect, useState } from "react";
+import { PDF_EXTRACTION_VERSION, type Source } from "@shared/ipc/types";
 import { statClass, statusLabel, stepLabel } from "./source-status";
 import { progressValueText } from "../../shared/a11y/messages";
 import { useRelink } from "./useRelink";
+import { useReprocess } from "./useReprocess";
 import type { SourceProgress } from "./useSources";
 
 const KIND_ICON: Record<Source["kind"], string> = {
@@ -60,6 +61,23 @@ export function SourceItem({
   const relinkThenRetry = async (): Promise<void> => {
     if ((await relink(source.id)) === "ok") onRetry(source.id);
   };
+  // 112: PDF trích theo cách cũ ⇒ gợi ý thụ động; "Xử lý lại" (có xác nhận) cho PDF ready/error.
+  const reproc = useReprocess(source.id, source.title);
+  const [confirming, setConfirming] = useState(false);
+  const isPdf = source.kind === "pdf";
+  const showHint =
+    isPdf &&
+    source.status === "ready" &&
+    source.extractionVersion < PDF_EXTRACTION_VERSION &&
+    !reproc.running;
+  const canReprocess =
+    isPdf &&
+    (source.status === "ready" || source.status === "error") &&
+    !reproc.running;
+  const confirmReprocess = (): void => {
+    setConfirming(false);
+    void reproc.start();
+  };
   return (
     <li className="src" data-testid={`source-${source.id}`}>
       <span className={`src-icon kind-${source.kind}`}>
@@ -110,6 +128,74 @@ export function SourceItem({
             {relinkMsg}
           </span>
         )}
+        {showHint && (
+          <span className="src-hint" data-testid="source-reprocess-hint">
+            Xử lý lại để giữ bố cục
+          </span>
+        )}
+        {reproc.running && (
+          <span className="src-sub src-reprocess-run">
+            <span
+              className="src-progress"
+              role="progressbar"
+              aria-label={`Tiến độ xử lý lại ${source.title}`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={reproc.pct}
+              data-testid="source-reprocess-progress"
+            >
+              <span
+                className="src-progress-fill"
+                style={{ width: `${reproc.pct}%` }}
+              />
+            </span>
+            <span aria-hidden="true">Đang xử lý lại · {reproc.pct}%</span>
+            <button
+              type="button"
+              className="nb-icon-btn"
+              onClick={() => void reproc.cancel()}
+              data-testid="source-reprocess-cancel"
+            >
+              Huỷ
+            </button>
+          </span>
+        )}
+        {reproc.message && (
+          <span className="src-relink-msg" data-testid="source-reprocess-msg">
+            {reproc.message}
+          </span>
+        )}
+        {confirming && (
+          <div
+            className="src-confirm"
+            role="alertdialog"
+            aria-label={`Xử lý lại ${source.title}`}
+            data-testid="source-reprocess-confirm"
+          >
+            <p>
+              Trích xuất lại PDF để giữ dòng, cột và bảng. Các trích dẫn [n] cũ
+              tới nguồn này vẫn mở được nhưng sẽ không còn tô sáng đúng vị trí.
+            </p>
+            <div className="src-confirm-actions">
+              <button
+                type="button"
+                className="nb-icon-btn"
+                onClick={() => setConfirming(false)}
+                data-testid="source-reprocess-confirm-cancel"
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                className="nb-icon-btn primary"
+                onClick={confirmReprocess}
+                data-testid="source-reprocess-confirm-ok"
+              >
+                Xử lý lại
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <div className="src-actions">
         {source.status === "error" && (
@@ -120,6 +206,17 @@ export function SourceItem({
             data-testid="source-retry"
           >
             Thử lại
+          </button>
+        )}
+        {canReprocess && !confirming && (
+          <button
+            type="button"
+            className="nb-icon-btn"
+            aria-label={`Xử lý lại ${source.title} để giữ bố cục`}
+            onClick={() => setConfirming(true)}
+            data-testid="source-reprocess"
+          >
+            Xử lý lại
           </button>
         )}
         {canRelink && (

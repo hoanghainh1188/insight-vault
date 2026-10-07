@@ -218,6 +218,16 @@ export const MIGRATIONS: Migration[] = [
       db.exec("ALTER TABLE chat_message ADD COLUMN mode_used TEXT");
     },
   },
+  // 112-pdf-layout: source.extraction_version — cách trích đã dùng cho văn bản/chunk hiện tại (PDF bố cục = 2).
+  // ADD COLUMN thuần, append-only; nguồn cũ = 1 (cách trích trước 112) ⇒ gợi ý "Xử lý lại để giữ bố cục".
+  {
+    version: 9,
+    up(db) {
+      db.exec(
+        "ALTER TABLE source ADD COLUMN extraction_version INTEGER NOT NULL DEFAULT 1",
+      );
+    },
+  },
 ];
 
 export function getUserVersion(db: Db): number {

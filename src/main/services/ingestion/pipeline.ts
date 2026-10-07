@@ -10,6 +10,7 @@ import type { SourceRepo } from "./source-repo";
 import type { VectorStore, VectorRecord } from "./vector-store";
 import type { LLMProvider } from "../ai-runtime/provider";
 import type { ParseResult } from "./parsers";
+import { PDF_EXTRACTION_VERSION } from "@shared/ipc/types";
 import { detectKindFromPath, titleFromPath } from "./parsers";
 import { cleanText } from "./cleaning";
 import { chunkPages, type PageText } from "./chunker";
@@ -20,6 +21,8 @@ import { errorLabelForStep } from "./status";
 import { SizeLimitError, assertWithinLimit } from "./size-limits";
 import { hashBytes, urlContentHash } from "./dedup";
 import { createSerialQueue } from "./queue";
+import { REPROCESS_ERRORS } from "./reprocess-guard";
+import { randomUUID } from "node:crypto";
 
 // Điều phối pipeline nạp nguồn (FR-004..010). TUẦN TỰ 1 nguồn/lần (queue). Toàn bộ DI → unit-test
 // không cần Electron/LanceDB thật. KHÔNG log nội dung tài liệu (Constitution III).
@@ -59,11 +62,26 @@ export interface PipelineDeps {
   hashFile?: (path: string) => Promise<{ hash: string; byteLength: number }>;
   setOnline?: (online: boolean, kind?: "url" | "model") => void;
   emit: (e: SourceProgressEvent) => void;
+  /** 112: kho đang sao lưu/khôi phục (085) ⇒ không hoán đổi dữ liệu của lần xử lý lại. */
+  isVaultLocked?: () => boolean;
+  /** 112: sinh id chunk mới cho lần xử lý lại (test cố định; mặc định randomUUID). */
+  newChunkId?: () => string;
+  /** 112: ghi sự kiện chẩn đoán (KHÔNG nội dung tài liệu). */
+  logEvent?: (event: string) => void;
 }
 
 export interface IngestionPipeline {
   add(input: AddSourceInput): Promise<AddSourceResult>;
   retry(id: string): Promise<Source>;
+  /**
+   * 112: xử lý lại nguồn PDF bằng cách trích hiện hành. Nguồn `ready`: dựng chunk + vector mới trong RAM rồi hoán đổi
+   * nguyên tử (giữ bản cũ khi lỗi/huỷ). Nguồn `error`: như retry. Ném nếu nguồn đang trong hàng đợi.
+   */
+  reprocess(id: string): Promise<void>;
+  /** 112: huỷ lần xử lý lại đang chờ/chạy; false nếu không có. */
+  cancelReprocess(id: string): boolean;
+  /** 112: có lần xử lý lại đang chờ/chạy (sao lưu coi là "bận" — nguồn vẫn `ready` nên không lộ qua trạng thái). */
+  isReprocessing(): boolean;
   remove(id: string): Promise<{ deleted: true }>;
   resumeAwaiting(): Promise<void>;
   /** Đánh dấu nguồn kẹt queued/processing sau restart → error (retry được). Gọi lúc khởi động. */
@@ -80,9 +98,29 @@ class StepError extends Error {
   }
 }
 
+/**
+ * Làm sạch một trang. 112 (FR-008, research R7): giữ `blocks` (vùng bảng) CHỈ khi làm sạch không đổi văn bản —
+ * nếu đổi thì offset của blocks không còn đúng ⇒ bỏ blocks (chunk vẫn hợp lệ, chỉ mất ưu tiên không cắt bảng).
+ */
+function cleanPage(p: PageText): PageText {
+  const text = cleanText(p.text);
+  return p.blocks && p.blocks.length > 0 && text === p.text
+    ? { page: p.page, text, blocks: p.blocks }
+    : { page: p.page, text };
+}
+
+/** 112: thông báo khi xử lý lại thất bại (nguồn vẫn dùng bản cũ). */
+export const REPROCESS_FAILED_LABEL = "Xử lý lại thất bại — vẫn dùng bản cũ.";
+/** 112: tệp gốc bị sửa sau khi yêu cầu (lúc đọc khác content_hash) ⇒ huỷ, giữ bản cũ. */
+export const REPROCESS_CHANGED_LABEL =
+  "Tệp gốc đã bị sửa so với lúc nạp — xử lý lại bị huỷ, vẫn dùng bản cũ.";
+
 export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
   const { sourceRepo, vectorStore, emit } = deps;
   const queue = createSerialQueue();
+
+  // 112: id đang "Xử lý lại" (nguồn ready) ⇒ mọi sự kiện của nó gắn cờ reprocess.
+  const reprocessing = new Set<string>();
 
   const send = (
     s: Source,
@@ -97,6 +135,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       step,
       progress,
       ...(errorLabel ? { errorLabel } : {}),
+      ...(reprocessing.has(s.id) ? { reprocess: true as const } : {}),
     });
   };
 
@@ -105,6 +144,8 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
   // Parse + clean → các trang đã làm sạch. Ném StepError nếu lỗi/không có nội dung.
   const parseAndClean = async (
     src: Source,
+    /** 112: xử lý lại — nội dung đọc lúc parse phải đúng content_hash lúc nạp (tệp có thể bị sửa khi đang chờ). */
+    expectHash?: string,
   ): Promise<{
     pages: PageText[];
     pageCount: number | null;
@@ -147,6 +188,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         });
       } else {
         const bytes = await deps.readFile(sourceOrigin(src));
+        if (expectHash !== undefined && hashBytes(bytes) !== expectHash) {
+          throw new StepError("parse", REPROCESS_CHANGED_LABEL);
+        }
         assertWithinLimit(src.kind, bytes.byteLength);
         // Audio (045): transcribe/tải model dài → báo tiến độ phụ trong bước parse (0.1→0.25).
         result = await deps.parseFile(src.kind, bytes, (frac) => {
@@ -155,11 +199,12 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         });
       }
     } catch (e) {
+      if (e instanceof StepError) throw e;
       if (e instanceof SizeLimitError) throw new StepError("parse", e.label);
       throw new StepError("parse", errorLabelForStep("parse", src.kind));
     }
     const cleaned = result.pages
-      .map((p) => ({ page: p.page, text: cleanText(p.text) }))
+      .map((p) => cleanPage(p))
       .filter((p) => p.text.length > 0);
     // Video no-audio (051) / ảnh không chữ (053) → transcript rỗng: VẪN nạp thành công (ready, 0 chunk,
     // media vẫn xem được — FR-011/FR-010). Các loại khác rỗng = lỗi parse.
@@ -237,6 +282,108 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     return true;
   };
 
+  // 112: nhúng văn bản chunk TRONG RAM (không ghi gì) — dùng cho xử lý lại. Ném StepError("embed") khi lỗi.
+  const embedInMemory = async (
+    src: Source,
+    texts: string[],
+  ): Promise<{ vectors: number[][]; dim: number }> => {
+    const provider = deps.getProvider();
+    if (!(await deps.isRuntimeReady()) || !provider) {
+      throw new StepError("embed", errorLabelForStep("embed", src.kind));
+    }
+    const onEmbedProgress = (done: number, total: number): void => {
+      const s = reload(src.id);
+      if (s) send(s, "embed", total ? done / total : 1);
+    };
+    try {
+      return deps.embedBatch
+        ? await deps.embedBatch(texts, onEmbedProgress)
+        : await embedTexts(provider, texts, onEmbedProgress);
+    } catch {
+      throw new StepError("embed", errorLabelForStep("embed", src.kind));
+    }
+  };
+
+  /**
+   * 112 (FR-015, research R10): xử lý lại nguồn READY — nguồn giữ `ready` (dữ liệu cũ dùng được) tới khi bản mới dựng
+   * xong: parse → chunk → embed trong RAM → add vector mới → replaceChunks (1 transaction) → xoá vector cũ. Lỗi/huỷ
+   * trước hoán đổi ⇒ không đổi gì (vector mới đã thêm bị xoá).
+   */
+  const reprocessReady = async (
+    id: string,
+    signal: { cancelled: boolean },
+  ): Promise<void> => {
+    const finish = (errorLabel?: string): void => {
+      const s = reload(id);
+      if (s) send(s, "done", errorLabel ? 0 : 1, errorLabel);
+      reprocessing.delete(id);
+    };
+    const src = reload(id);
+    if (!src || signal.cancelled) return finish();
+    let newIds: string[] = [];
+    let added = false;
+    try {
+      const { pages, pageCount } = await parseAndClean(
+        src,
+        sourceRepo.getRelinkInfo(id)?.contentHash,
+      );
+      if (signal.cancelled || !reload(id)) return finish();
+      const drafts = chunkPages(pages);
+      send(src, "chunk", 0.4);
+      newIds = drafts.map(() => (deps.newChunkId ?? randomUUID)());
+      const { vectors, dim } = await embedInMemory(
+        src,
+        drafts.map((d) => d.text),
+      );
+      if (signal.cancelled || !reload(id)) return finish();
+      if (deps.isVaultLocked?.()) {
+        throw new StepError("store", REPROCESS_ERRORS.vaultLocked);
+      }
+      const oldIds = sourceRepo.chunkIds(id);
+      added = true;
+      await vectorStore.add(
+        drafts.map((_, i) => ({
+          id: newIds[i],
+          notebookId: src.notebookId,
+          sourceId: id,
+          vector: vectors[i],
+          dim,
+        })),
+      );
+      if (signal.cancelled || !reload(id)) {
+        await vectorStore.deleteByIds(newIds).catch(() => {});
+        return finish();
+      }
+      // Kiểm lại NGAY TRƯỚC hoán đổi: sao lưu/khôi phục có thể bắt đầu trong lúc ghi vector (await dài).
+      if (deps.isVaultLocked?.()) {
+        throw new StepError("store", REPROCESS_ERRORS.vaultLocked);
+      }
+      sourceRepo.replaceChunks(id, drafts, newIds, {
+        extractionVersion: PDF_EXTRACTION_VERSION,
+        pageCount,
+      });
+      added = false; // từ đây vector mới là dữ liệu chính thức
+      try {
+        await vectorStore.deleteByIds(oldIds);
+      } catch {
+        // Vector mồ côi (chunk cũ không còn) vô hại cho đúng đắn; dọn ở lần xoá/xử lý lại sau.
+        deps.logEvent?.("ingest.reprocess.orphanVectors");
+      }
+      finish();
+    } catch (e) {
+      if (added) await vectorStore.deleteByIds(newIds).catch(() => {});
+      if (signal.cancelled) return finish();
+      const label = e instanceof StepError ? e.label : "";
+      finish(
+        label === REPROCESS_ERRORS.vaultLocked
+          ? `${REPROCESS_ERRORS.vaultLocked} Xử lý lại bị huỷ, vẫn dùng bản cũ.`
+          : label === REPROCESS_CHANGED_LABEL
+            ? label
+            : REPROCESS_FAILED_LABEL,
+      );
+    }
+  };
+
   const finishReady = (src: Source): void => {
     sourceRepo.updateStatus(src.id, "ready");
     const s = reload(src.id);
@@ -292,6 +439,10 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         : withTime;
       sourceRepo.deleteChunks(id); // sạch trước khi ghi (retry an toàn)
       sourceRepo.insertChunks(id, located);
+      // 112: chunk PDF vừa tạo bằng cách trích có bố cục ⇒ ghi phiên bản (gợi ý "Xử lý lại" biến mất).
+      if (src.kind === "pdf") {
+        sourceRepo.setExtractionVersion(id, PDF_EXTRACTION_VERSION);
+      }
       send(reload(id)!, "chunk", 0.4);
       if (signal.cancelled) return;
       const embedded = await embedAndStore(reload(id)!, signal);
@@ -308,7 +459,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     }
   };
 
-  return {
+  const api: IngestionPipeline = {
     async add(input) {
       // Validate Ở BOUNDARY (không tin thẳng renderer — Constitution III, coding-style "validate at boundaries").
       if (
@@ -399,8 +550,40 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       return queued;
     },
 
+    async reprocess(id) {
+      const src = sourceRepo.getById(id);
+      if (!src) throw new Error(REPROCESS_ERRORS.notFound);
+      if (src.kind !== "pdf") throw new Error(REPROCESS_ERRORS.notPdf);
+      if (queue.has(id)) throw new Error(REPROCESS_ERRORS.busy);
+      // Nguồn lỗi (chưa từng sẵn sàng) ⇒ thử lại bằng cách trích hiện hành (processFull ghi phiên bản mới).
+      if (src.status === "error") {
+        await api.retry(id);
+        return;
+      }
+      if (src.status !== "ready") throw new Error(REPROCESS_ERRORS.badStatus);
+      reprocessing.add(id);
+      send(src, "parse", 0.05);
+      queue.enqueue(id, (signal) => reprocessReady(id, signal));
+    },
+
+    cancelReprocess(id) {
+      if (!reprocessing.has(id)) return false;
+      const r = queue.cancel(id);
+      if (r === "none") return false;
+      // Việc chưa chạy bị bỏ ⇒ không có callback nào ⇒ kết thúc trạng thái ngay (UI hết "Đang xử lý lại").
+      if (r === "dropped") {
+        const s = reload(id);
+        if (s) send(s, "done", 1);
+        reprocessing.delete(id);
+      }
+      return true;
+    },
+
+    isReprocessing: () => reprocessing.size > 0,
+
     async remove(id) {
       queue.cancel(id);
+      reprocessing.delete(id); // 112: nguồn bị xoá ⇒ không còn lần xử lý lại nào
       await vectorStore.deleteBySource(id);
       return sourceRepo.delete(id); // cascade chunk
     },
@@ -449,4 +632,5 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
 
     whenIdle: () => queue.whenIdle(),
   };
+  return api;
 }
