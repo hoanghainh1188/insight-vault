@@ -61,7 +61,7 @@ export async function createIngestion(opts: {
   dataDir: string;
   aiRuntime: AiRuntime;
   emit: (e: SourceProgressEvent) => void;
-  setOnline?: (online: boolean) => void;
+  setOnline?: (online: boolean, kind?: "url" | "model") => void;
 }): Promise<Ingestion> {
   const sourceRepo = createSourceRepo(opts.db);
   const vectorStore = await createLanceVectorStore(

@@ -51,6 +51,26 @@
 .privacy-badge.online .dot {
   background: var(--warn-strong);
 }
+/* 103: đang có dữ liệu thật rời máy — nổi hơn "đã bật" + chấm nhấp nháy nhẹ (opacity, compositor-friendly; tắt khi
+   người dùng bật giảm chuyển động — tokens.css). */
+.privacy-badge.sending {
+  color: var(--warn-ink);
+  background: var(--warn-bg);
+  border-color: var(--warn-strong);
+  font-weight: 500;
+}
+.privacy-badge.sending .dot {
+  background: var(--warn-strong);
+  animation: privacy-pulse 1.2s var(--ease-out-expo) infinite alternate;
+}
+@keyframes privacy-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
 
 .app-body {
   display: flex;

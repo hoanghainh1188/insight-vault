@@ -5,6 +5,7 @@ import {
   resolveBaseUrl,
   DEFAULT_OLLAMA_URL,
 } from "../../src/main/services/ai-runtime/ollama-client";
+import { getPrivacyState } from "../../src/main/services/app-shell/privacy-state";
 
 // fetch giả trả về Response-like tối thiểu.
 function fakeFetch(
@@ -158,5 +159,30 @@ describe("resolveBaseUrl (Constitution I: chỉ localhost)", () => {
       fetchFn: fakeFetch(() => ({}), false, 404),
     });
     expect(await bad.contextLength("x")).toBeNull();
+  });
+
+  it("103: chat stream qua Ollama (localhost) KHÔNG bật badge 'đang gửi ra ngoài'", async () => {
+    const seen: string[] = [];
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(
+          new TextEncoder().encode(
+            JSON.stringify({ message: { content: "xin chào" }, done: false }) +
+              "\n",
+          ),
+        );
+        c.close();
+      },
+    });
+    const c = createOllamaClient({
+      fetchFn: (async () =>
+        new Response(body, { status: 200 })) as unknown as typeof fetch,
+    });
+    await c.chat(
+      { messages: [{ role: "user", content: "hi" }] },
+      { onToken: () => seen.push(getPrivacyState().mode) },
+    );
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((m) => m === "local")).toBe(true);
   });
 });

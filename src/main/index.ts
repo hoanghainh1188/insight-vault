@@ -28,7 +28,10 @@ import { createChatRepo } from "./services/rag/chat-repo";
 import { createStudioRepo } from "./services/studio/studio-repo";
 import { createStudioService } from "./services/studio/studio-service";
 import { createContentSearch } from "./services/search/content-search";
-import { setEgressActive } from "./services/app-shell/privacy-state";
+import {
+  onPrivacyChange,
+  setEgressActive,
+} from "./services/app-shell/privacy-state";
 import { startupErrorDialog } from "./services/app-shell/startup-error";
 import { createMediaHandler } from "./services/source-viewer/media-serve";
 import { logError, logEvent, setLogSink } from "./logging";
@@ -303,7 +306,8 @@ app
       dataDir: dataDir.path,
       aiRuntime,
       emit: emitProgress,
-      setOnline: (online) => setEgressActive(online), // bật chỉ báo online khi fetch URL (FR-019)
+      // bật chỉ báo khi fetch URL (FR-019) / tải model lần đầu — 103: loại egress quyết định nhãn badge.
+      setOnline: (online, kind) => setEgressActive(online, kind ?? "url"),
     });
 
     // 049 (2a-player): phục vụ file audio gốc cho <audio> qua iv-media:// (đọc file CHỈ main, tra sourceId→
@@ -497,6 +501,14 @@ app
         isLocked: () => vaultLock.isLocked(),
         log: logEvent,
       }),
+    });
+
+    // 103: đẩy trạng thái riêng tư mới tới mọi cửa sổ mỗi khi mode đổi (badge cập nhật tức thì — Constitution I).
+    onPrivacyChange((state) => {
+      for (const w of BrowserWindow.getAllWindows()) {
+        if (!w.isDestroyed())
+          w.webContents.send(CHANNELS.privacyChanged, state);
+      }
     });
 
     installSecurity();

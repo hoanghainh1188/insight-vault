@@ -29,7 +29,7 @@ export function createOcr(opts: {
   cacheDir: string;
   isPackaged: boolean;
   /** Bật/tắt chỉ báo egress khi TẢI traineddata lần đầu (Constitution I — badge khớp hành vi). */
-  setOnline?: (online: boolean) => void;
+  setOnline?: (online: boolean, kind?: "model") => void;
 }): Ocr {
   let workerPromise: Promise<Awaited<ReturnType<typeof createWorker>>> | null =
     null;
@@ -39,18 +39,21 @@ export function createOcr(opts: {
   ): Promise<Awaited<ReturnType<typeof createWorker>>> => {
     if (!workerPromise) {
       logEvent("image.ocr.load", { lang: OCR_LANG });
+      // 103 (review M2): resolve corePath TRƯỚC khi bật egress — nó ném đồng bộ khi thiếu core; nếu đã bật thì
+      // .finally chưa kịp gắn ⇒ bộ đếm egress kẹt, badge "đang tải" mãi.
+      const corePath = resolveCorePath(opts.isPackaged);
       // Lần đầu tải traineddata vie+eng qua mạng → báo egress; tắt khi tải xong (cache local).
-      opts.setOnline?.(true);
+      opts.setOnline?.(true, "model");
       workerPromise = createWorker(OCR_LANG, 1, {
         cachePath: opts.cacheDir,
-        corePath: resolveCorePath(opts.isPackaged),
+        corePath,
         // Tiến độ tải/khởi tạo traineddata (0→0.5) — ADR C6, đối xứng progress_callback Whisper 045.
         logger: (m: { progress?: number }) => {
           if (typeof m.progress === "number") {
             onProgress?.(Math.max(0, Math.min(1, m.progress)) * 0.5);
           }
         },
-      }).finally(() => opts.setOnline?.(false));
+      }).finally(() => opts.setOnline?.(false, "model"));
     }
     return workerPromise;
   };

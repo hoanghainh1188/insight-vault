@@ -2,7 +2,8 @@
 
 /** Trạng thái riêng tư — nguồn sự thật cho privacy indicator badge. v1 luôn 'local'. */
 export interface PrivacyState {
-  mode: "local" | "online";
+  /** 103: local / online (provider online đã bật, chưa gửi) / sending (đang có egress thật). */
+  mode: "local" | "online" | "sending";
   /** Văn bản hiển thị badge, suy ra từ mode (không hard-code rời rạc ở renderer). */
   label: string;
 }
