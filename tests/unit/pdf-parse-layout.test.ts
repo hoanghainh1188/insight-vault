@@ -90,3 +90,18 @@ describe("parsePdf — bảng (US2)", () => {
     ).toBeUndefined();
   });
 });
+
+describe("parsePdf — ngân sách thời gian dựng bố cục (112 security hardening)", () => {
+  it("hết ngân sách ⇒ các trang còn lại dùng cách nối cũ (không treo main process)", async () => {
+    const s = twoColumns();
+    const pages = [...s.pages, ...s.pages, ...s.pages];
+    const r = await parsePdf(makePdf(pages), undefined, { layoutBudgetMs: 0 });
+    // ngân sách 0 ⇒ không trang nào dựng bố cục: văn bản không có ngắt đoạn của layout
+    for (const p of r.pages) {
+      expect(p.text).not.toContain("\n\n");
+      expect(p.blocks).toBeUndefined();
+    }
+    const normal = await parsePdf(makePdf(pages));
+    expect(normal.pages[0].text).toContain("\n\n");
+  });
+});

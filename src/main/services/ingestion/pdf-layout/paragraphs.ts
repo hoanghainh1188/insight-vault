@@ -4,6 +4,8 @@ import { PARAGRAPH_GAP_RATIO, type Line } from "./types";
 // đoạn mới; nối từ bị ngắt bằng gạch nối cuối dòng. Không nhận diện heading. Hàm thuần.
 
 const HARD_HYPHEN = /(\p{L})-$/u;
+/** Chỉ xét đuôi chuỗi (đoạn dài không làm regex chạy lại trên toàn bộ — O(1) mỗi dòng). */
+const tail = (s: string): string => s.slice(-2);
 const SOFT_HYPHEN = /\u00AD$/; // soft hyphen (U+00AD)
 const STARTS_LOWER = /^\p{Ll}/u;
 
@@ -12,8 +14,9 @@ export const lineText = (l: Line): string =>
 
 /** Nối dòng `next` vào cuối `acc` (cùng đoạn). */
 function appendLine(acc: string, next: string): string {
-  if (SOFT_HYPHEN.test(acc)) return acc.slice(0, -1) + next;
-  if (HARD_HYPHEN.test(acc)) {
+  const end = tail(acc);
+  if (SOFT_HYPHEN.test(end)) return acc.slice(0, -1) + next;
+  if (HARD_HYPHEN.test(end)) {
     return STARTS_LOWER.test(next) ? acc.slice(0, -1) + next : acc + next;
   }
   return `${acc} ${next}`;

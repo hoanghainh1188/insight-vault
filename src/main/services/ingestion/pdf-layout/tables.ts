@@ -123,8 +123,9 @@ export function detectTables(
       parts.push({ kind: "table", rows: run.rows });
       i = j;
     } else {
-      pushText([line]);
-      i++;
+      // Cụm không thành bảng ⇒ giữ cả cụm là văn bản và đi tiếp sau cụm (tránh dò lại O(n²) — hardening).
+      pushText(region.slice(i, Math.max(j, i + 1)));
+      i = Math.max(j, i + 1);
     }
   }
   return parts;

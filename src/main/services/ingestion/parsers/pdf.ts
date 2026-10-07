@@ -1,6 +1,6 @@
 import type { ParseResult } from "./index";
 import type { PageText } from "../chunker";
-import { layoutPage } from "../pdf-layout/layout-page";
+import { layoutPage, legacyJoin } from "../pdf-layout/layout-page";
 import type { LayoutItem } from "../pdf-layout/types";
 
 // Parse PDF → text theo TỪNG TRANG (pdfjs-dist legacy build, research R1). Chạy ở main.
@@ -32,11 +32,17 @@ export function toLayoutItem(it: PdfTextItem, viewTop: number): LayoutItem {
   };
 }
 
+/** 112 (hardening): tổng thời gian dựng bố cục tối đa cho một tài liệu; quá ⇒ các trang còn lại dùng cách nối cũ. */
+export const LAYOUT_BUDGET_MS = 5000;
+
 export async function parsePdf(
   bytes: Uint8Array,
   /** 112: tiến độ theo trang (0..1), gọi sau mỗi trang. */
   onProgress?: (frac: number) => void,
+  opts: { layoutBudgetMs?: number } = {},
 ): Promise<ParseResult> {
+  const budget = opts.layoutBudgetMs ?? LAYOUT_BUDGET_MS;
+  let spent = 0;
   // Import động: chỉ nạp pdfjs ở main khi thực sự parse PDF (không vào bundle renderer).
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const doc = await pdfjs.getDocument({
@@ -53,10 +59,13 @@ export async function parsePdf(
     const items = content.items.flatMap((it) =>
       "str" in it ? [toLayoutItem(it as PdfTextItem, y1)] : [],
     );
-    const { text, blocks } = layoutPage(items, {
-      width: x1 - x0,
-      height: y1 - y0,
-    });
+    // PDF bất thường (cố ý hay không) không được làm treo main process: hết ngân sách ⇒ cách nối cũ.
+    const t0 = Date.now();
+    const { text, blocks } =
+      spent < budget
+        ? layoutPage(items, { width: x1 - x0, height: y1 - y0 })
+        : { text: legacyJoin(items), blocks: [] };
+    spent += Date.now() - t0;
     pages.push(
       blocks.length > 0 ? { page: p, text, blocks } : { page: p, text },
     );
