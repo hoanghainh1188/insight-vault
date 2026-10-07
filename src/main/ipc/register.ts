@@ -18,6 +18,7 @@ import type {
   OllamaHealth,
   ReindexStatus,
   SourceRelinkResult,
+  SourceReprocessResult,
 } from "@shared/ipc/types";
 import { getPrivacyState } from "../services/app-shell/privacy-state";
 import { computeStorageInfo } from "../services/app-shell/storage-info";
@@ -84,6 +85,8 @@ interface RegisterDeps {
   crashService: CrashService;
   // 101 — chọn lại tệp gốc.
   relinkSource: (id: unknown) => Promise<SourceRelinkResult>;
+  // 112 — xử lý lại PDF (kiểm khoá kho / quy tắc / tệp gốc trong handler).
+  reprocessSource: (id: unknown) => Promise<SourceReprocessResult>;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
@@ -119,6 +122,7 @@ export function registerIpc({
   logsDir,
   crashService,
   relinkSource,
+  reprocessSource,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -250,6 +254,14 @@ export function registerIpc({
     assertVaultWritable();
     return relinkSource(id);
   });
+  // 112: xử lý lại PDF — là thao tác GHI vault ⇒ chặn khi đang sao lưu/khôi phục (kiểm lại lúc hoán đổi).
+  safeHandle(CHANNELS.sourceReprocess, (id) => {
+    assertVaultWritable();
+    return reprocessSource(id);
+  });
+  safeHandle(CHANNELS.sourceReprocessCancel, (id) => ({
+    cancelled: typeof id === "string" && pipeline.cancelReprocess(id),
+  }));
   // source-viewer (019) — tái dựng toàn văn từ chunk đã lưu để hiển thị. CHỈ đọc; KHÔNG log content.
   // 112: nhận id hoặc {sourceId, chunkId} — getSourceContent tự validate kiểu (sai ⇒ null).
   safeHandle(CHANNELS.sourceGetContent, (req) =>

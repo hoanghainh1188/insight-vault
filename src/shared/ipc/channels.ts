@@ -29,6 +29,7 @@ import type {
   CrashReportDraft,
   CrashNotice,
   SourceRelinkResult,
+  SourceReprocessResult,
 } from "./types";
 
 /**
@@ -87,6 +88,9 @@ export const CHANNELS = {
   sourceRetry: "source:retry",
   // 101: chọn lại tệp gốc (hộp thoại ở main, kiểm cùng nội dung) — renderer chỉ gửi sourceId, không gửi path.
   sourceRelink: "source:relink",
+  // 112: xử lý lại PDF bằng cách trích có bố cục (chỉ nhận sourceId) + huỷ.
+  sourceReprocess: "source:reprocess",
+  sourceReprocessCancel: "source:reprocessCancel",
   // source-viewer (019) — lấy toàn văn nguồn để hiển thị + highlight
   sourceGetContent: "source:getContent",
   // content-search (073) — tìm toàn văn nội dung nguồn trong notebook (FTS5 BM25)
@@ -177,6 +181,8 @@ export interface ChannelResponse {
   [CHANNELS.sourceDelete]: { deleted: true };
   [CHANNELS.sourceRetry]: Source;
   [CHANNELS.sourceRelink]: SourceRelinkResult;
+  [CHANNELS.sourceReprocess]: SourceReprocessResult;
+  [CHANNELS.sourceReprocessCancel]: { cancelled: boolean };
   // source-viewer (019)
   [CHANNELS.sourceGetContent]: SourceContent | null;
   // content-search (073)

@@ -125,9 +125,9 @@ ADR + glossary + gate.
 
 ### IPC + preload
 
-- [ ] T046 [US3] RED — `tests/unit/source-reprocess-whitelist.test.ts`: `source:reprocess`, `source:reprocessCancel` có trong `CHANNELS` + whitelist preload; chỉ gửi `sourceId` (string)
-- [ ] T047 [US3] RED — `tests/unit/source-reprocess.test.ts`: handler — vault khoá ⇒ ném `VAULT_LOCKED_MESSAGE`; guard lỗi ⇒ ném; tệp không tồn tại ⇒ `{status:"missing"}`; SHA-256 ≠ `content_hash` ⇒ `{status:"mismatch"}`; hợp lệ ⇒ `{status:"queued"}`; cancel ⇒ `{cancelled}`
-- [ ] T048 [US3] GREEN — `src/shared/ipc/channels.ts`, `src/preload/index.ts`, `src/main/ipc/register.ts` (handler dùng `hashFileStreaming`); (C2) `src/main/services/ingestion/ingestion.ts`: `createIngestion(opts)` nhận `isVaultLocked` và chuyển vào `PipelineDeps`; `src/main/index.ts` truyền `() => vaultLock.isLocked()`
+- [X] T046 [US3] RED — `tests/unit/source-reprocess-whitelist.test.ts`: `source:reprocess`, `source:reprocessCancel` có trong `CHANNELS` + whitelist preload; chỉ gửi `sourceId` (string)
+- [X] T047 [US3] RED — `tests/unit/source-reprocess.test.ts`: handler — vault khoá ⇒ ném `VAULT_LOCKED_MESSAGE`; guard lỗi ⇒ ném; tệp không tồn tại ⇒ `{status:"missing"}`; SHA-256 ≠ `content_hash` ⇒ `{status:"mismatch"}`; hợp lệ ⇒ `{status:"queued"}`; cancel ⇒ `{cancelled}`
+- [X] T048 [US3] GREEN — `src/shared/ipc/channels.ts`, `src/preload/index.ts`, `src/main/ipc/register.ts` (handler dùng `hashFileStreaming`); (C2) `src/main/services/ingestion/ingestion.ts`: `createIngestion(opts)` nhận `isVaultLocked` và chuyển vào `PipelineDeps`; `src/main/index.ts` truyền `() => vaultLock.isLocked()`
 
 ### UI
 

@@ -22,6 +22,7 @@ import { parseImage } from "./parsers/image";
 import { createOcr } from "./image/ocr";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { createEmbedder, type Embedder } from "../embedding/embed-model";
+import { logEvent } from "../../logging";
 
 // Ghép domain ingestion ở main: source-repo (SQLite) + vector-store (LanceDB) + pipeline (parse/chunk/
 // embed). Composition root — loại khỏi ngưỡng coverage (như ai-runtime.ts). Business logic thuần đã
@@ -62,6 +63,8 @@ export async function createIngestion(opts: {
   aiRuntime: AiRuntime;
   emit: (e: SourceProgressEvent) => void;
   setOnline?: (online: boolean, kind?: "url" | "model") => void;
+  /** 112: kho đang sao lưu/khôi phục ⇒ lần "Xử lý lại" không hoán đổi dữ liệu (giữ bản cũ). */
+  isVaultLocked?: () => boolean;
 }): Promise<Ingestion> {
   const sourceRepo = createSourceRepo(opts.db);
   const vectorStore = await createLanceVectorStore(
@@ -155,6 +158,8 @@ export async function createIngestion(opts: {
     parseUrl: (url) => fetchAndParseUrl(url),
     setOnline: opts.setOnline,
     emit: opts.emit,
+    isVaultLocked: opts.isVaultLocked,
+    logEvent: (event) => logEvent(event, {}),
   });
 
   // 051: dọn wav tạm mồ côi (app crash/kill giữa lúc tách audio) trong <dataDir>/tmp — best-effort, không

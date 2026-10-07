@@ -281,6 +281,13 @@ export interface SourceProgressEvent {
 }
 
 /**
+ * 112: kết quả yêu cầu "Xử lý lại" (contracts/ipc-reprocess.md). queued = đã xếp hàng (theo dõi qua source:progress
+ * có `reprocess`); missing = tệp gốc không còn ⇒ dẫn sang "Chọn lại tệp gốc…"; mismatch = tệp gốc đã bị sửa ⇒ chặn.
+ */
+export type SourceReprocessResult =
+  { status: "queued" } | { status: "missing" } | { status: "mismatch" };
+
+/**
  * Kết quả "chọn lại tệp gốc" (101). mismatch = tệp khác nội dung tệp đã nạp (trích dẫn sẽ sai ⇒ từ chối);
  * wrongType = đuôi không thuộc loại nguồn; notApplicable = nguồn URL/không tồn tại; busy = nguồn đang xếp hàng/xử
  * lý hoặc đang có 1 lần chọn lại khác; locked = vault đang sao lưu/khôi phục.
