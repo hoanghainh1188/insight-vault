@@ -18,10 +18,12 @@ let userData: string;
 function launch(): Promise<ElectronApplication> {
   return electron.launch({
     args: [MAIN, `--user-data-dir=${userData}`],
-    env: { ...process.env, IV_EMBED_FAKE: "1", IV_UI_LANG: "vi" } as Record<
-      string,
-      string
-    >,
+    env: {
+      ...process.env,
+      IV_EMBED_FAKE: "1",
+      IV_RERANK_FAKE: "1",
+      IV_UI_LANG: "vi",
+    } as Record<string, string>,
   });
 }
 

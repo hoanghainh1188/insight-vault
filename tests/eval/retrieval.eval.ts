@@ -27,6 +27,8 @@ import {
   groupOutcomes,
   histogram,
 } from "./lib/metrics";
+import { runRerankModel } from "./lib/rerank-run";
+import { loadScorer } from "./lib/rerank";
 import {
   describeConfig,
   renderMarkdown,
@@ -190,6 +192,16 @@ describe("eval:retrieval", () => {
         }
       }
 
+      // 109: phần LLM chạy với bộ chấm đã hiệu chuẩn (nếu bật) — đúng luồng của app.
+      const llmRerank =
+        process.env.EVAL_WITH_LLM === "1" && RELEVANCE_CALIBRATION.rerank
+          ? await loadScorer(
+              RELEVANCE_CALIBRATION.rerank.model,
+              CACHE_DIR,
+              process.env.EVAL_RERANK_FILE,
+              RELEVANCE_CALIBRATION.rerank.maxTokens,
+            )
+          : undefined;
       const llm =
         process.env.EVAL_WITH_LLM === "1"
           ? await runWithLlm(
@@ -197,8 +209,78 @@ describe("eval:retrieval", () => {
               questions,
               candidateCfg ?? RELEVANCE_CALIBRATION.config,
               process.env.EVAL_LLM_MODEL,
+              llmRerank?.score,
             )
           : undefined;
+      llmRerank?.dispose();
+
+      // 109: bộ chấm độ liên quan (EVAL_RERANK=model1,model2) — đo trên ĐÚNG retrieve() của app với cấu hình 108 hiện hành.
+      const rerankModels = (process.env.EVAL_RERANK ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const rerank = [];
+      for (const model of rerankModels) {
+        rerank.push(
+          await runRerankModel(
+            model,
+            index,
+            questions,
+            RELEVANCE_CALIBRATION.config,
+            baseline.en,
+            CACHE_DIR,
+            process.env.EVAL_RERANK_FILE,
+            {
+              ...(process.env.EVAL_RERANK_MAXLEN
+                ? { maxLength: Number(process.env.EVAL_RERANK_MAXLEN) }
+                : {}),
+              ...(process.env.EVAL_RERANK_TOPN
+                ? { topN: Number(process.env.EVAL_RERANK_TOPN) }
+                : {}),
+            },
+          ),
+        );
+      }
+
+      // 109: chế độ current (không chỉ định EVAL_RERANK) ⇒ đo lại ĐÚNG cấu hình bộ chấm đã ghi và so số liệu (hồi quy).
+      const recordedRerank = RELEVANCE_CALIBRATION.rerank;
+      if (mode === "current" && rerankModels.length === 0 && recordedRerank) {
+        const r = await runRerankModel(
+          recordedRerank.model,
+          index,
+          questions,
+          RELEVANCE_CALIBRATION.config,
+          baseline.en,
+          CACHE_DIR,
+          process.env.EVAL_RERANK_FILE,
+          {
+            maxLength: recordedRerank.maxTokens,
+            topN: recordedRerank.config.maxCandidates,
+          },
+          recordedRerank.config,
+        );
+        rerank.push(r);
+        const got = r.results[0];
+        const fields = ["recallAt6", "correctRejection", "mrr"] as const;
+        const drift = got
+          ? (["dev", "holdout", "en"] as const).flatMap((g) =>
+              fields
+                .filter(
+                  (f) =>
+                    Math.abs(got[g][f] - recordedRerank.metrics[g][f]) > 0.001,
+                )
+                .map(
+                  (f) =>
+                    `rerank ${g}.${f}: đo ${got[g][f].toFixed(4)} ≠ ghi ${recordedRerank.metrics[g][f]}`,
+                ),
+            )
+          : [`rerank: không đo được (${r.error ?? "?"})`];
+        warnings.push(
+          drift.length > 0
+            ? `Bộ chấm lệch bản ghi hiệu chuẩn — cần đo lại: ${drift.join("; ")}`
+            : "✓ Bộ chấm khớp số liệu ghi trong RELEVANCE_CALIBRATION.rerank (hồi quy OK)",
+        );
+      }
 
       const report: EvalReport = {
         runAt: new Date().toISOString(),
@@ -217,6 +299,7 @@ describe("eval:retrieval", () => {
         },
         coldRetrieveMs: index.coldRetrieveMs,
         ...(llm ? { llm } : {}),
+        ...(rerank.length > 0 ? { rerank } : {}),
         warnings,
       };
 

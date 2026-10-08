@@ -17,6 +17,7 @@ import type {
   StudioGenerateInput,
   ModelRecommendation,
   OllamaHealth,
+  RerankerStatus,
   ReindexStatus,
   SourceRelinkResult,
   SourceReprocessResult,
@@ -77,6 +78,8 @@ interface RegisterDeps {
   // 059 — gợi ý model theo RAM + health Ollama + trạng thái reindex.
   recommendChatModel: () => ModelRecommendation;
   ollamaHealth: () => Promise<OllamaHealth>;
+  // 109 — trạng thái bộ chấm độ liên quan (chỉ đọc).
+  rerankerStatus: () => RerankerStatus;
   reindexStatus: () => ReindexStatus;
   // 085 — sao lưu/khôi phục vault + khoá chặn ghi trong lúc chụp/sau xác nhận khôi phục.
   backupService: BackupService;
@@ -116,6 +119,7 @@ export function registerIpc({
   contentSearch,
   recommendChatModel,
   ollamaHealth,
+  rerankerStatus,
   reindexStatus,
   backupService,
   vaultLock,
@@ -190,6 +194,7 @@ export function registerIpc({
   // 059 — gợi ý cỡ model chat theo RAM (chỉ gợi ý) + health-check Ollama (chat). Read-only, không tự tải.
   safeHandle(CHANNELS.aiRecommendModel, () => recommendChatModel());
   safeHandle(CHANNELS.aiOllamaHealth, () => ollamaHealth());
+  safeHandle(CHANNELS.aiGetRerankerStatus, () => rerankerStatus());
   // 059 — trạng thái tái lập chỉ mục (đổi engine embedding).
   safeHandle(CHANNELS.embedReindexStatus, () => reindexStatus());
 

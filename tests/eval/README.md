@@ -13,13 +13,17 @@ npm run eval:retrieval                    # quét lưới cấu hình (chọn tr
 EVAL_MODE=current npm run eval:retrieval  # chỉ đo cấu hình đang dùng + baseline, so với số liệu đã ghi
 ```
 
-| Biến môi trường  | Mặc định                   | Ý nghĩa                                                                 |
-| ---------------- | -------------------------- | ----------------------------------------------------------------------- |
-| `EVAL_MODE`      | `sweep`                    | `sweep` quét lưới · `current` đo cấu hình hiện hành (kiểm hồi quy)      |
-| `EVAL_CONFIG`    | —                          | JSON một `RelevanceConfig` để đo riêng (ghi đè `EVAL_MODE`)             |
-| `EVAL_WITH_LLM`  | `0`                        | `1` = thêm phần end-to-end qua Ollama cục bộ (tham khảo, không xét ĐẠT) |
-| `EVAL_LLM_MODEL` | model chat đầu tiên        | model Ollama cho phần LLM                                               |
-| `EVAL_CACHE_DIR` | `tests/eval/.cache/models` | nơi tải mô hình e5 (~120MB, lần đầu cần Internet)                       |
+| Biến môi trường      | Mặc định                   | Ý nghĩa                                                                                                  |
+| -------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `EVAL_MODE`          | `sweep`                    | `sweep` quét lưới · `current` đo cấu hình hiện hành (kiểm hồi quy)                                       |
+| `EVAL_CONFIG`        | —                          | JSON một `RelevanceConfig` để đo riêng (ghi đè `EVAL_MODE`)                                              |
+| `EVAL_WITH_LLM`      | `0`                        | `1` = thêm phần end-to-end qua Ollama cục bộ (tham khảo, không xét ĐẠT)                                  |
+| `EVAL_LLM_MODEL`     | model chat đầu tiên        | model Ollama cho phần LLM                                                                                |
+| `EVAL_CACHE_DIR`     | `tests/eval/.cache/models` | nơi tải mô hình e5 (~120MB, lần đầu cần Internet)                                                        |
+| `EVAL_RERANK`        | —                          | 109: danh sách model bộ chấm độ liên quan (phẩy) ⇒ quét 96 cấu hình/model trên đúng `retrieve()` của app |
+| `EVAL_RERANK_TOPN`   | 20                         | 109: số ứng viên đầu (thứ tự RRF) được chấm (`maxCandidates`)                                            |
+| `EVAL_RERANK_MAXLEN` | 512                        | 109: cắt mỗi cặp (câu hỏi, đoạn) ở số token này                                                          |
+| `EVAL_RERANK_FILE`   | theo `process.arch`        | 109: tệp ONNX riêng (vd `model_qint8_arm64`)                                                             |
 
 Báo cáo: `tests/eval/reports/<thời điểm>/report.{md,json}` (gitignore). Trên GitHub: Actions → `eval-retrieval` →
 Run workflow ⇒ artifact `eval-report`. Job không chặn PR.
@@ -40,6 +44,18 @@ Run workflow ⇒ artifact `eval-report`. Job không chặn PR.
   `reviewed: null` và nhờ chủ dự án duyệt lại (FR-003).
 - Tài liệu mới: chỉ nguồn được phép tái phân phối; ghi nguồn + giấy phép vào `corpus/manifest.json` và
   `corpus/README.md`.
+
+## Bộ chấm độ liên quan (109)
+
+```bash
+EVAL_MODE=current npm run eval:retrieval   # đo lại cấu hình 108 + bộ chấm đã ghi (RELEVANCE_CALIBRATION.rerank), so số liệu
+EVAL_MODE=current EVAL_RERANK=cross-encoder/mmarco-mMiniLMv2-L12-H384-v1 EVAL_RERANK_TOPN=12 EVAL_RERANK_MAXLEN=256 npm run eval:retrieval
+```
+
+Báo cáo có mục "Bộ chấm độ liên quan": kết luận cổng (từ chối đúng hold-out ≥ 90%, Recall@6 ≥ 85% / sàn 75%, cận dưới Wilson vi gộp
+≥ 0,75, English không tụt so với mốc cùng lượt), cấu hình chọn trên dev, Pareto, độ trễ p50/p95, RSS, event loop. Đổi model bộ chấm ⇒ đổi
+`RERANK_MODEL_VERSION` (`src/main/services/rerank/model-version.ts`) ⇒ test canh giữ fail cho tới khi đo lại và cập nhật
+`RELEVANCE_CALIBRATION.rerank`. Kết quả + quyết định: `docs/04-decisions/2026-10-08-unanswerable-detection.md`.
 
 ## Khi đổi mô hình embedding hoặc cách chia đoạn
 

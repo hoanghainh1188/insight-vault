@@ -19,6 +19,7 @@ import {
 } from "../../../src/main/services/rag/retrieval";
 import { createRagService } from "../../../src/main/services/rag/rag-service";
 import type { RelevanceConfig } from "../../../src/main/services/rag/relevance-filter";
+import type { RerankConfig } from "../../../src/main/services/rag/rerank-filter";
 import { DEFAULT_COLOR } from "../../../src/shared/notebook-palette";
 import {
   chunkContainsAnyQuote,
@@ -238,12 +239,27 @@ export async function warmUp(
   index.coldRetrieveMs = questions.length === 0 ? 0 : total / questions.length;
 }
 
-/** Chạy retrieve() của app với một cấu hình cho mọi câu ⇒ kết quả từng câu + độ trễ trung bình (cache ấm). */
+/** 109: bộ chấm độ liên quan gắn vào retrieve() của app (deps.rerank) + cấu hình rerank cần đo. */
+export interface RerankRun {
+  score: NonNullable<RetrievalDeps["rerank"]>;
+  cfg: RerankConfig;
+  /** đếm số lần bước chấm bị bỏ qua (fail-open) — phải bằng 0 khi đo */
+  onSkip?: (reason: string) => void;
+}
+
+/**
+ * Chạy retrieve() của app với một cấu hình cho mọi câu ⇒ kết quả từng câu + độ trễ trung bình (cache ấm). 109: `rerank`
+ * gắn bộ chấm vào ĐÚNG retrieve() của app (không dựng đường truy xuất riêng — bài học 108).
+ */
 export async function evaluateConfig(
   index: EvalIndex,
   questions: readonly EvalQuestion[],
   cfg: RelevanceConfig,
+  rerank?: RerankRun,
 ): Promise<{ outcomes: QuestionOutcome[]; avgRetrieveMs: number }> {
+  const deps: RetrievalDeps = rerank
+    ? { ...index.deps, rerank: rerank.score, onRerankSkip: rerank.onSkip }
+    : index.deps;
   const outcomes: QuestionOutcome[] = [];
   let total = 0;
   for (const q of questions) {
@@ -251,9 +267,10 @@ export async function evaluateConfig(
     const scored = await retrieve(
       q.text,
       index.notebookId,
-      index.deps,
+      deps,
       [],
       cfg,
+      rerank?.cfg ?? null,
     );
     total += performance.now() - t0;
     const rank =
@@ -288,6 +305,8 @@ export async function runWithLlm(
   questions: readonly EvalQuestion[],
   cfg: RelevanceConfig,
   modelName?: string,
+  /** 109: bộ chấm độ liên quan đã hiệu chuẩn (retrieve() của rag-service dùng cấu hình mặc định = bản ghi) */
+  rerank?: NonNullable<RetrievalDeps["rerank"]>,
 ): Promise<LlmResult> {
   const client = createOllamaClient();
   if (!(await client.ping())) {
@@ -300,6 +319,7 @@ export async function runWithLlm(
 
   const svc = createRagService({
     ...index.deps,
+    ...(rerank ? { rerank } : {}),
     relevanceConfig: cfg,
     chat: async (messages) => (await client.chat({ model, messages })).content,
     chatStream: async (messages) =>

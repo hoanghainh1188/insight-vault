@@ -31,6 +31,8 @@ export async function launchFreshAt(
     env: {
       ...process.env,
       IV_EMBED_FAKE: "1",
+      // 109: bộ chấm độ liên quan giả tất định — KHÔNG tải model ~119 MB trong e2e (nguồn ready ⇒ prefetch).
+      IV_RERANK_FAKE: "1",
       IV_UI_LANG: "vi",
       ...(env ?? {}),
     } as Record<string, string>,

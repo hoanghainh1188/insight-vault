@@ -20,6 +20,7 @@ import type {
   StoredChatMessage,
   ModelRecommendation,
   OllamaHealth,
+  RerankerStatus,
   ReindexStatus,
   VaultBackupState,
   BackupCreateResult,
@@ -75,6 +76,8 @@ export const CHANNELS = {
   // 059 — gợi ý model chat theo RAM + health-check Ollama
   aiRecommendModel: "ai:recommendModel",
   aiOllamaHealth: "ai:ollamaHealth",
+  // 109 — trạng thái bộ chấm độ liên quan (chỉ đọc)
+  aiGetRerankerStatus: "ai:getRerankerStatus",
   // notebooks (009)
   notebookList: "notebook:list",
   notebookCreate: "notebook:create",
@@ -176,6 +179,7 @@ export interface ChannelResponse {
   // 059 — gợi ý model theo RAM + health Ollama
   [CHANNELS.aiRecommendModel]: ModelRecommendation;
   [CHANNELS.aiOllamaHealth]: OllamaHealth;
+  [CHANNELS.aiGetRerankerStatus]: RerankerStatus;
   [CHANNELS.notebookList]: Notebook[];
   [CHANNELS.notebookCreate]: Notebook;
   [CHANNELS.notebookRename]: Notebook;

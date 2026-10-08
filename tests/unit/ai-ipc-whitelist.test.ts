@@ -38,6 +38,11 @@ describe("ai IPC whitelist", () => {
     }
   });
 
+  it("109: kênh chỉ đọc trạng thái bộ chấm độ liên quan whitelisted", () => {
+    expect(CHANNELS.aiGetRerankerStatus).toBe("ai:getRerankerStatus");
+    expect(isWhitelisted("ai:getRerankerStatus")).toBe(true);
+  });
+
   it("kênh ai:* ngoài danh sách bị từ chối", () => {
     expect(isWhitelisted("ai:pullModel")).toBe(false);
     expect(isWhitelisted("ai:deleteModel")).toBe(false);

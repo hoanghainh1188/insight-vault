@@ -90,10 +90,12 @@ test("đổi ngôn ngữ trong Cài đặt ⇒ áp dụng ngay, giữ state, lư
   // Mở lại cùng userData: OS vẫn "vi" nhưng lựa chọn đã lưu là English.
   const app2 = await electron.launch({
     args: [MAIN, `--user-data-dir=${userData}`],
-    env: { ...process.env, IV_EMBED_FAKE: "1", IV_UI_LANG: "vi" } as Record<
-      string,
-      string
-    >,
+    env: {
+      ...process.env,
+      IV_EMBED_FAKE: "1",
+      IV_RERANK_FAKE: "1",
+      IV_UI_LANG: "vi",
+    } as Record<string, string>,
   });
   const win2 = await app2.firstWindow();
   await expect(win2.locator("html")).toHaveAttribute("lang", "en");

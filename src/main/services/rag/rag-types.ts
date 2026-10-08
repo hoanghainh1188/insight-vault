@@ -7,6 +7,8 @@ export interface ScoredChunk {
   chunk: Chunk;
   sourceTitle: string;
   score: number; // = _distance (nhỏ = liên quan hơn)
+  /** 109: điểm bộ chấm độ liên quan (0..1, lớn = liên quan) — chỉ có khi bước rerank chạy; KHÔNG thay `score`. */
+  rerankScore?: number;
 }
 
 /** ScoredChunk đã được đánh số [n] để ghép context + hậu kiểm citation. */

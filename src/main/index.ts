@@ -78,6 +78,12 @@ import {
   startupLanguage,
 } from "./services/ui-language";
 import { createTranslator } from "@shared/i18n";
+import { createReranker, type Reranker } from "./services/rerank/rerank-model";
+import {
+  RERANK_MODEL_REVISION,
+  rerankModelFile,
+} from "./services/rerank/model-version";
+import { RELEVANCE_CALIBRATION } from "./services/rag/relevance-calibration";
 
 /** 123: locale OS ưu tiên đầu tiên; an toàn cả trước app.whenReady (getLocale có thể rỗng). */
 function systemLocale(): string | undefined {
@@ -333,7 +339,23 @@ app
     const aiRuntime = createAiRuntime(store);
 
     // ingestion (011): LanceDB + pipeline. Progress push tới mọi cửa sổ qua source:progress.
+    // 109: bộ chấm độ liên quan (cross-encoder in-process) — chỉ khi bản ghi hiệu chuẩn bật. Tải nền một lần vào data dir
+    // (badge egress "model"); chưa sẵn sàng/lỗi ⇒ retrieve() bỏ qua bước chấm (fail-open).
+    const rerankCal = RELEVANCE_CALIBRATION.rerank;
+    const reranker: Reranker | null = rerankCal
+      ? createReranker({
+          cacheDir: join(dataDir.path, "models"),
+          model: rerankCal.model,
+          revision: RERANK_MODEL_REVISION,
+          modelFile: rerankModelFile(),
+          maxTokens: rerankCal.maxTokens,
+          setOnline: (online, kind) => setEgressActive(online, kind ?? "model"),
+        })
+      : null;
+
     const emitProgress = (e: SourceProgressEvent): void => {
+      // 109: nguồn đầu tiên sẵn sàng ⇒ tải nền bộ chấm (idempotent) để lượt hỏi đầu không phải chờ.
+      if (e.status === "ready" && !e.reprocess) reranker?.prefetch();
       for (const w of BrowserWindow.getAllWindows()) {
         if (!w.isDestroyed()) w.webContents.send(CHANNELS.sourceProgress, e);
       }
@@ -352,6 +374,16 @@ app
       // 116: đếm ghi cho bảo trì kho vector (bộ điều phối tạo bên dưới, sau vaultLock).
       onVectorWrite: () => vectorMaintenance?.notifyWrite(),
     });
+
+    // 109 (review): người dùng đã có nguồn sẵn sàng từ trước (nâng cấp, không thêm nguồn mới) ⇒ tải nền bộ chấm sau khi mở app
+    // (trễ nhẹ để không tranh tài nguyên lúc khởi động), thay vì đợi nguồn mới sẵn sàng.
+    if (reranker) {
+      setTimeout(() => {
+        if (ingestion.sourceRepo.listByStatus("ready").length > 0) {
+          reranker.prefetch();
+        }
+      }, 5000).unref?.();
+    }
 
     // 049 (2a-player): phục vụ file audio gốc cho <audio> qua iv-media:// (đọc file CHỈ main, tra sourceId→
     // path từ DB, chỉ nguồn kind=audio). Local: không egress.
@@ -403,6 +435,15 @@ app
         // 055 hybrid: BM25 keyword (FTS5) + vector cho MMR. rewrite qua provider active (badge egress 031).
         searchBm25: (nb, query, k) => keywordStore.searchBm25(nb, query, k),
         getVectorsByIds: (ids) => ingestion.vectorStore.getVectorsByIds(ids),
+        // 109: bộ chấm độ liên quan (cấu hình từ RELEVANCE_CALIBRATION.rerank); bỏ qua ⇒ chỉ ghi mã lý do, không nội dung.
+        ...(reranker
+          ? {
+              rerank: (q: string, ps: { id: string; text: string }[]) =>
+                reranker.score(q, ps),
+              onRerankSkip: (reason: string) =>
+                logEvent("rerank.skip", { reason }),
+            }
+          : {}),
         rewrite: (question, history) =>
           rewriteQuery(
             question,
@@ -582,6 +623,7 @@ app
             aiRuntime.getSelectedModels().chatModel ?? undefined,
         }),
       reindexStatus: () => reindex,
+      rerankerStatus: () => reranker?.status() ?? "unavailable",
       backupService,
       vaultLock,
       logsDir,
