@@ -26,6 +26,9 @@ highlighted.
   Vietnamese + English).
 - **Chat with citations** — streamed answers, hybrid retrieval (vector + full-text), "grounded" mode that
   refuses to answer outside your sources, or "extended" mode that is clearly labelled.
+- **Relevance checker** — a small local model checks whether the retrieved passages actually answer the question, so
+  questions your sources don't cover get "Not found in the sources" right away instead of a guess (downloaded once,
+  ~120 MB; Q&A works as before until it's ready).
 - **Source viewer** — opens the cited passage highlighted; audio/video jump to the cited timestamp; images
   show the recognised text region.
 - **Studio** — summary, key points, FAQ and outline across a whole notebook (large notebooks are processed
@@ -45,7 +48,7 @@ highlighted.
 1. Download the latest installer from [Releases](https://github.com/hoanghainh1188/insight-vault/releases/latest):
    `InsightVault-<version>-arm64.dmg` (macOS, Apple Silicon) or `InsightVault-<version>-Setup.exe` (Windows x64).
 2. Install [Ollama](https://ollama.com) and pull a chat model, for example `ollama pull qwen2.5:7b`
-   (the app suggests models that fit your RAM). Embeddings, transcription and OCR run inside the app —
+   (the app suggests models that fit your RAM). Embeddings, the relevance checker, transcription and OCR run inside the app —
    their models are downloaded once on first use.
 3. The builds are **not code-signed yet**:
    - macOS: right-click the app → **Open**, or run `xattr -dr com.apple.quarantine /Applications/InsightVault.app`.

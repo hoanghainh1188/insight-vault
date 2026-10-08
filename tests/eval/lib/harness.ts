@@ -305,6 +305,8 @@ export async function runWithLlm(
   questions: readonly EvalQuestion[],
   cfg: RelevanceConfig,
   modelName?: string,
+  /** 109: bộ chấm độ liên quan đã hiệu chuẩn (retrieve() của rag-service dùng cấu hình mặc định = bản ghi) */
+  rerank?: NonNullable<RetrievalDeps["rerank"]>,
 ): Promise<LlmResult> {
   const client = createOllamaClient();
   if (!(await client.ping())) {
@@ -317,6 +319,7 @@ export async function runWithLlm(
 
   const svc = createRagService({
     ...index.deps,
+    ...(rerank ? { rerank } : {}),
     relevanceConfig: cfg,
     chat: async (messages) => (await client.chat({ model, messages })).content,
     chatStream: async (messages) =>

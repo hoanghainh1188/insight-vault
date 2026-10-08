@@ -167,12 +167,12 @@
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T037 [P] Cập nhật `tests/eval/README.md` (biến `EVAL_RERANK`, `EVAL_RERANK_FILE`, `EVAL_JUDGE`, mục báo cáo mới, khi đổi model reranker).
-- [ ] T038 ADR `docs/04-decisions/2026-10-08-unanswerable-detection.md`: bối cảnh, số liệu mọi hướng đã đo (mốc, a1, a2, b nếu có), quy tắc + hướng chọn,
+- [X] T037 [P] Cập nhật `tests/eval/README.md` (biến `EVAL_RERANK`, `EVAL_RERANK_FILE`, `EVAL_JUDGE`, mục báo cáo mới, khi đổi model reranker).
+- [X] T038 ADR `docs/04-decisions/2026-10-08-unanswerable-detection.md`: bối cảnh, số liệu mọi hướng đã đo (mốc, a1, a2, b nếu có), quy tắc + hướng chọn,
       giấy phép/dung lượng/RAM, ghi chú MS MARCO, độ trễ p50/p95 + nạp nguội, giới hạn đã biết (English, fail-open, lần đầu offline), **thay thế một phần 055**
       (mục "không LLM-rerank/cross-encoder"); append một dòng `docs/04-decisions/INDEX.md` bằng script (KHÔNG prettier).
-- [ ] T039 [P] Rà lại `docs/00-glossary.md`: thuật ngữ phát sinh thêm trong lúc làm (ngoài T003) ⇒ append bằng script (KHÔNG prettier).
-- [ ] T040 Cập nhật `README.md` + `README.vi.md` nếu hành vi người dùng thấy đổi (tải thêm model lần đầu, "Không tìm thấy" nhanh/ổn định hơn).
+- [X] T039 [P] Rà lại `docs/00-glossary.md`: thuật ngữ phát sinh thêm trong lúc làm (ngoài T003) ⇒ append bằng script (KHÔNG prettier).
+- [X] T040 Cập nhật `README.md` + `README.vi.md` nếu hành vi người dùng thấy đổi (tải thêm model lần đầu, "Không tìm thấy" nhanh/ổn định hơn).
 - [ ] T041 Test gate: `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; rồi `EVAL_MODE=current npm run eval:retrieval`
       (hồi quy OK) và `EVAL_MODE=current EVAL_WITH_LLM=1 EVAL_LLM_MODEL=qwen2.5:7b npm run eval:retrieval` (tham khảo, ghi vào ADR).
 
@@ -180,10 +180,10 @@
 
 ## Phase 8: Nhánh KHÔNG ĐẠT (thay Phase 4–6)
 
-- [ ] T042 Giữ bộ đo v3 + công cụ đo mở rộng + `rerank-filter.ts` + hỗ trợ rerank trong `retrieve()` (tắt); `src/main/services/rag/relevance-calibration.ts`:
+- [X] T042 (KHÔNG ÁP DỤNG — cổng ĐẠT) Giữ bộ đo v3 + công cụ đo mở rộng + `rerank-filter.ts` + hỗ trợ rerank trong `retrieve()` (tắt); `src/main/services/rag/relevance-calibration.ts`:
       `datasetVersion` "3" + số liệu 108 đo lại (T018), không thêm `rerank` (hoặc `rerank: null`); test canh giữ datasetVersion (phần datasetVersion của T025)
       viết trước rồi xanh.
-- [ ] T043 ADR ghi KHÔNG ĐẠT + số liệu + đề xuất bước kế tiếp (hướng c / model lớn hơn); T037, T039, T041 như Polish (bỏ phần app).
+- [X] T043 (KHÔNG ÁP DỤNG — cổng ĐẠT) ADR ghi KHÔNG ĐẠT + số liệu + đề xuất bước kế tiếp (hướng c / model lớn hơn); T037, T039, T041 như Polish (bỏ phần app).
 
 ---
 

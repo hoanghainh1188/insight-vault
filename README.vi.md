@@ -24,6 +24,9 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
   **video** (`.mp4` `.mov` `.webm` `.mkv`), **ảnh** (`.png` `.jpg` `.webp` `.bmp` `.tiff` — OCR cục bộ, Việt + Anh).
 - **Hỏi đáp có trích dẫn** — trả lời dạng stream, truy xuất lai (vector + toàn văn), chế độ "theo nguồn" từ chối
   trả lời ngoài tài liệu, hoặc chế độ "mở rộng" có gắn nhãn rõ.
+- **Bộ chấm độ liên quan** — một mô hình nhỏ chạy cục bộ kiểm tra đoạn tìm được có thật sự trả lời câu hỏi không, nên câu
+  hỏi mà nguồn không có được báo "Không tìm thấy trong nguồn" ngay thay vì đoán (tải một lần ~120 MB; trong lúc chưa sẵn
+  sàng hỏi đáp vẫn chạy như trước).
 - **Trình xem nguồn** — mở đoạn được trích có tô sáng; audio/video tua tới mốc được trích; ảnh hiện vùng chữ.
 - **Studio** — tóm tắt, ý chính, FAQ, dàn ý cho cả notebook (notebook lớn được xử lý theo phần mà vẫn giữ trích
   dẫn chính xác). Sao chép hoặc xuất Markdown.
@@ -40,7 +43,7 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
 1. Tải bản cài mới nhất ở [Releases](https://github.com/hoanghainh1188/insight-vault/releases/latest):
    `InsightVault-<version>-arm64.dmg` (macOS, Apple Silicon) hoặc `InsightVault-<version>-Setup.exe` (Windows x64).
 2. Cài [Ollama](https://ollama.com) và tải một mô hình chat, ví dụ `ollama pull qwen2.5:7b` (app gợi ý mô hình
-   hợp với RAM). Nhúng, bóc băng và OCR chạy ngay trong app — mô hình của chúng tải một lần khi dùng lần đầu.
+   hợp với RAM). Nhúng, bộ chấm độ liên quan, bóc băng và OCR chạy ngay trong app — mô hình của chúng tải một lần khi dùng lần đầu.
 3. Bản cài **chưa ký số**:
    - macOS: chuột phải vào app → **Open**, hoặc `xattr -dr com.apple.quarantine /Applications/InsightVault.app`.
    - Windows: SmartScreen → **More info → Run anyway**.

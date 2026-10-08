@@ -28,6 +28,7 @@ import {
   histogram,
 } from "./lib/metrics";
 import { runRerankModel } from "./lib/rerank-run";
+import { loadScorer } from "./lib/rerank";
 import {
   describeConfig,
   renderMarkdown,
@@ -191,6 +192,16 @@ describe("eval:retrieval", () => {
         }
       }
 
+      // 109: phần LLM chạy với bộ chấm đã hiệu chuẩn (nếu bật) — đúng luồng của app.
+      const llmRerank =
+        process.env.EVAL_WITH_LLM === "1" && RELEVANCE_CALIBRATION.rerank
+          ? await loadScorer(
+              RELEVANCE_CALIBRATION.rerank.model,
+              CACHE_DIR,
+              process.env.EVAL_RERANK_FILE,
+              RELEVANCE_CALIBRATION.rerank.maxTokens,
+            )
+          : undefined;
       const llm =
         process.env.EVAL_WITH_LLM === "1"
           ? await runWithLlm(
@@ -198,8 +209,10 @@ describe("eval:retrieval", () => {
               questions,
               candidateCfg ?? RELEVANCE_CALIBRATION.config,
               process.env.EVAL_LLM_MODEL,
+              llmRerank?.score,
             )
           : undefined;
+      llmRerank?.dispose();
 
       // 109: bộ chấm độ liên quan (EVAL_RERANK=model1,model2) — đo trên ĐÚNG retrieve() của app với cấu hình 108 hiện hành.
       const rerankModels = (process.env.EVAL_RERANK ?? "")
