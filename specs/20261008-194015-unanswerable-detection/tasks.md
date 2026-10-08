@@ -62,7 +62,7 @@
 
 ### Bộ đo v3
 
-- [ ] T009 [US3] Soạn 12 câu tiếng Việt `type: "unanswerable"` (8 `dev` + 4 `holdout`) và 3 câu `lang: "en"` `unanswerable` (`dev`), ưu tiên câu **sát chủ
+- [X] T009 [US3] Soạn 12 câu tiếng Việt `type: "unanswerable"` (8 `dev` + 4 `holdout`) và 3 câu `lang: "en"` `unanswerable` (`dev`), ưu tiên câu **sát chủ
       đề** (hỏi chi tiết không có về đúng chủ thể của tài liệu trong `tests/eval/corpus/`), mỗi câu kèm bằng chứng grep tài liệu không có đáp án; ghi bảng đề
       xuất (id, câu, nhóm, lý do, bằng chứng) vào `specs/20261008-194015-unanswerable-detection/eval-dataset-v3.md`.
 - [ ] T010 [US3] **DỪNG — chờ chủ dự án duyệt** bảng ở T009 (sửa/loại câu theo phản hồi). Không đi tiếp T011 khi chưa duyệt.
