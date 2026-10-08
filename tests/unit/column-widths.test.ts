@@ -4,7 +4,9 @@ import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import {
+  CHAT_MIN_WIDTH,
   clampWidths,
+  fitWidths,
   parseWidths,
   useColumnWidths,
 } from "../../src/renderer/features/sources/useColumnWidths";
@@ -126,5 +128,42 @@ describe("useColumnWidths — hook drag (025)", () => {
     );
     act(() => document.dispatchEvent(pointerEvent("pointerup", 150)));
     act(() => root.unmount());
+  });
+});
+
+describe("#128: fitWidths — cột Chat luôn đủ rộng", () => {
+  const CHAT = CHAT_MIN_WIDTH;
+  const SPLIT = 10; // 2 splitter × 5px
+  it("đủ chỗ ⇒ giữ nguyên", () => {
+    expect(fitWidths({ src: 300, studio: 260 }, 1200)).toEqual({
+      src: 300,
+      studio: 260,
+    });
+  });
+  it("thiếu chỗ ⇒ co 2 cột biên theo tỉ lệ phần dư trên mức tối thiểu, Chat = tối thiểu", () => {
+    const w = fitWidths({ src: 300, studio: 260 }, 830);
+    expect(w.src + w.studio + SPLIT + CHAT).toBeLessThanOrEqual(830);
+    expect(w.src + w.studio + SPLIT + CHAT).toBeGreaterThanOrEqual(829);
+    expect(w.src).toBeGreaterThanOrEqual(220);
+    expect(w.studio).toBeGreaterThanOrEqual(200);
+    expect(w.src).toBeLessThan(300);
+    expect(w.studio).toBeLessThan(260);
+  });
+  it("cực hẹp ⇒ dừng ở mức tối thiểu mỗi cột", () => {
+    expect(fitWidths({ src: 460, studio: 420 }, 500)).toEqual({
+      src: 220,
+      studio: 200,
+    });
+  });
+  it("chưa đo được (0) ⇒ giữ nguyên", () => {
+    expect(fitWidths({ src: 300, studio: 260 }, 0)).toEqual({
+      src: 300,
+      studio: 260,
+    });
+  });
+  it("cửa sổ tối thiểu mới (900px trừ rail) vẫn để Chat ≥ tối thiểu với độ rộng mặc định", () => {
+    const available = 900 - 72; // rail
+    const w = fitWidths({ src: 300, studio: 260 }, available);
+    expect(available - SPLIT - w.src - w.studio).toBeGreaterThanOrEqual(CHAT);
   });
 });
