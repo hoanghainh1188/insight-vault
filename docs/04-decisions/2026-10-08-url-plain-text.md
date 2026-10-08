@@ -2,8 +2,9 @@
 
 - Ngày: 2026-10-08
 - Feature liên quan: `150-url-plain-text` (issue #150) — sửa lỗi nhỏ, không qua Spec Kit (như #142).
-- Câu hỏi gốc: nạp URL (Readability + turndown) lưu nguyên cú pháp Markdown — `[chữ](https://… "title")`, dấu chú
-  thích `[\[11\]](#cite_note-…)`, ảnh `[![](https://upload…)](…/File:…)`, `\[[edit](…action=edit…)\]`, escape `\[`,
+- Câu hỏi gốc: nạp URL (Readability + turndown) lưu nguyên cú pháp Markdown — liên kết `[chữ]` + `(https://… "title")`,
+  dấu chú thích `[\[11\]]` trỏ `#cite_note-…`, ảnh `![]` bọc trong liên kết tới `…/File:…`, liên kết `[edit]` trỏ
+  `index.php?…action=edit…`, escape `\[`,
   nhấn mạnh `_pho_`. Trình xem nguồn hiện thô; cùng nhiễu đó đi vào chunk → embedding và BM25.
 - Người quyết định: Hải (2026-10-08) — yêu cầu "chỉ giữ chữ của liên kết, bỏ ảnh và dấu chú thích, giữ offset trích
   dẫn nhất quán".
