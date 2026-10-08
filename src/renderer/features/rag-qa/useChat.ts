@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { runtimeStatusStore } from "../ai-runtime/runtime-status-store";
 import type { AiTarget, Citation, RagMode, RagTurn } from "@shared/ipc/types";
 import type { Translator } from "@shared/i18n";
 import type { ParsedIpcError } from "@shared/online-error-tag";
@@ -60,7 +67,14 @@ export function useChat(notebookId: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ChatError | null>(null);
   const [failedTurn, setFailedTurn] = useState<FailedTurn | null>(null);
-  const [runtimeReady, setRuntimeReady] = useState<boolean | null>(null);
+  // #135: trạng thái runtime dùng chung (tự kiểm tra lại khi chưa sẵn sàng; "Kiểm tra lại" ở banner cập nhật cả đây).
+  const runtime = useSyncExternalStore(
+    runtimeStatusStore.subscribe,
+    runtimeStatusStore.getSnapshot,
+  );
+  const runtimeReady: boolean | null = runtime.status
+    ? runtime.status.ollamaReady
+    : null;
   const [hasReadySources, setHasReadySources] = useState(false);
   // 039: id stream đang chạy (để hiện nút Dừng); ref để listener token lọc đúng lượt.
   const [streamingId, setStreamingId] = useState<string | null>(null);
@@ -135,10 +149,7 @@ export function useChat(notebookId: string) {
   }, [notebookId]);
 
   const refreshReadiness = useCallback(() => {
-    window.api
-      .aiGetRuntimeStatus()
-      .then((s) => setRuntimeReady(s.ollamaReady))
-      .catch(() => setRuntimeReady(false));
+    runtimeStatusStore.refresh();
     window.api
       .sourceListByNotebook(notebookId)
       .then((list) =>

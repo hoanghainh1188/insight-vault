@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import type { RuntimeStatus } from "@shared/ipc/types";
+import { runtimeStatusStore } from "./runtime-status-store";
 
-// Đọc trạng thái runtime AI (check-on-demand — A2). refresh() gọi lại khi mở Cài đặt / bấm kiểm tra.
+// Đọc trạng thái runtime AI từ kho dùng chung (#135): banner, Cài đặt, Chat, Studio thấy cùng một trạng thái; khi
+// chưa sẵn sàng kho tự kiểm tra lại. Mount ⇒ kiểm tra ngay (mở Cài đặt / banner). refresh() = "Kiểm tra lại".
 // 123: IPC lỗi ⇒ readFailed=true + reason=null (nơi hiển thị dịch "ai.runtime.statusUnreadable" lúc render).
 export function useRuntimeStatus(): {
   status: RuntimeStatus | null;
@@ -9,28 +11,12 @@ export function useRuntimeStatus(): {
   loading: boolean;
   refresh: () => void;
 } {
-  const [status, setStatus] = useState<RuntimeStatus | null>(null);
-  const [readFailed, setReadFailed] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const refresh = useCallback(() => {
-    setLoading(true);
-    window.api
-      .aiGetRuntimeStatus()
-      .then((s) => {
-        setStatus(s);
-        setReadFailed(false);
-      })
-      .catch(() => {
-        setStatus({ reachable: false, ollamaReady: false, reason: null });
-        setReadFailed(true);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
+  const snap = useSyncExternalStore(
+    runtimeStatusStore.subscribe,
+    runtimeStatusStore.getSnapshot,
+  );
   useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return { status, readFailed, loading, refresh };
+    runtimeStatusStore.refresh();
+  }, []);
+  return { ...snap, refresh: runtimeStatusStore.refresh };
 }
