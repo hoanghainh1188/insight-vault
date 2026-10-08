@@ -173,9 +173,10 @@ describe("SourceItem — Xử lý lại (112)", () => {
     expect(q("source-reprocess-progress")).toBeNull();
   });
 
-  it("IPC ném (vd đang sao lưu) ⇒ hiện thông điệp lỗi", async () => {
+  it("IPC ném (vd đang sao lưu) ⇒ hiện thông điệp lỗi theo mã", async () => {
+    // 123: main gắn thẻ mã lỗi người-dùng-thấy; renderer dịch theo ngôn ngữ hiện tại.
     api.sourceReprocess.mockRejectedValueOnce(
-      new Error("Đang sao lưu/khôi phục — thử lại sau giây lát."),
+      new Error("Đang sao lưu/khôi phục [[err:vaultLocked]]"),
     );
     render(pdf());
     await click("source-reprocess");

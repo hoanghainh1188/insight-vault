@@ -1,17 +1,15 @@
 import { useState } from "react";
 import type { Citation, StudioResult } from "@shared/ipc/types";
+import { isoDate } from "@shared/i18n";
 import { formatCitationLabel } from "../rag-qa/citation-format";
 import { MarkdownContent } from "../../shared/markdown/MarkdownContent";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Card kết quả Studio. Render MARKDOWN an toàn + chip [n] (029, React node — KHÔNG innerHTML). Bấm chip →
-// onCite (mở Source Viewer 019). Ghi chú khi truncated.
+// onCite (mở Source Viewer 019). Ghi chú khi truncated. 123: nhãn loại = khoá `studio.kind.<kind>`.
 
-const KIND_LABEL: Record<StudioResult["kind"], string> = {
-  summary: "Tóm tắt tài liệu",
-  keyPoints: "Ý chính",
-  faq: "FAQ",
-  outline: "Dàn ý",
-};
+// 123: thông báo chớp lưu KHOÁ (không lưu chuỗi đã dịch).
+type NoticeKey = "copyFailed" | "exported" | "exportFailed";
 
 interface StudioResultCardProps {
   result: StudioResult;
@@ -29,12 +27,14 @@ export function StudioResultCard({
   onCite,
   local,
 }: StudioResultCardProps): JSX.Element {
+  const t = useT();
+  const kindLabel = t.t(`studio.kind.${result.kind}`);
   const citeByN = new Map(result.citations.map((c) => [c.n, c]));
   const [copied, setCopied] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<NoticeKey | null>(null);
 
-  const flash = (msg: string): void => {
-    setNotice(msg);
+  const flash = (key: NoticeKey): void => {
+    setNotice(key);
     setTimeout(() => setNotice(null), 2000);
   };
 
@@ -46,7 +46,7 @@ export function StudioResultCard({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      flash("Không sao chép được.");
+      flash("copyFailed");
     }
   };
 
@@ -54,11 +54,14 @@ export function StudioResultCard({
     try {
       const res = await window.api.studioExport({
         content: result.content,
-        suggestedName: `${KIND_LABEL[result.kind]} — ${new Date(result.createdAt).toISOString().slice(0, 10)}`,
+        suggestedName: t.t("studio.exportName", {
+          kind: kindLabel,
+          date: isoDate(result.createdAt),
+        }),
       });
-      if (res.saved) flash("Đã xuất tệp.");
+      if (res.saved) flash("exported");
     } catch {
-      flash("Không xuất được tệp.");
+      flash("exportFailed");
     }
   };
 
@@ -66,14 +69,14 @@ export function StudioResultCard({
     <article className="studio-card" data-testid={`studio-card-${result.kind}`}>
       <header className="studio-card-head">
         <h3 className="studio-card-title">
-          {KIND_LABEL[result.kind]}
+          {kindLabel}
           {local && (
             <span
               className="local-answer"
               data-testid={`studio-local-${result.kind}`}
-              title="Kết quả này được tạo bằng AI cục bộ (Ollama) vì AI online gặp lỗi."
+              title={t.t("studio.localBadgeTitle")}
             >
-              AI cục bộ
+              {t.t("studio.localBadge")}
             </span>
           )}
         </h3>
@@ -84,7 +87,7 @@ export function StudioResultCard({
             onClick={() => void onCopy()}
             data-testid={`studio-copy-${result.kind}`}
           >
-            {copied ? "Đã sao chép" : "Sao chép"}
+            {copied ? t.t("common.copied") : t.t("common.copy")}
           </button>
           <button
             type="button"
@@ -92,7 +95,7 @@ export function StudioResultCard({
             onClick={() => void onExport()}
             data-testid={`studio-export-${result.kind}`}
           >
-            Xuất
+            {t.t("chat.actions.export")}
           </button>
           <button
             type="button"
@@ -101,7 +104,7 @@ export function StudioResultCard({
             disabled={regenerating}
             data-testid={`studio-regen-${result.kind}`}
           >
-            {regenerating ? "Đang tạo…" : "Tạo lại"}
+            {regenerating ? t.t("studio.creating") : t.t("studio.regenerate")}
           </button>
         </div>
       </header>
@@ -110,7 +113,7 @@ export function StudioResultCard({
           className="studio-notice"
           data-testid={`studio-notice-${result.kind}`}
         >
-          {notice}
+          {t.t(`chat.actions.${notice}`)}
         </p>
       )}
       <div className="studio-card-body">
@@ -123,14 +126,12 @@ export function StudioResultCard({
       {/* 105: tổng hợp nhiều phần (map-reduce) — chip [n] vẫn trỏ đúng đoạn nguồn (ADR studio-large-clarify). */}
       {(result.parts ?? 1) > 1 && (
         <p className="studio-truncated" data-testid="studio-parts">
-          Tổng hợp từ {result.parts} phần của tài liệu — mỗi trích dẫn [n] vẫn
-          trỏ đúng đoạn nguồn.
+          {t.plural("studio.parts", result.parts ?? 1)}
         </p>
       )}
       {result.truncated && (
         <p className="studio-truncated" data-testid="studio-truncated">
-          Tài liệu quá dài nên phần cuối chưa được tổng hợp — hãy lọc theo từng
-          nguồn để tổng hợp đầy đủ.
+          {t.t("studio.truncated")}
         </p>
       )}
       {result.citations.length > 0 && (
@@ -138,10 +139,12 @@ export function StudioResultCard({
           className="studio-srcnote"
           data-testid={`studio-srcnote-${result.kind}`}
         >
-          <span className="studio-srcnote-label">Nguồn:</span>
+          <span className="studio-srcnote-label">
+            {t.t("chat.sourcesLabel")}
+          </span>
           {result.citations.map((c) => (
             <span key={c.n} className="studio-srcnote-item">
-              {formatCitationLabel(c)}
+              {formatCitationLabel(c, t)}
             </span>
           ))}
         </div>

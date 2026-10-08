@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { formatRelativeTime } from "../../src/renderer/features/notebooks/relative-time";
+import { trEn } from "./helpers/t-vi";
 
 const NOW = 1_700_000_000_000;
 const rel = (agoMs: number) => formatRelativeTime(NOW - agoMs, NOW);
@@ -26,5 +27,13 @@ describe("formatRelativeTime", () => {
   });
   it("thời điểm tương lai (diff âm) → vừa xong", () => {
     expect(formatRelativeTime(NOW + 10_000, NOW)).toBe("vừa xong");
+  });
+  it("123: truyền translator en → tiếng Anh", () => {
+    expect(formatRelativeTime(NOW - 5 * 60_000, NOW, trEn)).toBe(
+      "5 minutes ago",
+    );
+    expect(formatRelativeTime(NOW - 30 * 3_600_000, NOW, trEn)).toBe(
+      "yesterday",
+    );
   });
 });

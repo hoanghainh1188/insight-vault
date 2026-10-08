@@ -4,17 +4,15 @@ import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
 import { announce } from "../../shared/a11y/announcer";
 import { studioMessage } from "../../shared/a11y/messages";
+import { useT } from "../../shared/i18n/i18n-context";
+import { describeIpcError } from "../../shared/i18n/describe-error";
 import "./studio.css";
 
 // Cột Studio (prototype S2, cột 3). 4 nút "Tạo nhanh" → sinh bản tổng hợp toàn notebook. Nút vô hiệu khi
 // chưa có nguồn ready hoặc model chưa sẵn sàng (FR-010/011). Kết quả hiển thị card + chip [n] (kiểm chứng).
 
-const KINDS: { kind: StudioKind; label: string }[] = [
-  { kind: "summary", label: "Tóm tắt tài liệu" },
-  { kind: "keyPoints", label: "Ý chính" },
-  { kind: "faq", label: "FAQ" },
-  { kind: "outline", label: "Dàn ý" },
-];
+// 123: nhãn loại lấy từ MỘT chỗ — khoá `studio.kind.<kind>` (dịch lúc render).
+const KINDS: readonly StudioKind[] = ["summary", "keyPoints", "faq", "outline"];
 
 interface StudioColumnProps {
   notebookId: string;
@@ -36,15 +34,19 @@ export function StudioColumn({
     hasReadySources,
     readySources,
   } = useStudio(notebookId);
+  const t = useT();
+  // 123: translator HIỆN TẠI cho câu báo xong (về sau await — người dùng có thể đã đổi ngôn ngữ).
+  const trRef = useRef(t);
+  trRef.current = t;
   // Phạm vi tổng hợp (US2): "" = tất cả nguồn; else sourceId.
   const [scope, setScope] = useState("");
   const scopeId = scope === "" ? undefined : scope;
 
   const blockReason =
     ollamaReady === false
-      ? "Mô hình AI chưa sẵn sàng. Kiểm tra Cài đặt để chọn mô hình."
+      ? t.t("studio.blockModel")
       : !hasReadySources
-        ? "Nạp nguồn để tạo Studio."
+        ? t.t("studio.blockNoSources")
         : null;
   const disabled = blockReason !== null;
   // 098: khối lỗi (chứa nút vừa bấm) biến mất khi tạo lại ⇒ đưa focus về tiêu đề cột Studio.
@@ -52,26 +54,25 @@ export function StudioColumn({
 
   // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
   // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
-  const run = async (
-    kind: StudioKind,
-    label: string,
-    target?: AiTarget,
-  ): Promise<void> => {
-    announce(studioMessage(label, "start"));
-    if (await generate(kind, scopeId, target))
-      announce(studioMessage(label, "done"));
+  const run = async (kind: StudioKind, target?: AiTarget): Promise<void> => {
+    const tr = trRef.current;
+    announce(studioMessage(tr.t(`studio.kind.${kind}`), "start", tr));
+    if (await generate(kind, scopeId, target)) {
+      const done = trRef.current;
+      announce(studioMessage(done.t(`studio.kind.${kind}`), "done", done));
+    }
   };
 
   return (
     <section
       className="studio-col"
-      aria-label="Studio"
+      aria-label={t.t("studio.title")}
       data-testid="studio-col"
     >
       <h2 className="studio-title" ref={titleRef} tabIndex={-1}>
-        Studio
+        {t.t("studio.title")}
       </h2>
-      <p className="col-hint">Tạo nhanh bản tổng hợp từ nguồn của notebook.</p>
+      <p className="col-hint">{t.t("studio.hint")}</p>
 
       {blockReason && (
         <p className="studio-block" data-testid="studio-block">
@@ -81,14 +82,14 @@ export function StudioColumn({
 
       {hasReadySources && readySources.length > 1 && (
         <label className="studio-scope">
-          <span className="studio-scope-label">Phạm vi</span>
+          <span className="studio-scope-label">{t.t("studio.scope")}</span>
           <select
             className="studio-scope-select"
             value={scope}
             onChange={(e) => setScope(e.target.value)}
             data-testid="studio-scope"
           >
-            <option value="">Tất cả nguồn</option>
+            <option value="">{t.t("studio.scopeAll")}</option>
             {readySources.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.title}
@@ -99,22 +100,25 @@ export function StudioColumn({
       )}
 
       <div className="studio-actions">
-        {KINDS.map(({ kind, label }) => (
+        {KINDS.map((kind) => (
           <button
             key={kind}
             type="button"
             className="studio-btn"
-            onClick={() => void run(kind, label)}
+            onClick={() => void run(kind)}
             disabled={disabled || loading[kind] === true}
             data-testid={`studio-btn-${kind}`}
           >
-            {loading[kind] ? "Đang tạo…" : label}
+            {loading[kind]
+              ? t.t("studio.creating")
+              : t.t(`studio.kind.${kind}`)}
           </button>
         ))}
       </div>
 
       <div className="studio-results">
-        {KINDS.map(({ kind, label }) => {
+        {KINDS.map((kind) => {
+          const label = t.t(`studio.kind.${kind}`);
           const err = errors[kind];
           const res = results[kind];
           // Skeleton khi đang tạo lần đầu (chưa có kết quả cũ) — US3.
@@ -139,33 +143,33 @@ export function StudioColumn({
                 className="studio-error"
                 data-testid={`studio-error-${kind}`}
               >
-                <p role="alert">{err}</p>
+                <p role="alert">{describeIpcError(err, t)}</p>
                 {/* 098: lỗi AI online ⇒ người dùng chọn tạo bằng AI cục bộ cho lượt này, hoặc thử lại. */}
                 {onlineFailed[kind] && (
                   <div className="fallback-actions">
                     <button
                       type="button"
                       className="btn-primary-sm"
-                      aria-label={`Tạo ${label} bằng AI cục bộ`}
+                      aria-label={t.t("studio.localRetryAria", { kind: label })}
                       onClick={() => {
                         titleRef.current?.focus();
-                        void run(kind, label, "local");
+                        void run(kind, "local");
                       }}
                       data-testid={`studio-local-retry-${kind}`}
                     >
-                      Tạo bằng AI cục bộ
+                      {t.t("studio.localRetry")}
                     </button>
                     <button
                       type="button"
                       className="btn-outline-sm"
-                      aria-label={`Thử lại ${label}`}
+                      aria-label={t.t("studio.retryAria", { kind: label })}
                       onClick={() => {
                         titleRef.current?.focus();
-                        void run(kind, label);
+                        void run(kind);
                       }}
                       data-testid={`studio-retry-${kind}`}
                     >
-                      Thử lại
+                      {t.t("common.retry")}
                     </button>
                   </div>
                 )}
@@ -178,7 +182,7 @@ export function StudioColumn({
               key={kind}
               result={res}
               regenerating={loading[kind] === true}
-              onRegenerate={() => void run(kind, label)}
+              onRegenerate={() => void run(kind)}
               onCite={onCite}
               local={localKinds[kind] === true}
             />

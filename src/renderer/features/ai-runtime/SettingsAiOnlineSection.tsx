@@ -1,6 +1,12 @@
 import { useState } from "react";
 import type { OnlineProviderId, OnlineProviderView } from "@shared/ipc/types";
+import type { ParsedIpcError } from "@shared/online-error-tag";
 import { useOnlineProviders } from "./useOnlineProviders";
+import { useT } from "../../shared/i18n/i18n-context";
+import {
+  describeIpcError,
+  toParsedError,
+} from "../../shared/i18n/describe-error";
 
 // Khu vực "AI online (tùy chọn)" trong Cài đặt (031, prototype #s5). 3 hàng provider: trạng thái khóa (che),
 // nhập/xoá khóa, chọn model (preset + "Khác"), bật/tắt độc quyền (confirm 1 lần khi bật), kiểm tra kết nối.
@@ -8,14 +14,20 @@ import { useOnlineProviders } from "./useOnlineProviders";
 
 const CUSTOM = "__custom__";
 
+// 123: kết quả kiểm tra kết nối giữ dạng trạng thái (dịch lúc render); reason đến từ main — hiển thị nguyên.
+type TestState =
+  | { kind: "testing" }
+  | { kind: "ok" }
+  | { kind: "failed"; reason: string | null };
+
 export function SettingsAiOnlineSection(): JSX.Element {
+  const t = useT();
   const { state, setKey, deleteKey, setModel, setActive, test } =
     useOnlineProviders();
   const [confirmId, setConfirmId] = useState<OnlineProviderId | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ParsedIpcError | null>(null);
 
-  const onError = (e: unknown): void =>
-    setError(e instanceof Error ? e.message : "Thao tác thất bại.");
+  const onError = (e: unknown): void => setError(toParsedError(e));
 
   const confirmProvider = state?.providers.find((p) => p.id === confirmId);
 
@@ -25,17 +37,15 @@ export function SettingsAiOnlineSection(): JSX.Element {
       data-testid="settings-ai-online"
     >
       <div className="settings-ai-head">
-        <h3>AI online (tùy chọn)</h3>
+        <h3>{t.t("ai.online.title")}</h3>
         {state?.activeOnlineId && (
           <span className="tag warn" data-testid="online-active-tag">
-            Đang gửi dữ liệu ra ngoài
+            {t.t("ai.online.activeTag")}
           </span>
         )}
       </div>
       <p className="ai-note" data-testid="online-egress-note">
-        Khi bật, câu hỏi và đoạn nguồn liên quan sẽ được gửi tới máy chủ nhà
-        cung cấp. Dùng khóa API của chính bạn. Mặc định app chạy cục bộ, không
-        gửi gì ra ngoài.
+        {t.t("ai.online.egressNote")}
       </p>
 
       {error && (
@@ -44,7 +54,7 @@ export function SettingsAiOnlineSection(): JSX.Element {
           data-testid="online-error"
           role="alert"
         >
-          {error}
+          {describeIpcError(error, t)}
         </div>
       )}
 
@@ -71,8 +81,9 @@ export function SettingsAiOnlineSection(): JSX.Element {
           data-testid="online-confirm"
         >
           <p>
-            Bật <strong>{confirmProvider.label}</strong>? Câu hỏi và đoạn nguồn
-            liên quan sẽ được gửi tới máy chủ của nhà cung cấp này.
+            {t.t("ai.online.confirmBefore")}{" "}
+            <strong>{confirmProvider.label}</strong>
+            {t.t("ai.online.confirmAfter")}
           </p>
           <div className="online-confirm-actions">
             <button
@@ -81,7 +92,7 @@ export function SettingsAiOnlineSection(): JSX.Element {
               onClick={() => setConfirmId(null)}
               data-testid="online-confirm-cancel"
             >
-              Huỷ
+              {t.t("common.cancel")}
             </button>
             <button
               type="button"
@@ -93,7 +104,7 @@ export function SettingsAiOnlineSection(): JSX.Element {
                 setActive(id).catch(onError);
               }}
             >
-              Bật
+              {t.t("ai.online.confirmOk")}
             </button>
           </div>
         </div>
@@ -119,8 +130,9 @@ function ProviderRow({
   onDeactivate: () => void;
   onTest: () => Promise<{ reachable: boolean; reason: string | null }>;
 }): JSX.Element {
+  const t = useT();
   const [draftKey, setDraftKey] = useState("");
-  const [testMsg, setTestMsg] = useState<string | null>(null);
+  const [testState, setTestState] = useState<TestState | null>(null);
   const isCustom = view.model !== null && !view.presets.includes(view.model);
   const [customMode, setCustomMode] = useState(isCustom);
 
@@ -132,7 +144,9 @@ function ProviderRow({
           className={`tag ${view.hasKey ? "ok" : "warn"}`}
           data-testid={`online-key-status-${view.id}`}
         >
-          {view.hasKey ? "Đã lưu khóa ••••" : "Chưa nhập khóa API"}
+          {view.hasKey
+            ? t.t("ai.online.keySaved")
+            : t.t("ai.online.keyMissing")}
         </span>
         <label className="online-toggle">
           <input
@@ -144,7 +158,7 @@ function ProviderRow({
               e.target.checked ? onRequestActivate() : onDeactivate()
             }
           />
-          <span>Dùng</span>
+          <span>{t.t("ai.online.use")}</span>
         </label>
       </div>
 
@@ -152,7 +166,11 @@ function ProviderRow({
         <div className="online-key-input">
           <input
             type="password"
-            placeholder={view.hasKey ? "Nhập khóa mới để thay" : "Dán API key"}
+            placeholder={
+              view.hasKey
+                ? t.t("ai.online.keyPlaceholderReplace")
+                : t.t("ai.online.keyPlaceholder")
+            }
             value={draftKey}
             onChange={(e) => setDraftKey(e.target.value)}
             data-testid={`online-key-input-${view.id}`}
@@ -167,7 +185,7 @@ function ProviderRow({
               setDraftKey("");
             }}
           >
-            Lưu
+            {t.t("common.save")}
           </button>
           {view.hasKey && (
             <button
@@ -176,7 +194,7 @@ function ProviderRow({
               data-testid={`online-key-delete-${view.id}`}
               onClick={onDeleteKey}
             >
-              Xoá
+              {t.t("common.delete")}
             </button>
           )}
         </div>
@@ -194,18 +212,18 @@ function ProviderRow({
               }
             }}
           >
-            <option value="">— Chọn mô hình —</option>
+            <option value="">{t.t("ai.online.modelPlaceholder")}</option>
             {view.presets.map((m) => (
               <option key={m} value={m}>
                 {m}
               </option>
             ))}
-            <option value={CUSTOM}>Khác (nhập tay)…</option>
+            <option value={CUSTOM}>{t.t("ai.online.modelCustom")}</option>
           </select>
           {customMode && (
             <input
               type="text"
-              placeholder="Tên mô hình"
+              placeholder={t.t("ai.online.modelNamePlaceholder")}
               defaultValue={view.model ?? ""}
               data-testid={`online-model-custom-${view.id}`}
               onBlur={(e) => onSetModel(e.target.value.trim() || null)}
@@ -216,23 +234,31 @@ function ProviderRow({
             className="btn-sm"
             data-testid={`online-test-${view.id}`}
             onClick={() => {
-              setTestMsg("Đang kiểm tra…");
-              onTest().then((s) =>
-                setTestMsg(
-                  s.reachable ? "Kết nối OK ✓" : (s.reason ?? "Lỗi kết nối"),
-                ),
-              );
+              setTestState({ kind: "testing" });
+              onTest()
+                .then((s) =>
+                  setTestState(
+                    s.reachable
+                      ? { kind: "ok" }
+                      : { kind: "failed", reason: s.reason },
+                  ),
+                )
+                .catch(() => setTestState({ kind: "failed", reason: null }));
             }}
           >
-            Kiểm tra kết nối
+            {t.t("ai.testConnection")}
           </button>
         </div>
-        {testMsg && (
+        {testState && (
           <span
             className="online-test-msg"
             data-testid={`online-test-msg-${view.id}`}
           >
-            {testMsg}
+            {testState.kind === "testing"
+              ? t.t("ai.online.testing")
+              : testState.kind === "ok"
+                ? t.t("ai.online.testOk")
+                : (testState.reason ?? t.t("ai.online.testFailed"))}
           </span>
         )}
       </div>

@@ -5,6 +5,7 @@ import { aggregateLabel } from "./source-status";
 import { SourceItem } from "./SourceItem";
 import { AddSourceModal } from "./AddSourceModal";
 import { ContentSearchBox } from "../search/ContentSearchBox";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Cột "Nguồn" của Workspace (prototype S2): header tổng hợp + nút thêm + tìm toàn văn (073) + danh sách nguồn + modal.
 export function SourceList({
@@ -16,17 +17,18 @@ export function SourceList({
   onOpenSource?: (sourceId: string) => void; // 019: mở trình xem nguồn
   onOpenHit?: (hit: ContentSearchHit) => void; // 073: mở kết quả tìm + highlight
 }): JSX.Element {
+  const t = useT();
   const { sources, loading, progress, add, remove, retry } =
     useSources(notebookId);
   const [showAdd, setShowAdd] = useState(false);
 
   return (
-    <section className="src-col" aria-label="Nguồn">
+    <section className="src-col" aria-label={t.t("sources.list.label")}>
       <header className="src-head">
         <div>
-          <h2>Nguồn</h2>
+          <h2>{t.t("sources.list.label")}</h2>
           <span className="src-agg" data-testid="source-aggregate">
-            {aggregateLabel(sources)}
+            {aggregateLabel(sources, t)}
           </span>
         </div>
         <button
@@ -35,7 +37,7 @@ export function SourceList({
           onClick={() => setShowAdd(true)}
           data-testid="add-source-btn"
         >
-          Thêm nguồn
+          {t.t("sources.list.add")}
         </button>
       </header>
 
@@ -61,7 +63,7 @@ export function SourceList({
         </ul>
       ) : sources.length === 0 ? (
         <p className="src-empty" data-testid="source-empty">
-          Chưa có nguồn. Bấm “Thêm nguồn” để nạp tài liệu.
+          {t.t("sources.list.empty")}
         </p>
       ) : (
         <ul className="srclist">

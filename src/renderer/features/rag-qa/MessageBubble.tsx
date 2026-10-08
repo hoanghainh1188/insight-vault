@@ -1,8 +1,13 @@
 import { useState } from "react";
 import type { Citation } from "@shared/ipc/types";
+import { isoDate } from "@shared/i18n";
 import { formatCitationLabel, formatAnswerMarkdown } from "./citation-format";
 import { MarkdownContent } from "../../shared/markdown/MarkdownContent";
 import type { ChatMessage } from "./useChat";
+import { useT } from "../../shared/i18n/i18n-context";
+
+// 123: thông báo chớp lưu KHOÁ (không lưu chuỗi đã dịch) ⇒ đổi ngôn ngữ thì thông báo cũng đổi.
+type NoticeKey = "copyFailed" | "exported" | "exportFailed";
 
 // Bong bóng hội thoại (prototype S2). Trả lời AI: render MARKDOWN an toàn + chip [n] (029). Tin người dùng
 // giữ text thuần. Bấm chip → mở Source Viewer (019). onCite optional. 072: Copy/Export câu trả lời kèm nguồn.
@@ -14,20 +19,26 @@ export function MessageBubble({
   message: ChatMessage;
   onCite?: (c: Citation) => void;
 }): JSX.Element {
+  const t = useT();
   const isUser = message.role === "user";
   const citeByN = new Map((message.citations ?? []).map((c) => [c.n, c]));
   const [copied, setCopied] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<NoticeKey | null>(null);
 
-  const flash = (msg: string): void => {
-    setNotice(msg);
+  const flash = (key: NoticeKey): void => {
+    setNotice(key);
     setTimeout(() => setNotice(null), 2000);
   };
 
   // 072: copy/export câu trả lời + danh sách nguồn (markdown). Copy qua clipboard main (#67); export .md
   // qua hộp thoại lưu (tái dùng studioExport — ghi markdown generic ở main). KHÔNG log nội dung.
+  // 123: câu "không tìm thấy" hiển thị theo ngôn ngữ hiện tại (bỏ qua content đã lưu — có thể là tiếng Việt cũ).
+  const content =
+    !isUser && message.notFound && !message.streaming
+      ? `${t.t("chat.notFound")} ${t.t("chat.notFoundHint")}`
+      : message.content;
   const exportMd = (): string =>
-    formatAnswerMarkdown(message.content, message.citations ?? []);
+    formatAnswerMarkdown(content, message.citations ?? [], t);
 
   const onCopy = async (): Promise<void> => {
     try {
@@ -35,7 +46,7 @@ export function MessageBubble({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      flash("Không sao chép được.");
+      flash("copyFailed");
     }
   };
 
@@ -43,17 +54,16 @@ export function MessageBubble({
     try {
       const res = await window.api.studioExport({
         content: exportMd(),
-        suggestedName: `Câu trả lời — ${new Date().toISOString().slice(0, 10)}`,
+        suggestedName: t.t("chat.exportName", { date: isoDate(Date.now()) }),
       });
-      if (res.saved) flash("Đã xuất tệp.");
+      if (res.saved) flash("exported");
     } catch {
-      flash("Không xuất được tệp.");
+      flash("exportFailed");
     }
   };
 
   // Chỉ hiện hành động cho câu trả lời AI đã hoàn tất, có nội dung.
-  const showActions =
-    !isUser && !message.streaming && message.content.trim() !== "";
+  const showActions = !isUser && !message.streaming && content.trim() !== "";
 
   return (
     <div
@@ -63,16 +73,16 @@ export function MessageBubble({
       aria-busy={message.streaming ? true : undefined}
     >
       <span className="who" data-testid="bubble-who">
-        {isUser ? "Bạn" : "InsightVault"}
+        {isUser ? t.t("chat.you") : "InsightVault"}
       </span>
       {/* 071: chế độ Mở rộng có thể chứa nội dung ngoài nguồn → badge cảnh báo (kiểm chứng được). */}
       {!isUser && message.modeUsed === "open" && (
         <span
           className="ungrounded"
           data-testid="ungrounded-badge"
-          title="Câu trả lời ở chế độ Mở rộng có thể chứa kiến thức ngoài tài liệu nguồn."
+          title={t.t("chat.ungroundedTitle")}
         >
-          Mở rộng · có thể ngoài nguồn
+          {t.t("chat.ungroundedBadge")}
         </span>
       )}
       {/* 098: trả lời bằng AI cục bộ sau lỗi online (người dùng chọn) — minh bạch nguồn trả lời. */}
@@ -80,9 +90,9 @@ export function MessageBubble({
         <span
           className="local-answer"
           data-testid="local-badge"
-          title="Lượt này được trả lời bằng AI cục bộ (Ollama) vì AI online gặp lỗi."
+          title={t.t("chat.localBadgeTitle")}
         >
-          AI cục bộ
+          {t.t("chat.localBadge")}
         </span>
       )}
       {isUser ? (
@@ -99,7 +109,7 @@ export function MessageBubble({
       ) : (
         <div className="bubble-text">
           <MarkdownContent
-            content={message.content}
+            content={content}
             citeByN={citeByN}
             onCite={onCite}
           />
@@ -107,10 +117,10 @@ export function MessageBubble({
       )}
       {!isUser && message.citations && message.citations.length > 0 && (
         <div className="srcnote" data-testid="srcnote">
-          <span className="srcnote-label">Nguồn:</span>
+          <span className="srcnote-label">{t.t("chat.sourcesLabel")}</span>
           {message.citations.map((c) => (
             <span key={c.n} className="srcnote-item">
-              {formatCitationLabel(c)}
+              {formatCitationLabel(c, t)}
             </span>
           ))}
         </div>
@@ -123,7 +133,7 @@ export function MessageBubble({
             onClick={() => void onCopy()}
             data-testid="bubble-copy"
           >
-            {copied ? "Đã sao chép" : "Sao chép"}
+            {copied ? t.t("common.copied") : t.t("common.copy")}
           </button>
           <button
             type="button"
@@ -131,11 +141,11 @@ export function MessageBubble({
             onClick={() => void onExport()}
             data-testid="bubble-export"
           >
-            Xuất
+            {t.t("chat.actions.export")}
           </button>
           {notice && (
             <span className="bubble-notice" data-testid="bubble-notice">
-              {notice}
+              {t.t(`chat.actions.${notice}`)}
             </span>
           )}
         </div>

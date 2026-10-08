@@ -5,6 +5,7 @@ import {
   aggregateLabel,
 } from "../../src/renderer/features/sources/source-status";
 import type { Source } from "@shared/ipc/types";
+import { trEn } from "./helpers/t-vi";
 
 const s = (status: Source["status"], errorLabel: string | null = null) =>
   ({ status, errorLabel }) as Pick<Source, "status" | "errorLabel">;
@@ -36,6 +37,16 @@ describe("source-status", () => {
     // error KHÔNG tính là pending
     expect(aggregateLabel([s("ready"), s("error", "x")])).toBe(
       "2 nguồn · đã lập chỉ mục",
+    );
+  });
+
+  it("123: dịch theo Translator — mã lỗi + plural tiếng Anh", () => {
+    expect(statusLabel(s("ready"), trEn)).toBe("Ready");
+    expect(statusLabel(s("error", "tooLarge"), trEn)).toBe("File too large");
+    expect(statusLabel(s("error", "Tệp quá lớn"), trEn)).toBe("File too large");
+    expect(aggregateLabel([s("ready")], trEn)).toBe("1 source · indexed");
+    expect(aggregateLabel([s("ready"), s("queued")], trEn)).toBe(
+      "2 sources · 1 processing",
     );
   });
 });

@@ -1,22 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Notebook } from "@shared/ipc/types";
+import type { ParsedIpcError } from "@shared/online-error-tag";
 import { useNotebooks } from "./useNotebooks";
 import { NotebookCard } from "./NotebookCard";
 import { NotebookModal } from "./NotebookModal";
 import { DeleteConfirm } from "./DeleteConfirm";
 import { IconSearch, IconPlus } from "../../shared/icons";
+import { useT } from "../../shared/i18n/i18n-context";
+import {
+  describeIpcError,
+  toParsedError,
+} from "../../shared/i18n/describe-error";
 
 type ModalState =
   { kind: "create" } | { kind: "edit"; notebook: Notebook } | null;
 
 // Màn Notebooks (S1): lưới card + ô tìm kiếm client-side (A5) + tạo/sửa/xoá qua modal.
+// 123: lỗi xoá lưu ParsedIpcError (không lưu chuỗi đã dịch), dịch lúc render.
 export function NotebooksGrid(): JSX.Element {
+  const t = useT();
   const { notebooks, create, rename, setColor, remove } = useNotebooks();
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState<ModalState>(null);
   const [pendingDelete, setPendingDelete] = useState<Notebook | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<ParsedIpcError | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -40,10 +48,8 @@ export function NotebooksGrid(): JSX.Element {
     <section className="notebooks" data-testid="placeholder-notebooks">
       <div className="notebooks-head">
         <div>
-          <h2>Notebook của bạn</h2>
-          <p className="notebooks-sub">
-            Mỗi notebook là một không gian riêng cho một chủ đề nghiên cứu
-          </p>
+          <h2>{t.t("notebooks.grid.title")}</h2>
+          <p className="notebooks-sub">{t.t("notebooks.grid.subtitle")}</p>
         </div>
         <div className="nb-search">
           <IconSearch size={16} />
@@ -51,8 +57,8 @@ export function NotebooksGrid(): JSX.Element {
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm notebook… (⌘K)"
-            aria-label="Tìm notebook"
+            placeholder={t.t("notebooks.grid.searchPlaceholder")}
+            aria-label={t.t("notebooks.grid.searchLabel")}
             data-testid="notebook-search"
           />
         </div>
@@ -63,16 +69,14 @@ export function NotebooksGrid(): JSX.Element {
           data-testid="notebook-new"
         >
           <IconPlus size={15} />
-          Notebook mới
+          {t.t("notebooks.new")}
         </button>
       </div>
 
       {notebooks.length === 0 ? (
         <div className="nb-empty" data-testid="notebooks-empty">
-          <p className="nb-empty-title">Chưa có notebook nào</p>
-          <p className="nb-empty-sub">
-            Tạo notebook đầu tiên để bắt đầu nạp nguồn và hỏi đáp.
-          </p>
+          <p className="nb-empty-title">{t.t("notebooks.grid.emptyTitle")}</p>
+          <p className="nb-empty-sub">{t.t("notebooks.grid.emptySub")}</p>
           <button
             type="button"
             className="btn-primary-sm"
@@ -80,14 +84,16 @@ export function NotebooksGrid(): JSX.Element {
             data-testid="notebook-create-card"
           >
             <IconPlus size={15} />
-            Tạo notebook mới
+            {t.t("notebooks.grid.create")}
           </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="nb-empty" data-testid="notebooks-no-result">
-          <p className="nb-empty-title">Không tìm thấy notebook</p>
+          <p className="nb-empty-title">
+            {t.t("notebooks.grid.noResultTitle")}
+          </p>
           <p className="nb-empty-sub">
-            Không có notebook nào khớp “{query}”. Thử từ khoá khác.
+            {t.t("notebooks.grid.noResultSub", { query })}
           </p>
         </div>
       ) : (
@@ -109,7 +115,7 @@ export function NotebooksGrid(): JSX.Element {
             data-testid="notebook-create-card"
           >
             <IconPlus size={22} />
-            Tạo notebook mới
+            {t.t("notebooks.grid.create")}
           </button>
         </div>
       )}
@@ -138,18 +144,14 @@ export function NotebooksGrid(): JSX.Element {
       {pendingDelete && (
         <DeleteConfirm
           name={pendingDelete.name}
-          error={deleteError}
+          error={deleteError ? describeIpcError(deleteError, t) : null}
           onConfirm={() => {
             remove(pendingDelete.id)
               .then(() => {
                 setPendingDelete(null);
                 setDeleteError(null);
               })
-              .catch((e: unknown) =>
-                setDeleteError(
-                  e instanceof Error ? e.message : "Xoá thất bại.",
-                ),
-              );
+              .catch((e: unknown) => setDeleteError(toParsedError(e)));
           }}
           onCancel={() => {
             setPendingDelete(null);

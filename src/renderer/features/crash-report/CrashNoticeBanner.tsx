@@ -1,22 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import type { CrashNotice } from "@shared/ipc/types";
+import type { Translator } from "@shared/i18n";
+import { useT } from "../../shared/i18n/i18n-context";
 import { CrashReportDialog } from "../../shared/crash-report/CrashReportDialog";
 import "./crash-report.css";
 
-function noticeText(n: CrashNotice): string {
-  const crashes =
-    n.newNativeCrashes > 0
-      ? `InsightVault đã gặp sự cố ${n.newNativeCrashes} lần`
-      : "";
-  if (n.abnormalExit && crashes)
-    return `Lần trước InsightVault đóng bất thường (${crashes.toLowerCase()}).`;
-  if (n.abnormalExit) return "Lần trước InsightVault đóng bất thường.";
-  return `${crashes}.`;
+function noticeText(n: CrashNotice, t: Translator): string {
+  const crashes = n.newNativeCrashes;
+  if (n.abnormalExit && crashes > 0)
+    return t.plural("crash.notice.abnormalWithCrashes", crashes);
+  if (n.abnormalExit) return t.t("crash.notice.abnormal");
+  return t.plural("crash.notice.crashes", crashes);
 }
 
 // 093 — dải báo lúc mở app khi phiên trước đóng bất thường / có crash native mới. Mời gửi báo cáo (opt-in, bỏ qua
 // được, không chặn thao tác). Đọc 1 lần kể cả khi StrictMode chạy effect 2 lần.
 export function CrashNoticeBanner(): JSX.Element | null {
+  const t = useT();
   const [notice, setNotice] = useState<CrashNotice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const fetched = useRef(false);
@@ -43,8 +43,7 @@ export function CrashNoticeBanner(): JSX.Element | null {
       {show && (
         <div className="crash-notice" role="status" data-testid="crash-notice">
           <p>
-            {noticeText(notice)} Bạn có muốn gửi báo cáo lỗi (không chứa nội
-            dung tài liệu) để giúp sửa không?
+            {noticeText(notice, t)} {t.t("crash.notice.invite")}
           </p>
           <button
             type="button"
@@ -52,7 +51,7 @@ export function CrashNoticeBanner(): JSX.Element | null {
             onClick={() => setDialogOpen(true)}
             data-testid="crash-notice-open"
           >
-            Xem &amp; gửi báo cáo
+            {t.t("crash.notice.open")}
           </button>
           <button
             type="button"
@@ -60,7 +59,7 @@ export function CrashNoticeBanner(): JSX.Element | null {
             onClick={dismiss}
             data-testid="crash-notice-dismiss"
           >
-            Bỏ qua
+            {t.t("crash.notice.dismiss")}
           </button>
         </div>
       )}

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { Citation } from "@shared/ipc/types";
-import { useChat } from "./useChat";
+import { describeChatError, useChat } from "./useChat";
 import { MessageBubble } from "./MessageBubble";
 import { ModeToggle, MODE_HINTS } from "./ModeToggle";
 import { IconSend } from "../../shared/icons";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Cột Chat của Workspace (prototype S2 cột giữa). 013-rag-qa + đánh bóng 023-ui-polish (composer .cbox +
 // model chip + nút gửi icon + skeleton). `onCite` (019): bấm chip [n] → mở trình xem nguồn.
@@ -31,6 +32,7 @@ export function ChatColumn({
     stop,
     clearHistory,
   } = useChat(notebookId);
+  const t = useT();
   const [draft, setDraft] = useState("");
   // 098: khối lỗi (chứa nút vừa bấm) biến mất khi hỏi lại ⇒ đưa focus về vùng hội thoại, không để rơi ra <body>.
   const threadRef = useRef<HTMLDivElement>(null);
@@ -55,19 +57,19 @@ export function ChatColumn({
 
   const blockReason =
     runtimeReady === false
-      ? "AI cục bộ (Ollama) chưa sẵn sàng. Mở Cài đặt để bật/chọn mô hình."
+      ? t.t("chat.blockRuntime")
       : !hasReadySources
-        ? "Nạp nguồn để bắt đầu hỏi đáp."
+        ? t.t("chat.blockNoSources")
         : null;
 
   return (
     <section
       className="chat-col"
-      aria-label="Hỏi đáp"
+      aria-label={t.t("chat.title")}
       data-testid="chat-column"
     >
       <header className="chat-head">
-        <h2>Hỏi đáp</h2>
+        <h2>{t.t("chat.title")}</h2>
         {messages.length > 0 && (
           <button
             type="button"
@@ -75,7 +77,7 @@ export function ChatColumn({
             onClick={clearHistory}
             data-testid="chat-clear"
           >
-            Xoá hội thoại
+            {t.t("chat.clear")}
           </button>
         )}
       </header>
@@ -85,12 +87,10 @@ export function ChatColumn({
         data-testid="chat-thread"
         ref={threadRef}
         tabIndex={-1}
-        aria-label="Hội thoại"
+        aria-label={t.t("chat.threadLabel")}
       >
         {messages.length === 0 && !loading && (
-          <p className="chat-empty">
-            Đặt câu hỏi về các nguồn trong notebook này.
-          </p>
+          <p className="chat-empty">{t.t("chat.empty")}</p>
         )}
         {messages.map((m, i) => (
           <MessageBubble key={i} message={m} onCite={onCite} />
@@ -109,7 +109,7 @@ export function ChatColumn({
 
       {error && (
         <div className="form-error chat-error">
-          <p role="alert">{error}</p>
+          <p role="alert">{describeChatError(error, t)}</p>
           {/* 098 (ADR online-fallback-clarify): lỗi AI online ⇒ người dùng CHỌN trả lời lượt này bằng AI cục bộ
               hoặc thử lại — không tự đổi provider. */}
           {failedTurn && (
@@ -121,7 +121,7 @@ export function ChatColumn({
                 onClick={() => retry("local")}
                 data-testid="chat-local-retry"
               >
-                Trả lời bằng AI cục bộ
+                {t.t("chat.localRetry")}
               </button>
               <button
                 type="button"
@@ -130,7 +130,7 @@ export function ChatColumn({
                 onClick={() => retry("active")}
                 data-testid="chat-retry"
               >
-                Thử lại
+                {t.t("common.retry")}
               </button>
             </div>
           )}
@@ -147,7 +147,7 @@ export function ChatColumn({
             <div className="cbox">
               <textarea
                 className="composer-input"
-                placeholder="Nhập câu hỏi…"
+                placeholder={t.t("chat.placeholder")}
                 value={draft}
                 maxLength={2000}
                 rows={2}
@@ -165,17 +165,19 @@ export function ChatColumn({
                 <ModeToggle mode={mode} onChange={setMode} disabled={loading} />
                 <span
                   className="model-chip"
-                  title="Mô hình đang dùng — đổi ở mục Cài đặt"
+                  title={t.t("chat.modelChipTitle")}
                   data-testid="composer-model"
                 >
-                  Local · {chatModel ?? "chưa chọn"}
+                  {t.t("chat.modelChip", {
+                    model: chatModel ?? t.t("chat.modelNone"),
+                  })}
                 </span>
                 {streamingId ? (
                   <button
                     type="button"
                     className="send-btn stop-btn"
                     onClick={stop}
-                    aria-label="Dừng"
+                    aria-label={t.t("chat.stop")}
                     data-testid="chat-stop"
                   >
                     <span className="stop-square" aria-hidden="true" />
@@ -186,7 +188,7 @@ export function ChatColumn({
                     className="send-btn"
                     onClick={submit}
                     disabled={!canSend || draft.trim() === ""}
-                    aria-label="Gửi"
+                    aria-label={t.t("chat.send")}
                     data-testid="chat-send"
                   >
                     <IconSend size={16} />
@@ -195,7 +197,7 @@ export function ChatColumn({
               </div>
             </div>
             <p className="modehint" data-testid="mode-hint">
-              {MODE_HINTS[mode]}
+              {t.t(MODE_HINTS[mode])}
             </p>
           </>
         )}

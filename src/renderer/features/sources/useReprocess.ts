@@ -1,31 +1,62 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { ParsedIpcError } from "@shared/online-error-tag";
+import type { Translator } from "@shared/i18n";
 import { announce } from "../../shared/a11y/announcer";
+import { sourceErrorText } from "../../shared/a11y/messages";
+import { useT } from "../../shared/i18n/i18n-context";
+import {
+  describeIpcError,
+  toParsedError,
+} from "../../shared/i18n/describe-error";
 import { useRelink } from "./useRelink";
 
 // 112 (FR-012..FR-016): hook "Xử lý lại" một nguồn PDF ở cột Nguồn. Renderer chỉ gửi id; main kiểm khoá kho, tệp
 // gốc còn + cùng nội dung. Tiến độ/kết quả theo sự kiện source:progress có cờ `reprocess` (nguồn vẫn `ready`).
+// 123: state giữ MÔ TẢ thông báo (mã/lỗi đã tách) — dịch lúc render theo ngôn ngữ hiện tại.
 
-export const REPROCESS_MISMATCH_MSG =
-  "Tệp gốc đã bị sửa so với lúc nạp — không thể xử lý lại (trích dẫn sẽ lệch). Hãy nạp tệp như một nguồn mới.";
-const DONE_MSG = (title: string) => `Đã xử lý lại “${title}”.`;
+/** Mô tả thông báo (không phải chuỗi đã dịch). */
+export type ReprocessNotice =
+  | { kind: "mismatch" }
+  | { kind: "progressError"; label: string }
+  | { kind: "ipcError"; error: ParsedIpcError };
+
+export function reprocessNoticeText(
+  n: ReprocessNotice,
+  tr: Translator,
+): string {
+  switch (n.kind) {
+    case "mismatch":
+      return tr.t("sources.reprocess.mismatch");
+    case "progressError":
+      return sourceErrorText(n.label, tr);
+    case "ipcError":
+      return describeIpcError(n.error, tr);
+  }
+}
 
 export interface ReprocessState {
   running: boolean;
   /** 0..100 */
   pct: number;
+  /** Thông báo đã dịch theo ngôn ngữ hiện tại (tính lúc render). */
   message: string | null;
   start: () => Promise<void>;
   cancel: () => Promise<void>;
 }
 
-const errMsg = (e: unknown): string =>
-  e instanceof Error && e.message ? e.message : "Không xử lý lại được.";
-
 export function useReprocess(sourceId: string, title: string): ReprocessState {
+  const t = useT();
+  const trRef = useRef(t);
+  trRef.current = t;
   const [running, setRunning] = useState(false);
   const [pct, setPct] = useState(0);
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<ReprocessNotice | null>(null);
   const { relink } = useRelink();
+
+  const report = useCallback((n: ReprocessNotice): void => {
+    setNotice(n);
+    announce(reprocessNoticeText(n, trRef.current), "assertive");
+  }, []);
 
   useEffect(() => {
     const off = window.api.onSourceProgress((e) => {
@@ -34,10 +65,12 @@ export function useReprocess(sourceId: string, title: string): ReprocessState {
         setRunning(false);
         setPct(0);
         if (e.errorLabel) {
-          setMessage(e.errorLabel);
-          announce(e.errorLabel, "assertive");
+          report({ kind: "progressError", label: e.errorLabel });
         } else {
-          announce(DONE_MSG(title), "polite");
+          announce(
+            trRef.current.t("sources.reprocess.done", { title }),
+            "polite",
+          );
         }
         return;
       }
@@ -45,7 +78,7 @@ export function useReprocess(sourceId: string, title: string): ReprocessState {
       setPct(Math.round(e.progress * 100));
     });
     return off;
-  }, [sourceId, title]);
+  }, [sourceId, title, report]);
 
   const request = useCallback(async (): Promise<void> => {
     const res = await window.api.sourceReprocess(sourceId);
@@ -54,8 +87,7 @@ export function useReprocess(sourceId: string, title: string): ReprocessState {
       return;
     }
     if (res.status === "mismatch") {
-      setMessage(REPROCESS_MISMATCH_MSG);
-      announce(REPROCESS_MISMATCH_MSG, "assertive");
+      report({ kind: "mismatch" });
       return;
     }
     // missing ⇒ dẫn sang "Chọn lại tệp gốc…" (101); chọn đúng tệp ⇒ xử lý lại tiếp.
@@ -63,22 +95,21 @@ export function useReprocess(sourceId: string, title: string): ReprocessState {
       const again = await window.api.sourceReprocess(sourceId);
       if (again.status === "queued") setRunning(true);
     }
-  }, [sourceId, relink]);
+  }, [sourceId, relink, report]);
 
   const start = useCallback(async (): Promise<void> => {
-    setMessage(null);
+    setNotice(null);
     try {
       await request();
     } catch (e) {
-      const m = errMsg(e);
-      setMessage(m);
-      announce(m, "assertive");
+      report({ kind: "ipcError", error: toParsedError(e) });
     }
-  }, [request]);
+  }, [request, report]);
 
   const cancel = useCallback(async (): Promise<void> => {
     await window.api.sourceReprocessCancel(sourceId).catch(() => undefined);
   }, [sourceId]);
 
+  const message = notice ? reprocessNoticeText(notice, t) : null;
   return { running, pct, message, start, cancel };
 }

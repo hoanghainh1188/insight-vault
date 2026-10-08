@@ -1,7 +1,11 @@
 import type { IngestStep, Source, SourceStatus } from "@shared/ipc/types";
+import { createTranslator, type Translator } from "@shared/i18n";
+import { sourceErrorText } from "../../shared/a11y/messages";
 
-// Ánh xạ trạng thái nguồn → class .stat của prototype + nhãn tiếng Việt + trạng thái tổng hợp.
-// Hàm thuần (không React) — unit-test được, nằm trong coverage.
+// Ánh xạ trạng thái nguồn → class .stat của prototype + nhãn hiển thị + trạng thái tổng hợp.
+// Hàm thuần (không React) — unit-test được, nằm trong coverage. 123: dịch theo Translator truyền vào (mặc định Việt).
+
+const VI = createTranslator("vi");
 
 /** Class chấm trạng thái ở cột Nguồn (prototype: ready | proc | err). */
 export function statClass(status: SourceStatus): "ready" | "proc" | "err" {
@@ -10,35 +14,19 @@ export function statClass(status: SourceStatus): "ready" | "proc" | "err" {
   return "proc"; // queued | processing | awaiting_embedding
 }
 
-const STATUS_LABEL: Record<SourceStatus, string> = {
-  queued: "Trong hàng đợi",
-  processing: "Đang xử lý…",
-  awaiting_embedding: "Chờ nhúng",
-  ready: "Sẵn sàng",
-  error: "Lỗi",
-};
-
-/** Nhãn hiển thị cho một trạng thái (dùng khi không có error_label riêng). */
+/** Nhãn hiển thị cho một trạng thái; lỗi có error_label (mã hoặc văn bản Việt cũ) ⇒ dịch nhãn lỗi. */
 export function statusLabel(
   source: Pick<Source, "status" | "errorLabel">,
+  tr: Translator = VI,
 ): string {
-  if (source.status === "error" && source.errorLabel) return source.errorLabel;
-  return STATUS_LABEL[source.status];
+  if (source.status === "error" && source.errorLabel)
+    return sourceErrorText(source.errorLabel, tr);
+  return tr.t(`sources.status.${source.status}`);
 }
 
-// Nhãn tiếng Việt cho từng bước pipeline nạp nguồn (037 — hiển thị tiến độ realtime). "done" không hiện.
-const STEP_LABEL: Record<IngestStep, string> = {
-  parse: "Phân tích",
-  clean: "Làm sạch",
-  chunk: "Chia đoạn",
-  embed: "Nhúng",
-  store: "Lưu chỉ mục",
-  done: "Hoàn tất",
-};
-
 /** Nhãn bước xử lý hiện tại (037). Dùng cho thanh tiến độ ở dòng nguồn. */
-export function stepLabel(step: IngestStep): string {
-  return STEP_LABEL[step];
+export function stepLabel(step: IngestStep, tr: Translator = VI): string {
+  return tr.t(`sources.step.${step}`);
 }
 
 /**
@@ -47,13 +35,15 @@ export function stepLabel(step: IngestStep): string {
  * - mọi nguồn ready → "N nguồn · đã lập chỉ mục"
  * - còn nguồn chưa xong → "N nguồn · đang xử lý M"
  */
-export function aggregateLabel(sources: Pick<Source, "status">[]): string {
+export function aggregateLabel(
+  sources: Pick<Source, "status">[],
+  tr: Translator = VI,
+): string {
   const n = sources.length;
   if (n === 0) return "";
-  const noun = `${n} nguồn`;
   const pending = sources.filter(
     (s) => s.status !== "ready" && s.status !== "error",
   ).length;
-  if (pending === 0) return `${noun} · đã lập chỉ mục`;
-  return `${noun} · đang xử lý ${pending}`;
+  if (pending === 0) return tr.plural("sources.aggregate.indexed", n);
+  return tr.plural("sources.aggregate.pending", n, { pending });
 }

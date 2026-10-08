@@ -6,12 +6,8 @@ import type {
   SetColorInput,
 } from "@shared/ipc/types";
 
-function message(e: unknown): string {
-  return e instanceof Error ? e.message : "Đã xảy ra lỗi.";
-}
-
 // Hook quản lý danh sách notebook + thao tác CRUD qua window.api.notebook*. Mọi lỗi từ main (validate…)
-// trả về để UI hiển thị, không nuốt im lặng.
+// trả về để UI hiển thị, không nuốt im lặng. 123: ném lại lỗi GỐC (giữ thẻ mã lỗi) — UI tự dịch lúc render.
 export function useNotebooks() {
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,36 +25,24 @@ export function useNotebooks() {
 
   const create = useCallback(
     async (input: CreateNotebookInput): Promise<void> => {
-      try {
-        await window.api.notebookCreate(input);
-        reload();
-      } catch (e) {
-        throw new Error(message(e));
-      }
+      await window.api.notebookCreate(input);
+      reload();
     },
     [reload],
   );
 
   const rename = useCallback(
     async (input: RenameNotebookInput): Promise<void> => {
-      try {
-        await window.api.notebookRename(input);
-        reload();
-      } catch (e) {
-        throw new Error(message(e));
-      }
+      await window.api.notebookRename(input);
+      reload();
     },
     [reload],
   );
 
   const setColor = useCallback(
     async (input: SetColorInput): Promise<void> => {
-      try {
-        await window.api.notebookSetColor(input);
-        reload();
-      } catch (e) {
-        throw new Error(message(e));
-      }
+      await window.api.notebookSetColor(input);
+      reload();
     },
     [reload],
   );
@@ -69,7 +53,7 @@ export function useNotebooks() {
         await window.api.notebookDelete(id);
       } catch (e) {
         reload(); // đồng bộ lại trạng thái rồi báo lỗi lên UI (không nuốt im lặng)
-        throw new Error(message(e));
+        throw e;
       }
       reload();
     },

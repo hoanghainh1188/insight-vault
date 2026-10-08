@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { PDF_EXTRACTION_VERSION, type Source } from "@shared/ipc/types";
+import type { Translator } from "@shared/i18n";
 import { statClass, statusLabel, stepLabel } from "./source-status";
 import { progressValueText } from "../../shared/a11y/messages";
+import { useT } from "../../shared/i18n/i18n-context";
 import { useRelink } from "./useRelink";
 import { useReprocess } from "./useReprocess";
 import type { SourceProgress } from "./useSources";
@@ -17,12 +19,13 @@ const KIND_ICON: Record<Source["kind"], string> = {
   image: "IMG",
 };
 
-function subLabel(s: Source): string {
-  if (s.kind === "url") return "Web";
-  if (s.kind === "audio") return "Âm thanh";
-  if (s.kind === "video") return "Video";
-  if (s.kind === "image") return "Hình ảnh";
-  if (s.kind === "pdf" && s.pageCount) return `PDF · ${s.pageCount} trang`;
+function subLabel(s: Source, tr: Translator): string {
+  if (s.kind === "url") return tr.t("sources.kind.web");
+  if (s.kind === "audio") return tr.t("sources.kind.audio");
+  if (s.kind === "video") return tr.t("sources.kind.video");
+  if (s.kind === "image") return tr.t("sources.kind.image");
+  if (s.kind === "pdf" && s.pageCount)
+    return tr.plural("sources.kind.pdfPages", s.pageCount);
   return KIND_ICON[s.kind];
 }
 
@@ -40,6 +43,7 @@ export function SourceItem({
   onDelete: (id: string) => void;
   onOpen?: (id: string) => void; // 019: mở trình xem nguồn từ cột Nguồn
 }): JSX.Element {
+  const t = useT();
   // Xem được khi nguồn đã có chunk (đã parse): ready hoặc chờ nhúng. (019)
   const openable =
     onOpen &&
@@ -102,11 +106,17 @@ export function SourceItem({
             <span
               className="src-progress"
               role="progressbar"
-              aria-label={`Tiến độ xử lý ${source.title}`}
+              aria-label={t.t("sources.item.progressLabel", {
+                title: source.title,
+              })}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={pct}
-              aria-valuetext={progressValueText(stepLabel(progress!.step), pct)}
+              aria-valuetext={progressValueText(
+                stepLabel(progress!.step, t),
+                pct,
+                t,
+              )}
             >
               <span
                 className="src-progress-fill"
@@ -114,13 +124,13 @@ export function SourceItem({
               />
             </span>
             <span aria-hidden="true">
-              {stepLabel(progress!.step)} · {pct}%
+              {stepLabel(progress!.step, t)} · {pct}%
             </span>
           </span>
         ) : (
           <span className="src-sub">
             <span className={`stat ${statClass(source.status)}`} />
-            {statusLabel(source)} · {subLabel(source)}
+            {statusLabel(source, t)} · {subLabel(source, t)}
           </span>
         )}
         {relinkMsg && (
@@ -130,7 +140,7 @@ export function SourceItem({
         )}
         {showHint && (
           <span className="src-hint" data-testid="source-reprocess-hint">
-            Xử lý lại để giữ bố cục
+            {t.t("sources.item.reprocessHint")}
           </span>
         )}
         {reproc.running && (
@@ -138,7 +148,9 @@ export function SourceItem({
             <span
               className="src-progress"
               role="progressbar"
-              aria-label={`Tiến độ xử lý lại ${source.title}`}
+              aria-label={t.t("sources.item.reprocessProgressLabel", {
+                title: source.title,
+              })}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={reproc.pct}
@@ -149,14 +161,16 @@ export function SourceItem({
                 style={{ width: `${reproc.pct}%` }}
               />
             </span>
-            <span aria-hidden="true">Đang xử lý lại · {reproc.pct}%</span>
+            <span aria-hidden="true">
+              {t.t("sources.item.reprocessRunning", { pct: reproc.pct })}
+            </span>
             <button
               type="button"
               className="nb-icon-btn"
               onClick={() => void reproc.cancel()}
               data-testid="source-reprocess-cancel"
             >
-              Huỷ
+              {t.t("common.cancel")}
             </button>
           </span>
         )}
@@ -169,13 +183,12 @@ export function SourceItem({
           <div
             className="src-confirm"
             role="alertdialog"
-            aria-label={`Xử lý lại ${source.title}`}
+            aria-label={t.t("sources.item.reprocessConfirmLabel", {
+              title: source.title,
+            })}
             data-testid="source-reprocess-confirm"
           >
-            <p>
-              Trích xuất lại PDF để giữ dòng, cột và bảng. Các trích dẫn [n] cũ
-              tới nguồn này vẫn mở được nhưng sẽ không còn tô sáng đúng vị trí.
-            </p>
+            <p>{t.t("sources.item.reprocessConfirmBody")}</p>
             <div className="src-confirm-actions">
               <button
                 type="button"
@@ -183,7 +196,7 @@ export function SourceItem({
                 onClick={() => setConfirming(false)}
                 data-testid="source-reprocess-confirm-cancel"
               >
-                Huỷ
+                {t.t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -191,7 +204,7 @@ export function SourceItem({
                 onClick={confirmReprocess}
                 data-testid="source-reprocess-confirm-ok"
               >
-                Xử lý lại
+                {t.t("sources.item.reprocess")}
               </button>
             </div>
           </div>
@@ -205,18 +218,20 @@ export function SourceItem({
             onClick={() => onRetry(source.id)}
             data-testid="source-retry"
           >
-            Thử lại
+            {t.t("common.retry")}
           </button>
         )}
         {canReprocess && !confirming && (
           <button
             type="button"
             className="nb-icon-btn"
-            aria-label={`Xử lý lại ${source.title} để giữ bố cục`}
+            aria-label={t.t("sources.item.reprocessAria", {
+              title: source.title,
+            })}
             onClick={() => setConfirming(true)}
             data-testid="source-reprocess"
           >
-            Xử lý lại
+            {t.t("sources.item.reprocess")}
           </button>
         )}
         {canRelink && (
@@ -224,11 +239,13 @@ export function SourceItem({
             type="button"
             className="nb-icon-btn"
             disabled={relinking}
-            aria-label={`Chọn lại tệp gốc cho ${source.title}`}
+            aria-label={t.t("sources.item.relinkAria", {
+              title: source.title,
+            })}
             onClick={() => void relinkThenRetry()}
             data-testid="source-relink"
           >
-            Chọn lại tệp gốc…
+            {t.t("sources.item.relink")}
           </button>
         )}
         <button
@@ -237,7 +254,7 @@ export function SourceItem({
           onClick={() => onDelete(source.id)}
           data-testid="source-delete"
         >
-          Xoá
+          {t.t("common.delete")}
         </button>
       </div>
     </li>

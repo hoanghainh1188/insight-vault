@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useModalA11y } from "./useModalA11y";
 import { SHORTCUTS, isMacPlatform, keyLabel } from "./shortcuts";
+import { useT } from "./i18n/i18n-context";
 
 // Bảng trợ giúp phím tắt (043) — mở bằng "?"; đóng bằng Esc/nút/nền. Tái dùng a11y modal (023).
 export function ShortcutsHelp({
@@ -8,6 +9,7 @@ export function ShortcutsHelp({
 }: {
   onClose: () => void;
 }): JSX.Element {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   useModalA11y({ active: true, onClose, containerRef: ref });
   const isMac = isMacPlatform();
@@ -19,19 +21,19 @@ export function ShortcutsHelp({
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-label="Phím tắt"
+        aria-label={t.t("app.shortcuts.title")}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           className="modal-x"
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t.t("common.close")}
           data-testid="shortcuts-close"
         >
           ✕
         </button>
-        <h3>Phím tắt</h3>
+        <h3>{t.t("app.shortcuts.title")}</h3>
         <ul className="shortcuts-list">
           {SHORTCUTS.map((s, i) => (
             <li key={i}>
@@ -40,7 +42,7 @@ export function ShortcutsHelp({
                   <kbd key={j}>{keyLabel(k, isMac)}</kbd>
                 ))}
               </span>
-              <span className="shortcut-desc">{s.desc}</span>
+              <span className="shortcut-desc">{t.t(s.descKey)}</span>
             </li>
           ))}
         </ul>

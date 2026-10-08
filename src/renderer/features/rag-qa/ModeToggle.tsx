@@ -1,12 +1,13 @@
 import type { RagMode } from "@shared/ipc/types";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Segmented control 2 chế độ (023-ui-polish B). CHỈ render nút gạt (single-row) để canh thẳng hàng với
 // model chip + nút gửi trong .cbar. Dòng gợi ý (hint) hiển thị riêng ở ChatColumn (chiều cao cố định →
-// không nhảy layout khi đổi chế độ).
-export const MODE_HINTS: Record<RagMode, string> = {
-  grounded: "Theo nguồn: chỉ trả lời từ tài liệu đã nạp, không bịa.",
-  open: "Mở rộng: dùng thêm kiến thức chung, phần ngoài nguồn được gắn nhãn.",
-};
+// không nhảy layout khi đổi chế độ). 123: gợi ý là KHOÁ dịch, dịch lúc render.
+export const MODE_HINTS = {
+  grounded: "chat.mode.groundedHint",
+  open: "chat.mode.openHint",
+} as const satisfies Record<RagMode, string>;
 
 export function ModeToggle({
   mode,
@@ -17,11 +18,12 @@ export function ModeToggle({
   onChange: (m: RagMode) => void;
   disabled?: boolean;
 }): JSX.Element {
+  const t = useT();
   return (
     <div
       className="segmode"
       role="group"
-      aria-label="Chế độ trả lời"
+      aria-label={t.t("chat.mode.groupLabel")}
       data-mode={mode}
     >
       <button
@@ -32,7 +34,7 @@ export function ModeToggle({
         aria-pressed={mode === "grounded"}
         data-testid="mode-grounded"
       >
-        Theo nguồn
+        {t.t("chat.mode.grounded")}
       </button>
       <button
         type="button"
@@ -42,7 +44,7 @@ export function ModeToggle({
         aria-pressed={mode === "open"}
         data-testid="mode-open"
       >
-        Mở rộng
+        {t.t("chat.mode.open")}
       </button>
     </div>
   );

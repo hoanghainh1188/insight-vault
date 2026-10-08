@@ -28,10 +28,12 @@ export async function launchFreshAt(
   const app = await electron.launch({
     args: [MAIN, `--user-data-dir=${userData}`],
     // 059: embedding fake tất định trong E2E → không tải model e5 (~120MB), offline, nhanh, ổn định.
-    env: { ...process.env, IV_EMBED_FAKE: "1", ...(env ?? {}) } as Record<
-      string,
-      string
-    >,
+    env: {
+      ...process.env,
+      IV_EMBED_FAKE: "1",
+      IV_UI_LANG: "vi",
+      ...(env ?? {}),
+    } as Record<string, string>,
   });
   return { app, userData };
 }

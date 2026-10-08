@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ContentSearchHit } from "@shared/ipc/types";
 import { pageSuffix } from "../rag-qa/citation-format";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Tìm toàn văn nội dung nguồn trong notebook (073). Debounce 250ms; guard reqRef chống kết quả cũ đè mới.
 // Bấm 1 kết quả → onOpenHit (mở Source Viewer + highlight đúng locator — kiểm chứng được).
@@ -12,6 +13,7 @@ export function ContentSearchBox({
   notebookId: string;
   onOpenHit: (hit: ContentSearchHit) => void;
 }): JSX.Element {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<ContentSearchHit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -62,23 +64,23 @@ export function ContentSearchBox({
       <input
         className="csearch-input"
         type="search"
-        placeholder="Tìm trong nội dung nguồn…"
+        placeholder={t.t("search.content.placeholder")}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        aria-label="Tìm trong nội dung nguồn"
+        aria-label={t.t("search.content.label")}
         data-testid="content-search-input"
       />
       {q !== "" && (
         <div className="csearch-results" data-testid="content-search-results">
           {searching && hits.length === 0 ? (
-            <p className="csearch-note">Đang tìm…</p>
+            <p className="csearch-note">{t.t("search.content.searching")}</p>
           ) : failed ? (
             <p className="csearch-note" data-testid="content-search-error">
-              Không tìm được lúc này. Thử lại.
+              {t.t("search.content.error")}
             </p>
           ) : hits.length === 0 ? (
             <p className="csearch-note" data-testid="content-search-empty">
-              Không có kết quả.
+              {t.t("search.content.empty")}
             </p>
           ) : (
             <ul className="csearch-list">
@@ -92,7 +94,7 @@ export function ContentSearchBox({
                   >
                     <span className="csearch-hit-src">
                       {h.sourceTitle}
-                      {pageSuffix(h.locator.page)}
+                      {pageSuffix(h.locator.page, t)}
                     </span>
                     <span className="csearch-hit-snip">{h.snippet}</span>
                   </button>

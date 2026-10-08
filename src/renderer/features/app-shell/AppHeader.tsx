@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import type { AppInfo } from "@shared/ipc/types";
 import { PrivacyBadge } from "./PrivacyBadge";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Header in-app (dưới khung native OS — clarify A3): tên app + privacy badge.
 export function AppHeader(): JSX.Element {
+  const t = useT();
   const [info, setInfo] = useState<AppInfo | null>(null);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export function AppHeader(): JSX.Element {
       <span className="app-name" data-testid="app-name">
         {info?.name ?? "InsightVault"}
       </span>
-      <span className="app-tagline">· Trợ lý tri thức cục bộ</span>
+      <span className="app-tagline">{t.t("app.header.tagline")}</span>
       <PrivacyBadge />
     </header>
   );

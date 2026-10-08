@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import type { VaultBackupState } from "@shared/ipc/types";
+import type { VaultBackupErrorCode, VaultBackupState } from "@shared/ipc/types";
+import { useT } from "../../shared/i18n/i18n-context";
 import { BackupDialog } from "./BackupDialog";
 import { RestoreDialog } from "./RestoreDialog";
 import { busyReasonLabel, errorMessage } from "./messages";
@@ -15,12 +16,13 @@ type Open =
 // Khối "Sao lưu & khôi phục" trong Cài đặt → Lưu trữ cục bộ (085 FR-001). Nút bị vô hiệu kèm lý do khi đang xử
 // lý nguồn / tái lập chỉ mục / có thao tác khác (FR-026).
 export function VaultBackupPanel(): JSX.Element {
+  const t = useT();
   const [state, setState] = useState<VaultBackupState>({
     busy: false,
     reason: null,
   });
   const [open, setOpen] = useState<Open>({ kind: "none" });
-  const [pickError, setPickError] = useState<string | null>(null);
+  const [pickError, setPickError] = useState<VaultBackupErrorCode | null>(null);
   const [picking, setPicking] = useState(false);
 
   const refresh = useCallback(() => {
@@ -44,9 +46,9 @@ export function VaultBackupPanel(): JSX.Element {
       const r = await window.api.restorePick();
       if (r.status === "ok")
         setOpen({ kind: "restore", token: r.token, encrypted: r.encrypted });
-      else if (r.status === "error") setPickError(errorMessage(r.code));
+      else if (r.status === "error") setPickError(r.code);
     } catch {
-      setPickError(errorMessage("ioError"));
+      setPickError("ioError");
     } finally {
       setPicking(false);
     }
@@ -62,11 +64,8 @@ export function VaultBackupPanel(): JSX.Element {
 
   return (
     <div className="vb-panel" data-testid="vault-backup-panel">
-      <h4>Sao lưu &amp; khôi phục</h4>
-      <p className="vb-desc">
-        Xuất toàn bộ vault ra một file để giữ an toàn hoặc chuyển sang máy khác.
-        Khôi phục sẽ thay thế toàn bộ dữ liệu hiện tại.
-      </p>
+      <h4>{t.t("backup.panel.title")}</h4>
+      <p className="vb-desc">{t.t("backup.panel.desc")}</p>
       <div className="vb-actions">
         <button
           type="button"
@@ -75,7 +74,7 @@ export function VaultBackupPanel(): JSX.Element {
           onClick={() => setOpen({ kind: "backup" })}
           data-testid="backup-open"
         >
-          Sao lưu…
+          {t.t("backup.panel.backup")}
         </button>
         <button
           type="button"
@@ -84,7 +83,7 @@ export function VaultBackupPanel(): JSX.Element {
           onClick={() => void startRestore()}
           data-testid="restore-open"
         >
-          Khôi phục…
+          {t.t("backup.panel.restore")}
         </button>
         {state.busy && open.kind === "none" && (
           <span
@@ -92,13 +91,13 @@ export function VaultBackupPanel(): JSX.Element {
             role="status"
             data-testid="vault-backup-busy"
           >
-            {busyReasonLabel(state.reason)}
+            {busyReasonLabel(state.reason, t)}
           </span>
         )}
       </div>
       {pickError && (
         <div className="nb-error" role="alert" data-testid="restore-pick-error">
-          {pickError}
+          {errorMessage(pickError, t)}
         </div>
       )}
       {open.kind === "backup" && <BackupDialog onClose={closeDialog} />}

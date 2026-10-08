@@ -3,11 +3,14 @@ import type { StorageInfo } from "@shared/ipc/types";
 import { formatBytes } from "../../shared/format-bytes";
 import { VaultBackupPanel } from "../vault-backup/VaultBackupPanel";
 import { LogsFolderRow } from "./LogsFolderRow";
+import { useLang, useT } from "../../shared/i18n/i18n-context";
 
 // Section "Lưu trữ cục bộ" ở Cài đặt (037, prototype S5). Hiển thị đường dẫn thư mục dữ liệu + dung lượng
 // đã dùng + còn trống — củng cố minh bạch local-first (Constitution I). 085: kèm khối Sao lưu & khôi phục.
 // 088: kèm dòng Nhật ký lỗi (mở thư mục nhật ký).
 export function SettingsStorageSection(): JSX.Element {
+  const t = useT();
+  const lang = useLang();
   const [info, setInfo] = useState<StorageInfo | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -38,21 +41,21 @@ export function SettingsStorageSection(): JSX.Element {
       data-testid="settings-storage"
     >
       <div className="settings-ai-head">
-        <h3>Lưu trữ cục bộ</h3>
+        <h3>{t.t("app.storage.title")}</h3>
       </div>
 
       {failed ? (
         <div className="ai-note" data-testid="storage-error">
-          Không đọc được thông tin lưu trữ.
+          {t.t("app.storage.error")}
         </div>
       ) : !info ? (
         <div className="ai-note" data-testid="storage-loading">
-          Đang tính dung lượng…
+          {t.t("app.storage.loading")}
         </div>
       ) : (
         <>
           <p className="storage-path" data-testid="storage-path">
-            Thư mục dữ liệu: <code>{info.path}</code>
+            {t.t("app.storage.path")} <code>{info.path}</code>
           </p>
           <div className="storage-bar" aria-hidden="true">
             <div
@@ -61,8 +64,9 @@ export function SettingsStorageSection(): JSX.Element {
             />
           </div>
           <p className="storage-meta" data-testid="storage-meta">
-            Đã dùng <strong>{formatBytes(info.usedBytes)}</strong> · Còn trống{" "}
-            {formatBytes(info.freeBytes)}
+            {t.t("app.storage.used")}{" "}
+            <strong>{formatBytes(info.usedBytes, lang)}</strong> ·{" "}
+            {t.t("app.storage.free")} {formatBytes(info.freeBytes, lang)}
           </p>
         </>
       )}

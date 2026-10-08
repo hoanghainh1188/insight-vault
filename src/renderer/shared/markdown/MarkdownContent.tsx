@@ -4,6 +4,8 @@ import remarkGfm from "remark-gfm";
 import type { Citation } from "@shared/ipc/types";
 import { formatCitationLabel } from "../../features/rag-qa/citation-format";
 import { remarkCite } from "./remark-cite";
+import { useT } from "../i18n/i18n-context";
+import type { Translator } from "@shared/i18n";
 import "./markdown.css";
 
 // Render markdown (029) bằng react-markdown — đúng chuẩn CommonMark/GFM (xuống dòng, list lồng, bảng…),
@@ -26,6 +28,7 @@ function citeNumberFromNode(node: unknown): number {
 function buildComponents(
   citeByN: Map<number, Citation>,
   onCite: ((c: Citation) => void) | undefined,
+  tr: Translator,
 ): Components {
   const map: Record<string, (props: Record<string, unknown>) => ReactNode> = {
     // Hạ bậc heading trong ngữ cảnh bong bóng/thẻ (h1→h4…) nhưng giữ phân cấp thị giác qua .md-h1/2/3.
@@ -54,7 +57,7 @@ function buildComponents(
         <button
           type="button"
           className="cite"
-          title={formatCitationLabel(c)}
+          title={formatCitationLabel(c, tr)}
           onClick={() => onCite?.(c)}
           data-testid={`cite-${n}`}
         >
@@ -76,11 +79,12 @@ export function MarkdownContent({
   citeByN: Map<number, Citation>;
   onCite?: (c: Citation) => void;
 }): JSX.Element {
+  const t = useT();
   const tooLong = content.length > MAX_MARKDOWN_LENGTH;
   const text = tooLong ? content.slice(0, MAX_MARKDOWN_LENGTH) : content;
   const components = useMemo(
-    () => buildComponents(citeByN, onCite),
-    [citeByN, onCite],
+    () => buildComponents(citeByN, onCite, t),
+    [citeByN, onCite, t],
   );
   return (
     <div className="md">
@@ -89,7 +93,7 @@ export function MarkdownContent({
       </ReactMarkdown>
       {tooLong && (
         <p className="md-truncated" data-testid="md-truncated">
-          (Nội dung dài đã được rút gọn khi hiển thị.)
+          {t.t("app.markdown.truncated")}
         </p>
       )}
     </div>
