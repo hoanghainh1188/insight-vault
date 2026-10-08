@@ -36,9 +36,12 @@ afterEach(() => {
   container.remove();
 });
 
+// 142: nút trên thẻ nguồn là icon ⇒ tìm theo chữ hiển thị HOẶC tooltip/aria-label.
 const btn = (text: string): HTMLButtonElement | undefined =>
   Array.from(container.querySelectorAll("button")).find((b) =>
-    b.textContent?.includes(text),
+    [b.textContent, b.getAttribute("title"), b.getAttribute("aria-label")].some(
+      (v) => v?.includes(text),
+    ),
   );
 
 describe("relinkMessage", () => {

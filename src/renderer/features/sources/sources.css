@@ -141,14 +141,21 @@
 
 .srclist {
   list-style: none;
+  /* 142: bỏ lề mặc định của <ul> (~40px) — thẻ nguồn dùng hết chiều rộng cột */
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .src {
-  display: flex;
-  align-items: flex-start; /* icon căn theo TÊN (dòng đầu), không lệch tâm khi có 2 dòng */
-  gap: 11px;
+  /* 142: lưới 3 cột [badge | tên | nút]; các dòng dưới tên (trạng thái, gợi ý, tiến độ) trải sang cả cột nút ⇒ không
+     bị bóp/xuống hàng sớm vì cột nút. */
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start; /* badge căn theo TÊN (dòng đầu) */
+  column-gap: 11px;
+  row-gap: 3px;
   padding: 11px 12px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);
@@ -262,12 +269,22 @@
   }
 }
 .src-main {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  /* 142: các con thành ô lưới của .src (tên ở hàng 1 cột 2; còn lại trải cột 2–3). */
+  display: contents;
+}
+.src-main > * {
+  grid-column: 2 / 4;
   min-width: 0;
-  flex: 1;
+}
+.src-main > .src-title {
+  grid-column: 2;
+  grid-row: 1;
   padding-top: 1px; /* căn baseline tên với badge */
+  align-self: center;
+}
+.src-icon {
+  grid-column: 1;
+  grid-row: 1;
 }
 .src-title {
   font-size: 13px;
@@ -286,19 +303,49 @@
   line-height: 1.3;
   color: var(--ink-soft);
 }
-/* 123: nguồn lỗi có thêm nút (Thử lại/Retry…) + nhãn lỗi English dài ⇒ cho nút xuống dòng thay vì đè lên dòng lỗi. */
-.src.src-error {
-  flex-wrap: wrap;
-}
-.src.src-error .src-main {
-  flex-basis: 140px;
-}
 .src-actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
-  margin-left: auto;
-  align-self: center; /* nút căn giữa dòng dù icon/tên căn top */
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center; /* 142: cùng dòng với TÊN nguồn (dòng đầu) */
+}
+/* 142: nút icon gọn trên thẻ nguồn — màu nhạt, rõ khi rê chuột/focus; Xoá chuyển đỏ. */
+.src-act {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out-expo),
+    background var(--duration-fast) var(--ease-out-expo),
+    border-color var(--duration-fast) var(--ease-out-expo);
+}
+.src-act:hover {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+.src-act:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  color: var(--ink);
+}
+.src-act.danger:hover,
+.src-act.danger:focus-visible {
+  color: var(--danger);
+  border-color: var(--danger-line);
+}
+.src-act:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* Chấm trạng thái (.stat ready|proc|err) */
