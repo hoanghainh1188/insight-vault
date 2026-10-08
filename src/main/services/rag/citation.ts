@@ -1,5 +1,6 @@
 import type { Citation } from "@shared/ipc/types";
 import type { RetrievedChunk } from "./rag-types";
+import { expandGroupedCitations } from "@shared/citations/expand-grouped";
 
 // HẬU KIỂM chip [n] (CRUX Constitution II / SC-002). Hàm THUẦN — test tất định, không cần model.
 // Nguyên tắc: KHÔNG tin số LLM tự sinh. Chỉ [n] ánh xạ được tới chunk THẬT trong context mới giữ lại;
@@ -16,6 +17,7 @@ export interface Postprocessed {
  * Đối chiếu mọi `[n]` trong `rawAnswer` với `map` (n → chunk thật):
  * - n hợp lệ (map có) → giữ chip, thêm vào citations (dedup).
  * - n ngoài phạm vi → gỡ token `[n]` khỏi answer.
+ * - #129: nhóm "[1, 2]" / "[1-3]" tách thành chip đơn trước khi đối chiếu (từng số hậu kiểm riêng).
  */
 export function postprocessCitations(
   rawAnswer: string,
@@ -24,22 +26,25 @@ export function postprocessCitations(
   const seen = new Set<number>();
   const citations: Citation[] = [];
 
-  const answer = rawAnswer.replace(CITE_RE, (whole, digits: string) => {
-    const n = Number(digits);
-    const rc = map.get(n);
-    if (!rc) return ""; // chip lỗi → gỡ
-    if (!seen.has(n)) {
-      seen.add(n);
-      citations.push({
-        n,
-        chunkId: rc.chunk.id,
-        sourceId: rc.chunk.sourceId,
-        sourceTitle: rc.sourceTitle,
-        locator: rc.chunk.locator,
-      });
-    }
-    return whole; // chip hợp lệ → giữ
-  });
+  const answer = expandGroupedCitations(rawAnswer).replace(
+    CITE_RE,
+    (whole, digits: string) => {
+      const n = Number(digits);
+      const rc = map.get(n);
+      if (!rc) return ""; // chip lỗi → gỡ
+      if (!seen.has(n)) {
+        seen.add(n);
+        citations.push({
+          n,
+          chunkId: rc.chunk.id,
+          sourceId: rc.chunk.sourceId,
+          sourceTitle: rc.sourceTitle,
+          locator: rc.chunk.locator,
+        });
+      }
+      return whole; // chip hợp lệ → giữ
+    },
+  );
 
   citations.sort((a, b) => a.n - b.n);
   // Dọn khoảng trắng thừa do gỡ chip (vd "abc  ." → "abc .").
