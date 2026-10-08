@@ -214,6 +214,9 @@ describe("123 (FR-018): ngôn ngữ đầu ra Studio", () => {
       outputLanguage: "en",
     });
     expect(calls[0].messages[0].content).toContain("Write in English");
+    expect(calls[0].messages.at(-1)!.content).toMatch(
+      /entire answer in English/,
+    );
     await svc.generate({
       notebookId: "nb1",
       kind: "summary",

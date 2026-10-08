@@ -88,3 +88,18 @@ describe("SettingsLanguageSection", () => {
     expect(radio("auto").checked).toBe(true);
   });
 });
+
+describe("123 quickstart: lựa chọn phản hồi ngay khi bấm (không chờ IPC)", () => {
+  it("IPC chưa trả ⇒ radio vừa chọn đã checked; IPC lỗi ⇒ trả về lựa chọn cũ", async () => {
+    let reject: (e: Error) => void = () => undefined;
+    install({ preference: "auto", effective: "vi" });
+    setUiLanguage.mockImplementation(
+      () => new Promise((_, rj) => (reject = rj)),
+    );
+    await render();
+    await act(async () => radio("en").click());
+    expect(radio("en").checked).toBe(true);
+    await act(async () => reject(new Error("io")));
+    expect(radio("auto").checked).toBe(true);
+  });
+});

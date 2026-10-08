@@ -3,7 +3,11 @@ import type { ChatMessage, StudioKind } from "@shared/ipc/types";
 import type { RetrievedChunk, ScoredChunk } from "../rag/rag-types";
 import { citationBlock } from "../rag/context-builder";
 import { postprocessCitations } from "../rag/citation";
-import { outputLanguageLine, systemPromptFor } from "./prompt";
+import {
+  languageReminder,
+  outputLanguageLine,
+  systemPromptFor,
+} from "./prompt";
 import type { LanguageCode } from "@shared/i18n";
 
 // 105 — map-reduce cho notebook vượt ngân sách, GIỮ chip [n] tới ĐÚNG ĐOẠN (ADR 2026-10-07-studio-large-clarify).
@@ -155,7 +159,7 @@ async function condense(
       const input = batch.map((b) => b.text).join("\n");
       const raw = await chat([
         { role: "system", content: condensePrompt(lang) },
-        { role: "user", content: input },
+        { role: "user", content: `${input}\n\n${languageReminder(lang)}` },
       ]);
       next.push(...cleanNotes(raw, subsetIn(input, map)));
     }
@@ -209,7 +213,10 @@ export async function runMapReduce({
     );
     const messages: ChatMessage[] = [
       { role: "system", content: mapPrompt(outputLanguage) },
-      { role: "user", content: input },
+      {
+        role: "user",
+        content: `${input}\n\n${languageReminder(outputLanguage)}`,
+      },
     ];
     // Thử lại 1 lần khi lỗi tạm (Ollama vừa nạp lại…) hoặc ghi chú không có [n] hợp lệ — không mất cả lượt tạo.
     let got: string[] = [];
@@ -237,7 +244,10 @@ export async function runMapReduce({
       role: "system",
       content: `${systemPromptFor(kind, outputLanguage)}\n\n${FROM_NOTES}`,
     },
-    { role: "user", content: finalInput },
+    {
+      role: "user",
+      content: `${finalInput}\n\n${languageReminder(outputLanguage)}`,
+    },
   ]);
 
   return {

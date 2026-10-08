@@ -83,7 +83,10 @@ export function SourceItem({
     void reproc.start();
   };
   return (
-    <li className="src" data-testid={`source-${source.id}`}>
+    <li
+      className={source.status === "error" ? "src src-error" : "src"}
+      data-testid={`source-${source.id}`}
+    >
       <span className={`src-icon kind-${source.kind}`}>
         {KIND_ICON[source.kind]}
       </span>

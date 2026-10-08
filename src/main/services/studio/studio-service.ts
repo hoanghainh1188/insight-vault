@@ -11,7 +11,7 @@ import type { ScoredChunk } from "../rag/rag-types";
 import { buildBalancedContext } from "./balanced-context";
 import { postprocessCitations, citationsFromMap } from "../rag/citation";
 import { STUDIO_CONTEXT_BUDGET, STUDIO_KINDS } from "./constants";
-import { systemPromptFor } from "./prompt";
+import { languageReminder, systemPromptFor } from "./prompt";
 import { runMapReduce } from "./map-reduce";
 import type { StudioRepo } from "./studio-repo";
 
@@ -94,7 +94,10 @@ export function createStudioService(deps: StudioServiceDeps) {
     if (single.contextText.length <= ctx.budget) {
       raw = await chat([
         { role: "system", content: systemPromptFor(kind, outputLanguage) },
-        { role: "user", content: single.contextText },
+        {
+          role: "user",
+          content: `${single.contextText}\n\n${languageReminder(outputLanguage)}`,
+        },
       ]);
     } else {
       const mr = await runMapReduce({

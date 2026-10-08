@@ -20,6 +20,14 @@ export function outputLanguageLine(lang: LanguageCode): string {
   return `Write in ${OUTPUT_LANGUAGE_NAME[lang]}, clearly and concisely.`;
 }
 
+/**
+ * Nhắc lại ngôn ngữ đầu ra ở CUỐI system prompt và cuối tin người dùng: nguồn khác ngôn ngữ giao diện ⇒ model cục bộ nhỏ
+ * hay viết theo ngôn ngữ nguồn khi chỉ dẫn nằm giữa đoạn (quickstart 123: Tóm tắt ra tiếng Việt khi giao diện English).
+ */
+export function languageReminder(lang: LanguageCode): string {
+  return `Write your entire answer in ${OUTPUT_LANGUAGE_NAME[lang]}, even if the source passages are in another language.`;
+}
+
 function common(lang: LanguageCode): string {
   return [
     "You are an assistant that synthesizes documents. Below are source passages NUMBERED [1], [2], …",
@@ -53,5 +61,5 @@ export function systemPromptFor(
   if (!t) {
     throw new Error(`Invalid StudioKind: ${String(kind)}`);
   }
-  return `${common(outputLanguage)}\n\n${t}`;
+  return `${common(outputLanguage)}\n\n${t}\n${languageReminder(outputLanguage)}`;
 }

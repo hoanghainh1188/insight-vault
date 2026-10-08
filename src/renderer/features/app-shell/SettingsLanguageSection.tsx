@@ -9,15 +9,21 @@ export function SettingsLanguageSection() {
   const t = useT();
   const ui = useUiLanguage();
   const [failed, setFailed] = useState(false);
+  // Lựa chọn đang lưu: radio phản hồi ngay khi bấm (IPC chậm lúc máy bận ⇒ trước đây trông như bấm không ăn).
+  const [pending, setPending] = useState<UiLanguagePreference | null>(null);
 
   const choose = async (pref: UiLanguagePreference) => {
     setFailed(false);
+    setPending(pref);
     try {
       await ui.setPreference(pref);
     } catch {
       setFailed(true);
+    } finally {
+      setPending(null);
     }
   };
+  const selected = pending ?? ui.preference;
 
   const options: { value: UiLanguagePreference; label: string }[] = [
     { value: "auto", label: t.t("settings.language.auto") },
@@ -40,7 +46,7 @@ export function SettingsLanguageSection() {
               type="radio"
               name="ui-language"
               value={o.value}
-              checked={ui.preference === o.value}
+              checked={selected === o.value}
               onChange={() => void choose(o.value)}
             />
             <span lang={o.value === "auto" ? undefined : o.value}>
