@@ -221,6 +221,9 @@ const api = {
   > => ipcRenderer.invoke(CHANNELS.aiRecommendModel),
   aiOllamaHealth: (): Promise<import("@shared/ipc/types").OllamaHealth> =>
     ipcRenderer.invoke(CHANNELS.aiOllamaHealth),
+  // 109 — trạng thái bộ chấm độ liên quan (chỉ đọc, không tham số).
+  getRerankerStatus: (): Promise<import("@shared/ipc/types").RerankerStatus> =>
+    ipcRenderer.invoke(CHANNELS.aiGetRerankerStatus),
   embedReindexStatus: (): Promise<import("@shared/ipc/types").ReindexStatus> =>
     ipcRenderer.invoke(CHANNELS.embedReindexStatus),
   /** Đăng ký nhận tiến độ tái lập chỉ mục (push từ main). Trả hàm huỷ đăng ký. */

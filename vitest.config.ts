@@ -122,6 +122,8 @@ export default defineConfig({
         "src/main/services/embedding/embed-model.ts",
         "src/main/services/embedding/reindex-runner.ts",
         "src/main/services/ai/ollama-health.ts",
+        // 109: adapter I/O bộ chấm (transformers.js cross-encoder) — phần thuần ở status.ts, fake-score.ts, rerank-filter.ts.
+        "src/main/services/rerank/rerank-model.ts",
       ],
       thresholds: {
         statements: 80,

@@ -61,6 +61,17 @@ export const aiVi = {
     recheck: "Kiểm tra lại",
     skip: "Cài sau",
   },
+  reranker: {
+    title: "Bộ chấm độ liên quan",
+    status: {
+      unavailable: "Không dùng",
+      idle: "Chưa tải — sẽ tự tải (~120 MB) khi có nguồn sẵn sàng.",
+      downloading: "Đang tải bộ chấm độ liên quan (~120 MB, một lần)…",
+      ready: "Sẵn sàng — câu hỏi không có trong nguồn được báo ngay.",
+      error:
+        "Chưa tải được — hỏi đáp vẫn hoạt động bình thường; sẽ thử lại sau.",
+    },
+  },
   reindex: {
     running: "Đang tái lập chỉ mục nguồn (cập nhật công cụ tìm kiếm cục bộ)…",
     runningProgress:
@@ -147,6 +158,18 @@ export const aiEn: Widen<typeof aiVi> = {
     hintAfter: ', run it, then click "Check again".',
     recheck: "Check again",
     skip: "Set up later",
+  },
+  reranker: {
+    title: "Relevance checker",
+    status: {
+      unavailable: "Not used",
+      idle: "Not downloaded — downloads automatically (~120 MB) once a source is ready.",
+      downloading: "Downloading the relevance checker (~120 MB, one time)…",
+      ready:
+        "Ready — questions not covered by your sources are reported right away.",
+      error:
+        "Couldn't download yet — Q&A still works normally; will retry later.",
+    },
   },
   reindex: {
     running: "Reindexing sources (updating the local search engine)…",

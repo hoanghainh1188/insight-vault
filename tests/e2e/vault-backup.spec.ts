@@ -29,6 +29,7 @@ function launch(): Promise<ElectronApplication> {
       ...process.env,
       ...UNREACHABLE_OLLAMA,
       IV_EMBED_FAKE: "1",
+      IV_RERANK_FAKE: "1",
       IV_UI_LANG: "vi",
       IV_E2E_DIALOG_PATH: backupFile,
       IV_E2E_NO_RELAUNCH: "1",

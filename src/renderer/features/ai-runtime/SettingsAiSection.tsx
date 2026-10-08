@@ -4,6 +4,7 @@ import type { Model, ModelSelection } from "@shared/ipc/types";
 import { ModelSelect } from "./ModelSelect";
 import { useRuntimeStatus } from "./useRuntimeStatus";
 import { SettingsModelAdvice } from "./SettingsModelAdvice";
+import { SettingsRerankerStatus } from "./SettingsRerankerStatus";
 import { useT } from "../../shared/i18n/i18n-context";
 
 // Khu vực "AI cục bộ (Ollama)" trong Cài đặt (prototype S5). Trạng thái + kiểm tra kết nối +
@@ -104,6 +105,9 @@ export function SettingsAiSection(): JSX.Element {
         <strong>{t.t("ai.local.embedNoteStrong")}</strong>
         {t.t("ai.local.embedNoteAfter")}
       </p>
+
+      {/* 109: bộ chấm độ liên quan (tải nền một lần, chạy in-process) — chỉ hiện khi đang dùng. */}
+      <SettingsRerankerStatus />
 
       {/* FR-011 / F2: link/hướng dẫn tĩnh — KHÔNG tự chạy ollama pull trong app v1. */}
       <p className="ai-more-models mono" data-testid="ai-more-models">

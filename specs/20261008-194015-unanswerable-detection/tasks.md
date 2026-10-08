@@ -134,25 +134,25 @@
 
 **Independent Test**: e2e `IV_RERANK_FAKE=1`: Cài đặt hiện trạng thái; câu không đáp án ⇒ notFound không gọi chat; lỗi rerank ⇒ hỏi đáp vẫn chạy.
 
-- [ ] T027 [US4] Viết test TRƯỚC `tests/unit/reranker-status.test.ts` cho máy trạng thái thuần `src/main/services/rerank/status.ts`
+- [X] T027 [US4] Viết test TRƯỚC `tests/unit/reranker-status.test.ts` cho máy trạng thái thuần `src/main/services/rerank/status.ts`
       (`idle → downloading → ready`, `downloading → error`, `error → downloading`, sự kiện lặp idempotent). Chạy thấy FAIL.
-- [ ] T028 [US4] Hiện thực `src/main/services/rerank/status.ts` cho T027 xanh.
-- [ ] T029 [US4] Hiện thực `src/main/services/rerank/rerank-model.ts` (I/O, loại coverage) theo `contracts/reranker-service.md`: `createReranker` (nạp như T001,
+- [X] T028 [US4] Hiện thực `src/main/services/rerank/status.ts` cho T027 xanh.
+- [X] T029 [US4] Hiện thực `src/main/services/rerank/rerank-model.ts` (I/O, loại coverage) theo `contracts/reranker-service.md`: `createReranker` (nạp như T001,
       `env.cacheDir`, `setOnline(true/false, "model")`, `logEvent` chỉ tên model), `prefetch()` idempotent, `score()` lô + hàng đợi tuần tự, ném
       `RerankNotReadyError` khi chưa sẵn sàng, seam `IV_RERANK_FAKE=1` chỉ khi `!app.isPackaged` (điểm tất định theo trùng từ khoá).
-- [ ] T030 [US4] Wiring ở main (`src/main/index.ts` / nơi dựng `rag-service`, `src/main/services/ingestion/ingestion.ts` cho sự kiện nguồn `ready`): tạo
+- [X] T030 [US4] Wiring ở main (`src/main/index.ts` / nơi dựng `rag-service`, `src/main/services/ingestion/ingestion.ts` cho sự kiện nguồn `ready`): tạo
       reranker khi `RELEVANCE_CALIBRATION.rerank !== null` với `<dataDir>/models`; truyền `deps.rerank` + `onRerankSkip` (→ `logEvent("rerank.skip", { reason })`)
       cho `retrieve()`; `prefetch()` khi nguồn đầu tiên `ready` trong phiên.
-- [ ] T031 [US4] Viết test TRƯỚC: thêm `ai:getRerankerStatus` vào kỳ vọng whitelist `tests/unit/ai-ipc-whitelist.test.ts` (và `tests/unit/ipc-whitelist.test.ts`
+- [X] T031 [US4] Viết test TRƯỚC: thêm `ai:getRerankerStatus` vào kỳ vọng whitelist `tests/unit/ai-ipc-whitelist.test.ts` (và `tests/unit/ipc-whitelist.test.ts`
       nếu liệt kê toàn bộ). Chạy thấy FAIL.
-- [ ] T032 [US4] Thêm kênh `ai:getRerankerStatus` (chỉ đọc, không tham số) vào `src/shared/ipc/channels.ts`, kiểu `RerankerStatus` vào
+- [X] T032 [US4] Thêm kênh `ai:getRerankerStatus` (chỉ đọc, không tham số) vào `src/shared/ipc/channels.ts`, kiểu `RerankerStatus` vào
       `src/shared/ipc/types.ts`, handler ở `src/main/ipc/register.ts`, `getRerankerStatus()` ở `src/preload/index.ts`; T031 xanh.
-- [ ] T033 [P] [US4] Thêm khoá `ai.reranker.title` + `ai.reranker.status.{unavailable,idle,downloading,ready,error}` vi/en trong
+- [X] T033 [P] [US4] Thêm khoá `ai.reranker.title` + `ai.reranker.status.{unavailable,idle,downloading,ready,error}` vi/en trong
       `src/shared/i18n/domains/ai.ts` (test catalog + quét chuỗi cứng tự kiểm).
-- [ ] T034 [US4] Viết test TRƯỚC (jsdom) `tests/unit/settings-reranker-status.test.ts`: Cài đặt › AI hiện dòng trạng thái theo IPC (vi/en), `unavailable` ⇒ ẩn
+- [X] T034 [US4] Viết test TRƯỚC (jsdom) `tests/unit/settings-reranker-status.test.ts`: Cài đặt › AI hiện dòng trạng thái theo IPC (vi/en), `unavailable` ⇒ ẩn
       dòng, `downloading` ⇒ làm mới định kỳ; rồi hiện thực trong `src/renderer/features/ai-runtime/SettingsAiSection.tsx` (+ hook nhỏ
       `src/renderer/features/ai-runtime/useRerankerStatus.ts`).
-- [ ] T035 [US4] E2E `tests/e2e/rerank.spec.ts` (`IV_RERANK_FAKE=1`, `IV_EMBED_FAKE=1`): notebook + nguồn md ⇒ Cài đặt hiện "sẵn sàng"; câu không trùng từ khoá
+- [X] T035 [US4] E2E `tests/e2e/rerank.spec.ts` (`IV_RERANK_FAKE=1`, `IV_EMBED_FAKE=1`): notebook + nguồn md ⇒ Cài đặt hiện "sẵn sàng"; câu không trùng từ khoá
       nào (fake rerank chấm 0) ở Theo nguồn ⇒ "Không tìm thấy trong nguồn" mà không gọi chat; câu khớp ⇒ không bị lọc (bị chặn bởi runtime chat như cũ là đủ
       chứng minh). Chạy `npx electron-vite build && npx playwright test tests/e2e/rerank.spec.ts`.
 
@@ -160,7 +160,7 @@
 
 ## Phase 6: User Story 5 — English không tệ đi (Priority: P3) — chỉ khi reranker ĐẠT
 
-- [ ] T036 [US5] Xác nhận từ T019–T021: nhóm en (CR, R@6) của cấu hình chọn ≥ mốc T018; nếu thấp hơn ⇒ ghi giới hạn đã biết + cân nhắc ở ADR (T038), và thêm
+- [X] T036 [US5] Xác nhận từ T019–T021: nhóm en (CR, R@6) của cấu hình chọn ≥ mốc T018; nếu thấp hơn ⇒ ghi giới hạn đã biết + cân nhắc ở ADR (T038), và thêm
       câu en tiêu biểu vào quickstart thủ công (`specs/20261008-194015-unanswerable-detection/quickstart.md` mục 3).
 
 ---
