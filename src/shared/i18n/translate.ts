@@ -17,7 +17,7 @@ export type Params = Readonly<Record<string, string | number>>;
 
 /** Cấu trúc tệp dịch: cùng khoá với vi.ts, lá là string / {one, other}. en.ts phải khớp kiểu này. */
 export type Messages = Widen<typeof vi>;
-type Widen<T> = T extends string
+export type Widen<T> = T extends string
   ? string
   : T extends PluralLeaf
     ? PluralLeaf

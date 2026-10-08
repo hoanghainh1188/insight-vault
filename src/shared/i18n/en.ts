@@ -1,36 +1,30 @@
 import type { Messages } from "./translate";
+import { coreEn } from "./domains/core";
+import { appEn } from "./domains/app";
+import { notebooksEn } from "./domains/notebooks";
+import { searchEn } from "./domains/search";
+import { sourcesEn } from "./domains/sources";
+import { viewerEn } from "./domains/viewer";
+import { chatEn } from "./domains/chat";
+import { studioEn } from "./domains/studio";
+import { aiEn } from "./domains/ai";
+import { backupEn } from "./domains/backup";
+import { crashEn } from "./domains/crash";
+import { a11yEn } from "./domains/a11y";
 
 // 123 — bản English (bản dịch phát sinh từ vi.ts; thuật ngữ theo cột English của docs/00-glossary.md).
 
 export const en: Messages = {
-  common: {
-    cancel: "Cancel",
-    close: "Close",
-    save: "Save",
-    retry: "Retry",
-    delete: "Delete",
-    copy: "Copy",
-    copied: "Copied",
-  },
-  time: {
-    justNow: "just now",
-    minutesAgo: { one: "{count} minute ago", other: "{count} minutes ago" },
-    hoursAgo: { one: "{count} hour ago", other: "{count} hours ago" },
-    yesterday: "yesterday",
-    daysAgo: { one: "{count} day ago", other: "{count} days ago" },
-    lastWeek: "last week",
-  },
-  errors: {
-    unexpected: "Something went wrong. Please try again.",
-  },
-  settings: {
-    title: "Settings",
-    language: {
-      title: "Language",
-      description:
-        "Interface language. Chat answers follow the language of your question; Studio follows the interface language.",
-      auto: "Automatic (system language)",
-      saveFailed: "Couldn't change the language. Please try again.",
-    },
-  },
+  ...coreEn,
+  app: appEn,
+  notebooks: notebooksEn,
+  search: searchEn,
+  sources: sourcesEn,
+  viewer: viewerEn,
+  chat: chatEn,
+  studio: studioEn,
+  ai: aiEn,
+  backup: backupEn,
+  crash: crashEn,
+  a11y: a11yEn,
 };

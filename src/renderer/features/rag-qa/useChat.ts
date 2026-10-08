@@ -3,8 +3,8 @@ import type { AiTarget, Citation, RagMode, RagTurn } from "@shared/ipc/types";
 import { parseIpcError } from "@shared/online-error-tag";
 import { announce } from "../../shared/a11y/announcer";
 import {
-  CHAT_CANCELLED,
-  CHAT_STARTED,
+  chatCancelledMessage,
+  chatStartedMessage,
   chatDoneMessage,
 } from "../../shared/a11y/messages";
 
@@ -67,7 +67,7 @@ export function useChat(notebookId: string) {
       activeStreamRef.current = null;
       setStreamingId(null);
       // 091: lượt bị huỷ không còn câu báo kết thúc ⇒ báo huỷ để "Đang soạn…" không treo lơ lửng.
-      announce(CHAT_CANCELLED);
+      announce(chatCancelledMessage());
     }
     setError(null);
     setFailedTurn(null);
@@ -166,7 +166,7 @@ export function useChat(notebookId: string) {
       ]);
       setLoading(true);
       stopRequestedRef.current = false;
-      announce(CHAT_STARTED);
+      announce(chatStartedMessage());
       try {
         const res = await window.api.ragAskStream({
           notebookId,

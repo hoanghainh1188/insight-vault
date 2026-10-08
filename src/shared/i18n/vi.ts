@@ -1,35 +1,30 @@
-// 123 — tệp dịch NGÔN NGỮ NGUỒN (tiếng Việt). Kiểu `Messages` suy từ đây; en.ts phải đủ khoá + cùng placeholder.
-// Quy ước: khoá lồng theo domain; lá là chuỗi hoặc { one, other } (plural); placeholder dạng {name}; không HTML.
+import { coreVi } from "./domains/core";
+import { appVi } from "./domains/app";
+import { notebooksVi } from "./domains/notebooks";
+import { searchVi } from "./domains/search";
+import { sourcesVi } from "./domains/sources";
+import { viewerVi } from "./domains/viewer";
+import { chatVi } from "./domains/chat";
+import { studioVi } from "./domains/studio";
+import { aiVi } from "./domains/ai";
+import { backupVi } from "./domains/backup";
+import { crashVi } from "./domains/crash";
+import { a11yVi } from "./domains/a11y";
+
+// 123 — tệp dịch NGÔN NGỮ NGUỒN (tiếng Việt), ghép từ các domain ở ./domains (mỗi domain một tệp để nhiều người
+// sửa song song). Kiểu `Messages` suy từ đây; en.ts phải đủ khoá + cùng placeholder (tsc + i18n-catalog.test.ts).
 
 export const vi = {
-  common: {
-    cancel: "Huỷ",
-    close: "Đóng",
-    save: "Lưu",
-    retry: "Thử lại",
-    delete: "Xoá",
-    copy: "Sao chép",
-    copied: "Đã sao chép",
-  },
-  time: {
-    justNow: "vừa xong",
-    minutesAgo: { one: "{count} phút trước", other: "{count} phút trước" },
-    hoursAgo: { one: "{count} giờ trước", other: "{count} giờ trước" },
-    yesterday: "hôm qua",
-    daysAgo: { one: "{count} ngày trước", other: "{count} ngày trước" },
-    lastWeek: "tuần trước",
-  },
-  errors: {
-    unexpected: "Đã có lỗi xảy ra. Vui lòng thử lại.",
-  },
-  settings: {
-    title: "Cài đặt",
-    language: {
-      title: "Ngôn ngữ",
-      description:
-        "Ngôn ngữ của giao diện. Câu trả lời trong Chat theo ngôn ngữ câu hỏi; Studio theo ngôn ngữ giao diện.",
-      auto: "Tự động (theo hệ điều hành)",
-      saveFailed: "Không đổi được ngôn ngữ. Vui lòng thử lại.",
-    },
-  },
+  ...coreVi,
+  app: appVi,
+  notebooks: notebooksVi,
+  search: searchVi,
+  sources: sourcesVi,
+  viewer: viewerVi,
+  chat: chatVi,
+  studio: studioVi,
+  ai: aiVi,
+  backup: backupVi,
+  crash: crashVi,
+  a11y: a11yVi,
 } as const;
