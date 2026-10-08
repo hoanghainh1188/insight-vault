@@ -3,8 +3,11 @@ import {
   AutoModel,
   AutoModelForSequenceClassification,
   AutoTokenizer,
-  env,
 } from "@huggingface/transformers";
+import {
+  RERANK_MODEL,
+  RERANK_MODEL_REVISION,
+} from "../../../src/main/services/rerank/model-version";
 
 // 109 (research R1–R3, R11): nạp bộ chấm độ liên quan (cross-encoder) trong công cụ đo + đo độ trễ/RAM/event loop. I/O,
 // KHÔNG tính coverage. Điểm cache theo (truy vấn, id) ⇒ quét 96 cấu hình chỉ chấm một lần/câu.
@@ -60,20 +63,27 @@ export async function loadScorer(
   /** 109 (cổng #14): cắt mỗi cặp ở số token này (mặc định 512) */
   maxLength = 512,
 ): Promise<RerankScorer> {
-  env.cacheDir = cacheDir;
+  // Model đã hiệu chuẩn ⇒ ĐÚNG commit app dùng (review bảo mật 109); model khác (thí nghiệm) ⇒ main.
+  const hub = {
+    cache_dir: cacheDir,
+    ...(model === RERANK_MODEL ? { revision: RERANK_MODEL_REVISION } : {}),
+  };
   const modelFile = fileFor(model, fileOverride);
   const rss0 = process.memoryUsage().rss;
   const t0 = performance.now();
   const tokenizer = (await AutoTokenizer.from_pretrained(
     model,
+    hub,
   )) as unknown as Tokenizer;
   // a1 (xlm-roberta) có lớp phân loại trong registry; a2 (model_type "new") phải nạp qua AutoModel (research R2).
   const net = (modelFile
     ? await AutoModelForSequenceClassification.from_pretrained(model, {
+        ...hub,
         model_file_name: modelFile,
         dtype: "fp32",
       })
     : await AutoModel.from_pretrained(model, {
+        ...hub,
         dtype: "q8",
       })) as unknown as SeqModel & { dispose?: () => Promise<void> };
   const coldLoadMs = performance.now() - t0;

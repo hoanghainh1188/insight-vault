@@ -79,7 +79,10 @@ import {
 } from "./services/ui-language";
 import { createTranslator } from "@shared/i18n";
 import { createReranker, type Reranker } from "./services/rerank/rerank-model";
-import { rerankModelFile } from "./services/rerank/model-version";
+import {
+  RERANK_MODEL_REVISION,
+  rerankModelFile,
+} from "./services/rerank/model-version";
 import { RELEVANCE_CALIBRATION } from "./services/rag/relevance-calibration";
 
 /** 123: locale OS ưu tiên đầu tiên; an toàn cả trước app.whenReady (getLocale có thể rỗng). */
@@ -343,6 +346,7 @@ app
       ? createReranker({
           cacheDir: join(dataDir.path, "models"),
           model: rerankCal.model,
+          revision: RERANK_MODEL_REVISION,
           modelFile: rerankModelFile(),
           maxTokens: rerankCal.maxTokens,
           setOnline: (online, kind) => setEgressActive(online, kind ?? "model"),
@@ -370,6 +374,16 @@ app
       // 116: đếm ghi cho bảo trì kho vector (bộ điều phối tạo bên dưới, sau vaultLock).
       onVectorWrite: () => vectorMaintenance?.notifyWrite(),
     });
+
+    // 109 (review): người dùng đã có nguồn sẵn sàng từ trước (nâng cấp, không thêm nguồn mới) ⇒ tải nền bộ chấm sau khi mở app
+    // (trễ nhẹ để không tranh tài nguyên lúc khởi động), thay vì đợi nguồn mới sẵn sàng.
+    if (reranker) {
+      setTimeout(() => {
+        if (ingestion.sourceRepo.listByStatus("ready").length > 0) {
+          reranker.prefetch();
+        }
+      }, 5000).unref?.();
+    }
 
     // 049 (2a-player): phục vụ file audio gốc cho <audio> qua iv-media:// (đọc file CHỈ main, tra sourceId→
     // path từ DB, chỉ nguồn kind=audio). Local: không egress.

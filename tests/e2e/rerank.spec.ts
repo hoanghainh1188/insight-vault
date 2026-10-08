@@ -66,19 +66,21 @@ test("Cài đặt hiện trạng thái bộ chấm; câu không liên quan ⇒ k
   expect(blocked.notFound).toBe(true);
   expect(blocked.citations).toEqual([]);
 
-  // Câu khớp tài liệu ⇒ qua bộ chấm ⇒ tới bước gọi model (Ollama không chạy ⇒ lỗi) — chứng minh không bị lọc nhầm.
+  // Câu "Phở là gì?" chỉ có MỘT từ ≥ 3 ký tự ("phở") ⇒ điểm giả 1,0 với mọi đoạn có "phở" (không phụ thuộc cách chia đoạn)
+  // ⇒ qua bộ chấm ⇒ tới bước gọi model chat ⇒ lỗi của BƯỚC GỌI MODEL (`chatModelNotSelected` — model giả không có trên máy nên bị
+  // chuẩn hoá về null). Lỗi này chỉ phát sinh SAU truy xuất; câu bị bộ chấm chặn trả notFound trước đó — chứng minh không lọc nhầm.
   const passed = await win.evaluate(async (id) => {
     try {
       await window.api.ragAsk({
         notebookId: id,
-        question: "Phở có nguồn gốc từ đâu?",
+        question: "Phở là gì?",
         mode: "grounded",
         history: [],
       });
       return "answered";
-    } catch {
-      return "reachedModel";
+    } catch (e) {
+      return String(e instanceof Error ? e.message : e);
     }
   }, nbId);
-  expect(passed).toBe("reachedModel");
+  expect(passed).toMatch(/chatModelNotSelected/);
 });

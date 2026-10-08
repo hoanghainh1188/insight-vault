@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
+  canRetryDownload,
   nextRerankerState,
+  RETRY_COOLDOWN_MS,
   type RerankerState,
 } from "../../src/main/services/rerank/status";
 
@@ -26,5 +28,15 @@ describe("nextRerankerState", () => {
     expect(nextRerankerState("ready", "failed")).toBe("ready");
     expect(nextRerankerState("idle", "loaded")).toBe("idle");
     expect(nextRerankerState("error", "loaded")).toBe("error");
+  });
+});
+
+describe("canRetryDownload (review 109: không thử tải lại ở mỗi câu hỏi)", () => {
+  it("chưa lỗi lần nào ⇒ được thử", () => {
+    expect(canRetryDownload(null, 1000)).toBe(true);
+  });
+  it("trong thời gian chờ sau lỗi ⇒ không; hết thời gian chờ ⇒ được", () => {
+    expect(canRetryDownload(0, RETRY_COOLDOWN_MS - 1)).toBe(false);
+    expect(canRetryDownload(0, RETRY_COOLDOWN_MS)).toBe(true);
   });
 });

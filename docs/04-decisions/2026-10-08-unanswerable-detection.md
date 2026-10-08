@@ -22,7 +22,7 @@
    (Theo nguồn, không gọi model) / ngữ cảnh rỗng (Mở rộng) — như 108. `ScoredChunk.rerankScore` là trường mới; `score` giữ cosine distance;
    `chunk`/`locator` không đổi (Constitution II).
 3. **Fail-open:** model chưa tải / đang tải / lỗi / quá **1500 ms** (ngưỡng an toàn, không phải mục tiêu) ⇒ bỏ qua bước chấm (hành vi 108),
-   `logEvent("rerank.skip", { reason: notReady|timeout|error })`, không nội dung.
+   `logEvent("rerank.skip", { reason: notReady|busy|timeout|error })`, không nội dung.
 4. **Tải model:** một lần vào `<data dir>/models` theo khuôn e5/Whisper, **nền** khi nguồn đầu tiên sẵn sàng trong phiên (hoặc khi hỏi mà chưa có),
    chỉ báo riêng tư `sending / model` trong lúc tải; không đóng gói trong bộ cài v1. Lõi hỏi đáp vẫn chạy offline khi chưa có model (Constitution I).
    Tệp ONNX theo CPU: `model_qint8_arm64` (Apple Silicon) / `model_quint8_avx2` (x64).
@@ -30,6 +30,16 @@
 6. **Hiệu chuẩn:** `RELEVANCE_CALIBRATION.rerank` (model, `RERANK_MODEL_VERSION`, `maxTokens`, cấu hình, số liệu dev/hold-out/en, độ trễ) +
    `datasetVersion "3"`; test canh giữ: đổi model bộ chấm hoặc bộ đo mà không đo lại ⇒ fail. `EVAL_MODE=current` đo lại và so cả bộ chấm.
 7. **Ngưỡng chung** vi/en (FR-011, cổng #15).
+
+## Bổ sung sau review (code / bảo mật, 2026-10-08)
+
+- **Ghim phiên bản model:** tải đúng commit Hugging Face `RERANK_MODEL_REVISION` (`1427fd65…`, Apache-2.0) thay vì `main`; `RERANK_MODEL_VERSION`
+  gồm commit ⇒ đổi commit phải đo lại. `cache_dir`/`revision` truyền theo từng lần nạp (không đổi `env.cacheDir` dùng chung).
+- **Không dồn hàng đợi:** tối đa một lượt chấm đang chạy + một lượt chờ; nhiều hơn ⇒ bỏ qua bước chấm với lý do `busy` (lượt quá giờ không làm các
+  câu sau chờ theo).
+- **Thử tải lại sau lỗi:** chờ ít nhất 10 phút (offline không thử tải và nhấp nháy chỉ báo ở mỗi câu hỏi). Cài đặt vẫn đọc lại trạng thái mỗi 30 s.
+- **Người dùng đã có nguồn từ trước:** tải nền 5 s sau khi mở app (không phải đợi thêm nguồn mới).
+- Không còn đoạn nào để chấm (bị xoá giữa chừng) ⇒ bỏ qua bước chấm, không trả "không tìm thấy".
 
 ## Số đo (bộ đo v3: vi 82 có đáp án + 32 không có, en 22 + 12; máy tham chiếu macOS arm64)
 
@@ -47,6 +57,15 @@
   đo được 120 ms trong một lượt máy bận). RSS +~200 MB khi nạp. Nạp model (đã có cache) 0,8–2,1 s.
 - Kiểm thử app thật (Electron, model thật): `idle → downloading → ready` ~7 s (lần tải đầu), chỉ báo `sending/model` trong lúc tải, câu không có
   đáp án ⇒ notFound không gọi model, câu có đáp án đi tiếp.
+
+## End-to-end qua LLM (tham khảo — `EVAL_MODE=current EVAL_WITH_LLM=1`, qwen2.5:7b, chế độ Theo nguồn, có bộ chấm)
+
+| Nhóm        | Có đáp án có `[n]` hợp lệ        | Trả nhầm "không tìm thấy" | Đúng ngôn ngữ | Từ chối đúng câu không có đáp án                                |
+| ----------- | -------------------------------- | ------------------------- | ------------- | --------------------------------------------------------------- |
+| vi hold-out | 100% (24)                        | 0%                        | 100%          | **100% (10/10)** — trước (123, không bộ chấm): dao động 5/6–6/6 |
+| en          | 72,7% (22) — 123: 77,3% (−1 câu) | 27,3%                     | 90,9%         | 100% (12/12)                                                    |
+
+Hồi quy: "✓ Khớp số liệu ghi trong RELEVANCE_CALIBRATION" và "✓ Bộ chấm khớp số liệu ghi trong RELEVANCE_CALIBRATION.rerank".
 
 ## Hệ quả & giới hạn đã biết
 

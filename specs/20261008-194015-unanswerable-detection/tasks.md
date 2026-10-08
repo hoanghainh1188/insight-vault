@@ -173,7 +173,7 @@
       (mục "không LLM-rerank/cross-encoder"); append một dòng `docs/04-decisions/INDEX.md` bằng script (KHÔNG prettier).
 - [X] T039 [P] Rà lại `docs/00-glossary.md`: thuật ngữ phát sinh thêm trong lúc làm (ngoài T003) ⇒ append bằng script (KHÔNG prettier).
 - [X] T040 Cập nhật `README.md` + `README.vi.md` nếu hành vi người dùng thấy đổi (tải thêm model lần đầu, "Không tìm thấy" nhanh/ổn định hơn).
-- [ ] T041 Test gate: `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; rồi `EVAL_MODE=current npm run eval:retrieval`
+- [X] T041 Test gate: `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; rồi `EVAL_MODE=current npm run eval:retrieval`
       (hồi quy OK) và `EVAL_MODE=current EVAL_WITH_LLM=1 EVAL_LLM_MODEL=qwen2.5:7b npm run eval:retrieval` (tham khảo, ghi vào ADR).
 
 ---

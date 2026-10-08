@@ -10,7 +10,13 @@ export const RERANK_MODEL_FILES = {
   x64: "model_quint8_avx2",
 } as const;
 
-export const RERANK_MODEL_VERSION = `${RERANK_MODEL}@qint8`;
+/**
+ * Commit cố định trên Hugging Face (review bảo mật 109): không kéo `main` — đổi trọng số phía upstream không lặng lẽ đổi bộ chấm
+ * đã hiệu chuẩn. Đổi commit ⇒ đổi RERANK_MODEL_VERSION ⇒ phải đo lại.
+ */
+export const RERANK_MODEL_REVISION = "1427fd652930e4ba29e8149678df786c240d8825";
+
+export const RERANK_MODEL_VERSION = `${RERANK_MODEL}@${RERANK_MODEL_REVISION.slice(0, 12)}-qint8`;
 
 /** Tệp ONNX cho kiến trúc CPU hiện tại. */
 export function rerankModelFile(arch: string = process.arch): string {

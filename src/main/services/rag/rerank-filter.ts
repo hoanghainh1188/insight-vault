@@ -30,6 +30,14 @@ export class RerankNotReadyError extends Error {
   }
 }
 
+/** Bộ chấm đang bận (đã có một lượt chờ) — retrieve() bỏ qua bước chấm với lý do `busy`, không xếp hàng dồn (review 109). */
+export class RerankBusyError extends Error {
+  constructor() {
+    super("Reranker busy");
+    this.name = "RerankBusyError";
+  }
+}
+
 function assertUnit(name: string, v: number): void {
   if (!Number.isFinite(v) || v < 0 || v > 1) {
     throw new Error(`RerankConfig.${name} must be within [0, 1] (got ${v})`);

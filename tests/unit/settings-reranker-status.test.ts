@@ -77,6 +77,20 @@ describe("SettingsRerankerStatus", () => {
     expect(getRerankerStatus.mock.calls.length).toBe(calls); // ready ⇒ ngừng làm mới
   });
 
+  it("error ⇒ vẫn làm mới thưa (30 s) để thấy khi main thử lại thành công", async () => {
+    install("error", "ready");
+    await render();
+    expect(line()?.getAttribute("data-state")).toBe("error");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(line()?.getAttribute("data-state")).toBe("error");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(line()?.getAttribute("data-state")).toBe("ready");
+  });
+
   it("IPC lỗi ⇒ ẩn, không crash", async () => {
     getRerankerStatus = vi.fn().mockRejectedValue(new Error("x"));
     (window as unknown as { api: unknown }).api = { getRerankerStatus };

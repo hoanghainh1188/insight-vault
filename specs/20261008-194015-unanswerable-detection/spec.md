@@ -33,7 +33,7 @@ không thay thế tầng trả lời 108/123.
 
 Nguồn: `docs/04-decisions/2026-10-08-unanswerable-detection-clarify.md` (người dùng chọn toàn bộ phương án khuyên dùng).
 
-- Q: Thứ tự thử các hướng và quy tắc chọn? → A: Thí nghiệm tuần tự trong công cụ đo trước khi tích hợp: (a) bộ xếp hạng lại
+- Q: Thứ tự thử các hướng và quy tắc chọn? → A: Thí nghiệm tuần tự trong công cụ đo trước khi tích hợp: (a) bộ chấm độ liên quan
   (cross-encoder) chạy cục bộ với ≥ 2 model đa ngôn ngữ cỡ nhỏ → (b) model chat cục bộ chấm độ liên quan → (c) đổi model embedding
   chỉ khi (a), (b) không đạt sàn. Nhiều hướng cùng đạt trên hold-out **và** dev ⇒ ưu tiên (1) tất định và không cần Ollama, (2) độ trễ
   ấm thấp nhất, (3) dung lượng tải nhỏ nhất, (4) đơn giản nhất.
@@ -110,7 +110,7 @@ Recall@6 rơi xuống 41%).
 
 ### User Story 3 - Chủ dự án chọn hướng bằng số đo (Priority: P1)
 
-Chủ dự án chạy công cụ đo, so sánh các hướng ứng viên (bộ xếp hạng lại cục bộ, model chat chấm, model embedding khác) trên cùng bộ
+Chủ dự án chạy công cụ đo, so sánh các hướng ứng viên (bộ chấm độ liên quan cục bộ, model chat chấm, model embedding khác) trên cùng bộ
 đánh giá, xem bảng tỉ lệ từ chối đúng / Recall@6 / độ trễ cho từng hướng và cấu hình, rồi chọn theo quy tắc đã chốt. Kết quả và lý do
 chọn được ghi vào ADR; nếu không hướng nào đạt sàn, công cụ đo báo rõ và feature dừng lại thay vì hạ mục tiêu.
 
@@ -230,13 +230,13 @@ Người dùng hỏi bằng English trên tài liệu tiếng Việt (hoặc Eng
 
 - **Câu hỏi đánh giá (EvalQuestion)**: câu hỏi trong bộ đánh giá, có ngôn ngữ (vi/en), nhóm (dev/hold-out), loại (có đáp án / không có
   đáp án) và trích đoạn đáp án; bộ đánh giá có số phiên bản.
-- **Hướng ứng viên (candidate approach)**: (a) bộ xếp hạng lại cục bộ, (b) model chat cục bộ chấm, (c) model embedding khác; mỗi hướng có
+- **Hướng ứng viên (candidate approach)**: (a) bộ chấm độ liên quan cục bộ, (b) model chat cục bộ chấm, (c) model embedding khác; mỗi hướng có
   cấu hình (model, ngưỡng tuyệt đối/tương đối, có xếp lại hay không).
 - **Kết quả đo (evaluation report)**: theo từng cấu hình — từ chối đúng, Recall@6, khoảng tin cậy, độ trễ p50/p95, nạp nguội, dung lượng,
   kết luận.
 - **Bản ghi hiệu chuẩn (relevance calibration record)**: cấu hình đã chọn + số liệu + phiên bản model embedding + phiên bản model bước mới
   - phiên bản bộ đo; được test canh giữ đối chiếu.
-- **Điểm liên quan của bước mới (rerank score)**: điểm do bước mới gán cho từng đoạn ứng viên, tách biệt với điểm khoảng cách.
+- **Điểm rerank (`rerankScore`)**: điểm do bước mới gán cho từng đoạn ứng viên, tách biệt với điểm khoảng cách.
 - **Trạng thái bước mới (readiness)**: chưa tải / đang tải / sẵn sàng / lỗi — hiển thị ở Cài đặt.
 
 ## Success Criteria _(mandatory)_
@@ -262,7 +262,7 @@ Người dùng hỏi bằng English trên tài liệu tiếng Việt (hoặc Eng
 - Bộ đánh giá 108 (sau khi mở rộng) là thước đo đại diện; tiêu chí ĐẠT cứng chỉ tính trên tiếng Việt (108 clarify #9).
 - Máy tham chiếu đo độ trễ là máy phát triển macOS hiện dùng cho các số đo 108/123; plan ghi rõ cấu hình máy.
 - Model chat tham chiếu cho hướng (b) và phép đo end-to-end là qwen2.5:7b (như 123), chạy cục bộ; không dùng model online/`:cloud`.
-- Hạ tầng suy luận cục bộ hiện có (đang chạy model embedding và bóc băng) đủ để chạy một model xếp hạng lại cỡ nhỏ; xác minh ở plan.
+- Hạ tầng suy luận cục bộ hiện có (đang chạy model embedding và bóc băng) đủ để chạy một model chấm độ liên quan cỡ nhỏ; xác minh ở plan.
 - Tải model một lần theo khuôn embedding/bóc băng được coi là phù hợp Constitution I vì lõi hỏi đáp vẫn chạy offline khi bước mới chưa
   sẵn sàng (fail-open).
 - Chủ dự án duyệt các câu hỏi mới của bộ đánh giá trước khi chúng được dùng để chọn cấu hình.

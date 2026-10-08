@@ -7,6 +7,7 @@ import { selectRelevant, type RelevanceConfig } from "./relevance-filter";
 import { RELEVANCE_CALIBRATION } from "./relevance-calibration";
 import {
   applyRerank,
+  RerankBusyError,
   RerankNotReadyError,
   type RerankConfig,
 } from "./rerank-filter";
@@ -40,7 +41,7 @@ export interface RetrievalDeps {
   onRerankSkip?: (reason: RerankSkipReason) => void;
 }
 
-export type RerankSkipReason = "notReady" | "timeout" | "error";
+export type RerankSkipReason = "notReady" | "busy" | "timeout" | "error";
 
 class RerankTimeoutError extends Error {}
 
@@ -65,7 +66,9 @@ async function scoreWithin(
         ? "timeout"
         : e instanceof RerankNotReadyError
           ? "notReady"
-          : "error",
+          : e instanceof RerankBusyError
+            ? "busy"
+            : "error",
     );
     return null;
   } finally {
@@ -137,16 +140,16 @@ export async function retrieve(
     rerankCfg && deps.rerank ? deps.getChunksByIds(fused) : null;
   if (rerankCfg && deps.rerank && fusedChunks) {
     const textOf = new Map(fusedChunks.map((c) => [c.id, c.text]));
-    const scores = await scoreWithin(
-      deps,
-      q,
-      // N ứng viên đầu theo THỨ TỰ RRF (getChunksByIds không bảo đảm thứ tự) — cổng #14 giới hạn độ trễ.
-      fused
-        .slice(0, rerankCfg.maxCandidates)
-        .filter((id) => textOf.has(id))
-        .map((id) => ({ id, text: textOf.get(id)! })),
-      rerankCfg.timeoutMs,
-    );
+    // N ứng viên đầu theo THỨ TỰ RRF (getChunksByIds không bảo đảm thứ tự) — cổng #14 giới hạn độ trễ.
+    const passages = fused
+      .slice(0, rerankCfg.maxCandidates)
+      .filter((id) => textOf.has(id))
+      .map((id) => ({ id, text: textOf.get(id)! }));
+    // Không còn đoạn nào để chấm (bị xoá giữa chừng) ⇒ bỏ qua bước chấm, KHÔNG coi là "không tìm thấy" (fail-open).
+    const scores =
+      passages.length === 0
+        ? null
+        : await scoreWithin(deps, q, passages, rerankCfg.timeoutMs);
     if (scores) {
       const r = applyRerank(fused, scores, rerankCfg);
       if (r.ids.length === 0) return []; // không đoạn nào trả lời được ⇒ "không tìm thấy" (108)

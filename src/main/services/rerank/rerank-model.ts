@@ -1,13 +1,16 @@
 import {
   AutoModelForSequenceClassification,
   AutoTokenizer,
-  env,
 } from "@huggingface/transformers";
 import { app } from "electron";
 import { logEvent } from "../../logging";
-import { RerankNotReadyError } from "../rag/rerank-filter";
+import { RerankBusyError, RerankNotReadyError } from "../rag/rerank-filter";
 import { fakeRerankScore } from "./fake-score";
-import { nextRerankerState, type RerankerState } from "./status";
+import {
+  canRetryDownload,
+  nextRerankerState,
+  type RerankerState,
+} from "./status";
 
 // 109 (contracts/reranker-service.md): bộ chấm độ liên quan (cross-encoder) IN-PROCESS ở main — cùng khuôn embed-model.ts
 // (059): model tải một lần vào data dir (badge egress "model" trong lúc tải), sau chạy offline. Constitution III: suy luận CHỈ ở
@@ -39,6 +42,8 @@ type SeqModel = (inputs: unknown) => Promise<{
 export function createReranker(opts: {
   cacheDir: string;
   model: string;
+  /** commit cố định trên Hugging Face (không kéo `main`) */
+  revision: string;
   modelFile: string;
   maxTokens: number;
   setOnline?: (online: boolean, kind?: "model") => void;
@@ -55,29 +60,39 @@ export function createReranker(opts: {
 
   let state: RerankerState = "idle";
   let loaded: { tok: Tokenizer; net: SeqModel } | null = null;
-  // Hàng đợi tuần tự: một phiên ONNX, không chấm song song (tránh tranh CPU với embedder).
+  // Hàng đợi tuần tự: một phiên ONNX, không chấm song song (tránh tranh CPU với embedder). Tối đa MỘT lượt chạy + MỘT lượt chờ;
+  // nhiều hơn ⇒ RerankBusyError (retrieve() bỏ qua bước chấm) — lượt quá hạn không dồn hàng (review 109).
   let queue: Promise<unknown> = Promise.resolve();
+  let inFlight = 0;
+  // Lỗi tải gần nhất — offline không thử tải lại ở mỗi câu hỏi (review 109: chờ RETRY_COOLDOWN_MS).
+  let lastFailedAt: number | null = null;
+  // cache_dir/revision theo từng lần nạp — KHÔNG đổi env.cacheDir toàn cục dùng chung với embedder/Whisper.
+  const hub = { cache_dir: opts.cacheDir, revision: opts.revision };
 
   const prefetch = (): void => {
+    if (state === "error" && !canRetryDownload(lastFailedAt, Date.now())) {
+      return;
+    }
     const next = nextRerankerState(state, "start");
     if (next === state) return; // đang tải / đã sẵn sàng
     state = next;
-    env.cacheDir = opts.cacheDir;
     logEvent("rerank.model.load", { model: opts.model });
     opts.setOnline?.(true, "model");
     void (async () => {
       try {
         const tok = (await AutoTokenizer.from_pretrained(
           opts.model,
+          hub,
         )) as unknown as Tokenizer;
         const net = (await AutoModelForSequenceClassification.from_pretrained(
           opts.model,
-          { model_file_name: opts.modelFile, dtype: "fp32" },
+          { ...hub, model_file_name: opts.modelFile, dtype: "fp32" },
         )) as unknown as SeqModel;
         loaded = { tok, net };
         state = nextRerankerState(state, "loaded");
       } catch (e) {
         state = nextRerankerState(state, "failed");
+        lastFailedAt = Date.now();
         logEvent("rerank.model.error", {
           model: opts.model,
           errorType: e instanceof Error ? e.constructor.name : typeof e,
@@ -115,7 +130,13 @@ export function createReranker(opts: {
         return Promise.reject(new RerankNotReadyError());
       }
       if (passages.length === 0) return Promise.resolve(new Map());
-      const job = queue.then(() => run(query, passages));
+      if (inFlight >= 2) return Promise.reject(new RerankBusyError());
+      inFlight += 1;
+      const job = queue
+        .then(() => run(query, passages))
+        .finally(() => {
+          inFlight -= 1;
+        });
       queue = job.catch(() => undefined);
       return job;
     },

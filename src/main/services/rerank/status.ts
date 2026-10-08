@@ -17,3 +17,14 @@ export function nextRerankerState(
       return state === "downloading" ? "error" : state;
   }
 }
+
+/** Khoảng chờ tối thiểu giữa hai lần thử tải lại sau lỗi (review 109: offline không thử tải ở mỗi câu hỏi). */
+export const RETRY_COOLDOWN_MS = 10 * 60 * 1000;
+
+/** Được thử tải lại chưa: chưa lỗi lần nào, hoặc đã qua RETRY_COOLDOWN_MS kể từ lần lỗi gần nhất. */
+export function canRetryDownload(
+  lastFailedAt: number | null,
+  now: number,
+): boolean {
+  return lastFailedAt === null || now - lastFailedAt >= RETRY_COOLDOWN_MS;
+}

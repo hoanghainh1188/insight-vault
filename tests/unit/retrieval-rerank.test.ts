@@ -4,6 +4,7 @@ import {
   type RetrievalDeps,
 } from "../../src/main/services/rag/retrieval";
 import {
+  RerankBusyError,
   RerankNotReadyError,
   type RerankConfig,
 } from "../../src/main/services/rag/rerank-filter";
@@ -242,5 +243,41 @@ describe("retrieve + rerank — fail-open (109 FR-013)", () => {
     vi.useRealTimers();
     expect(out).toEqual(await plain());
     expect(onRerankSkip).toHaveBeenCalledWith("timeout");
+  });
+});
+
+describe("retrieve + rerank — review 109", () => {
+  it("bộ chấm đang bận (đã có lượt chờ) ⇒ hành vi 108 + onRerankSkip('busy')", async () => {
+    const onRerankSkip = vi.fn();
+    const out = await retrieve(
+      "q",
+      "nb",
+      baseDeps({
+        rerank: async () => {
+          throw new RerankBusyError();
+        },
+        onRerankSkip,
+      }),
+      [],
+      relevance,
+      R,
+    );
+    expect(out).toEqual(
+      await retrieve("q", "nb", baseDeps(), [], relevance, null),
+    );
+    expect(onRerankSkip).toHaveBeenCalledWith("busy");
+  });
+
+  it("không còn đoạn nào để chấm (chunk bị xoá giữa chừng) ⇒ không gọi bộ chấm (fail-open, không coi là không tìm thấy)", async () => {
+    const rerank = rerankWith({});
+    await retrieve(
+      "q",
+      "nb",
+      baseDeps({ rerank, getChunksByIds: () => [] }),
+      [],
+      relevance,
+      R,
+    );
+    expect(rerank).not.toHaveBeenCalled();
   });
 });
