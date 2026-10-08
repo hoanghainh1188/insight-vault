@@ -41,6 +41,7 @@ describe("rethrowForIpc", () => {
     ).toEqual({
       message: "Gemini: hết thời gian chờ.",
       onlineKind: "timeout",
+      provider: "Gemini",
     });
   });
 

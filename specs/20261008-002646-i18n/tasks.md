@@ -21,8 +21,8 @@ description: "Task list — 123 i18n (Tiếng Việt + English), AI trả lời 
 
 ## Phase 1: Setup
 
-- [ ] T001 Thêm `src/shared/i18n/**`, `src/shared/codes/**`, `src/main/services/ui-language/**`, `src/renderer/shared/i18n/i18n-context.ts`, `src/renderer/shared/i18n/describe-error.ts` vào `coverage.include` trong `vitest.config.ts`
-- [ ] T002 [P] Tạo thư mục `tests/unit/helpers/` (nếu chưa có) và tệp rỗng chờ `tests/unit/helpers/t-vi.ts`
+- [X] T001 Thêm `src/shared/i18n/**`, `src/shared/codes/**`, `src/main/services/ui-language/**`, `src/renderer/shared/i18n/i18n-context.ts`, `src/renderer/shared/i18n/describe-error.ts` vào `coverage.include` trong `vitest.config.ts`
+- [X] T002 [P] Tạo thư mục `tests/unit/helpers/` (nếu chưa có) và tệp rỗng chờ `tests/unit/helpers/t-vi.ts`
 
 ---
 
@@ -30,22 +30,22 @@ description: "Task list — 123 i18n (Tiếng Việt + English), AI trả lời 
 
 **Mục tiêu:** khung `src/shared/i18n` + `src/shared/codes` thuần, có test; chưa đổi hành vi app.
 
-- [ ] T003 [P] Viết test FAIL `tests/unit/i18n-resolve-language.test.ts`: `parseUiLanguage` (auto/vi/en giữ; null, "", "fr", 1, {} ⇒ auto) và `resolveLanguage` (vi|en giữ; auto + `vi`, `vi-VN`, `VI_vn`, `vi-Latn` ⇒ vi; `en-US`, `de-DE`, `""`, `undefined` ⇒ en) theo `contracts/i18n-core.md`
-- [ ] T004 Tạo `src/shared/i18n/languages.ts` (`LanguageCode`, `UiLanguagePreference`, `LANGUAGES` với `nativeName`/`intlLocale` vi-VN, en-US, `SOURCE_LANGUAGE="vi"`) và `src/shared/i18n/resolve-language.ts` cho T003 xanh
-- [ ] T005 [P] Viết test FAIL `tests/unit/i18n-translate.test.ts` với catalog giả nhỏ (tiêm vào `createTranslatorFrom(catalogs, lang)`): tra khoá lồng, nội suy `{name}` (số + chuỗi), placeholder thiếu tham số giữ `{name}`, tham số chứa `<b>` trả nguyên văn (không HTML), fallback khoá thiếu ⇒ vi ⇒ chính khoá, `plural` one/other theo `Intl.PluralRules` (en: 1 ⇒ one, 2 ⇒ other; vi ⇒ other), `{count}` tự có
-- [ ] T006 Tạo `src/shared/i18n/translate.ts` (`createTranslatorFrom`, `createTranslator(lang)` dùng catalog thật, kiểu `MessageKey`/`PluralKey`/`ParamsOf` suy từ `vi.ts` bằng template literal types) cho T005 xanh
-- [ ] T007 Tạo `src/shared/i18n/vi.ts` (`as const`) khởi đầu với nhóm khoá dùng ở Phase 3 (`settings.language.*`, `common.*`, `errors.unexpected`) và `src/shared/i18n/en.ts` (`export const en: Messages`) tương ứng; `src/shared/i18n/index.ts` re-export
-- [ ] T008 [P] Viết test FAIL `tests/unit/i18n-catalog.test.ts`: tập khoá lá vi = en; tập placeholder mỗi khoá bằng nhau; lá plural có `one`+`other` ở mọi ngôn ngữ; không chuỗi rỗng; không chứa `<`; mọi `LANGUAGES[].code` có catalog — rồi chỉnh T007 cho xanh
-- [ ] T009 [P] [US5] Viết test FAIL `tests/unit/i18n-format.test.ts`: `formatDateTime` (vi-VN/en-US medium+short), `formatNumber`, `formatBytes` (0 B, 1023 B, 1,5 KB vs 1.5 KB, MB, GB), `isoDate` ổn định, `formatRelativeTime` giữ đúng các bucket và chuỗi vi hiện có của `tests/unit/relative-time.test.ts` (vừa xong, N phút trước, hôm qua, tuần trước, dd/mm/yyyy) + bản en ("just now", "3 minutes ago", "yesterday", "last week", ngày ngắn en-US)
-- [ ] T010 [US5] Tạo `src/shared/i18n/format.ts` + khoá `time.*` trong `vi.ts`/`en.ts` cho T009 xanh
-- [ ] T011 [P] [US3] Viết test FAIL `tests/unit/i18n-detect-language.test.ts` (research R10): câu vi có dấu ⇒ vi; vi không dấu ⇒ undefined; câu English ≥ 3 từ ⇒ en; "Q3 2024?" / "Hà Nội" / "OK" ⇒ undefined; câu trộn ưu tiên mật độ dấu; bỏ `[n]`, URL, số
-- [ ] T012 [US3] Tạo `src/shared/i18n/detect-language.ts` (`detectQuestionLanguage`) cho T011 xanh
-- [ ] T013 [P] [US2] Viết test FAIL `tests/unit/codes-source-error.test.ts`: `normalizeSourceErrorCode` — 11 mã hợp lệ giữ; 7 văn bản Việt cũ (data-model.md) ⇒ mã; 3 nhãn xử lý lại cũ ⇒ mã; null/"" ⇒ null; giá trị lạ ⇒ `unknown`; `LEGACY_SOURCE_ERROR_LABELS` đủ 10 mục
-- [ ] T014 [US2] Tạo `src/shared/codes/source-error.ts` cho T013 xanh
-- [ ] T015 [P] [US1] Viết test FAIL `tests/unit/codes-user-error.test.ts`: `UserFacingError` giữ code/params; `encodeUserError` chỉ ASCII; `parseIpcError` (mở rộng) trên chuỗi có tiền tố Electron "Error invoking remote method 'x': Error: " ⇒ `{code, params}`; params base64 hỏng/khác kiểu/quá 200 ký tự ⇒ bỏ params, giữ code; mã lạ ⇒ không code; thẻ online 098 cũ vẫn ra `onlineKind`; tách `provider` từ tiền tố "Claude (Anthropic): …"
-- [ ] T016 [US1] Tạo `src/shared/codes/user-error.ts` và mở rộng `src/shared/online-error-tag.ts` (`ParsedIpcError` thêm `code`, `params`, `provider`) cho T015 xanh; test cũ `tests/unit/online-error-tag*.test.ts` vẫn xanh
-- [ ] T017 [P] Tạo `tests/unit/helpers/t-vi.ts` export `tVi = createTranslator("vi").t` và `tEn` tương tự
-- [ ] T018 Chạy `npm run lint` + `npm test`; commit "feat(123): khung i18n dùng chung + mã thay chuỗi (lớp 1)"
+- [X] T003 [P] Viết test FAIL `tests/unit/i18n-resolve-language.test.ts`: `parseUiLanguage` (auto/vi/en giữ; null, "", "fr", 1, {} ⇒ auto) và `resolveLanguage` (vi|en giữ; auto + `vi`, `vi-VN`, `VI_vn`, `vi-Latn` ⇒ vi; `en-US`, `de-DE`, `""`, `undefined` ⇒ en) theo `contracts/i18n-core.md`
+- [X] T004 Tạo `src/shared/i18n/languages.ts` (`LanguageCode`, `UiLanguagePreference`, `LANGUAGES` với `nativeName`/`intlLocale` vi-VN, en-US, `SOURCE_LANGUAGE="vi"`) và `src/shared/i18n/resolve-language.ts` cho T003 xanh
+- [X] T005 [P] Viết test FAIL `tests/unit/i18n-translate.test.ts` với catalog giả nhỏ (tiêm vào `createTranslatorFrom(catalogs, lang)`): tra khoá lồng, nội suy `{name}` (số + chuỗi), placeholder thiếu tham số giữ `{name}`, tham số chứa `<b>` trả nguyên văn (không HTML), fallback khoá thiếu ⇒ vi ⇒ chính khoá, `plural` one/other theo `Intl.PluralRules` (en: 1 ⇒ one, 2 ⇒ other; vi ⇒ other), `{count}` tự có
+- [X] T006 Tạo `src/shared/i18n/translate.ts` (`createTranslatorFrom`, `createTranslator(lang)` dùng catalog thật, kiểu `MessageKey`/`PluralKey`/`ParamsOf` suy từ `vi.ts` bằng template literal types) cho T005 xanh
+- [X] T007 Tạo `src/shared/i18n/vi.ts` (`as const`) khởi đầu với nhóm khoá dùng ở Phase 3 (`settings.language.*`, `common.*`, `errors.unexpected`) và `src/shared/i18n/en.ts` (`export const en: Messages`) tương ứng; `src/shared/i18n/index.ts` re-export
+- [X] T008 [P] Viết test FAIL `tests/unit/i18n-catalog.test.ts`: tập khoá lá vi = en; tập placeholder mỗi khoá bằng nhau; lá plural có `one`+`other` ở mọi ngôn ngữ; không chuỗi rỗng; không chứa `<`; mọi `LANGUAGES[].code` có catalog — rồi chỉnh T007 cho xanh
+- [X] T009 [P] [US5] Viết test FAIL `tests/unit/i18n-format.test.ts`: `formatDateTime` (vi-VN/en-US medium+short), `formatNumber`, `formatBytes` (0 B, 1023 B, 1,5 KB vs 1.5 KB, MB, GB), `isoDate` ổn định, `formatRelativeTime` giữ đúng các bucket và chuỗi vi hiện có của `tests/unit/relative-time.test.ts` (vừa xong, N phút trước, hôm qua, tuần trước, dd/mm/yyyy) + bản en ("just now", "3 minutes ago", "yesterday", "last week", ngày ngắn en-US)
+- [X] T010 [US5] Tạo `src/shared/i18n/format.ts` + khoá `time.*` trong `vi.ts`/`en.ts` cho T009 xanh
+- [X] T011 [P] [US3] Viết test FAIL `tests/unit/i18n-detect-language.test.ts` (research R10): câu vi có dấu ⇒ vi; vi không dấu ⇒ undefined; câu English ≥ 3 từ ⇒ en; "Q3 2024?" / "Hà Nội" / "OK" ⇒ undefined; câu trộn ưu tiên mật độ dấu; bỏ `[n]`, URL, số
+- [X] T012 [US3] Tạo `src/shared/i18n/detect-language.ts` (`detectQuestionLanguage`) cho T011 xanh
+- [X] T013 [P] [US2] Viết test FAIL `tests/unit/codes-source-error.test.ts`: `normalizeSourceErrorCode` — 11 mã hợp lệ giữ; 7 văn bản Việt cũ (data-model.md) ⇒ mã; 3 nhãn xử lý lại cũ ⇒ mã; null/"" ⇒ null; giá trị lạ ⇒ `unknown`; `LEGACY_SOURCE_ERROR_LABELS` đủ 10 mục
+- [X] T014 [US2] Tạo `src/shared/codes/source-error.ts` cho T013 xanh
+- [X] T015 [P] [US1] Viết test FAIL `tests/unit/codes-user-error.test.ts`: `UserFacingError` giữ code/params; `encodeUserError` chỉ ASCII; `parseIpcError` (mở rộng) trên chuỗi có tiền tố Electron "Error invoking remote method 'x': Error: " ⇒ `{code, params}`; params base64 hỏng/khác kiểu/quá 200 ký tự ⇒ bỏ params, giữ code; mã lạ ⇒ không code; thẻ online 098 cũ vẫn ra `onlineKind`; tách `provider` từ tiền tố "Claude (Anthropic): …"
+- [X] T016 [US1] Tạo `src/shared/codes/user-error.ts` và mở rộng `src/shared/online-error-tag.ts` (`ParsedIpcError` thêm `code`, `params`, `provider`) cho T015 xanh; test cũ `tests/unit/online-error-tag*.test.ts` vẫn xanh
+- [X] T017 [P] Tạo `tests/unit/helpers/t-vi.ts` export `tVi = createTranslator("vi").t` và `tEn` tương tự
+- [X] T018 Chạy `npm run lint` + `npm test`; commit "feat(123): khung i18n dùng chung + mã thay chuỗi (lớp 1)"
 
 **Checkpoint:** khung dịch, định dạng, nhận diện ngôn ngữ, mã lỗi có test xanh; app chưa đổi hành vi.
 
