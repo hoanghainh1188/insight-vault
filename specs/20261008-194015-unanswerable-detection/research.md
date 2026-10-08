@@ -98,7 +98,7 @@ lọc lại. Chọn trên dev: lọc cấu hình đạt (CR ≥ 0,9, R@6 ≥ 0,8
 
 ## R8 — Fail-open, timeout, đồng thời
 
-**Decision:** `deps.rerank` bọc timeout (giá trị trong bản ghi hiệu chuẩn, mốc khởi đầu **1500 ms** cho lần ấm; lần nạp nguội không áp vào hỏi đáp
+**Decision:** `deps.rerank` bọc timeout (giá trị trong bản ghi hiệu chuẩn, mốc khởi đầu **1500 ms** cho lần ấm — đây là **ngưỡng an toàn** để fail-open, KHÔNG phải mục tiêu độ trễ (mục tiêu p50 ≤ 300 ms: SC-003/R11); lần nạp nguội không áp vào hỏi đáp
 vì model nạp nền — R9); lỗi/timeout/chưa sẵn sàng ⇒ `applyRerank` không chạy, `retrieve()` đi tiếp như 108 (fail-open), `logEvent("rerank.skip",
 { reason })` với `reason ∈ notReady | timeout | error` (không nội dung). Một phiên ONNX dùng chung, gọi tuần tự (hàng đợi) — tránh tranh CPU với
 embedder. Không dùng worker ở v1 nếu đo cho thấy event loop không bị chặn đáng kể (onnxruntime-node chạy suy luận trên luồng riêng); đo `eventLoopDelay`

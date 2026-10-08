@@ -13,7 +13,7 @@ Ngưỡng khoảng cách e5 không tách được câu không có đáp án (108
   công cụ đo bước chấm cross-encoder cục bộ cho hai model đa ngôn ngữ giấy phép Apache-2.0 có ONNX — a1 `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`
   (~119 MB int8) và a2 `onnx-community/gte-multilingual-reranker-base` (~341 MB q8) — quét ngưỡng tuyệt đối/tương đối × xếp lại, đo độ trễ/RAM;
   hướng b (qwen2.5:7b chấm) chỉ khi a không đạt; c chỉ khi a, b không đạt. **Cổng:** đạt R6 ⇒ Pha 1; không ⇒ dừng, ADR ghi kết quả (FR-005).
-- **Pha 1 — tích hợp (chỉ khi ĐẠT):** hàm thuần `applyRerank` chèn sau RRF/trước MMR trong `retrieve()`; service reranker ở main (khuôn
+- **Pha 1 — tích hợp (chỉ khi ĐẠT):** bật bước rerank (hàm thuần `applyRerank` đã nằm trong `retrieve()` từ Pha 0, mặc định tắt) qua bản ghi hiệu chuẩn; service reranker ở main (khuôn
   `embed-model.ts`: tải nền một lần vào data dir, badge `model`, fail-open + timeout, seam `IV_RERANK_FAKE`); `RELEVANCE_CALIBRATION.rerank` +
   `RERANK_MODEL_VERSION` + test canh giữ + đồng bộ `datasetVersion`; IPC chỉ đọc `ai:getRerankerStatus` + một dòng ở Cài đặt (i18n vi/en);
   ADR mới thay một phần 055.
@@ -85,7 +85,7 @@ tests/eval/
 
 src/main/services/rag/
 ├── rerank-filter.ts          # MỚI (Pha 0, thuần — dùng chung công cụ đo) — RerankConfig, validateRerankConfig, applyRerank
-├── retrieval.ts              # SỬA (Pha 1) — bước rerank sau RRF, fail-open/timeout, rerankScore
+├── retrieval.ts              # SỬA (Pha 0, mặc định tắt) — bước rerank sau RRF, fail-open/timeout, rerankScore; công cụ đo gọi đúng hàm này
 ├── rag-types.ts              # SỬA — ScoredChunk.rerankScore?
 └── relevance-calibration.ts  # SỬA — rerank: RerankCalibration | null, datasetVersion "3"
 
@@ -122,9 +122,9 @@ R7 lưới + chọn · R8 fail-open/timeout · R9 tải + trạng thái · R10 h
 ### Thứ tự thực hiện gợi ý (cho /speckit-tasks)
 
 1. **Bộ đo v3** (+15 câu, grep chứng minh không có đáp án) → **DỪNG cho chủ dự án duyệt**.
-2. Song song: `rerank-filter.ts` + `rerank-grid.ts` (TDD) · smoke-test nạp a1/a2 trong Node (R2) · `tests/eval/lib/rerank.ts`.
+2. Glossary append thuật ngữ mới (trước khi đặt tên) → `rerank-filter.ts` + hỗ trợ rerank trong `retrieve()` mặc định tắt (TDD) · song song: `rerank-grid.ts` (TDD), smoke-test nạp a1/a2 (R2), `tests/eval/lib/rerank.ts` (công cụ đo gọi đúng `retrieve()`).
 3. Đo mốc `EVAL_MODE=current` trên v3 → đo a1, a2 → (b nếu cần) → **CỔNG**: báo cáo + quyết định (DỪNG, trình số liệu cho chủ dự án).
-4. Nếu ĐẠT: service reranker + status (TDD phần thuần) → `retrieve()` (TDD: rerank/fail-open/timeout/rỗng) → hiệu chuẩn + guard → IPC + Cài đặt + i18n
+4. Nếu ĐẠT (reranker): hiệu chuẩn + guard (bật rerank) → service reranker + status (TDD phần thuần) → IPC + Cài đặt + i18n
    → wiring tải nền → e2e.
 5. ADR + INDEX + glossary + README công cụ đo + CI cache → test gate + đo lại `EVAL_MODE=current` (+ `EVAL_WITH_LLM=1` tham khảo).
 6. Nếu KHÔNG ĐẠT: chỉ giữ bộ đo v3 + công cụ đo mở rộng + ADR ghi kết quả; `rerank: null`.
