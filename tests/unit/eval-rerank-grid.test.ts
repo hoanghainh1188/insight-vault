@@ -82,6 +82,19 @@ describe("chooseRerankConfig (chỉ dev)", () => {
   });
 });
 
+describe("chooseRerankConfig — hoà ⇒ đơn giản nhất (clarify #1)", () => {
+  it("cùng số liệu ⇒ ưu tiên không Δ, không sắp lại", () => {
+    const same = m(0.95, 0.9);
+    const r = chooseRerankConfig([
+      { config: cfg(0.6, 0.2, true), dev: same },
+      { config: cfg(0.6, 0.2), dev: same },
+      { config: cfg(0.6, null, true), dev: same },
+      { config: cfg(0.6), dev: same },
+    ]);
+    expect(r.chosen).toEqual(cfg(0.6));
+  });
+});
+
 describe("paretoFront", () => {
   it("giữ điểm không bị trội theo (CR, R@6), sắp CR giảm dần", () => {
     const f = paretoFront([

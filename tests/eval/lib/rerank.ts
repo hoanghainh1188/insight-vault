@@ -1,4 +1,4 @@
-import { monitorEventLoopDelay, performance } from "node:perf_hooks";
+import { performance } from "node:perf_hooks";
 import {
   AutoModel,
   AutoModelForSequenceClassification,
@@ -17,6 +17,7 @@ export interface RerankStats {
   /** mỗi lượt chấm THẬT (không cache) — một lượt/câu hỏi */
   callMs: number[];
   rssDeltaMb: number;
+  /** khoảng hở event loop lớn nhất trong lúc chấm (ms) */
   eventLoopP99Ms: number;
 }
 
@@ -78,12 +79,19 @@ export async function loadScorer(
 
   const callMs: number[] = [];
   const cache = new Map<string, number>();
-  const loop = monitorEventLoopDelay({ resolution: 5 });
+  // Khoảng hở lớn nhất của event loop trong lúc chấm (đo bằng nhịp setInterval 2 ms). KHÔNG dùng monitorEventLoopDelay
+  // bật/tắt theo lượt — cách đó cộng cả thời gian tắt vào mẫu đầu, cho số ảo (lượt đo 2026-10-08: 1,5 s ảo vs 26–67 ms thật).
+  let maxLoopGapMs = 0;
 
   const score = async (query: string, passages: Passage[]) => {
     const missing = passages.filter((p) => !cache.has(`${query}\u0000${p.id}`));
     if (missing.length > 0) {
-      loop.enable();
+      let last = performance.now();
+      const tick = setInterval(() => {
+        const now = performance.now();
+        maxLoopGapMs = Math.max(maxLoopGapMs, now - last);
+        last = now;
+      }, 2);
       const t = performance.now();
       const inputs = tokenizer(
         missing.map(() => query),
@@ -97,7 +105,7 @@ export async function loadScorer(
       const out = await net(inputs);
       const probs = out.logits.sigmoid().tolist();
       callMs.push(performance.now() - t);
-      loop.disable();
+      clearInterval(tick);
       missing.forEach((p, i) =>
         cache.set(`${query}\u0000${p.id}`, probs[i][0]),
       );
@@ -115,7 +123,7 @@ export async function loadScorer(
       coldLoadMs,
       callMs: [...callMs],
       rssDeltaMb,
-      eventLoopP99Ms: loop.percentile(99) / 1e6,
+      eventLoopP99Ms: maxLoopGapMs,
     }),
     dispose: () => void net.dispose?.(),
   };

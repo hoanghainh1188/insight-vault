@@ -92,12 +92,12 @@
 
 ### Chạy đo
 
-- [ ] T018 [US3] Chạy `EVAL_MODE=current npm run eval:retrieval` trên bộ đo v3 ⇒ mốc (vi dev/hold-out, en) của cấu hình hiện hành; lưu số liệu vào
+- [X] T018 [US3] Chạy `EVAL_MODE=current npm run eval:retrieval` trên bộ đo v3 ⇒ mốc (vi dev/hold-out, en) của cấu hình hiện hành; lưu số liệu vào
       `specs/20261008-194015-unanswerable-detection/eval-baseline-v3.md`.
-- [ ] T019 [US3] Chạy `EVAL_RERANK=cross-encoder/mmarco-mMiniLMv2-L12-H384-v1 npm run eval:retrieval` ⇒ ghi kết quả a1 vào
+- [X] T019 [US3] Chạy `EVAL_RERANK=cross-encoder/mmarco-mMiniLMv2-L12-H384-v1 npm run eval:retrieval` ⇒ ghi kết quả a1 vào
       `specs/20261008-194015-unanswerable-detection/eval-rerank.md`.
-- [ ] T020 [US3] Chạy `EVAL_RERANK=onnx-community/gte-multilingual-reranker-base npm run eval:retrieval` ⇒ ghi kết quả a2 vào cùng tệp.
-- [ ] T021 [US3] So sánh a1/a2 theo quy tắc clarify #1 (tất định & không cần Ollama > trễ ấm > dung lượng > đơn giản) + SC-003 (p50 ≤ 300 ms) + SC-004
+- [X] T020 [US3] Chạy `EVAL_RERANK=onnx-community/gte-multilingual-reranker-base npm run eval:retrieval` ⇒ ghi kết quả a2 vào cùng tệp.
+- [X] T021 [US3] So sánh a1/a2 theo quy tắc clarify #1 (tất định & không cần Ollama > trễ ấm > dung lượng > đơn giản) + SC-003 (p50 ≤ 300 ms) + SC-004
       (English) ⇒ đề xuất model + cấu hình trong `eval-rerank.md`. **Nếu cấu hình chọn chênh lệch vi/en đáng kể (FR-011)** ⇒ ghi rõ và đưa vào câu hỏi ở cổng
       T023 (tách ngưỡng theo ngôn ngữ hay chấp nhận) — KHÔNG tự tách.
 - [ ] T022 [US3] Chỉ khi a1 và a2 đều KHÔNG ĐẠT: chạy `EVAL_JUDGE=llm EVAL_LLM_MODEL=qwen2.5:7b npm run eval:retrieval` (hướng b) và ghi kết quả; vẫn không

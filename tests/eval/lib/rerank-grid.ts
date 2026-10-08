@@ -78,10 +78,15 @@ export function paretoFront(
     );
 }
 
+/** Số tham số đang bật — hoà số liệu ⇒ chọn cấu hình đơn giản nhất (clarify #1). */
+const complexity = (c: RerankConfig) =>
+  (c.relativeDelta === null ? 0 : 1) + (c.reorder ? 1 : 0);
+
 const better = (a: RerankCandidate, b: RerankCandidate) =>
   b.dev.recallAt6 - a.dev.recallAt6 ||
   b.dev.correctRejection - a.dev.correctRejection ||
   a.config.minScore - b.config.minScore ||
+  complexity(a.config) - complexity(b.config) ||
   key(a.config).localeCompare(key(b.config));
 
 /**

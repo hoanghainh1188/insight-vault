@@ -244,7 +244,7 @@ function rerankMd(
             `- Chênh lệch vi−en: từ chối đúng ${pct(r.gate!.langGap.correctRejection)}, Recall@6 ${pct(r.gate!.langGap.recallAt6)}`,
           ]
         : []),
-      `- Độ trễ chấm/câu: p50 ${l.p50Ms.toFixed(0)} ms · p95 ${l.p95Ms.toFixed(0)} ms · nạp ${l.coldLoadMs.toFixed(0)} ms · RSS +${l.rssDeltaMb.toFixed(0)} MB · event loop p99 ${l.eventLoopP99Ms.toFixed(1)} ms${r.skips ? ` · ⚠️ bỏ qua ${r.skips} lần` : ""}`,
+      `- Độ trễ chấm/câu: p50 ${l.p50Ms.toFixed(0)} ms · p95 ${l.p95Ms.toFixed(0)} ms · nạp ${l.coldLoadMs.toFixed(0)} ms · RSS +${l.rssDeltaMb.toFixed(0)} MB · event loop chặn tối đa ${l.eventLoopP99Ms.toFixed(0)} ms${r.skips ? ` · ⚠️ bỏ qua ${r.skips} lần` : ""}`,
       "",
       "Pareto trên dev (từ chối đúng | Recall@6):",
       "",
