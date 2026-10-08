@@ -8,6 +8,7 @@ import {
   type VectorStore,
 } from "../../src/main/services/ingestion/vector-store";
 import { RETENTION_MS } from "../../src/main/services/vector-maintenance/constants";
+import { classifyOptimizeError } from "../../src/main/services/vector-maintenance/classify-error";
 
 // 116 (research R2/R5): bảo trì trên LanceDB THẬT ở thư mục tạm — gộp fragment, dọn phiên bản, kết quả truy vấn
 // không đổi, ghi đồng thời an toàn.
@@ -120,14 +121,24 @@ describe("LanceVectorStore stats/optimize (116)", () => {
     await vs.close();
   });
 
-  it("ghi đồng thời trong lúc optimize vẫn đúng", async () => {
+  it("ghi đồng thời trong lúc optimize vẫn đúng (xung đột commit ⇒ hoãn, không mất dữ liệu)", async () => {
     const vs = await fragmentedStore();
-    const opt = vs.optimize(0);
+    // LanceDB có thể từ chối commit của bước gộp khi một lần xoá chen vào ("Retryable commit conflict") — đúng thiết
+    // kế 116 R5: bảo trì xếp loại "conflict" và HOÃN (classifyOptimizeError). Không được ném lỗi khác.
+    const opt = vs.optimize(0).then(
+      () => "done" as const,
+      (e: unknown) => {
+        expect(classifyOptimizeError(e)).toEqual({ kind: "conflict" });
+        return "conflict" as const;
+      },
+    );
     const writes = (async () => {
       for (let k = 0; k < 5; k++) await vs.add([rec(10_000 + k)]);
       await vs.deleteBySource("s1");
     })();
-    await Promise.all([opt, writes]);
+    const [outcome] = await Promise.all([opt, writes]);
+    // Hoãn ⇒ lần bảo trì sau (không còn ghi chen) phải gộp được.
+    if (outcome === "conflict") expect(await vs.optimize(0)).not.toBeNull();
     // 1600 − 800 (đã xoá s0,s2,s4,s6,s8) = 800 hàng; − 160 của s1 + 4 mới (10001 thuộc s1 nên bị xoá theo).
     expect(await vs.countBySource("s1")).toBe(0);
     expect((await vs.stats(0))!.rowCount).toBe(800 - 160 + 4);
