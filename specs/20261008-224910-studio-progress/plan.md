@@ -59,7 +59,8 @@ src/shared/ipc/channels.ts         # SỬA — studioProgress: "studio:progress"
 src/shared/studio-progress.ts      # MỚI (thuần) — isValidGenerationId
 src/main/services/studio/map-reduce.ts    # SỬA — onProgress (reading i/N trước mỗi lượt map, condensing khi vào vòng rút gọn đầu, writing trước bước cuối)
 src/main/services/studio/studio-service.ts # SỬA — generate(input, onProgress?) ; một lượt ⇒ writing; nhiều phần ⇒ truyền xuống runMapReduce
-src/main/ipc/register.ts           # SỬA — studio:generate: generationId hợp lệ ⇒ onProgress phát studio:progress tới mọi cửa sổ
+src/main/services/studio/progress-emitter.ts # MỚI (thuần, analyze M1) — createStudioProgressEmitter(input, send): kiểm id, chỉ gửi mã + số
+src/main/ipc/register.ts           # SỬA — studio:generate chỉ nối dây emitter ⇒ studio:progress tới mọi cửa sổ
 src/preload/index.ts               # SỬA — onStudioProgress(cb) ⇒ hàm huỷ
 src/renderer/features/studio/studio-progress.ts   # MỚI (thuần) — reducer áp sự kiện + chọn mốc thông báo + chuỗi hiển thị
 src/renderer/features/studio/useStudio.ts         # SỬA — sinh generationId, theo dõi lượt đang chạy, progress theo loại
