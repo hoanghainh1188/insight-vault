@@ -1,5 +1,5 @@
 {
-  "datasetVersion": "2",
+  "datasetVersion": "3",
   "reviewed": {
     "by": "Hải",
     "date": "2026-10-08"
@@ -1615,6 +1615,141 @@
       "lang": "en",
       "type": "unanswerable",
       "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-134",
+      "text": "Đài thiên văn nào ở Việt Nam đã quan sát nhật thực toàn phần năm 1995?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-135",
+      "text": "Năm 2003, Sao Hỏa tiến gần Trái Đất nhất ở khoảng cách bao nhiêu km?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-136",
+      "text": "Một hecta lúa hấp thụ bao nhiêu kg CO₂ mỗi năm nhờ quang hợp?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-137",
+      "text": "Sân vận động Mỹ Đình có sức chứa bao nhiêu chỗ ngồi?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-138",
+      "text": "Phở Bát Đàn ở Hà Nội mở cửa bán từ mấy giờ sáng?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-139",
+      "text": "Hồ sơ xin nhập quốc tịch Việt Nam có được nộp trực tuyến qua Cổng dịch vụ công quốc gia không?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-140",
+      "text": "Theo Luật Bảo vệ môi trường 1993, doanh nghiệp xả thải vượt chuẩn bị phạt tối đa bao nhiêu tỷ đồng?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-141",
+      "text": "Mỗi năm hang Sửng Sốt đón bao nhiêu lượt khách quốc tế?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-142",
+      "text": "Tháp Rùa được trùng tu lần gần nhất vào năm nào?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-143",
+      "text": "Cầu Cần Thơ bắc qua sông Hậu dài bao nhiêu mét?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-144",
+      "text": "Bộ áo dài đắt nhất thế giới được bán với giá bao nhiêu?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-145",
+      "text": "Đội tuyển Việt Nam lần đầu vô địch AFF Cup vào năm nào?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-146",
+      "text": "How long is the Can Tho Bridge over the Hau River?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-147",
+      "text": "How many kilograms of CO₂ does one hectare of rice absorb per year through photosynthesis?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-148",
+      "text": "What time does Pho Bat Dan open in the morning?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "dev",
       "quotes": [],
       "docIds": []
     }
