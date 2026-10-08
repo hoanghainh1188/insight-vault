@@ -6,13 +6,14 @@ import { MAX_HISTORY_TURNS } from "./constants";
 // lỗi/rỗng). KHÔNG log nội dung (Constitution III). Badge egress: dùng provider active (031) — nếu online
 // đang bật thì badge đã ở trạng thái online (không cần bật riêng cho bước này).
 
-const SYSTEM = `Bạn viết lại câu hỏi nối tiếp thành MỘT câu hỏi độc lập bằng cách CHỈ thay đại từ/tham chiếu
-bằng chủ thể thật từ hội thoại trước. TUYỆT ĐỐI KHÔNG:
-- thêm chủ đề, lĩnh vực, từ khoá mới không có trong câu gốc;
-- mở rộng, diễn giải, hay làm câu dài hơn cần thiết;
-- đổi ý định của người dùng.
-Giữ câu NGẮN GỌN, sát câu gốc nhất có thể (chỉ khác ở phần đại từ được thay). CHỈ trả về câu viết lại,
-KHÔNG giải thích, KHÔNG dấu ngoặc/tiền tố.`;
+// 123 (FR-019, research R8): lời nhắc English; GIỮ NGUYÊN ngôn ngữ câu hỏi (truy xuất BM25/vector dùng câu này).
+const SYSTEM = `Rewrite the follow-up question as ONE standalone question by ONLY replacing pronouns/references
+with the actual subject from the earlier conversation. NEVER:
+- add topics, fields or keywords that are not in the original question;
+- expand, paraphrase or make the question longer than necessary;
+- change the user's intent.
+Keep the question in its original language. Keep it SHORT and as close to the original as possible (differing only
+where pronouns were replaced). Return ONLY the rewritten question — no explanation, no quotes or prefixes.`;
 
 // Guardrail: rewrite dài hơn câu gốc quá nhiều = model "phình" → bỏ, dùng câu gốc.
 const MAX_EXPAND_CHARS = 200;
@@ -27,16 +28,15 @@ export function buildRewritePrompt(
     recent.length > 0
       ? recent
           .map(
-            (t) =>
-              `${t.role === "user" ? "Người dùng" : "Trợ lý"}: ${t.content}`,
+            (t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.content}`,
           )
           .join("\n")
-      : "(chưa có hội thoại trước)";
+      : "(no earlier conversation)";
   return [
     { role: "system", content: SYSTEM },
     {
       role: "user",
-      content: `Hội thoại trước:\n${historyText}\n\nCâu hỏi cần viết lại:\n${question}\n\nTruy vấn viết lại:`,
+      content: `Earlier conversation:\n${historyText}\n\nQuestion to rewrite:\n${question}\n\nRewritten question:`,
     },
   ];
 }

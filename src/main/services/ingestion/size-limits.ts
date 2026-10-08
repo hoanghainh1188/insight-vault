@@ -20,7 +20,7 @@ export const SIZE_LIMITS: Record<SourceKind, number> = {
 export class SizeLimitError extends Error {
   readonly code = "tooLarge" as const;
   constructor() {
-    super("Nguồn vượt giới hạn kích thước cho phép.");
+    super("Source exceeds the allowed size limit.");
     this.name = "SizeLimitError";
   }
 }

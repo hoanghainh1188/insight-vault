@@ -96,7 +96,7 @@ export class OpenAIProvider implements LLMProvider {
 
   async embed(): Promise<EmbedResult> {
     throw new Error(
-      `${LABEL} embedding không dùng ở đây — embedding luôn dùng Ollama local.`,
+      `${LABEL} embedding is not used here — embedding always uses local models.`,
     );
   }
 

@@ -55,7 +55,7 @@ export function createUiLanguageService(
     get: current,
     set(pref) {
       if (typeof pref !== "string" || !VALID.includes(pref)) {
-        throw new Error("uiLanguage không hợp lệ.");
+        throw new Error("Invalid uiLanguage.");
       }
       const before = current();
       preference = pref as UiLanguagePreference;

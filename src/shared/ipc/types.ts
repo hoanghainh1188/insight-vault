@@ -447,6 +447,8 @@ export interface StudioGenerateInput {
   kind: StudioKind;
   sourceId?: string; // 025: lọc theo 1 nguồn; bỏ trống = toàn bộ nguồn ready
   target?: AiTarget; // 098: "local" = tạo bằng Ollama sau lỗi online
+  /** 123 (FR-018): ngôn ngữ đầu ra = ngôn ngữ giao diện lúc bấm tạo; sai/thiếu ⇒ ngôn ngữ hiệu lực của main. */
+  outputLanguage?: "vi" | "en";
 }
 
 /** Input xuất kết quả Studio ra tệp .md (025). */

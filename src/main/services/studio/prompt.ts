@@ -1,32 +1,57 @@
 import type { StudioKind } from "@shared/ipc/types";
+import type { LanguageCode } from "@shared/i18n";
 
 // System prompt cho Studio (ADR 2026-07-11-studio-context-strategy). Hàm THUẦN — test tất định.
-// Khung chung ép: chỉ dùng đoạn ĐÁNH SỐ, chèn [n], KHÔNG bịa, tiếng Việt (Constitution II — kiểm chứng
-// được; nội dung luôn truy được về chunk thật qua [n]).
+// Khung chung ép: chỉ dùng đoạn ĐÁNH SỐ, chèn [n], KHÔNG bịa (Constitution II — kiểm chứng được; nội dung luôn truy
+// được về chunk thật qua [n]). 123 (FR-018, FR-019): lời nhắc English; ngôn ngữ đầu ra = ngôn ngữ giao diện lúc tạo.
 
-const COMMON = [
-  "Bạn là trợ lý tổng hợp tài liệu. Dưới đây là các đoạn nguồn được ĐÁNH SỐ [1], [2], …",
-  "Chỉ dùng thông tin trong các đoạn đó, TUYỆT ĐỐI KHÔNG bịa hay thêm kiến thức ngoài.",
-  "BẮT BUỘC: mỗi ý/câu phải kết thúc bằng ít nhất một chip trích dẫn [n] tương ứng (n là số đoạn nguồn); câu KHÔNG có [n] là không hợp lệ. Ví dụ: 'Tài liệu nêu ba mục tiêu chính [2].'",
-  "Bao quát cân bằng TẤT CẢ các đoạn nguồn (mọi tài liệu), KHÔNG chỉ tập trung một vài đoạn đầu hay cuối.",
-  "Trả lời bằng tiếng Việt, rõ ràng, súc tích.",
-].join(" ");
-
-const BY_KIND: Record<StudioKind, string> = {
-  summary:
-    "Nhiệm vụ: viết BẢN TÓM TẮT ngắn gọn toàn bộ tài liệu thành vài đoạn/gạch đầu dòng, nêu các nội dung chính.",
-  keyPoints:
-    "Nhiệm vụ: liệt kê các Ý CHÍNH dưới dạng danh sách gạch đầu dòng, mỗi ý một dòng bắt đầu bằng '- '.",
-  faq: "Nhiệm vụ: soạn các câu HỎI–ĐÁP thường gặp từ tài liệu, mỗi cặp trình bày 'Hỏi: …' rồi 'Đáp: … [n]'.",
-  outline:
-    "Nhiệm vụ: dựng DÀN Ý phân cấp của tài liệu (mục lớn và mục con thụt lề), phản ánh cấu trúc nội dung.",
+export const OUTPUT_LANGUAGE_NAME: Record<LanguageCode, string> = {
+  vi: "Vietnamese",
+  en: "English",
 };
 
-/** Trả system prompt theo loại. Ném nếu kind không hợp lệ (biên hệ thống). */
-export function systemPromptFor(kind: StudioKind): string {
-  const task = BY_KIND[kind];
-  if (!task) {
+/** Nhãn FAQ theo ngôn ngữ đầu ra (định dạng văn bản; không code nào parse). */
+const FAQ_LABELS: Record<LanguageCode, { q: string; a: string }> = {
+  vi: { q: "Hỏi", a: "Đáp" },
+  en: { q: "Q", a: "A" },
+};
+
+export function outputLanguageLine(lang: LanguageCode): string {
+  return `Write in ${OUTPUT_LANGUAGE_NAME[lang]}, clearly and concisely.`;
+}
+
+function common(lang: LanguageCode): string {
+  return [
+    "You are an assistant that synthesizes documents. Below are source passages NUMBERED [1], [2], …",
+    "Use only the information in those passages; NEVER make anything up or add outside knowledge.",
+    "REQUIRED: every point/sentence must end with at least one matching citation chip [n] (n is the passage number); a sentence WITHOUT [n] is invalid. Example: 'The document lists three main goals [2].'",
+    "Cover ALL source passages (every document) in a balanced way — do NOT focus only on the first or last few passages.",
+    outputLanguageLine(lang),
+  ].join(" ");
+}
+
+function task(kind: StudioKind, lang: LanguageCode): string | undefined {
+  const faq = FAQ_LABELS[lang];
+  const byKind: Record<StudioKind, string> = {
+    summary:
+      "Task: write a concise SUMMARY of the whole document in a few paragraphs/bullet points covering the main content.",
+    keyPoints:
+      "Task: list the KEY POINTS as a bulleted list, one point per line starting with '- '.",
+    faq: `Task: write frequently asked QUESTIONS AND ANSWERS from the document, each pair formatted as '${faq.q}: …' then '${faq.a}: … [n]'.`,
+    outline:
+      "Task: build a hierarchical OUTLINE of the document (main sections and indented subsections) reflecting its structure.",
+  };
+  return byKind[kind];
+}
+
+/** Trả system prompt theo loại + ngôn ngữ đầu ra. Ném nếu kind không hợp lệ (biên hệ thống). */
+export function systemPromptFor(
+  kind: StudioKind,
+  outputLanguage: LanguageCode = "vi",
+): string {
+  const t = task(kind, outputLanguage);
+  if (!t) {
     throw new Error(`Invalid StudioKind: ${String(kind)}`);
   }
-  return `${COMMON}\n\n${task}`;
+  return `${common(outputLanguage)}\n\n${t}`;
 }

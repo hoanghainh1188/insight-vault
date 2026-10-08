@@ -580,6 +580,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  /* 123: nhãn English dài hơn — không xuống dòng ở cửa sổ hẹp. */
+  white-space: nowrap;
+  flex-shrink: 0;
   border: 1px solid var(--accent);
   background: var(--accent);
   color: #fff;

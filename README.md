@@ -35,9 +35,10 @@ highlighted.
   local model.
 - **Backup & restore** — export the whole vault to one `.ivbackup` file, optionally encrypted with a
   password (AES-256-GCM).
+- **English and Vietnamese interface** — follows your system language on first launch; switch any time in
+  **Settings › Language** (applies instantly). Chat answers in the language of your question; Studio writes in the
+  interface language.
 - Full-text search across sources, chat history, keyboard shortcuts, screen-reader announcements.
-
-> The user interface is currently **Vietnamese only**; English UI is planned.
 
 ## Install
 

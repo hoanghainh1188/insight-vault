@@ -34,7 +34,7 @@ async function safeFetch(rawUrl: string): Promise<Response> {
     }
     return res;
   }
-  throw new SsrfError("Quá nhiều chuyển hướng.");
+  throw new SsrfError("Too many redirects.");
 }
 
 /** Đọc body theo stream, cắt NGAY khi vượt `cap` (tránh buffer toàn bộ response độc hại vào RAM). */
@@ -43,7 +43,7 @@ async function readBodyCapped(res: Response, cap: number): Promise<string> {
   if (!reader) {
     const buf = await res.arrayBuffer();
     if (buf.byteLength > cap)
-      throw new Error("Trang web vượt giới hạn dung lượng.");
+      throw new Error("Web page exceeds the size limit.");
     return new TextDecoder().decode(buf);
   }
   const chunks: Uint8Array[] = [];
@@ -55,7 +55,7 @@ async function readBodyCapped(res: Response, cap: number): Promise<string> {
     total += value.byteLength;
     if (total > cap) {
       await reader.cancel();
-      throw new Error("Trang web vượt giới hạn dung lượng.");
+      throw new Error("Web page exceeds the size limit.");
     }
     chunks.push(value);
   }
@@ -75,7 +75,7 @@ export async function fetchAndParseUrl(rawUrl: string): Promise<ParseResult> {
   // Fast-path: từ chối sớm nếu Content-Length đã báo vượt; rồi đọc stream có cắt ngưỡng.
   const declared = Number(res.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > SIZE_LIMITS.url) {
-    throw new Error("Trang web vượt giới hạn dung lượng.");
+    throw new Error("Web page exceeds the size limit.");
   }
   const html = await readBodyCapped(res, SIZE_LIMITS.url);
 
@@ -86,7 +86,7 @@ export async function fetchAndParseUrl(rawUrl: string): Promise<ParseResult> {
   const dom = new JSDOM(html, { url: rawUrl });
   const article = new Readability(dom.window.document).parse();
   if (!article || !article.content) {
-    throw new Error("Không trích được nội dung chính của trang.");
+    throw new Error("Could not extract the main content of the page.");
   }
   const markdown = new TurndownService().turndown(article.content);
 

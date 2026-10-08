@@ -43,7 +43,7 @@ describe("migrations", () => {
     const db = openDatabase(":memory:");
     const max = MIGRATIONS.reduce((m, x) => Math.max(m, x.version), 0);
     db.exec("PRAGMA user_version = 99");
-    expect(() => runMigrations(db)).toThrow(/không tự hạ cấp/);
+    expect(() => runMigrations(db)).toThrow(/refusing to downgrade/);
     try {
       runMigrations(db);
       expect.unreachable("phải ném");

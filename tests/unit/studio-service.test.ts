@@ -35,7 +35,7 @@ function setup(opts: {
       const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
         Number(m[1]),
       );
-      if (messages[0].content.startsWith("Bạn trích GHI CHÚ"))
+      if (messages[0].content.startsWith("Extract NOTES"))
         return `- ý [${ns[0]}]`;
       return `Kết quả ${ns.map((n) => `[${n}]`).join(" ")}.`;
     },
@@ -118,7 +118,7 @@ describe("studio-service — ngân sách theo model", () => {
         const ns = [...m[1].content.matchAll(/\[(\d+)\]/g)].map((x) =>
           Number(x[1]),
         );
-        return m[0].content.startsWith("Bạn trích GHI CHÚ")
+        return m[0].content.startsWith("Extract NOTES")
           ? `- ý [${ns[0]}]`
           : `Kết luận [${ns[0]}].`;
       },
@@ -148,7 +148,7 @@ describe("studio-service — ngân sách theo model", () => {
         const ns = [...m[1].content.matchAll(/\[(\d+)\]/g)].map((x) =>
           Number(x[1]),
         );
-        return m[0].content.startsWith("Bạn trích GHI CHÚ")
+        return m[0].content.startsWith("Extract NOTES")
           ? `- ý [${ns[0]}]`
           : "Kết luận không kèm trích dẫn.";
       },
@@ -202,5 +202,23 @@ describe("studio-service — ngân sách theo model", () => {
         sourceId: "khong-co",
       }),
     ).rejects.toThrow(/studioSourceNotReady|studioNoReadySources/);
+  });
+});
+
+describe("123 (FR-018): ngôn ngữ đầu ra Studio", () => {
+  it("dùng outputLanguage hợp lệ; thiếu/sai ⇒ mặc định vi (không có ngôn ngữ hiệu lực)", async () => {
+    const { svc, calls } = setup({ perSource: 2, budget: 50_000 });
+    await svc.generate({
+      notebookId: "nb1",
+      kind: "summary",
+      outputLanguage: "en",
+    });
+    expect(calls[0].messages[0].content).toContain("Write in English");
+    await svc.generate({
+      notebookId: "nb1",
+      kind: "summary",
+      outputLanguage: "fr" as never,
+    });
+    expect(calls[1].messages[0].content).toContain("Write in Vietnamese");
   });
 });

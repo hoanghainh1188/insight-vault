@@ -156,7 +156,7 @@ export function createOnlineRuntime(deps: OnlineRuntimeDeps): OnlineRuntime {
         return {
           reachable: false,
           ollamaReady: false,
-          reason: "Nhà cung cấp không hợp lệ.",
+          reason: "Invalid provider.",
         };
       }
       return providers.get(id)!.test();

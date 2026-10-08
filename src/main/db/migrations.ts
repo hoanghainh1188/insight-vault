@@ -25,7 +25,7 @@ export class SchemaVersionError extends Error {
     readonly appVersion: number,
   ) {
     super(
-      `Schema DB (v${dbVersion}) mới hơn phiên bản ứng dụng (v${appVersion}) — không tự hạ cấp để tránh mất dữ liệu.`,
+      `DB schema (v${dbVersion}) is newer than the app (v${appVersion}) — refusing to downgrade to avoid data loss.`,
     );
     this.name = "SchemaVersionError";
   }

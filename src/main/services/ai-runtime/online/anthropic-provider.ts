@@ -123,7 +123,7 @@ export class AnthropicProvider implements LLMProvider {
 
   async embed(): Promise<EmbedResult> {
     throw new Error(
-      `${LABEL} không hỗ trợ embedding — embedding luôn dùng Ollama local.`,
+      `${LABEL} does not support embedding — embedding always uses local models.`,
     );
   }
 

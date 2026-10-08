@@ -1,3 +1,4 @@
+import { detectQuestionLanguage } from "@shared/i18n";
 import type { ChatMessage, RagAnswer, RagAskInput } from "@shared/ipc/types";
 import type { ChatStreamOpts } from "../ai-runtime/provider";
 import {
@@ -96,7 +97,12 @@ export function createRagService(deps: RagServiceDeps) {
     if (mode === "grounded" && scored.length === 0) return notFoundResult();
 
     const built = buildContext(scored);
-    const system = systemPromptFor(mode, built.contextText);
+    // 123 (FR-017): trả lời theo ngôn ngữ câu hỏi — chỉ định rõ khi nhận diện chắc chắn vi/en.
+    const system = systemPromptFor(
+      mode,
+      built.contextText,
+      detectQuestionLanguage(question),
+    );
     const recent = history.slice(-MAX_HISTORY_TURNS);
     const messages: ChatMessage[] = [
       { role: "system", content: system },

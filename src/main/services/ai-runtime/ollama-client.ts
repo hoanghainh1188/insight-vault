@@ -40,7 +40,7 @@ export function resolveBaseUrl(
   }
   return {
     url: DEFAULT_OLLAMA_URL,
-    warning: `OLLAMA_HOST không phải localhost — bỏ qua, dùng ${DEFAULT_OLLAMA_URL}.`,
+    warning: `OLLAMA_HOST is not localhost — ignored, using ${DEFAULT_OLLAMA_URL}.`,
   };
 }
 

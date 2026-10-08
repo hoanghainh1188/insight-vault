@@ -111,7 +111,7 @@ export class GeminiProvider implements LLMProvider {
 
   async embed(): Promise<EmbedResult> {
     throw new Error(
-      `${LABEL} không dùng cho embedding — embedding luôn dùng Ollama local.`,
+      `${LABEL} is not used for embedding — embedding always uses local models.`,
     );
   }
 

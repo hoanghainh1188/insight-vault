@@ -43,7 +43,7 @@ const GATES: readonly Bm25Gate[] = [
 function assertNonNegativeFinite(name: string, v: number): void {
   if (!Number.isFinite(v) || v < 0) {
     throw new Error(
-      `RelevanceConfig.${name} phải là số hữu hạn ≥ 0 (nhận ${v})`,
+      `RelevanceConfig.${name} must be a finite number ≥ 0 (got ${v})`,
     );
   }
 }
@@ -55,17 +55,17 @@ export function validateRelevanceConfig(cfg: RelevanceConfig): void {
     assertNonNegativeFinite("relativeDelta", cfg.relativeDelta);
   }
   if (!GATES.includes(cfg.bm25Gate)) {
-    throw new Error(`RelevanceConfig.bm25Gate không hợp lệ: ${cfg.bm25Gate}`);
+    throw new Error(`Invalid RelevanceConfig.bm25Gate: ${cfg.bm25Gate}`);
   }
   if (cfg.bm25Gate === "vectorWithin") {
     if (cfg.bm25VectorMaxDistance === null) {
-      throw new Error("bm25Gate 'vectorWithin' cần bm25VectorMaxDistance");
+      throw new Error("bm25Gate 'vectorWithin' requires bm25VectorMaxDistance");
     }
     assertNonNegativeFinite("bm25VectorMaxDistance", cfg.bm25VectorMaxDistance);
   }
   if (cfg.bm25Gate === "minScore") {
     if (cfg.bm25MaxScore === null || !Number.isFinite(cfg.bm25MaxScore)) {
-      throw new Error("bm25Gate 'minScore' cần bm25MaxScore hữu hạn");
+      throw new Error("bm25Gate 'minScore' requires a finite bm25MaxScore");
     }
   }
 }

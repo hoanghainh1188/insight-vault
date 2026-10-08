@@ -1,3 +1,4 @@
+import type { LanguageCode } from "@shared/i18n";
 import { UserFacingError } from "@shared/codes/user-error";
 import type {
   Chunk,
@@ -20,6 +21,8 @@ import type { StudioRepo } from "./studio-repo";
 // Hậu kiểm chip (Constitution II) → upsert. KHÔNG log nội dung (Constitution III).
 
 export interface StudioServiceDeps {
+  /** 123: ngôn ngữ đầu ra mặc định (ngôn ngữ hiệu lực của main) khi input không gửi/không hợp lệ. */
+  defaultOutputLanguage?: () => LanguageCode;
   /** Nguồn của notebook (011) — chỉ đọc. */
   listSources: (notebookId: string) => Source[];
   listChunks: (sourceId: string) => Chunk[];
@@ -43,6 +46,11 @@ function isStudioKind(k: string): k is (typeof STUDIO_KINDS)[number] {
 export function createStudioService(deps: StudioServiceDeps) {
   async function generate(input: StudioGenerateInput): Promise<StudioResult> {
     const { notebookId, kind, sourceId } = input;
+    // 123 (FR-018): chỉ nhận vi/en; khác ⇒ ngôn ngữ hiệu lực của main (mặc định vi).
+    const outputLanguage: LanguageCode =
+      input.outputLanguage === "vi" || input.outputLanguage === "en"
+        ? input.outputLanguage
+        : (deps.defaultOutputLanguage?.() ?? "vi");
     if (!notebookId || !isStudioKind(kind)) {
       throw new Error("Invalid Studio request.");
     }
@@ -85,11 +93,17 @@ export function createStudioService(deps: StudioServiceDeps) {
     let truncated = false;
     if (single.contextText.length <= ctx.budget) {
       raw = await chat([
-        { role: "system", content: systemPromptFor(kind) },
+        { role: "system", content: systemPromptFor(kind, outputLanguage) },
         { role: "user", content: single.contextText },
       ]);
     } else {
-      const mr = await runMapReduce({ kind, groups, budget: ctx.budget, chat });
+      const mr = await runMapReduce({
+        kind,
+        groups,
+        budget: ctx.budget,
+        chat,
+        outputLanguage,
+      });
       ({ raw, map, parts, truncated } = mr);
     }
     const { answer, citations } = postprocessCitations(raw, map);

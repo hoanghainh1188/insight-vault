@@ -40,7 +40,7 @@ export const notebooksEn: Widen<typeof notebooksVi> = {
   grid: {
     title: "Your notebooks",
     subtitle: "Each notebook is a separate space for one research topic",
-    searchPlaceholder: "Search notebooks… (⌘K)",
+    searchPlaceholder: "Search… (⌘K)",
     searchLabel: "Search notebooks",
     create: "Create a new notebook",
     emptyTitle: "No notebooks yet",

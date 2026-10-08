@@ -9,8 +9,6 @@ export const MAX_QUESTION_LEN = 2000; // giới hạn độ dài CÂU HỎI (inp
 export const MAX_HISTORY_CONTENT_LEN = 20000;
 export const MAX_HISTORY_TURNS = 6; // số lượt hội thoại gần nhất gửi cho chat
 
-// Câu "không tìm thấy" mà prompt grounded yêu cầu mô hình trả NGUYÊN VĂN (cũng dùng để nhận diện).
-export const NOT_FOUND_ANSWER = "Không tìm thấy trong nguồn.";
 // 123 (FR-015): câu HIỂN THỊ "không tìm thấy" + gợi ý (108 FR-016) do GIAO DIỆN dịch theo cờ notFound (khoá
 // chat.notFound/notFoundHint). Nội dung lưu cho lượt này là câu English trung tính — nó còn được gửi lại cho model làm
 // lịch sử hội thoại, nên không phụ thuộc ngôn ngữ giao diện.

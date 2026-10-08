@@ -444,6 +444,7 @@ app
     // lưu bền vào studio_result (migration #3). KHÔNG log nội dung.
     const makeStudioService = (target: AiTarget) =>
       createStudioService({
+        defaultOutputLanguage: () => uiLanguage.get().effective,
         listSources: (nb) => ingestion.sourceRepo.listByNotebook(nb),
         listChunks: (sid) => ingestion.sourceRepo.listChunks(sid),
         studioRepo: createStudioRepo(db),

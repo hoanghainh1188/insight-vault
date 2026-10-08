@@ -28,8 +28,8 @@ describe("buildContext", () => {
       sc("a", "alpha", 1, 0.1),
       sc("b", "beta", null, 0.2),
     ]);
-    expect(contextText).toContain("[1] (Nguồn: Nguồn a, trang 1)");
-    expect(contextText).toContain("[2] (Nguồn: Nguồn b, trang —)");
+    expect(contextText).toContain("[1] (Source: Nguồn a, page 1)");
+    expect(contextText).toContain("[2] (Source: Nguồn b, page —)");
     expect(map.get(1)?.chunk.id).toBe("a");
     expect(map.get(2)?.chunk.id).toBe("b");
   });

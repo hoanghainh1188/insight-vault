@@ -336,7 +336,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
 
     replaceChunks(sourceId, drafts, ids, meta) {
       if (ids.length !== drafts.length) {
-        throw new Error("replaceChunks: số id không khớp số chunk.");
+        throw new Error("replaceChunks: id count does not match chunk count.");
       }
       inTransaction(() => {
         db.prepare("DELETE FROM chunk WHERE source_id = ?").run(sourceId);

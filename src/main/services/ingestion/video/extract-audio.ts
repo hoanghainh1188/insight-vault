@@ -74,7 +74,7 @@ export function extractAudioTo16kWav(
             /* bỏ qua */
           }
         }
-        reject(new Error("ffmpeg quá thời gian (video có thể bị hỏng)"));
+        reject(new Error("ffmpeg timed out (the video may be corrupt)"));
         return;
       }
       const ok =
@@ -95,7 +95,7 @@ export function extractAudioTo16kWav(
         resolve(null); // video không có audio → FR-011 (không ném)
         return;
       }
-      reject(new Error(`ffmpeg thoát mã ${code}`)); // KHÔNG kèm stderr (tránh lộ path)
+      reject(new Error(`ffmpeg exited with code ${code}`)); // KHÔNG kèm stderr (tránh lộ path)
     });
   });
 }

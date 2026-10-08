@@ -6,7 +6,6 @@ import {
 import type { Chunk, ChatMessage, RagAskInput } from "@shared/ipc/types";
 import type { VectorSearchHit } from "../../src/main/services/ingestion/vector-store";
 import {
-  NOT_FOUND_ANSWER,
   NOT_FOUND_CONTENT,
   REINDEXING_CONTENT,
 } from "../../src/main/services/rag/constants";
@@ -207,6 +206,23 @@ describe("rag-service.ask", () => {
     expect(cap[0][0].content).toContain("(không dựa trên nguồn)"); // open system prompt
   });
 
+  it("123 (FR-017): lời nhắc chỉ định ngôn ngữ trả lời theo câu hỏi (vi / en / không chắc)", async () => {
+    const run = async (question: string) => {
+      const cap: ChatMessage[][] = [];
+      await createRagService(makeDeps({ capture: cap })).ask(ask({ question }));
+      return cap[0][0].content;
+    };
+    expect(await run("Where is Ha Long Bay located?")).toContain(
+      "answer in English",
+    );
+    expect(await run("Vịnh Hạ Long nằm ở tỉnh nào?")).toContain(
+      "answer in Vietnamese",
+    );
+    const unsure = await run("vinh ha long o dau");
+    expect(unsure).toContain("same language as the user's last question");
+    expect(unsure).not.toMatch(/answer in (English|Vietnamese)/);
+  });
+
   it("US4 multi-turn: history đưa vào messages (giữa system và câu hỏi mới)", async () => {
     const cap: ChatMessage[][] = [];
     const svc = createRagService(
@@ -277,9 +293,18 @@ describe("rag-service — không tìm thấy + gợi ý (108)", () => {
     expect(REINDEXING_CONTENT).not.toMatch(/[àáạảãâầấậẩẫăằắặẳẵđ]/);
   });
 
-  it("model tự trả đúng câu prompt 'Không tìm thấy trong nguồn.' → hiển thị NOT_FOUND_CONTENT", async () => {
+  it("model tự nói không tìm thấy (bất kỳ ngôn ngữ nào, không [n]) → notFound (123: không phụ thuộc văn bản)", async () => {
+    for (const reply of [
+      "Không tìm thấy trong nguồn.",
+      "The sources do not contain this information.",
+    ]) {
+      const r = await createRagService(
+        makeDeps({ chatReply: () => reply }),
+      ).ask(ask());
+      expect(r.notFound).toBe(true);
+    }
     const svc = createRagService(
-      makeDeps({ chatReply: () => NOT_FOUND_ANSWER }),
+      makeDeps({ chatReply: () => "The sources do not contain it." }),
     );
     const res = await svc.ask(ask());
     expect(res.answer).toBe(NOT_FOUND_CONTENT);

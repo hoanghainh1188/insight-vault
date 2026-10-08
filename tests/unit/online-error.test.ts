@@ -13,8 +13,8 @@ describe("online-error (031)", () => {
     expect(errorForStatus(500).kind).toBe("server");
     expect(errorForStatus(503).kind).toBe("server");
     expect(errorForStatus(418).kind).toBe("unknown");
-    expect(errorForStatus(401).message).toMatch(/Khóa API/);
-    expect(errorForStatus(429).message).toMatch(/giới hạn/);
+    expect(errorForStatus(401).message).toMatch(/API key/);
+    expect(errorForStatus(429).message).toMatch(/rate-limit/);
   });
 
   it("map cause fetch → timeout (AbortError) hoặc network", () => {
