@@ -27,6 +27,7 @@ import {
   groupOutcomes,
   histogram,
 } from "./lib/metrics";
+import { runRerankModel } from "./lib/rerank-run";
 import {
   describeConfig,
   renderMarkdown,
@@ -200,6 +201,26 @@ describe("eval:retrieval", () => {
             )
           : undefined;
 
+      // 109: bộ chấm độ liên quan (EVAL_RERANK=model1,model2) — đo trên ĐÚNG retrieve() của app với cấu hình 108 hiện hành.
+      const rerankModels = (process.env.EVAL_RERANK ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const rerank = [];
+      for (const model of rerankModels) {
+        rerank.push(
+          await runRerankModel(
+            model,
+            index,
+            questions,
+            RELEVANCE_CALIBRATION.config,
+            baseline.en,
+            CACHE_DIR,
+            process.env.EVAL_RERANK_FILE,
+          ),
+        );
+      }
+
       const report: EvalReport = {
         runAt: new Date().toISOString(),
         mode,
@@ -217,6 +238,7 @@ describe("eval:retrieval", () => {
         },
         coldRetrieveMs: index.coldRetrieveMs,
         ...(llm ? { llm } : {}),
+        ...(rerank.length > 0 ? { rerank } : {}),
         warnings,
       };
 

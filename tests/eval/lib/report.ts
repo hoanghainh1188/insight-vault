@@ -5,6 +5,8 @@ import type { EvalMetrics } from "../../../src/main/services/rag/relevance-calib
 import type { Histogram } from "./metrics";
 import type { LlmResult } from "./harness";
 import type { LlmSummary } from "./llm-metrics";
+import type { RerankModelReport } from "./rerank-run";
+import type { RerankConfig } from "../../../src/main/services/rag/rerank-filter";
 
 // 108: báo cáo công cụ đo — console + tests/eval/reports/<ts>/report.{json,md} (gitignore). I/O, không tính coverage.
 
@@ -40,6 +42,8 @@ export interface EvalReport {
   };
   coldRetrieveMs: number;
   llm?: LlmResult;
+  /** 109: đo bộ chấm độ liên quan theo model (EVAL_RERANK) */
+  rerank?: RerankModelReport[];
   warnings: string[];
 }
 
@@ -162,8 +166,15 @@ export function renderMarkdown(r: EvalReport): string {
     histMd("Câu không có đáp án", r.histograms.unanswerable),
   ];
   return (
-    [...head, ...chosen, ...latency, ...table, ...llm, ...hist].join("\n") +
-    "\n"
+    [
+      ...head,
+      ...chosen,
+      ...latency,
+      ...table,
+      ...(r.rerank ? rerankMd(r.rerank, r.baseline) : []),
+      ...llm,
+      ...hist,
+    ].join("\n") + "\n"
   );
 }
 
@@ -192,4 +203,61 @@ function llmSummaryTable(sum: LlmSummary): string[] {
     row("vi"),
     row("en"),
   ];
+}
+
+export function describeRerank(c: RerankConfig): string {
+  const parts = [`s≥${c.minScore}`];
+  if (c.relativeDelta !== null) parts.push(`Δ${c.relativeDelta}`);
+  if (c.reorder) parts.push("sắp lại");
+  return parts.join(" ");
+}
+
+/** 109: mục bộ chấm độ liên quan — mỗi model: kết luận cổng, cấu hình chọn, độ trễ, Pareto dev. */
+function rerankMd(
+  models: RerankModelReport[],
+  baseline: ConfigResult,
+): string[] {
+  const m = (x: EvalMetrics) =>
+    `${pct(x.correctRejection)} ${ci(x.ci95.correctRejection)} | ${pct(x.recallAt6)} ${ci(x.ci95.recallAt6)}`;
+  const out = [
+    "## Bộ chấm độ liên quan (109)",
+    "",
+    `Mốc cùng lượt (không chấm): dev ${m(baseline.dev)} · hold-out ${m(baseline.holdout)} · en ${m(baseline.en)}`,
+    "",
+  ];
+  for (const r of models) {
+    out.push(
+      `### \`${r.model}\`${r.modelFile ? ` (\`${r.modelFile}\`)` : ""}`,
+      "",
+    );
+    if (r.error) {
+      out.push(`- **Không nạp được**: ${r.error}`, "");
+      continue;
+    }
+    const l = r.latency!;
+    out.push(
+      `- Kết luận cổng: **${r.gate?.verdict ?? "KHÔNG ĐẠT"}**${r.gate && r.gate.reasons.length ? ` — ${r.gate.reasons.join("; ")}` : ""}`,
+      `- Chọn trên dev: ${r.choice?.chosen ? `\`${describeRerank(r.choice.chosen)}\`` : "không chọn được"} — ${r.choice?.reason ?? ""}`,
+      ...(r.chosen
+        ? [
+            `- Cấu hình chọn: dev ${m(r.chosen.dev)} · hold-out ${m(r.chosen.holdout)} · en ${m(r.chosen.en)} · Wilson vi gộp ${pct(r.gate!.wilsonLower)} (${r.chosen.viRejected.successes}/${r.chosen.viRejected.n})`,
+            `- Chênh lệch vi−en: từ chối đúng ${pct(r.gate!.langGap.correctRejection)}, Recall@6 ${pct(r.gate!.langGap.recallAt6)}`,
+          ]
+        : []),
+      `- Độ trễ chấm/câu: p50 ${l.p50Ms.toFixed(0)} ms · p95 ${l.p95Ms.toFixed(0)} ms · nạp ${l.coldLoadMs.toFixed(0)} ms · RSS +${l.rssDeltaMb.toFixed(0)} MB · event loop p99 ${l.eventLoopP99Ms.toFixed(1)} ms${r.skips ? ` · ⚠️ bỏ qua ${r.skips} lần` : ""}`,
+      "",
+      "Pareto trên dev (từ chối đúng | Recall@6):",
+      "",
+      "| cấu hình | dev | hold-out | en |",
+      "|---|---|---|---|",
+      ...(r.choice?.pareto ?? []).slice(0, 12).map((p) => {
+        const full = r.results.find(
+          (x) => JSON.stringify(x.config) === JSON.stringify(p.config),
+        )!;
+        return `| ${describeRerank(p.config)} | ${m(full.dev)} | ${m(full.holdout)} | ${m(full.en)} |`;
+      }),
+      "",
+    );
+  }
+  return out;
 }

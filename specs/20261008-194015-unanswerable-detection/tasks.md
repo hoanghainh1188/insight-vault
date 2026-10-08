@@ -71,21 +71,21 @@
 
 ### Logic thuần của công cụ đo
 
-- [ ] T012 [P] [US3] Viết test TRƯỚC `tests/unit/eval-rerank-grid.test.ts`: sinh lưới R7 (12 `minScore` × 4 `relativeDelta` × 2 `reorder` = 96, cấu hình
+- [X] T012 [P] [US3] Viết test TRƯỚC `tests/unit/eval-rerank-grid.test.ts`: sinh lưới R7 (12 `minScore` × 4 `relativeDelta` × 2 `reorder` = 96, cấu hình
       hợp lệ theo `validateRerankConfig`); chọn trên dev (lọc CR ≥ 0,9 ∧ R@6 ≥ 0,85 → max R@6 → max CR → `minScore` nhỏ nhất); Pareto khi không có; kết luận
       cổng R6 (`ĐẠT` / `ĐẠT SÀN` / `KHÔNG ĐẠT`: CR hold-out ≥ 0,9, R@6 hold-out ≥ 0,85 hoặc sàn 0,75, Wilson cận dưới vi dev+hold-out ≥ 0,75, English không
       tụt so với mốc); báo chênh lệch vi/en của cấu hình chọn (cho T021). Chạy thấy FAIL.
-- [ ] T013 [US3] Hiện thực `tests/eval/lib/rerank-grid.ts` cho T012 xanh; thêm vào `coverage.include` như `tests/eval/lib/metrics.ts` của 108.
+- [X] T013 [US3] Hiện thực `tests/eval/lib/rerank-grid.ts` cho T012 xanh; thêm vào `coverage.include` như `tests/eval/lib/metrics.ts` của 108.
 
 ### I/O công cụ đo
 
-- [ ] T014 [US3] Hiện thực `tests/eval/lib/rerank.ts` (I/O, không coverage): nạp model theo kết quả T001 (`EVAL_RERANK_FILE` hoặc tự chọn theo
+- [X] T014 [US3] Hiện thực `tests/eval/lib/rerank.ts` (I/O, không coverage): nạp model theo kết quả T001 (`EVAL_RERANK_FILE` hoặc tự chọn theo
       `process.arch` — research R3), `score(query, passages)` theo lô (`chunk.text`), cache điểm theo (câu, id, model), đo nạp nguội, p50/p95 chấm/câu, RSS
       tăng, event loop p99 (`perf_hooks.monitorEventLoopDelay`); model lỗi ⇒ ghi lỗi, đo tiếp model khác.
-- [ ] T015 [US3] Mở rộng `tests/eval/lib/harness.ts` + `tests/eval/retrieval.eval.ts`: chế độ `EVAL_RERANK` — gọi **ĐÚNG `retrieve()` của app** với
+- [X] T015 [US3] Mở rộng `tests/eval/lib/harness.ts` + `tests/eval/retrieval.eval.ts`: chế độ `EVAL_RERANK` — gọi **ĐÚNG `retrieve()` của app** với
       `deps.rerank` = scorer có cache (T014) và `rerankCfg` = từng cấu hình lưới (T013) trên nền cấu hình 108 hiện hành; tính chỉ số qua
       `tests/eval/lib/metrics.ts` theo nhóm vi dev / vi hold-out / en. Không thêm đường truy xuất riêng trong công cụ đo.
-- [ ] T016 [US3] Mở rộng `tests/eval/lib/report.ts`: mục `rerank` theo model (bảng cấu hình, cấu hình chọn, CI95, độ trễ/RAM/event loop, kết luận) +
+- [X] T016 [US3] Mở rộng `tests/eval/lib/report.ts`: mục `rerank` theo model (bảng cấu hình, cấu hình chọn, CI95, độ trễ/RAM/event loop, kết luận) +
       mốc English cùng lượt (theo `contracts/eval-rerank-cli.md`).
 - [ ] T017 [P] [US3] (chỉ dùng nếu cần ở T022) Hiện thực `tests/eval/lib/judge.ts` + chế độ `EVAL_JUDGE=llm` (research R5): một lượt `EVAL_LLM_MODEL` cục
       bộ/câu, lời nhắc English liệt kê đoạn đánh số, trả JSON số đoạn; hàm parse thuần có test `tests/unit/eval-judge-parse.test.ts` viết TRƯỚC.

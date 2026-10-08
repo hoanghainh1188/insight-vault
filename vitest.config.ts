@@ -40,6 +40,7 @@ export default defineConfig({
         "tests/eval/lib/dataset.ts",
         "tests/eval/lib/metrics.ts",
         "tests/eval/lib/grid.ts",
+        "tests/eval/lib/rerank-grid.ts",
         "src/main/services/ingestion/fts-fold.ts",
         "src/main/services/ingestion/keyword-store.ts",
         "src/renderer/shared/useModalA11y.ts",
