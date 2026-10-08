@@ -105,7 +105,7 @@ export interface ReindexStatus {
 export interface RuntimeStatus {
   /** Ollama phản hồi ping trong timeout. */
   reachable: boolean;
-  /** reachable AND chat+embedding model đã chọn tồn tại trên máy. */
+  /** reachable AND mô hình TRẢ LỜI đã chọn tồn tại trên máy (#124: embedding chạy in-process, không cần Ollama). */
   ollamaReady: boolean;
   /** Lý do khi chưa sẵn sàng (English, cho nhật ký) — giao diện hiển thị theo reasonCode (123). */
   reason: string | null;
