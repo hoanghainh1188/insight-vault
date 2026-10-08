@@ -32,7 +32,7 @@ export const aiVi = {
   runtimeReason: {
     ollamaUnreachable:
       "Không kết nối được Ollama (kiểm tra Ollama đã cài và đang chạy).",
-    modelsNotSelected: "Chưa chọn đủ mô hình trả lời và mô hình embedding.",
+    modelsNotSelected: "Chưa chọn mô hình trả lời.",
     modelsMissing: "Mô hình đã chọn không có trên máy: {models}.",
     apiKeyMissing: "{provider}: chưa nhập khóa API.",
     modelNotSelected: "{provider}: chưa chọn mô hình.",
@@ -118,9 +118,9 @@ export const aiEn: Widen<typeof aiVi> = {
   runtimeReason: {
     ollamaUnreachable:
       "Couldn't connect to Ollama (check that Ollama is installed and running).",
-    modelsNotSelected: "Choose both an answer model and an embedding model.",
+    modelsNotSelected: "No answer model selected.",
     modelsMissing:
-      "Selected models aren't installed on this computer: {models}.",
+      "The selected model isn't installed on this computer: {models}.",
     apiKeyMissing: "{provider}: no API key entered.",
     modelNotSelected: "{provider}: no model selected.",
     connectionFailed: "{provider}: connection test failed.",

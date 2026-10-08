@@ -2,7 +2,8 @@ import type { ModelSelection, RuntimeStatus } from "@shared/ipc/types";
 import type { OllamaClient } from "./ollama-client";
 
 // Compose trạng thái runtime (check-on-demand — A2). Thuần + nhận client/selection tiêm vào → test được.
-// ollamaReady = kết nối được AND chat+embedding model đã chọn tồn tại trên máy.
+// ollamaReady = kết nối được AND mô hình TRẢ LỜI đã chọn có trên máy. #124: embedding chạy in-process từ 059
+// (e5-small) ⇒ KHÔNG còn yêu cầu chọn/cài mô hình embedding của Ollama (trước đây chặn máy cài mới).
 
 export async function computeRuntimeStatus(
   client: OllamaClient,
@@ -18,26 +19,23 @@ export async function computeRuntimeStatus(
     };
   }
 
-  if (!selection.chatModel || !selection.embeddingModel) {
+  if (!selection.chatModel) {
     return {
       reachable: true,
       ollamaReady: false,
-      reason: "Chat and embedding models not selected.",
+      reason: "Answer model not selected.",
       reasonCode: "modelsNotSelected",
     };
   }
 
   const installed = new Set((await client.listModels()).map((m) => m.name));
-  const missing = [selection.chatModel, selection.embeddingModel].filter(
-    (m) => !installed.has(m),
-  );
-  if (missing.length > 0) {
+  if (!installed.has(selection.chatModel)) {
     return {
       reachable: true,
       ollamaReady: false,
-      reason: `Selected models not installed: ${missing.join(", ")}.`,
+      reason: `Selected model not installed: ${selection.chatModel}.`,
       reasonCode: "modelsMissing",
-      reasonParams: { models: missing.join(", ") },
+      reasonParams: { models: selection.chatModel },
     };
   }
 

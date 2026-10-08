@@ -34,20 +34,36 @@ describe("runtime-status", () => {
     expect(s.reasonCode).toBe("ollamaUnreachable");
   });
 
-  it("kết nối nhưng chưa chọn đủ model → not ready", async () => {
+  it("kết nối nhưng chưa chọn mô hình trả lời → not ready", async () => {
     const s = await computeRuntimeStatus(
       client({ reachable: true, models: ["a", "b"] }),
-      sel("a", null),
+      sel(null, null),
     );
     expect(s.reachable).toBe(true);
     expect(s.ollamaReady).toBe(false);
     expect(s.reasonCode).toBe("modelsNotSelected");
+    expect(s.reason).not.toMatch(/embedding/i);
   });
 
-  it("model đã chọn không có trên máy → not ready, nêu model thiếu", async () => {
+  it("#124: chỉ cần mô hình trả lời — embedding chạy trong app (059), không bắt chọn/cài model embedding Ollama", async () => {
+    const s = await computeRuntimeStatus(
+      client({ reachable: true, models: ["qwen2.5:7b"] }),
+      sel("qwen2.5:7b", null),
+    );
+    expect(s.ollamaReady).toBe(true);
+    expect(s.reason).toBeNull();
+    // embeddingModel cũ (trước 059) đã gỡ khỏi Ollama ⇒ vẫn sẵn sàng.
+    const old = await computeRuntimeStatus(
+      client({ reachable: true, models: ["qwen2.5:7b"] }),
+      sel("qwen2.5:7b", "nomic-embed-text"),
+    );
+    expect(old.ollamaReady).toBe(true);
+  });
+
+  it("mô hình trả lời đã chọn không có trên máy → not ready, nêu tên", async () => {
     const s = await computeRuntimeStatus(
       client({ reachable: true, models: ["a"] }),
-      sel("a", "missing"),
+      sel("missing", null),
     );
     expect(s.ollamaReady).toBe(false);
     expect(s.reason).toContain("missing");

@@ -19,7 +19,7 @@ describe("runtimeReasonText", () => {
         { reasonCode: "modelsMissing", reasonParams: { models: "a, b" } },
         trEn,
       ),
-    ).toBe("Selected models aren't installed on this computer: a, b.");
+    ).toBe("The selected model isn't installed on this computer: a, b.");
     expect(
       runtimeReasonText(
         { reasonCode: "apiKeyMissing", reasonParams: { provider: "OpenAI" } },
