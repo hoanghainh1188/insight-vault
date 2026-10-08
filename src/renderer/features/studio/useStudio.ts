@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { runtimeStatusStore } from "../ai-runtime/runtime-status-store";
 import type {
   AiTarget,
   Source,
@@ -26,7 +33,14 @@ export function useStudio(notebookId: string) {
   // 098: loại nào vừa lỗi do provider online (hiện nút "Tạo bằng AI cục bộ") / kết quả nào tạo bằng AI cục bộ (nhãn).
   const [onlineFailed, setOnlineFailed] = useState<StudioFlagMap>({});
   const [localKinds, setLocalKinds] = useState<StudioFlagMap>({});
-  const [ollamaReady, setOllamaReady] = useState<boolean | null>(null);
+  // #135: trạng thái runtime dùng chung (tự kiểm tra lại khi chưa sẵn sàng; "Kiểm tra lại" ở banner cập nhật cả đây).
+  const runtime = useSyncExternalStore(
+    runtimeStatusStore.subscribe,
+    runtimeStatusStore.getSnapshot,
+  );
+  const ollamaReady: boolean | null = runtime.status
+    ? runtime.status.ollamaReady
+    : null;
   const [readySources, setReadySources] = useState<Source[]>([]);
   const hasReadySources = readySources.length > 0;
   // 091 (review S3): notebook hiện tại — kết quả của lượt tạo cũ về muộn sau khi chuyển notebook thì bỏ.
@@ -34,10 +48,7 @@ export function useStudio(notebookId: string) {
 
   // Trạng thái sẵn sàng (mirror useChat): model + danh sách nguồn ready (cho dropdown lọc — US2).
   const refreshReadiness = useCallback(() => {
-    window.api
-      .aiGetRuntimeStatus()
-      .then((s) => setOllamaReady(s.ollamaReady))
-      .catch(() => setOllamaReady(false));
+    runtimeStatusStore.refresh();
     window.api
       .sourceListByNotebook(notebookId)
       .then((list) => setReadySources(list.filter((s) => s.status === "ready")))
