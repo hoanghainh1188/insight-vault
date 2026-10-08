@@ -36,7 +36,7 @@ Không đổi schema SQLite/LanceDB. Thay đổi là kiểu TypeScript + bộ đ
 | `rerank`         | `RerankCalibration \| null` | null ⇒ không rerank (trạng thái trước tích hợp / khi không hướng nào đạt) |
 | `datasetVersion` | `"3"` sau hiệu chuẩn        | khớp `tests/eval/questions.json` (test canh giữ)                          |
 
-`RerankCalibration = { model: string; modelFile: Partial<Record<"arm64" | "x64", string>> | null; modelVersion: string; config: RerankConfig;
+`RerankCalibration = { model: string; maxTokens: number /* cổng #14: 256 */; modelFile: Partial<Record<"arm64" | "x64", string>> | null; modelVersion: string; config: RerankConfig;
 metrics: { dev: EvalMetrics; holdout: EvalMetrics; en: EvalMetrics } ; latency: { coldLoadMs: number; p50Ms: number; p95Ms: number } }`.
 `RERANK_MODEL_VERSION` (hằng, `src/main/services/rerank/model-version.ts`) — đổi model ⇒ test canh giữ fail.
 

@@ -27,6 +27,8 @@ export interface RerankConfigResult {
 
 export interface RerankModelReport {
   model: string;
+  /** biến thể đo (cổng #14) */
+  variant?: { maxLength?: number; topN?: number };
   modelFile: string | null;
   error?: string;
   results: RerankConfigResult[];
@@ -54,10 +56,17 @@ export async function runRerankModel(
   enBaseline: EvalMetrics,
   cacheDir: string,
   fileOverride?: string,
+  variant: { maxLength?: number; topN?: number } = {},
 ): Promise<RerankModelReport> {
   let scorer;
   try {
-    scorer = await loadScorer(model, cacheDir, fileOverride);
+    scorer = await loadScorer(
+      model,
+      cacheDir,
+      fileOverride,
+      variant.maxLength,
+      variant.topN,
+    );
   } catch (e) {
     return {
       model,
@@ -122,6 +131,7 @@ export async function runRerankModel(
     const st = scorer.stats();
     return {
       model,
+      variant,
       modelFile: scorer.modelFile,
       results,
       choice,

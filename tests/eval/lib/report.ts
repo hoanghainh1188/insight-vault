@@ -226,8 +226,15 @@ function rerankMd(
     "",
   ];
   for (const r of models) {
+    const v = r.variant ?? {};
+    const variant = [
+      v.topN !== undefined ? `top-${v.topN}` : "",
+      v.maxLength !== undefined ? `${v.maxLength} token` : "",
+    ]
+      .filter(Boolean)
+      .join(", ");
     out.push(
-      `### \`${r.model}\`${r.modelFile ? ` (\`${r.modelFile}\`)` : ""}`,
+      `### \`${r.model}\`${r.modelFile ? ` (\`${r.modelFile}\`)` : ""}${variant ? ` — ${variant}` : ""}`,
       "",
     );
     if (r.error) {

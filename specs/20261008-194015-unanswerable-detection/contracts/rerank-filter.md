@@ -4,10 +4,11 @@ Tệp: `src/main/services/rag/rerank-filter.ts` (thuần) · `src/main/services/
 
 ## `validateRerankConfig(cfg: RerankConfig): void`
 
-Ném `Error` khi: `minScore` ∉ [0, 1] hoặc không hữu hạn; `relativeDelta` khác null và ∉ [0, 1]; `timeoutMs` ≤ 0 hoặc không hữu hạn.
+Ném `Error` khi: `minScore` ∉ [0, 1] hoặc không hữu hạn; `relativeDelta` khác null và ∉ [0, 1]; `timeoutMs` ≤ 0 hoặc không hữu hạn; `maxCandidates` không phải số nguyên ≥ 1.
 
 ## `applyRerank(fused, scores, cfg) → { ids, scoreOf }`
 
+- Chỉ `fused.slice(0, maxCandidates)` được xét (và được gửi đi chấm); id sau vị trí đó bị loại.
 - `best = max(scores[id] for id in fused có điểm)`; không id nào có điểm ⇒ `ids = []`.
 - Giữ `id` khi `scores[id] ≥ cfg.minScore` VÀ (`relativeDelta === null` HOẶC `scores[id] ≥ best − relativeDelta`).
 - `reorder === false` ⇒ thứ tự như `fused`; `true` ⇒ điểm giảm dần, hoà ⇒ vị trí trong `fused`.

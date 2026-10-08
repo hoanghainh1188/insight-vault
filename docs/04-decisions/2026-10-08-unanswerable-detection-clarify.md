@@ -25,3 +25,16 @@
 | 10  | Dự phòng khi bước mới không chạy được         | **Fail-open + timeout:** model chưa tải / tải lỗi / offline lần đầu / lỗi suy luận / quá thời gian ⇒ không lọc thêm (hành vi 108 hiện hành, tầng trả lời vẫn chặn bịa), `logEvent` mã lỗi (không nội dung); không chặn hỏi đáp; trạng thái "chưa sẵn sàng" chỉ hiện ở Cài đặt (qua i18n).                                                                                                                                      |
 | 11  | Giấy phép, dung lượng, nguồn model            | **Loại model không cho dùng thương mại** (kế hoạch freemium); chỉ xét model **đã có bản ONNX chạy được bằng `@huggingface/transformers`** (xác minh, không giả định); ghi giấy phép + dung lượng + RAM đo được vào ADR.                                                                                                                                                                                                        |
 | 12  | Quan hệ với ADR 055, canh giữ hiệu chuẩn, CI  | **ADR mới thay thế một phần 055** (mục "không LLM-rerank/cross-encoder"), không sửa file cũ; thêm trường hiệu chuẩn bước mới (vd `rerank`) + `rerankModelVersion` vào `RELEVANCE_CALIBRATION`, kèm test canh giữ song song `embeddingModelVersion`; job CI `eval-retrieval` **chỉ báo cáo**, không chặn PR (như 108).                                                                                                          |
+
+## Bổ sung — cổng T023 (2026-10-08, sau đo)
+
+Số liệu: `specs/20261008-194015-unanswerable-detection/eval-rerank.md`. Người dùng chốt (toàn bộ phương án khuyên):
+
+| #   | Câu hỏi | Quyết định |
+| --- | ------- | ---------- |
+| 13  | Tích hợp bộ chấm? | **ĐẠT — tích hợp a1** `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` (vi hold-out từ chối đúng 100%, Recall@6 95,8%; Wilson vi gộp 84,3%; English tốt hơn mốc). a2 loại (English Recall@6 31,8%). Không đo hướng b, c. |
+| 14  | Độ trễ p50 ~0,4–0,5 s (vượt mốc 300 ms) | **Thử tối ưu rồi chốt:** đo thêm biến thể chỉ chấm top-N ứng viên và/hoặc cắt token ngắn hơn; chọn biến thể nhanh nhất vẫn ĐẠT cổng; ngân sách chốt theo số đo, ghi ADR. |
+| 15  | Ngưỡng English (từ chối đúng 66,7% vs vi 100%) | **Giữ ngưỡng chung** (FR-011); ghi giới hạn đã biết trong ADR. |
+
+Kết quả #14 (đo 2026-10-08, `eval-rerank.md` mục "Tối ưu độ trễ"): chọn **top-12 ứng viên + cắt 256 token** — p50 286 ms (đo lặp) / 367 ms
+(công cụ đo), vẫn ĐẠT cổng. Ngân sách chốt: p50 ≤ 400 ms, p95 ≤ 800 ms (máy tham chiếu), timeout an toàn 1500 ms.

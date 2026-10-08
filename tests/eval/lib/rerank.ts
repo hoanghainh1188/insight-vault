@@ -57,6 +57,10 @@ export async function loadScorer(
   model: string,
   cacheDir: string,
   fileOverride?: string,
+  /** 109 (cổng #14): cắt mỗi cặp ở số token này (mặc định 512) */
+  maxLength = 512,
+  /** 109 (cổng #14): chỉ chấm N ứng viên đầu (thứ tự RRF); phần còn lại không có điểm ⇒ bị loại. undefined = mọi ứng viên */
+  topN?: number,
 ): Promise<RerankScorer> {
   env.cacheDir = cacheDir;
   const modelFile = fileFor(model, fileOverride);
@@ -83,7 +87,8 @@ export async function loadScorer(
   // bật/tắt theo lượt — cách đó cộng cả thời gian tắt vào mẫu đầu, cho số ảo (lượt đo 2026-10-08: 1,5 s ảo vs 26–67 ms thật).
   let maxLoopGapMs = 0;
 
-  const score = async (query: string, passages: Passage[]) => {
+  const score = async (query: string, all: Passage[]) => {
+    const passages = topN === undefined ? all : all.slice(0, topN);
     const missing = passages.filter((p) => !cache.has(`${query}\u0000${p.id}`));
     if (missing.length > 0) {
       let last = performance.now();
@@ -99,7 +104,7 @@ export async function loadScorer(
           text_pair: missing.map((p) => p.text),
           padding: true,
           truncation: true,
-          max_length: 512,
+          max_length: maxLength,
         },
       );
       const out = await net(inputs);

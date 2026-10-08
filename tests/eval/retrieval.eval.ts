@@ -217,6 +217,14 @@ describe("eval:retrieval", () => {
             baseline.en,
             CACHE_DIR,
             process.env.EVAL_RERANK_FILE,
+            {
+              ...(process.env.EVAL_RERANK_MAXLEN
+                ? { maxLength: Number(process.env.EVAL_RERANK_MAXLEN) }
+                : {}),
+              ...(process.env.EVAL_RERANK_TOPN
+                ? { topN: Number(process.env.EVAL_RERANK_TOPN) }
+                : {}),
+            },
           ),
         );
       }

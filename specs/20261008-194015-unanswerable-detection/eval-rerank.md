@@ -42,3 +42,20 @@ Chọn **a1, `minScore` 0,6**. Hai điểm cần quyết:
 1. **Độ trễ** p50 ~0,4–0,5 s/câu (mốc 300 ms): chấp nhận và chốt ngân sách mới, hoặc giảm chi phí (vd chỉ chấm top-12 ứng viên / cắt 256 token)
    rồi đo lại.
 2. **Ngưỡng chung vi/en** (FR-011): English kém vi ~33 điểm từ chối đúng nhưng vẫn tốt hơn mốc ⇒ đề xuất giữ ngưỡng chung, ghi giới hạn đã biết.
+
+## Tối ưu độ trễ (cổng #14, 2026-10-08)
+
+Đoạn của app ~1000 ký tự ≈ **290 token** (p50, max 346 trên 40 đoạn mẫu) ⇒ chi phí ∝ số cặp × số token.
+
+| Biến thể a1 (`minScore` 0,6) | p50 đo lặp (8 lượt, cùng đầu vào, 20/12 đoạn) | p50 / p95 trong công cụ đo | Cổng | vi dev (CR / R@6) | vi hold-out | en (CR / R@6) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 20 ứng viên, 512 token | 848 ms | 419–504 / 720–1146 ms | ĐẠT | 95,5% / 89,7% | 100% / 95,8% | 66,7% / 72,7% |
+| 20 ứng viên, 256 token | 514 ms | 670 / 1276 ms (nhiễu máy) | ĐẠT | 95,5% / 89,7% | 100% / 95,8% | 66,7% / 72,7% |
+| top-12, 512 token | 493 ms | 436 / 880 ms | ĐẠT | 95,5% / 89,7% | 100% / 95,8% | 75,0% / 72,7% |
+| **top-12, 256 token** | **286 ms** | **367 / 612 ms** | **ĐẠT** | 95,5% / 87,9% | 100% / 95,8% | 75,0% / 68,2% (= mốc) |
+
+Số đo trong công cụ đo dao động theo tải máy (cùng cấu hình lệch tới ±30%); bảng đo lặp có kiểm soát là căn cứ chính.
+
+**Chốt (theo quyết định #14 "nhanh nhất vẫn ĐẠT"):** a1, `minScore` 0,6, **chỉ chấm 12 ứng viên đầu (thứ tự RRF), cắt 256 token**. Ngân sách
+độ trễ chốt: p50 ≤ 400 ms, p95 ≤ 800 ms trên máy tham chiếu (macOS arm64); timeout an toàn giữ 1500 ms. Đổi lại: English Recall@6 bằng mốc
+(68,2%, không cải thiện) nhưng từ chối đúng English 0% → 75%; vi Recall@6 dev 89,7% → 87,9% (vẫn ≥ 85%).

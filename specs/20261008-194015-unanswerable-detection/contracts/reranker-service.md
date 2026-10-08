@@ -15,7 +15,7 @@ interface Reranker {
 
 - Nạp: `AutoTokenizer.from_pretrained(model)` + `AutoModelForSequenceClassification` (hoặc `AutoModel` nếu research R2 chốt) với `env.cacheDir`;
   trong lúc tải `setOnline(true, "model")`, xong/lỗi `setOnline(false, "model")`; `logEvent("rerank.model.load" | "rerank.model.error", { model })`.
-- `score`: một lô cho mọi cặp, `sigmoid(logits)`; gọi tuần tự qua hàng đợi (một phiên).
+- `score`: một lô cho mọi cặp, cắt `maxTokens` token/cặp (cổng #14: 256), `sigmoid(logits)`; gọi tuần tự qua hàng đợi (một phiên).
 - `score` khi trạng thái ≠ `ready` ⇒ kích `prefetch()` và ném `RerankNotReadyError` (retrieve fail-open, `reason: "notReady"`).
 - Seam: `IV_RERANK_FAKE=1` và `!app.isPackaged` ⇒ scorer tất định (điểm theo trùng từ khoá), không tải, `status() = "ready"`.
 - Không log câu hỏi/đoạn văn.
