@@ -103,3 +103,43 @@ test("nav Workspace: notebook gần nhất đã xoá → CTA chọn notebook", a
   // KHÔNG redirect (notebook đã xoá) → hiện CTA chọn notebook.
   await expect(win.getByTestId("ws-pick")).toBeVisible();
 });
+
+test("#128: cửa sổ nhỏ nhất ⇒ cột Chat vẫn ≥ 320px, cột biên co lại; rộng lại ⇒ trở về độ rộng đã chọn", async () => {
+  const win = await app.firstWindow();
+  await dismissOnboarding(win);
+  const nbId = await win.evaluate(async () => {
+    const nb = await window.api.notebookCreate({
+      name: "Hẹp",
+      color: "#1E6B57",
+    });
+    return nb.id;
+  });
+  await win.evaluate((id) => {
+    window.location.hash = `#/workspace/${id}`;
+  }, nbId);
+  await expect(win.getByTestId("chat-column")).toBeVisible();
+
+  const size = await app.evaluate(({ BrowserWindow }) => {
+    const w = BrowserWindow.getAllWindows()[0]!;
+    w.setSize(400, 300); // nhỏ hơn mức tối thiểu ⇒ Electron giữ ở minWidth/minHeight
+    return w.getSize();
+  });
+  expect(size[0]).toBe(900);
+  await expect
+    .poll(
+      async () =>
+        (await win.getByTestId("chat-column").boundingBox())?.width ?? 0,
+    )
+    .toBeGreaterThanOrEqual(320);
+
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0]!.setSize(1400, 820),
+  );
+  const stored = await win.evaluate(() =>
+    JSON.parse(localStorage.getItem("workspace-col-widths") ?? "null"),
+  );
+  const src = win.locator(".workspace > :first-child");
+  await expect
+    .poll(async () => Math.round((await src.boundingBox())?.width ?? 0))
+    .toBe(stored?.src ?? 300);
+});

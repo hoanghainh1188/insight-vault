@@ -1,11 +1,12 @@
-import { useEffect, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { SourceList } from "./SourceList";
 import { ChatColumn } from "../rag-qa/ChatColumn";
 import { StudioColumn } from "../studio/StudioColumn";
 import { SourceViewer } from "../source-viewer/SourceViewer";
 import { useSourceViewer } from "../source-viewer/useSourceViewer";
-import { useColumnWidths } from "./useColumnWidths";
+import { fitWidths, useColumnWidths } from "./useColumnWidths";
+import { useElementWidth } from "./useElementWidth";
 import { setLastNotebookId } from "../../shared/lastNotebook";
 import { useT } from "../../shared/i18n/i18n-context";
 
@@ -16,6 +17,9 @@ export function Workspace(): JSX.Element {
   const { notebookId } = useParams<{ notebookId: string }>();
   const viewer = useSourceViewer();
   const { widths, onDragSrc, onDragStudio } = useColumnWidths();
+  const ref = useRef<HTMLDivElement>(null);
+  // #128: cửa sổ hẹp ⇒ co Nguồn/Studio để Chat không bị bóp (độ rộng đã lưu giữ nguyên).
+  const shown = fitWidths(widths, useElementWidth(ref));
 
   // Nhớ notebook mở gần nhất (C) — nút Workspace trên rail dùng để mở lại.
   useEffect(() => {
@@ -25,12 +29,12 @@ export function Workspace(): JSX.Element {
   if (!notebookId) return <Navigate to="/notebooks" replace />;
 
   const style = {
-    "--col-src": `${widths.src}px`,
-    "--col-studio": `${widths.studio}px`,
+    "--col-src": `${shown.src}px`,
+    "--col-studio": `${shown.studio}px`,
   } as CSSProperties;
 
   return (
-    <div className="workspace" data-testid="workspace" style={style}>
+    <div ref={ref} className="workspace" data-testid="workspace" style={style}>
       <SourceList
         notebookId={notebookId}
         onOpenSource={viewer.openSource}

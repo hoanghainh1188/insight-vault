@@ -123,7 +123,7 @@ function createWindow(): void {
   const win = new BrowserWindow({
     width: 1120,
     height: 720,
-    minWidth: 720,
+    minWidth: 900, // #128: đủ chỗ 3 cột Workspace (Chat ≥ 320px khi Nguồn/Studio co về tối thiểu)
     minHeight: 480,
     show: false,
     ...(iconPath ? { icon: iconPath } : {}), // Windows/Linux taskbar + window

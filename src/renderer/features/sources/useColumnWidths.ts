@@ -23,6 +23,28 @@ export function clampWidths(w: ColWidths): ColWidths {
   };
 }
 
+/** #128: Chat phải còn ít nhất chừng này (ô nhập, chọn chế độ, nút gửi không bị bóp). */
+export const CHAT_MIN_WIDTH = 320;
+const SPLITTERS = 10; // 2 splitter × 5px
+
+/**
+ * Độ rộng HIỂN THỊ theo chỗ trống thật của Workspace (THUẦN): đủ chỗ ⇒ giữ nguyên; thiếu ⇒ co Nguồn + Studio theo tỉ lệ
+ * phần dư trên mức tối thiểu để Chat còn CHAT_MIN_WIDTH; không co dưới mức tối thiểu mỗi cột. available ≤ 0 (chưa
+ * đo) ⇒ giữ nguyên. Không đổi độ rộng người dùng đã lưu — cửa sổ rộng lại thì trở về như cũ.
+ */
+export function fitWidths(w: ColWidths, available: number): ColWidths {
+  if (available <= 0) return w;
+  const room = available - SPLITTERS - CHAT_MIN_WIDTH;
+  const excess = w.src + w.studio - room;
+  if (excess <= 0) return w;
+  const slackSrc = Math.max(0, w.src - SRC_MIN);
+  const slackStudio = Math.max(0, w.studio - STUDIO_MIN);
+  const slack = slackSrc + slackStudio;
+  if (excess >= slack) return { src: SRC_MIN, studio: STUDIO_MIN };
+  const cutSrc = Math.ceil((excess * slackSrc) / slack);
+  return { src: w.src - cutSrc, studio: w.studio - (excess - cutSrc) };
+}
+
 /** Parse localStorage an toàn → clamp; thiếu/hỏng → mặc định (THUẦN). */
 export function parseWidths(raw: string | null): ColWidths {
   if (!raw) return { ...DEFAULT };
