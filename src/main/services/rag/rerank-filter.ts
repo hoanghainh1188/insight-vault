@@ -11,6 +11,8 @@ export interface RerankConfig {
   reorder: boolean;
   /** Ngưỡng an toàn: chấm quá thời gian ⇒ bỏ qua bước chấm (fail-open). Không phải mục tiêu độ trễ. */
   timeoutMs: number;
+  /** Chỉ chấm N ứng viên đầu theo thứ tự RRF; phần sau bị loại (cổng #14: 12 — giới hạn độ trễ). */
+  maxCandidates: number;
 }
 
 export interface RerankResult {
@@ -44,6 +46,11 @@ export function validateRerankConfig(cfg: RerankConfig): void {
       `RerankConfig.timeoutMs must be a finite number > 0 (got ${cfg.timeoutMs})`,
     );
   }
+  if (!Number.isInteger(cfg.maxCandidates) || cfg.maxCandidates < 1) {
+    throw new Error(
+      `RerankConfig.maxCandidates must be an integer ≥ 1 (got ${cfg.maxCandidates})`,
+    );
+  }
 }
 
 /** Lọc (tuyệt đối + tương đối) và tuỳ chọn sắp lại `fused` theo điểm. Không mutate đầu vào; tất định. */
@@ -53,6 +60,7 @@ export function applyRerank(
   cfg: RerankConfig,
 ): RerankResult {
   const scored = fused
+    .slice(0, cfg.maxCandidates)
     .map((id, pos) => ({ id, pos, score: scores.get(id) }))
     .filter((x): x is { id: string; pos: number; score: number } =>
       Number.isFinite(x.score),

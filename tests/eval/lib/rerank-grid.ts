@@ -20,8 +20,8 @@ const MIN_SCORES = [
 ];
 const RELATIVE_DELTAS: readonly (number | null)[] = [null, 0.2, 0.4, 0.6];
 
-/** 12 minScore × 4 relativeDelta × 2 reorder = 96 cấu hình. */
-export function buildRerankGrid(): RerankConfig[] {
+/** 12 minScore × 4 relativeDelta × 2 reorder = 96 cấu hình; `maxCandidates` cố định cho cả lưới (cổng #14). */
+export function buildRerankGrid(maxCandidates = 20): RerankConfig[] {
   const out: RerankConfig[] = [];
   for (const minScore of MIN_SCORES) {
     for (const relativeDelta of RELATIVE_DELTAS) {
@@ -31,6 +31,7 @@ export function buildRerankGrid(): RerankConfig[] {
           relativeDelta,
           reorder,
           timeoutMs: RERANK_TIMEOUT_MS,
+          maxCandidates,
         });
       }
     }

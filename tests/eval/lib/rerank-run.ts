@@ -57,16 +57,12 @@ export async function runRerankModel(
   cacheDir: string,
   fileOverride?: string,
   variant: { maxLength?: number; topN?: number } = {},
+  /** chỉ đo đúng cấu hình này (kiểm hồi quy `EVAL_MODE=current`) thay vì quét lưới */
+  only?: RerankConfig,
 ): Promise<RerankModelReport> {
   let scorer;
   try {
-    scorer = await loadScorer(
-      model,
-      cacheDir,
-      fileOverride,
-      variant.maxLength,
-      variant.topN,
-    );
+    scorer = await loadScorer(model, cacheDir, fileOverride, variant.maxLength);
   } catch (e) {
     return {
       model,
@@ -89,11 +85,12 @@ export async function runRerankModel(
         relativeDelta: null,
         reorder: false,
         timeoutMs: 600_000,
+        maxCandidates: variant.topN ?? 20,
       },
       onSkip,
     });
     const results: RerankConfigResult[] = [];
-    for (const cfg of buildRerankGrid()) {
+    for (const cfg of only ? [only] : buildRerankGrid(variant.topN ?? 20)) {
       const { outcomes } = await evaluateConfig(index, questions, relevance, {
         score: scorer.score,
         cfg,

@@ -87,7 +87,7 @@
       `tests/eval/lib/metrics.ts` theo nhóm vi dev / vi hold-out / en. Không thêm đường truy xuất riêng trong công cụ đo.
 - [X] T016 [US3] Mở rộng `tests/eval/lib/report.ts`: mục `rerank` theo model (bảng cấu hình, cấu hình chọn, CI95, độ trễ/RAM/event loop, kết luận) +
       mốc English cùng lượt (theo `contracts/eval-rerank-cli.md`).
-- [ ] T017 [P] [US3] (chỉ dùng nếu cần ở T022) Hiện thực `tests/eval/lib/judge.ts` + chế độ `EVAL_JUDGE=llm` (research R5): một lượt `EVAL_LLM_MODEL` cục
+- [X] T017 (BỎ QUA — a1 ĐẠT cổng, không cần hướng b) [P] [US3] (chỉ dùng nếu cần ở T022) Hiện thực `tests/eval/lib/judge.ts` + chế độ `EVAL_JUDGE=llm` (research R5): một lượt `EVAL_LLM_MODEL` cục
       bộ/câu, lời nhắc English liệt kê đoạn đánh số, trả JSON số đoạn; hàm parse thuần có test `tests/unit/eval-judge-parse.test.ts` viết TRƯỚC.
 
 ### Chạy đo
@@ -100,9 +100,9 @@
 - [X] T021 [US3] So sánh a1/a2 theo quy tắc clarify #1 (tất định & không cần Ollama > trễ ấm > dung lượng > đơn giản) + SC-003 (p50 ≤ 300 ms) + SC-004
       (English) ⇒ đề xuất model + cấu hình trong `eval-rerank.md`. **Nếu cấu hình chọn chênh lệch vi/en đáng kể (FR-011)** ⇒ ghi rõ và đưa vào câu hỏi ở cổng
       T023 (tách ngưỡng theo ngôn ngữ hay chấp nhận) — KHÔNG tự tách.
-- [ ] T022 [US3] Chỉ khi a1 và a2 đều KHÔNG ĐẠT: chạy `EVAL_JUDGE=llm EVAL_LLM_MODEL=qwen2.5:7b npm run eval:retrieval` (hướng b) và ghi kết quả; vẫn không
+- [X] T022 (BỎ QUA — a1 ĐẠT cổng, không cần hướng b) [US3] Chỉ khi a1 và a2 đều KHÔNG ĐẠT: chạy `EVAL_JUDGE=llm EVAL_LLM_MODEL=qwen2.5:7b npm run eval:retrieval` (hướng b) và ghi kết quả; vẫn không
       đạt ⇒ ghi đề xuất hướng c (đổi embedding) cho chủ dự án, KHÔNG tự làm.
-- [ ] T023 [US3] **CỔNG — DỪNG trình số liệu cho chủ dự án** (bảng từ `eval-rerank.md`): reranker ĐẠT ⇒ Phase 4–6; KHÔNG ĐẠT ⇒ Phase 8. **Nếu hướng được
+- [X] T023 [US3] **CỔNG — DỪNG trình số liệu cho chủ dự án** (bảng từ `eval-rerank.md`): reranker ĐẠT ⇒ Phase 4–6; KHÔNG ĐẠT ⇒ Phase 8. **Nếu hướng được
       chọn là (b) LLM chấm** ⇒ Phase 4–5 hiện tại không áp dụng (viết cho reranker in-process): chạy lại `/speckit-tasks` cho phần tích hợp (b) (FR-012: luôn
       cục bộ, không có Ollama ⇒ bỏ qua) trước khi code. Ghi quyết định vào `docs/04-decisions/2026-10-08-unanswerable-detection-clarify.md` (mục bổ sung)
       theo rule 2.
@@ -117,12 +117,12 @@
 
 **Independent Test**: `EVAL_MODE=current npm run eval:retrieval` báo cấu hình rerank khớp số liệu ghi (hồi quy OK); unit xanh.
 
-- [ ] T024 [P] [US1] Test hồi quy `tests/unit/rag-service.test.ts`: `retrieve()` rỗng ở chế độ `grounded` ⇒ `notFound`, không gọi chat; ở `extended` ⇒ gọi
+- [X] T024 [P] [US1] Test hồi quy `tests/unit/rag-service.test.ts`: `retrieve()` rỗng ở chế độ `grounded` ⇒ `notFound`, không gọi chat; ở `extended` ⇒ gọi
       chat với ngữ cảnh rỗng (hành vi 108, thêm ca nếu chưa có).
-- [ ] T025 [US2] Viết test TRƯỚC trong `tests/unit/relevance-calibration.test.ts`: `RELEVANCE_CALIBRATION.datasetVersion` === `datasetVersion` của
+- [X] T025 [US2] Viết test TRƯỚC trong `tests/unit/relevance-calibration.test.ts`: `RELEVANCE_CALIBRATION.datasetVersion` === `datasetVersion` của
       `tests/eval/questions.json`; nếu `rerank` khác null thì `rerank.modelVersion === RERANK_MODEL_VERSION` và `validateRerankConfig(rerank.config)` không ném.
       Chạy thấy FAIL.
-- [ ] T026 [US2] Tạo `src/main/services/rerank/model-version.ts` (`RERANK_MODEL`, `RERANK_MODEL_FILE` theo arch, `RERANK_MODEL_VERSION`) và mở rộng
+- [X] T026 [US2] Tạo `src/main/services/rerank/model-version.ts` (`RERANK_MODEL`, `RERANK_MODEL_FILE` theo arch, `RERANK_MODEL_VERSION`) và mở rộng
       `src/main/services/rag/relevance-calibration.ts` (`rerank: RerankCalibration | null`, cấu hình + số liệu dev/hold-out/en + độ trễ từ T021, `datasetVersion`
       "3", số liệu 108 đo lại trên v3 từ T018); T025 xanh. Từ đây `retrieve()` mặc định bật rerank khi có `deps.rerank`.
 

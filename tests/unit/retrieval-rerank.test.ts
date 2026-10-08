@@ -41,6 +41,7 @@ const R: RerankConfig = {
   relativeDelta: null,
   reorder: false,
   timeoutMs: 1000,
+  maxCandidates: 20,
 };
 const relevance = RELEVANCE_CALIBRATION.config;
 const ids = (out: { chunk: Chunk }[]) => out.map((s) => s.chunk.id);
@@ -53,14 +54,24 @@ const rerankWith = (o: Record<string, number>) =>
 afterEach(() => vi.useRealTimers());
 
 describe("retrieve + rerank (109)", () => {
-  it("mặc định (rerankCfg null) hoặc thiếu deps.rerank ⇒ y hệt 108, không gọi rerank", async () => {
+  it("thiếu deps.rerank hoặc rerankCfg null ⇒ y hệt 108, không gọi rerank", async () => {
     const rerank = rerankWith({ a: 0 });
-    const before = await retrieve("q", "nb", baseDeps());
-    expect(await retrieve("q", "nb", baseDeps({ rerank }))).toEqual(before);
+    const before = await retrieve("q", "nb", baseDeps(), [], relevance, null);
+    expect(
+      await retrieve("q", "nb", baseDeps({ rerank }), [], relevance, null),
+    ).toEqual(before);
     expect(rerank).not.toHaveBeenCalled();
     expect(await retrieve("q", "nb", baseDeps(), [], relevance, R)).toEqual(
       before,
     );
+  });
+
+  it("mặc định = bản ghi hiệu chuẩn (RELEVANCE_CALIBRATION.rerank) khi có deps.rerank", async () => {
+    const rerank = rerankWith({ a: 0.1, b: 0.1, c: 0.1 });
+    const out = await retrieve("q", "nb", baseDeps({ rerank }));
+    expect(rerank).toHaveBeenCalledTimes(1);
+    expect(RELEVANCE_CALIBRATION.rerank).not.toBeNull();
+    expect(out).toEqual([]); // 0,1 < minScore đã hiệu chuẩn
   });
 
   it("chỉ đoạn đạt ngưỡng vào MMR; có rerankScore; score giữ cosine distance; locator nguyên", async () => {
@@ -91,6 +102,17 @@ describe("retrieve + rerank (109)", () => {
     expect(passages).toEqual(
       expect.arrayContaining([{ id: "a", text: "văn bản a" }]),
     );
+  });
+
+  it("maxCandidates ⇒ chỉ gửi N đoạn đầu (thứ tự RRF) đi chấm", async () => {
+    const rerank = rerankWith({ a: 0.9, b: 0.9, c: 0.9 });
+    const out = await retrieve("q", "nb", baseDeps({ rerank }), [], relevance, {
+      ...R,
+      maxCandidates: 2,
+    });
+    const [, passages] = rerank.mock.calls[0];
+    expect(passages.map((p) => p.id)).toEqual(["a", "b"]);
+    expect(ids(out).sort()).toEqual(["a", "b"]);
   });
 
   it("không đoạn nào đạt ⇒ [] (không tìm thấy)", async () => {

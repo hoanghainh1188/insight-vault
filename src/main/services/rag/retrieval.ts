@@ -136,10 +136,15 @@ export async function retrieve(
   const fusedChunks =
     rerankCfg && deps.rerank ? deps.getChunksByIds(fused) : null;
   if (rerankCfg && deps.rerank && fusedChunks) {
+    const textOf = new Map(fusedChunks.map((c) => [c.id, c.text]));
     const scores = await scoreWithin(
       deps,
       q,
-      fusedChunks.map((c) => ({ id: c.id, text: c.text })),
+      // N ứng viên đầu theo THỨ TỰ RRF (getChunksByIds không bảo đảm thứ tự) — cổng #14 giới hạn độ trễ.
+      fused
+        .slice(0, rerankCfg.maxCandidates)
+        .filter((id) => textOf.has(id))
+        .map((id) => ({ id, text: textOf.get(id)! })),
       rerankCfg.timeoutMs,
     );
     if (scores) {

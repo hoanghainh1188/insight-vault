@@ -36,6 +36,7 @@ const cfg = (
   relativeDelta,
   reorder,
   timeoutMs: RERANK_TIMEOUT_MS,
+  maxCandidates: 20,
 });
 
 describe("buildRerankGrid", () => {
@@ -46,6 +47,8 @@ describe("buildRerankGrid", () => {
     expect(new Set(g.map((c) => JSON.stringify(c))).size).toBe(96);
     expect(g.some((c) => c.reorder) && g.some((c) => !c.reorder)).toBe(true);
     expect(g.some((c) => c.relativeDelta === null)).toBe(true);
+    expect(g.every((c) => c.maxCandidates === 20)).toBe(true);
+    expect(buildRerankGrid(12).every((c) => c.maxCandidates === 12)).toBe(true);
   });
 });
 

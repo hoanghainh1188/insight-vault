@@ -13,6 +13,7 @@ const cfg = (over: Partial<RerankConfig> = {}): RerankConfig => ({
   relativeDelta: null,
   reorder: false,
   timeoutMs: 1500,
+  maxCandidates: 20,
   ...over,
 });
 const scores = (o: Record<string, number>) => new Map(Object.entries(o));
@@ -94,6 +95,17 @@ describe("applyRerank", () => {
   });
 });
 
+describe("applyRerank — maxCandidates (cổng #14)", () => {
+  it("chỉ xét N ứng viên đầu theo thứ tự RRF; id sau vị trí N bị loại dù có điểm cao", () => {
+    const r = applyRerank(
+      ["a", "b", "c", "d"],
+      scores({ a: 0.9, b: 0.7, c: 0.99, d: 0.99 }),
+      cfg({ minScore: 0.5, maxCandidates: 2 }),
+    );
+    expect(r.ids).toEqual(["a", "b"]);
+  });
+});
+
 describe("validateRerankConfig", () => {
   it("cấu hình hợp lệ không ném", () => {
     expect(() => validateRerankConfig(cfg())).not.toThrow();
@@ -111,6 +123,8 @@ describe("validateRerankConfig", () => {
       cfg({ relativeDelta: 2 }),
       cfg({ timeoutMs: 0 }),
       cfg({ timeoutMs: Number.POSITIVE_INFINITY }),
+      cfg({ maxCandidates: 0 }),
+      cfg({ maxCandidates: 1.5 }),
     ]) {
       expect(() => validateRerankConfig(bad), JSON.stringify(bad)).toThrow();
     }

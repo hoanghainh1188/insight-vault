@@ -229,6 +229,46 @@ describe("eval:retrieval", () => {
         );
       }
 
+      // 109: chế độ current (không chỉ định EVAL_RERANK) ⇒ đo lại ĐÚNG cấu hình bộ chấm đã ghi và so số liệu (hồi quy).
+      const recordedRerank = RELEVANCE_CALIBRATION.rerank;
+      if (mode === "current" && rerankModels.length === 0 && recordedRerank) {
+        const r = await runRerankModel(
+          recordedRerank.model,
+          index,
+          questions,
+          RELEVANCE_CALIBRATION.config,
+          baseline.en,
+          CACHE_DIR,
+          process.env.EVAL_RERANK_FILE,
+          {
+            maxLength: recordedRerank.maxTokens,
+            topN: recordedRerank.config.maxCandidates,
+          },
+          recordedRerank.config,
+        );
+        rerank.push(r);
+        const got = r.results[0];
+        const fields = ["recallAt6", "correctRejection", "mrr"] as const;
+        const drift = got
+          ? (["dev", "holdout", "en"] as const).flatMap((g) =>
+              fields
+                .filter(
+                  (f) =>
+                    Math.abs(got[g][f] - recordedRerank.metrics[g][f]) > 0.001,
+                )
+                .map(
+                  (f) =>
+                    `rerank ${g}.${f}: đo ${got[g][f].toFixed(4)} ≠ ghi ${recordedRerank.metrics[g][f]}`,
+                ),
+            )
+          : [`rerank: không đo được (${r.error ?? "?"})`];
+        warnings.push(
+          drift.length > 0
+            ? `Bộ chấm lệch bản ghi hiệu chuẩn — cần đo lại: ${drift.join("; ")}`
+            : "✓ Bộ chấm khớp số liệu ghi trong RELEVANCE_CALIBRATION.rerank (hồi quy OK)",
+        );
+      }
+
       const report: EvalReport = {
         runAt: new Date().toISOString(),
         mode,
