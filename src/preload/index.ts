@@ -153,6 +153,24 @@ const api = {
     return () => ipcRenderer.removeListener(CHANNELS.sourceProgress, listener);
   },
   /** 103: nhận trạng thái riêng tư mới mỗi khi main đổi mode (badge cập nhật tức thì). Trả hàm huỷ. */
+  // 123: ngôn ngữ giao diện — đọc/đặt (enum) + nghe sự kiện đổi (trả hàm huỷ).
+  getUiLanguage: (): Promise<import("@shared/ipc/types").UiLanguageState> =>
+    ipcRenderer.invoke(CHANNELS.getUiLanguage),
+  setUiLanguage: (
+    preference: "auto" | "vi" | "en",
+  ): Promise<import("@shared/ipc/types").UiLanguageState> =>
+    ipcRenderer.invoke(CHANNELS.setUiLanguage, preference),
+  onUiLanguageChanged: (
+    cb: (s: import("@shared/ipc/types").UiLanguageState) => void,
+  ): (() => void) => {
+    const listener = (
+      _e: unknown,
+      payload: import("@shared/ipc/types").UiLanguageState,
+    ) => cb(payload);
+    ipcRenderer.on(CHANNELS.uiLanguageChanged, listener);
+    return () =>
+      ipcRenderer.removeListener(CHANNELS.uiLanguageChanged, listener);
+  },
   onPrivacyChanged: (
     cb: (s: import("@shared/ipc/types").PrivacyState) => void,
   ): (() => void) => {

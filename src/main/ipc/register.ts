@@ -34,6 +34,7 @@ import type { NotebookRepo } from "../services/notebooks/notebook-repo";
 import type { SourceRepo } from "../services/ingestion/source-repo";
 import type { IngestionPipeline } from "../services/ingestion/pipeline";
 import type { VectorStore } from "../services/ingestion/vector-store";
+import type { UiLanguageService } from "../services/ui-language";
 import type { RagService } from "../services/rag/rag-service";
 import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
@@ -87,6 +88,8 @@ interface RegisterDeps {
   relinkSource: (id: unknown) => Promise<SourceRelinkResult>;
   // 112 — xử lý lại PDF (kiểm khoá kho / quy tắc / tệp gốc trong handler).
   reprocessSource: (id: unknown) => Promise<SourceReprocessResult>;
+  // 123 — ngôn ngữ giao diện (lưu lựa chọn + ngôn ngữ hiệu lực).
+  uiLanguage: UiLanguageService;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
@@ -123,6 +126,7 @@ export function registerIpc({
   crashService,
   relinkSource,
   reprocessSource,
+  uiLanguage,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -142,6 +146,9 @@ export function registerIpc({
     computeStorageInfo(dataDir.path, createFsOps()),
   );
   safeHandle(CHANNELS.getPrivacyState, () => getPrivacyState());
+  // 123: đọc/đặt ngôn ngữ giao diện; set kiểm enum ở service (giá trị khác ⇒ ném, không ghi).
+  safeHandle(CHANNELS.getUiLanguage, () => uiLanguage.get());
+  safeHandle(CHANNELS.setUiLanguage, (pref) => uiLanguage.set(pref));
   safeHandle(CHANNELS.getOnboardingState, () => getOnboardingState(store));
   safeHandle(CHANNELS.setOnboardingComplete, () =>
     setOnboardingComplete(store),

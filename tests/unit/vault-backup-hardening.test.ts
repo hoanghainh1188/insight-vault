@@ -43,6 +43,16 @@ describe("085 S1: sanitizeConfig", () => {
     });
   });
 
+  it("123 FR-005: ngôn ngữ giao diện (uiLanguage) KHÔNG đi theo sao lưu/khôi phục", () => {
+    for (const restoring of [true, false]) {
+      const out = sanitizeConfig(
+        { uiLanguage: "en", onboardingComplete: true },
+        { restoring },
+      );
+      expect(out).toEqual({ onboardingComplete: true });
+    }
+  });
+
   it("lúc sao lưu giữ nguyên activeOnlineId (chỉ lọc khoá)", () => {
     const out = sanitizeConfig(raw, { restoring: false }) as {
       ai: { onlineConfig: { activeOnlineId: string } };

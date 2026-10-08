@@ -73,6 +73,7 @@ import { BACKUP_WAIT_TIMEOUT_MS } from "./services/vector-maintenance/constants"
 import { createFsOps } from "./services/app-shell/storage-fs";
 import { dirSize } from "./services/app-shell/storage-info";
 import { createElectronDialogs } from "./services/vault-backup/dialogs";
+import { createUiLanguageService } from "./services/ui-language";
 
 // 049: đăng ký scheme iv-media:// là privileged (stream + fetch API) TRƯỚC khi app ready — cho <audio> phát
 // file audio gốc qua main (renderer sandbox không đọc FS). Handler đăng ký ở whenReady (cần sourceRepo).
@@ -297,6 +298,13 @@ app
     }
 
     const store = new Store();
+    // 123: ngôn ngữ giao diện — lựa chọn ở store, auto ⇒ locale OS; IV_UI_LANG chỉ cho bản chưa đóng gói (e2e/dev).
+    const uiLanguage = createUiLanguageService({
+      store,
+      osLocale: () => app.getPreferredSystemLanguages()[0] ?? app.getLocale(),
+      envOverride: process.env.IV_UI_LANG,
+      isPackaged: app.isPackaged,
+    });
 
     // SQLite (009): mở DB trong data dir, chạy migration (nay tới v2 — bảng source/chunk), tạo repo.
     const db = openDatabase(join(dataDir.path, "insightvault.db"));
@@ -533,6 +541,7 @@ app
 
     registerIpc({
       store,
+      uiLanguage,
       version: app.getVersion(),
       dataDir,
       notebookRepo,
@@ -575,6 +584,14 @@ app
         fileExists: async (p) => existsSync(p),
         hashFile: hashFileStreaming,
       }),
+    });
+
+    // 123: đẩy ngôn ngữ giao diện mới tới mọi cửa sổ — renderer re-render ngay, không khởi động lại (FR-004).
+    uiLanguage.onChange((state) => {
+      for (const w of BrowserWindow.getAllWindows()) {
+        if (!w.isDestroyed())
+          w.webContents.send(CHANNELS.uiLanguageChanged, state);
+      }
     });
 
     // 103: đẩy trạng thái riêng tư mới tới mọi cửa sổ mỗi khi mode đổi (badge cập nhật tức thì — Constitution I).

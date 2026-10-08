@@ -1,5 +1,11 @@
 // Kiểu trao đổi qua IPC (main ↔ renderer). Nguồn: data-model.md.
 
+/** 123: trạng thái ngôn ngữ giao diện — lựa chọn đã lưu + ngôn ngữ hiệu lực (contracts/ipc-ui-language.md). */
+export interface UiLanguageState {
+  preference: "auto" | "vi" | "en";
+  effective: "vi" | "en";
+}
+
 /** Trạng thái riêng tư — nguồn sự thật cho privacy indicator badge. v1 luôn 'local'. */
 export interface PrivacyState {
   /** 103: local / online (provider online đã bật, chưa gửi) / sending (đang có egress thật). */

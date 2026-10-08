@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./app/routes";
 import { installGlobalErrorReporting } from "./shared/error-report";
+import { I18nProvider } from "./shared/i18n/I18nProvider";
 import "./shared/tokens.css";
 import "./app/app.css";
 import "./features/sources/sources.css";
@@ -14,6 +15,8 @@ installGlobalErrorReporting(window);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <I18nProvider>
+      <RouterProvider router={router} />
+    </I18nProvider>
   </React.StrictMode>,
 );
