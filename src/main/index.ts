@@ -6,6 +6,7 @@ import {
   BrowserWindow,
   crashReporter,
   dialog,
+  Menu,
   nativeImage,
   protocol,
   session,
@@ -79,6 +80,7 @@ import {
 } from "./services/ui-language";
 import { createTranslator } from "@shared/i18n";
 import { createReranker, type Reranker } from "./services/rerank/rerank-model";
+import { appMenuTemplate } from "./services/ui-language/app-menu";
 import {
   RERANK_MODEL_REVISION,
   rerankModelFile,
@@ -647,8 +649,23 @@ app
       }),
     });
 
+    // 145: menu ứng dụng theo ngôn ngữ giao diện — dựng lúc khởi động và dựng lại ngay khi đổi ngôn ngữ.
+    const applyAppMenu = (): void => {
+      Menu.setApplicationMenu(
+        Menu.buildFromTemplate(
+          appMenuTemplate(uiLanguage.translator(), {
+            platform: process.platform,
+            isPackaged: app.isPackaged,
+            appName: app.getName(),
+          }),
+        ),
+      );
+    };
+    applyAppMenu();
+
     // 123: đẩy ngôn ngữ giao diện mới tới mọi cửa sổ — renderer re-render ngay, không khởi động lại (FR-004).
     uiLanguage.onChange((state) => {
+      applyAppMenu(); // 145
       for (const w of BrowserWindow.getAllWindows()) {
         if (!w.isDestroyed())
           w.webContents.send(CHANNELS.uiLanguageChanged, state);

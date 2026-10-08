@@ -109,3 +109,19 @@ test("đổi ngôn ngữ trong Cài đặt ⇒ áp dụng ngay, giữ state, lư
   ).toHaveText("Cài đặt");
   await app2.close();
 });
+
+test("145: menu ứng dụng theo ngôn ngữ giao diện, đổi ngay khi đổi ngôn ngữ", async () => {
+  const { app } = await launchFreshAt({ IV_UI_LANG: "en" });
+  const win = await app.firstWindow();
+  await dismissOnboarding(win);
+  const topLabels = () =>
+    app.evaluate(({ Menu }) =>
+      (Menu.getApplicationMenu()?.items ?? []).map((i) => i.label),
+    );
+  expect(await topLabels()).toEqual(expect.arrayContaining(["Edit", "View"]));
+  await win.getByTestId("nav-settings").click();
+  await win.locator('input[type=radio][value="vi"]').check();
+  await expect(win.locator("html")).toHaveAttribute("lang", "vi");
+  await expect.poll(topLabels).toEqual(expect.arrayContaining(["Sửa", "Xem"]));
+  await app.close();
+});
