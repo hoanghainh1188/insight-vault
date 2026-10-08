@@ -30,22 +30,22 @@
 
 ## Phase 2: Foundational (dùng chung công cụ đo + app; mặc định tắt)
 
-- [ ] T003 Append thuật ngữ mới vào `docs/00-glossary.md` bằng script (KHÔNG prettier) TRƯỚC khi đặt tên trong code (Constitution — terminology
+- [X] T003 Append thuật ngữ mới vào `docs/00-glossary.md` bằng script (KHÔNG prettier) TRƯỚC khi đặt tên trong code (Constitution — terminology
       fidelity): bộ chấm độ liên quan / reranker (cross-encoder), điểm rerank (`rerankScore`), cấu hình rerank (`RerankConfig`), áp rerank (`applyRerank`),
       câu không đáp án sát chủ đề (hard negative), trạng thái bộ chấm (`RerankerStatus`), bỏ qua bước chấm (fail-open, `onRerankSkip`).
-- [ ] T004 Viết test TRƯỚC `tests/unit/rerank-filter.test.ts` cho `validateRerankConfig` và `applyRerank` theo `contracts/rerank-filter.md`: ngưỡng
+- [X] T004 Viết test TRƯỚC `tests/unit/rerank-filter.test.ts` cho `validateRerankConfig` và `applyRerank` theo `contracts/rerank-filter.md`: ngưỡng
       tuyệt đối, tương đối (best − delta), cả hai; `reorder` false giữ thứ tự RRF / true sắp giảm dần + hoà giữ thứ tự RRF; id thiếu điểm bị loại; không id
       nào có điểm ⇒ rỗng; không mutate đầu vào; `ids ⊆ fused`; cấu hình ngoài miền ⇒ ném. Chạy thấy FAIL.
-- [ ] T005 Hiện thực `src/main/services/rag/rerank-filter.ts` (`RerankConfig`, `validateRerankConfig`, `applyRerank`) cho T004 xanh; thêm vào
+- [X] T005 Hiện thực `src/main/services/rag/rerank-filter.ts` (`RerankConfig`, `validateRerankConfig`, `applyRerank`) cho T004 xanh; thêm vào
       `coverage.include` nếu cấu hình coverage liệt kê tệp.
-- [ ] T006 [P] Thêm `rerankScore?: number` vào `ScoredChunk` trong `src/main/services/rag/rag-types.ts` (chú thích: chỉ có khi bước rerank chạy;
+- [X] T006 [P] Thêm `rerankScore?: number` vào `ScoredChunk` trong `src/main/services/rag/rag-types.ts` (chú thích: chỉ có khi bước rerank chạy;
       `score` vẫn là cosine distance).
-- [ ] T007 Viết test TRƯỚC `tests/unit/retrieval-rerank.test.ts` (DI giả, không model): `rerankCfg` null hoặc thiếu `deps.rerank` ⇒ kết quả y hệt 108;
+- [X] T007 Viết test TRƯỚC `tests/unit/retrieval-rerank.test.ts` (DI giả, không model): `rerankCfg` null hoặc thiếu `deps.rerank` ⇒ kết quả y hệt 108;
       rerank trả điểm ⇒ chỉ đoạn đạt vào MMR, có `rerankScore`, `score` giữ cosine distance, `locator` nguyên; không đoạn nào đạt ⇒ `[]`; `reorder` true ⇒
       thứ tự theo điểm trước MMR; câu đã viết lại (có lịch sử) được gửi rerank; `fused` rỗng ⇒ không gọi rerank; **tất định: gọi `retrieve()` 5 lần với cùng
       điểm ⇒ 5 kết quả giống hệt (SC-005)**; fail-open: rerank ném lỗi ⇒ hành vi 108 + `onRerankSkip("error")`, quá `timeoutMs` (fake timers) ⇒ 108 +
       `"timeout"`, ném `RerankNotReadyError` ⇒ 108 + `"notReady"`. Chạy thấy FAIL.
-- [ ] T008 Sửa `src/main/services/rag/retrieval.ts`: thêm `deps.rerank?`, `deps.onRerankSkip?`, tham số `rerankCfg` (mặc định
+- [X] T008 Sửa `src/main/services/rag/retrieval.ts`: thêm `deps.rerank?`, `deps.onRerankSkip?`, tham số `rerankCfg` (mặc định
       `RELEVANCE_CALIBRATION.rerank?.config ?? null` — hiện chưa có trường `rerank` ⇒ null ⇒ app không đổi hành vi), bước rerank sau RRF/trước MMR theo
       `contracts/rerank-filter.md`, bọc timeout; export `RerankNotReadyError` (vd `src/main/services/rag/rerank-filter.ts`); T007 xanh;
       `tests/unit/retrieval.test.ts`, `tests/unit/retrieval-hybrid.test.ts` vẫn xanh không sửa kỳ vọng.

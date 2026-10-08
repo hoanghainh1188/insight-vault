@@ -1,5 +1,6 @@
 import { EMBEDDING_MODEL_VERSION } from "../embedding/model-version";
 import type { RelevanceConfig } from "./relevance-filter";
+import type { RerankConfig } from "./rerank-filter";
 
 // 108: bản ghi hiệu chuẩn bộ lọc độ liên quan — MỘT nguồn sự thật cho retrieve() (thay RELEVANCE_MAX_DISTANCE).
 // Gắn phiên bản mô hình embedding đã dùng để đo: đổi mô hình mà không hiệu chuẩn lại ⇒ test canh giữ fail
@@ -31,6 +32,8 @@ export interface RelevanceCalibration {
   calibratedAt: string | null;
   datasetVersion: string | null;
   metrics: { dev: EvalMetrics; holdout: EvalMetrics } | null;
+  /** 109: bộ chấm độ liên quan; null = tắt (retrieve() giữ hành vi 108). Điền sau khi đo + chủ dự án chốt (tasks T026). */
+  rerank: { config: RerankConfig } | null;
 }
 
 // Hiệu chuẩn 2026-10-07 (ADR docs/04-decisions/2026-10-07-relevance-calibration.md): quét 392 cấu hình — KHÔNG cấu hình
@@ -71,4 +74,5 @@ export const RELEVANCE_CALIBRATION: RelevanceCalibration = {
       ci95: { recallAt6: [0.7976, 0.9926], correctRejection: [0, 0.3903] },
     },
   },
+  rerank: null,
 };
