@@ -21,7 +21,7 @@ description: "Task list — 123 i18n (Tiếng Việt + English), AI trả lời 
 
 ## Phase 1: Setup
 
-- [ ] T001 Thêm `src/shared/i18n/**`, `src/shared/codes/**`, `src/main/services/ui-language/**`, `src/renderer/shared/i18n/i18n-context.ts` vào `coverage.include` trong `vitest.config.ts`
+- [ ] T001 Thêm `src/shared/i18n/**`, `src/shared/codes/**`, `src/main/services/ui-language/**`, `src/renderer/shared/i18n/i18n-context.ts`, `src/renderer/shared/i18n/describe-error.ts` vào `coverage.include` trong `vitest.config.ts`
 - [ ] T002 [P] Tạo thư mục `tests/unit/helpers/` (nếu chưa có) và tệp rỗng chờ `tests/unit/helpers/t-vi.ts`
 
 ---
@@ -57,11 +57,11 @@ description: "Task list — 123 i18n (Tiếng Việt + English), AI trả lời 
 
 **Independent Test:** unit service + IPC whitelist; jsdom `SettingsLanguageSection` đổi lựa chọn ⇒ gọi `setUiLanguage`, sự kiện ⇒ `<html lang>` và chuỗi trong cây đổi.
 
-- [ ] T019 [P] [US2] Viết test FAIL `tests/unit/ui-language-service.test.ts`: store trống ⇒ `{preference:"auto", effective theo osLocale}`; `set("en")` lưu khoá `uiLanguage`, phát `onChange` đúng một lần; `set("en")` lặp lại không phát; `set("fr")`/`set(1)` ném, không ghi; giá trị hỏng trong store ⇒ auto; `IV_UI_LANG` ghi đè osLocale khi `isPackaged=false`, bỏ qua khi `true`; `translator()` theo effective; `startupLanguage(osLocale)`
+- [ ] T019 [P] [US2] Viết test FAIL `tests/unit/ui-language-service.test.ts`: store trống ⇒ `{preference:"auto", effective theo osLocale}`; `set("en")` lưu khoá `uiLanguage`, phát `onChange` đúng một lần; `set("en")` lặp lại không phát; `set("fr")`/`set(1)` ném, không ghi; giá trị hỏng trong store ⇒ auto; `IV_UI_LANG` ghi đè osLocale khi `isPackaged=false`, bỏ qua khi `true`; `translator()` theo effective; `startupLanguage(osLocale)`; thêm ca vào `tests/unit/vault-backup-hardening.test.ts`: `sanitizeConfig` bỏ khoá `uiLanguage` (FR-005 — ngôn ngữ không đi theo sao lưu/khôi phục)
 - [ ] T020 [US2] Tạo `src/main/services/ui-language/ui-language.ts` + `index.ts` (`createUiLanguageService({store, osLocale, envOverride, isPackaged})`, `startupLanguage`) cho T019 xanh
-- [ ] T021 [P] [US2] Viết test FAIL cập nhật `tests/unit/ipc-channels*.test.ts` (hoặc test whitelist hiện có): 3 kênh `app:getUiLanguage`, `app:setUiLanguage`, `app:uiLanguageChanged` có trong `CHANNELS`, 2 kênh invoke trong `WHITELISTED_CHANNELS`; kiểu `UiLanguageState` trong `ChannelResponse`
+- [ ] T021 [P] [US2] Viết test FAIL `tests/unit/ui-language-whitelist.test.ts` (mẫu `tests/unit/crash-report-whitelist.test.ts`): 3 kênh `app:getUiLanguage`, `app:setUiLanguage`, `app:uiLanguageChanged` có trong `CHANNELS`, 2 kênh invoke trong `WHITELISTED_CHANNELS`; kiểu `UiLanguageState` trong `ChannelResponse`
 - [ ] T022 [US2] Thêm kênh + kiểu `UiLanguageState` vào `src/shared/ipc/channels.ts` và `src/shared/ipc/types.ts`; đăng ký `safeHandle` ở `src/main/ipc/register.ts` (set kiểm enum qua service); khởi tạo service ở `src/main/index.ts` (osLocale = `app.getPreferredSystemLanguages()[0] ?? app.getLocale()`, `IV_UI_LANG` chỉ khi `!app.isPackaged`) và phát `app:uiLanguageChanged` tới mọi `BrowserWindow` (mẫu `onPrivacyChange` ≈ dòng 581); expose `getUiLanguage`/`setUiLanguage`/`onUiLanguageChanged` ở `src/preload/index.ts` — T021 xanh
-- [ ] T023 [P] [US2] Viết test FAIL jsdom `tests/unit/i18n-provider.test.ts`: `useT()` không provider ⇒ tiếng Việt; trong `I18nProvider` với `window.api` giả: mount gọi `getUiLanguage`, hiển thị theo `effective`; sự kiện `onUiLanguageChanged` ⇒ re-render ngôn ngữ mới + `document.documentElement.lang` đổi; unmount huỷ đăng ký
+- [ ] T023 [P] [US2] Viết test FAIL jsdom `tests/unit/i18n-provider.test.ts`: `useT()` không provider ⇒ tiếng Việt; trong `I18nProvider` với `window.api` giả: mount gọi `getUiLanguage`, hiển thị theo `effective`; sự kiện `onUiLanguageChanged` ⇒ re-render ngôn ngữ mới + `document.documentElement.lang` đổi; unmount huỷ đăng ký; đổi ngôn ngữ khi `ChatColumn` đang stream (`window.api` giả phát token) ⇒ stream không bị huỷ, nội dung đã nhận giữ nguyên, chỉ chrome đổi ngôn ngữ (FR-004, edge case)
 - [ ] T024 [US2] Tạo `src/renderer/shared/i18n/i18n-context.ts` (context + `useT`, `useLang`, `useFormat`, fallback vi) và `src/renderer/shared/i18n/I18nProvider.tsx`; bọc `I18nProvider` ngoài `RouterProvider` trong `src/renderer/main.tsx` — T023 xanh
 - [ ] T025 [P] [US2] Viết test FAIL jsdom `tests/unit/settings-language-section.test.ts`: 3 lựa chọn (radio native trong `fieldset`/`legend`) nhãn `Tự động` + tên tự xưng `Tiếng Việt`/`English` (không đổi theo ngôn ngữ hiện tại); chọn ⇒ `window.api.setUiLanguage(pref)`; lựa chọn hiện tại được `checked`; lỗi IPC ⇒ thông báo `errors.unexpected`
 - [ ] T026 [US2] Tách trang Cài đặt khỏi `src/renderer/app/routes.tsx` thành `src/renderer/app/SettingsPage.tsx` (giữ `data-testid="placeholder-settings"`, `<h2>` qua `t`), tạo `src/renderer/features/app-shell/SettingsLanguageSection.tsx` theo markup `settings-ai`/`settings-ai-head` (đặt đầu trang); thêm khoá `settings.title`, `settings.language.*` — T025 xanh
@@ -91,7 +91,7 @@ Mỗi task: thêm khoá vào `src/shared/i18n/vi.ts` (giữ nguyên văn tiếng
 - [ ] T037 [P] [US1] Crash report UI: `src/renderer/shared/crash-report/CrashReportDialog.tsx` (`PROBLEM_TEXT` ⇒ khoá), `src/renderer/features/crash-report/CrashNoticeBanner.tsx` — cập nhật `tests/unit/crash-report-ui.test.ts`
 - [ ] T038 [P] [US1] A11y: `src/renderer/shared/a11y/messages.ts` — mọi hàm nhận `t` (`chatDoneMessage` dùng `plural` cho số trích dẫn; `sourceStatusMessage` dịch `errorCode`); nơi gọi `announce()` truyền chuỗi đã dịch — cập nhật `tests/unit/{a11y-announcer,a11y-live-region,a11y-messages*}.test.ts`
 - [ ] T039 [P] [US5] Dung lượng: `src/renderer/shared/format-bytes.ts` uỷ quyền `formatBytes(bytes, lang)`; `ModelSelect` GB qua `formatNumber`; nơi gọi lấy `lang` từ `useLang()` — cập nhật `tests/unit/format-bytes.test.ts`
-- [ ] T040 [US1] `src/renderer/index.html` giữ `lang="vi"` làm mặc định ban đầu (provider ghi đè ngay khi có `effective`); xác nhận không còn chuỗi Việt trong `src/renderer/**` ngoài catalog bằng cách chạy tạm script quét của R11 (chưa thành test)
+- [ ] T040 [US1] `src/renderer/index.html` giữ `lang="vi"` làm mặc định ban đầu (provider ghi đè ngay khi có `effective`); xác nhận không còn chuỗi Việt trong `src/renderer/**` ngoài catalog bằng cách chạy tạm script quét của R11 (chưa thành test); quét thêm `toLocale`/`new Date(`/`getFullYear` trong `src/renderer/**` để mọi chỗ hiển thị ngày giờ/số dùng `src/shared/i18n/format.ts` (FR-023)
 - [ ] T041 [US1] Chạy `npm run lint` + `npm test` + `npm run build`; commit "feat(123): renderer dùng khung dịch (lớp 3)"
 
 **Checkpoint:** renderer hoàn toàn qua catalog; giao diện tiếng Việt y như cũ.
@@ -172,7 +172,7 @@ Mỗi task: thêm khoá vào `src/shared/i18n/vi.ts` (giữ nguyên văn tiếng
 - [ ] T080 [P] ADR `docs/04-decisions/2026-10-08-i18n.md`: kiến trúc (từ điển có kiểu, mã thay chuỗi IPC/DB, migration #10), lời nhắc English + bảng số đo trước/sau (T065/T072), giới hạn đã biết (model cục bộ không bảo đảm ngôn ngữ; English là bản dịch phát sinh, prototype chỉ tiếng Việt; menu OS/trình cài đặt chưa dịch; thông báo a11y đã xếp hàng không dịch lại); thêm dòng `docs/04-decisions/INDEX.md` bằng script (không prettier)
 - [ ] T081 [P] Append glossary `docs/00-glossary.md` (không prettier): ngôn ngữ giao diện (`uiLanguage`), ngôn ngữ hiệu lực (`effective language`), tệp dịch (`message catalog`), khoá dịch (`message key`), mã nhãn lỗi nguồn (`SourceErrorCode`), lỗi người-dùng-thấy (`UserFacingError`), ngôn ngữ đầu ra (`outputLanguage`), nhãn UI English chuẩn (Sources only / Extended / Reprocess / Privacy indicator…). **Không sửa** dòng `NOT_FOUND_DISPLAY` hiện có — ghi chú cần PR glossary riêng
 - [ ] T082 [P] Cập nhật `README.md` (English: UI English + Vietnamese, chọn ở Settings › Language; bỏ câu "UI Vietnamese only") và `README.vi.md` tương ứng; `CLAUDE.md` dòng "Ngôn ngữ tài liệu thiết kế gốc & UI: tiếng Việt (i18n để sau)" ⇒ ghi UI Việt + English (i18n #123)
-- [ ] T083 Đánh dấu `[X]` các task đã xong trong `specs/20261008-002646-i18n/tasks.md`; chạy quickstart.md mục 1–6 (phần tay ghi kết quả vào PR)
+- [ ] T083 Đánh dấu `[X]` các task đã xong trong `specs/20261008-002646-i18n/tasks.md`; chạy quickstart.md mục 1–6 (phần tay ghi kết quả vào PR), gồm kiểm tay SC-008: ngắt mạng, chạy cả hai ngôn ngữ ⇒ không yêu cầu mạng mới
 - [ ] T084 Test gate cuối: `npm run lint`, `npm test` (coverage ≥ 80%), `npm run build`, `npm run test:e2e`, `EVAL_MODE=current npm run eval:retrieval` ("hồi quy OK"); commit "docs(123): ADR i18n, glossary, README EN/VI, CLAUDE.md"
 
 ---
@@ -182,7 +182,7 @@ Mỗi task: thêm khoá vào `src/shared/i18n/vi.ts` (giữ nguyên văn tiếng
 - **Phase 1 → Phase 2** (khung) chặn mọi phase sau.
 - **Phase 3 (US2 lựa chọn ngôn ngữ)** cần Phase 2; chặn Phase 4 (renderer cần `I18nProvider`/`useT`).
 - **Phase 4 (US1 renderer)** cần Phase 3. **Phase 5 (main trả mã)** cần Phase 4 (renderer phải dịch mã) — T030 có đường đọc `errorLabel` tạm để Phase 4 không phá.
-- **Phase 6 (US3/US4 lời nhắc)** cần Phase 2 (`detectQuestionLanguage`) và Phase 5 (`RagAnswer`); T062 DỪNG chờ người dùng; T065 phải chạy **trước** T066–T070.
+- **Phase 6 (US3/US4 lời nhắc)** cần Phase 2 (`detectQuestionLanguage`) và Phase 5 (`RagAnswer`); T062 DỪNG chờ người dùng — **trong lúc chờ làm song song T063/T064** (bộ đo mở rộng không phụ thuộc bộ câu mới); T065 cần T062 + T064 và phải chạy **trước** T066–T070.
 - **Phase 7** cần Phase 4–6 xong (quét toàn bộ). **Phase 8** cuối.
 - US5 (định dạng) nằm rải ở T009–T010, T029, T036, T039.
 
