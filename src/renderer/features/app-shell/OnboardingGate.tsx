@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Onboarding lần đầu (FR-008). Placeholder — kiểm tra runtime AI local (Ollama) thuộc feature 002.
 // Đọc getOnboardingState lúc mount; chưa hoàn tất ⇒ hiện overlay. "Bắt đầu" → setOnboardingComplete.
 export function OnboardingGate(): JSX.Element | null {
+  const t = useT();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -36,18 +38,18 @@ export function OnboardingGate(): JSX.Element | null {
       data-testid="onboarding"
     >
       <div className="onboarding-card">
-        <h1>Chào mừng đến InsightVault</h1>
+        <h1>{t.t("app.onboarding.title")}</h1>
         <p>
-          Trợ lý tri thức <b>chạy cục bộ</b> — dữ liệu của bạn không rời máy. Ở
-          các bước tiếp theo, ứng dụng sẽ giúp bạn chuẩn bị runtime AI cục bộ và
-          tạo notebook đầu tiên.
+          {t.t("app.onboarding.bodyBefore")}
+          <b>{t.t("app.onboarding.bodyStrong")}</b>
+          {t.t("app.onboarding.bodyAfter")}
         </p>
         <button
           className="btn-primary"
           onClick={finish}
           data-testid="onboarding-start"
         >
-          Bắt đầu
+          {t.t("app.onboarding.start")}
         </button>
       </div>
     </div>

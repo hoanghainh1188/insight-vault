@@ -1,8 +1,8 @@
 {
-  "datasetVersion": "1",
+  "datasetVersion": "2",
   "reviewed": {
     "by": "Hải",
-    "date": "2026-10-07"
+    "date": "2026-10-08"
   },
   "questions": [
     {
@@ -1363,6 +1363,255 @@
     {
       "id": "q-112",
       "text": "What is the fine for not having a fire extinguisher at home?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-113",
+      "text": "How many visitors did Ha Long Bay receive in 2015 according to the Department of Cultural Heritage?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Năm 2015, Cục Di sản văn hóa đã công bố về số lượng khách tham quan vịnh Hạ Long là trên 2,5 triệu lượt khách"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-114",
+      "text": "Who first praised Ha Long Bay as a wonder of stone rising into the sky?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Nguyễn Trãi đã lần đầu tiên ca ngợi vịnh Hạ Long"
+      ],
+      "docIds": [
+        "vinh-ha-long"
+      ]
+    },
+    {
+      "id": "q-115",
+      "text": "Which early dictionary is one of the first documents to mention pho, and when was it compiled?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Nhật Dụng Thường Đàm (日用常談) của Phạm Đình Hổ biên soạn vào năm 1827"
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-116",
+      "text": "Why did chicken pho appear in 1939?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Năm 1939, phở gà xuất hiện, bởi khi ấy một tuần có hai ngày: thứ hai và thứ sáu không có thịt bò bán."
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-117",
+      "text": "When did Acecook Vietnam start producing instant pho noodles from rice flour?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Năm 2006, Acecook Việt Nam sản xuất được sợi phở ăn liền từ bột gạo."
+      ],
+      "docIds": [
+        "pho"
+      ]
+    },
+    {
+      "id": "q-118",
+      "text": "In which year were the first Lemur ao dai garments released?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Đến năm 1935 thì cho xuất xưởng những chiếc áo đầu tiên."
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-119",
+      "text": "Which tailor shop in Dakao introduced raglan sleeves for the ao dai?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "nhà may Dung ở Dakao (quận 1), Sài Gòn đưa ra kiểu may áo dài với cách ráp tay raglan"
+      ],
+      "docIds": [
+        "ao-dai"
+      ]
+    },
+    {
+      "id": "q-120",
+      "text": "When was the Turtle Tower on Hoan Kiem Lake built?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "được xây dựng trong khoảng từ giữa năm 1884 đến tháng 4 năm 1886"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-121",
+      "text": "Who had The Huc Bridge built, and in which year?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "do danh sĩ Nguyễn Văn Siêu cho xây dựng vào năm 1865"
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-122",
+      "text": "When did the last Hoan Kiem Lake turtle die?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Ngày 19 tháng 1 năm 2016, cá thể rùa Hồ Gươm cuối cùng đã chết."
+      ],
+      "docIds": [
+        "ho-hoan-kiem"
+      ]
+    },
+    {
+      "id": "q-123",
+      "text": "How large is the Mekong River basin according to the Mekong River Commission?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Lưu vực của nó rộng khoảng 795.000 km² (theo số liệu của Ủy hội sông Mê Kông)"
+      ],
+      "docIds": [
+        "song-me-kong"
+      ]
+    },
+    {
+      "id": "q-124",
+      "text": "How many years must a foreigner have permanently resided in Vietnam before applying for Vietnamese nationality?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Đã thường trú ở Việt Nam từ 5 năm trở lên tính đến thời điểm xin nhập quốc tịch Việt Nam"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-125",
+      "text": "How recently must the criminal record certificate have been issued for a nationality application?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Phiếu lý lịch tư pháp phải là phiếu được cấp không quá 90 ngày tính đến ngày nộp hồ sơ"
+      ],
+      "docIds": [
+        "luat-quoc-tich-2008"
+      ]
+    },
+    {
+      "id": "q-126",
+      "text": "When did the 2001 Law on Fire Prevention and Fighting take effect?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Luật này có hiệu lực kể từ ngày 04 tháng 10 năm 2001"
+      ],
+      "docIds": [
+        "luat-pccc-2001"
+      ]
+    },
+    {
+      "id": "q-127",
+      "text": "On what date did the National Assembly pass the 1993 Law on Environmental Protection?",
+      "lang": "en",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "thông qua ngày 27 tháng 12 năm 1993"
+      ],
+      "docIds": [
+        "luat-bvmt-1993"
+      ]
+    },
+    {
+      "id": "q-128",
+      "text": "How much is the entrance ticket to Ngoc Son Temple?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-129",
+      "text": "How many calories are in a bowl of pho?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-130",
+      "text": "How much does a custom-tailored ao dai cost in Ho Chi Minh City today?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-131",
+      "text": "How deep is Hoan Kiem Lake?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-132",
+      "text": "What is the speed limit for tourist boats in Ha Long Bay?",
+      "lang": "en",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": []
+    },
+    {
+      "id": "q-133",
+      "text": "How many foreigners were granted Vietnamese nationality in 2020?",
       "lang": "en",
       "type": "unanswerable",
       "split": "holdout",

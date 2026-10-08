@@ -15,25 +15,27 @@ describe("notebook validation", () => {
   });
 
   it("tên rỗng / chỉ khoảng trắng → ném", () => {
-    expect(() => validateName("")).toThrow(/để trống/);
-    expect(() => validateName("   ")).toThrow(/để trống/);
+    expect(() => validateName("")).toThrow(/notebookNameEmpty|questionEmpty/);
+    expect(() => validateName("   ")).toThrow(
+      /notebookNameEmpty|questionEmpty/,
+    );
     expect(() => validateName(null)).toThrow();
   });
 
   it("tên > 100 ký tự → ném", () => {
-    expect(() => validateName("a".repeat(101))).toThrow(/tối đa/);
+    expect(() => validateName("a".repeat(101))).toThrow(/notebookNameTooLong/);
   });
 
   it("màu thuộc palette được chấp nhận; ngoài palette → ném", () => {
     expect(validateColor(PALETTE[0])).toBe(PALETTE[0]);
-    expect(() => validateColor("#000000")).toThrow(/không hợp lệ/);
+    expect(() => validateColor("#000000")).toThrow(/Invalid notebook color/);
     expect(() => validateColor("red")).toThrow();
     expect(() => validateColor(123)).toThrow();
   });
 
   it("validateId: chuỗi non-empty OK; object/số/rỗng → ném lỗi nghiệp vụ", () => {
     expect(validateId("id-1")).toBe("id-1");
-    expect(() => validateId("")).toThrow(/id không hợp lệ/);
+    expect(() => validateId("")).toThrow(/Invalid notebook id/);
     expect(() => validateId({ malicious: true })).toThrow();
     expect(() => validateId(42)).toThrow();
     expect(() => validateId(null)).toThrow();

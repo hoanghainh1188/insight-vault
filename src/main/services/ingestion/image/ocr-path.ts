@@ -19,7 +19,7 @@ export function resolveCorePath(isPackaged: boolean): string {
   const raw = dirname(require.resolve("tesseract.js-core/package.json"));
   const dir = resolveCorePathFrom(raw, isPackaged);
   if (!existsSync(dir)) {
-    throw new Error("Không tìm thấy tesseract.js-core (đóng gói lệch?)");
+    throw new Error("tesseract.js-core not found (packaging mismatch?)");
   }
   return dir;
 }

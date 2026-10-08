@@ -9,15 +9,13 @@ export const MAX_QUESTION_LEN = 2000; // giới hạn độ dài CÂU HỎI (inp
 export const MAX_HISTORY_CONTENT_LEN = 20000;
 export const MAX_HISTORY_TURNS = 6; // số lượt hội thoại gần nhất gửi cho chat
 
-// Câu "không tìm thấy" mà prompt grounded yêu cầu mô hình trả NGUYÊN VĂN (cũng dùng để nhận diện).
-export const NOT_FOUND_ANSWER = "Không tìm thấy trong nguồn.";
-// 108 (FR-016): câu HIỂN THỊ cho người dùng = câu trên + gợi ý ngắn. Chỉ đổi chữ, không đổi bố cục.
-export const NOT_FOUND_HINT =
-  "Thử hỏi cụ thể hơn, hoặc chuyển sang chế độ Mở rộng nếu chấp nhận nội dung ngoài tài liệu.";
-export const NOT_FOUND_DISPLAY = `${NOT_FOUND_ANSWER} ${NOT_FOUND_HINT}`;
-// 059: đang tái lập chỉ mục (đổi engine embedding) → trả thông báo thay vì kết quả sai/thiếu (FR-010).
-export const REINDEXING_ANSWER =
-  "Đang tái lập chỉ mục nguồn (cập nhật công cụ tìm kiếm cục bộ). Vui lòng thử lại sau giây lát.";
+// 123 (FR-015): câu HIỂN THỊ "không tìm thấy" + gợi ý (108 FR-016) do GIAO DIỆN dịch theo cờ notFound (khoá
+// chat.notFound/notFoundHint). Nội dung lưu cho lượt này là câu English trung tính — nó còn được gửi lại cho model làm
+// lịch sử hội thoại, nên không phụ thuộc ngôn ngữ giao diện.
+export const NOT_FOUND_CONTENT = "Not found in the sources.";
+// 059: đang tái lập chỉ mục (đổi engine embedding) → cờ reindexing (giao diện dịch chat.reindexing); không lưu (FR-010).
+export const REINDEXING_CONTENT =
+  "Re-indexing sources. Please try again shortly.";
 
 // 055 hybrid: hợp nhất vector + BM25 + đa dạng hoá.
 export const RRF_K = 60; // hằng Reciprocal Rank Fusion: điểm = Σ 1/(k+rank)

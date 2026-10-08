@@ -4,6 +4,7 @@ import {
   CRASH_TITLE_MAX_CHARS,
 } from "@shared/crash-report-limits";
 import { useModalA11y } from "../useModalA11y";
+import { useT } from "../i18n/i18n-context";
 import "./crash-report-dialog.css";
 
 interface CrashReportDialogProps {
@@ -20,12 +21,12 @@ type Phase =
   | { kind: "sending" }
   | { kind: "sent" };
 
-const PROBLEM_TEXT: Record<Exclude<Problem, null>, string> = {
-  browser:
-    "Không mở được trình duyệt. Hãy bấm “Sao chép” rồi dán vào email hoặc trang GitHub của dự án.",
-  throttled: "Vừa mở trình duyệt — đợi vài giây rồi thử lại.",
-  copy: "Không sao chép được. Hãy chọn nội dung trong ô và sao chép thủ công.",
-};
+// 123: vấn đề → khoá dịch (dịch lúc render).
+const PROBLEM_KEY = {
+  browser: "crash.problem.browser",
+  throttled: "crash.problem.throttled",
+  copy: "crash.problem.copy",
+} as const;
 
 // 093 — hộp thoại "Báo lỗi" (ADR crash-report-clarify): người dùng XEM và SỬA toàn bộ bản nháp trước khi tự gửi.
 // "Mở GitHub" chỉ mở trình duyệt tới trang tạo issue điền sẵn (đích cố định ở main) — app không tự gửi gì.
@@ -33,6 +34,7 @@ const PROBLEM_TEXT: Record<Exclude<Problem, null>, string> = {
 export function CrashReportDialog({
   onClose,
 }: CrashReportDialogProps): JSX.Element {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [title, setTitle] = useState("");
@@ -120,23 +122,22 @@ export function CrashReportDialog({
       data-testid="crash-dialog"
     >
       <div className="nb-modal crash-modal" ref={ref} tabIndex={-1}>
-        <h3 id="crash-title">Báo lỗi cho nhà phát triển</h3>
+        <h3 id="crash-title">{t.t("crash.dialog.title")}</h3>
 
         {phase.kind === "loading" && (
           <p className="crash-desc" role="status">
-            Đang soạn báo cáo từ nhật ký…
+            {t.t("crash.dialog.loading")}
           </p>
         )}
 
         {phase.kind === "loadFailed" && (
           <>
             <div className="nb-error" role="alert">
-              Không soạn được báo cáo. Bạn vẫn có thể mở thư mục nhật ký ở Cài
-              đặt → Lưu trữ và gửi tệp main.log.
+              {t.t("crash.dialog.loadFailed")}
             </div>
             <div className="nb-modal-actions">
               <button type="button" className="btn-sm" onClick={close}>
-                Đóng
+                {t.t("common.close")}
               </button>
             </div>
           </>
@@ -145,13 +146,12 @@ export function CrashReportDialog({
         {editable && (
           <>
             <p className="crash-desc">
-              Nội dung dưới đây được soạn từ nhật ký trên máy — không chứa nội
-              dung tài liệu, câu hỏi hay câu trả lời. Bạn có thể sửa trước khi
-              gửi. InsightVault <strong>không tự gửi</strong>: bấm “Mở GitHub”
-              để mở trình duyệt với báo cáo điền sẵn rồi tự bấm gửi ở đó.
+              {t.t("crash.dialog.descBefore")}{" "}
+              <strong>{t.t("crash.dialog.descStrong")}</strong>
+              {t.t("crash.dialog.descAfter")}
             </p>
             <label className="nb-field-label" htmlFor="crash-title-input">
-              Tiêu đề
+              {t.t("crash.dialog.titleLabel")}
             </label>
             <input
               id="crash-title-input"
@@ -163,7 +163,7 @@ export function CrashReportDialog({
               data-testid="crash-title"
             />
             <label className="nb-field-label" htmlFor="crash-text-input">
-              Nội dung báo cáo
+              {t.t("crash.dialog.textLabel")}
             </label>
             <textarea
               id="crash-text-input"
@@ -178,7 +178,7 @@ export function CrashReportDialog({
             />
             {phase.kind === "editing" && phase.problem && (
               <div className="nb-error" role="alert">
-                {PROBLEM_TEXT[phase.problem]}
+                {t.t(PROBLEM_KEY[phase.problem])}
               </div>
             )}
             <div className="nb-modal-actions crash-actions">
@@ -188,7 +188,7 @@ export function CrashReportDialog({
                 aria-disabled={sending || undefined}
                 onClick={close}
               >
-                Huỷ
+                {t.t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -196,7 +196,7 @@ export function CrashReportDialog({
                 onClick={() => void copy()}
                 data-testid="crash-copy"
               >
-                {copied ? "Đã sao chép" : "Sao chép"}
+                {copied ? t.t("common.copied") : t.t("common.copy")}
               </button>
               {/* aria-disabled thay vì disabled: nút đang có focus không bị gỡ focus (rơi ra nền) khi đang gửi. */}
               <button
@@ -206,7 +206,9 @@ export function CrashReportDialog({
                 onClick={() => void send()}
                 data-testid="crash-send"
               >
-                {sending ? "Đang mở…" : "Mở GitHub để gửi"}{" "}
+                {sending
+                  ? t.t("crash.dialog.sending")
+                  : t.t("crash.dialog.send")}{" "}
                 <span aria-hidden="true">↗</span>
               </button>
             </div>
@@ -216,12 +218,11 @@ export function CrashReportDialog({
         {phase.kind === "sent" && (
           <>
             <p className="crash-desc" role="status" data-testid="crash-sent">
-              Đã mở trình duyệt với báo cáo điền sẵn. Hoàn tất bằng nút “Submit
-              new issue” trên GitHub (cần tài khoản GitHub). Cảm ơn bạn!
+              {t.t("crash.dialog.sent")}
             </p>
             <div className="nb-modal-actions">
               <button type="button" className="btn-primary-sm" onClick={close}>
-                Đóng
+                {t.t("common.close")}
               </button>
             </div>
           </>

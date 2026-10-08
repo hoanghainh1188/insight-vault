@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BackupCreateResult, VaultBackupStep } from "@shared/ipc/types";
+import type {
+  BackupCreateResult,
+  VaultBackupErrorCode,
+  VaultBackupStep,
+} from "@shared/ipc/types";
+import { formatBytes } from "@shared/i18n";
 import { useModalA11y } from "../../shared/useModalA11y";
-import { formatBytes } from "../../shared/format-bytes";
+import { useLang, useT } from "../../shared/i18n/i18n-context";
 import { validatePassword } from "./password-rules";
 import { errorMessage, stepLabel } from "./messages";
 
@@ -9,11 +14,12 @@ type Phase =
   | { kind: "options" }
   | { kind: "running"; step: VaultBackupStep | null }
   | { kind: "done"; result: Extract<BackupCreateResult, { status: "ok" }> }
-  | { kind: "error"; message: string };
+  | { kind: "error"; code: VaultBackupErrorCode };
 
+// 123: gợi ý mật khẩu theo lý do → khoá dịch (dịch lúc render).
 const PW_HINT = {
-  tooShort: "Mật khẩu cần tối thiểu 8 ký tự.",
-  mismatch: "Hai lần nhập chưa khớp.",
+  tooShort: "backup.dialog.pwTooShort",
+  mismatch: "backup.dialog.pwMismatch",
 } as const;
 
 // Hộp thoại sao lưu (085 US1/US3): tuỳ chọn mật khẩu → main mở hộp thoại lưu file → tiến trình theo bước.
@@ -22,6 +28,8 @@ export function BackupDialog({
 }: {
   onClose: () => void;
 }): JSX.Element {
+  const t = useT();
+  const lang = useLang();
   const [phase, setPhase] = useState<Phase>({ kind: "options" });
   const [protect, setProtect] = useState(false);
   const [pw, setPw] = useState("");
@@ -55,9 +63,9 @@ export function BackupDialog({
       const r = await window.api.backupCreate(password ? { password } : {});
       if (r.status === "ok") setPhase({ kind: "done", result: r });
       else if (r.status === "cancelled") setPhase({ kind: "options" });
-      else setPhase({ kind: "error", message: errorMessage(r.code) });
+      else setPhase({ kind: "error", code: r.code });
     } catch {
-      setPhase({ kind: "error", message: errorMessage("ioError") });
+      setPhase({ kind: "error", code: "ioError" });
     }
   }
 
@@ -70,15 +78,14 @@ export function BackupDialog({
       data-testid="backup-dialog"
     >
       <div className="nb-modal vb-modal" ref={ref}>
-        <h3 id="vb-backup-title">Sao lưu vault</h3>
+        <h3 id="vb-backup-title">{t.t("backup.dialog.title")}</h3>
 
         {phase.kind === "options" && (
           <>
             <p className="vb-desc">
-              Lưu toàn bộ notebook, nguồn đã xử lý, lịch sử chat, kết quả Studio
-              và cấu hình vào một file
-              <code> .ivbackup</code>. Không gồm file gốc (PDF, audio, video,
-              ảnh) và khoá API.
+              {t.t("backup.dialog.descBefore")}
+              <code> .ivbackup</code>
+              {t.t("backup.dialog.descAfter")}
             </p>
             <label className="vb-check">
               <input
@@ -87,11 +94,13 @@ export function BackupDialog({
                 onChange={(e) => setProtect(e.target.checked)}
                 data-testid="backup-protect"
               />
-              Bảo vệ bằng mật khẩu
+              {t.t("backup.dialog.protect")}
             </label>
             {protect ? (
               <>
-                <div className="nb-field-label">Mật khẩu</div>
+                <div className="nb-field-label">
+                  {t.t("backup.dialog.password")}
+                </div>
                 <input
                   className="nb-input"
                   type="password"
@@ -100,7 +109,9 @@ export function BackupDialog({
                   onChange={(e) => setPw(e.target.value)}
                   data-testid="backup-password"
                 />
-                <div className="nb-field-label">Nhập lại mật khẩu</div>
+                <div className="nb-field-label">
+                  {t.t("backup.dialog.passwordConfirm")}
+                </div>
                 <input
                   className="nb-input"
                   type="password"
@@ -111,12 +122,12 @@ export function BackupDialog({
                 />
                 {!check.ok && (pw || pw2) && (
                   <p className="vb-hint" data-testid="backup-password-hint">
-                    {PW_HINT[check.reason]}
+                    {t.t(PW_HINT[check.reason])}
                   </p>
                 )}
                 <div className="vb-callout">
-                  <strong>Không có cách lấy lại mật khẩu.</strong> Quên mật khẩu
-                  đồng nghĩa không mở được bản sao lưu này.
+                  <strong>{t.t("backup.dialog.noRecoveryStrong")}</strong>{" "}
+                  {t.t("backup.dialog.noRecoveryRest")}
                 </div>
               </>
             ) : (
@@ -124,13 +135,12 @@ export function BackupDialog({
                 className="vb-callout"
                 data-testid="backup-unencrypted-warning"
               >
-                File không mã hoá: ai có file đều đọc được nội dung tài liệu của
-                bạn. Hãy cất ở nơi an toàn hoặc bật mật khẩu.
+                {t.t("backup.dialog.unencryptedWarning")}
               </div>
             )}
             <div className="nb-modal-actions">
               <button type="button" className="btn-sm" onClick={onClose}>
-                Huỷ
+                {t.t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -139,7 +149,7 @@ export function BackupDialog({
                 onClick={() => void start()}
                 data-testid="backup-start"
               >
-                Chọn nơi lưu…
+                {t.t("backup.dialog.chooseLocation")}
               </button>
             </div>
           </>
@@ -153,16 +163,22 @@ export function BackupDialog({
             data-testid="backup-progress"
           >
             <span className="vb-spinner" aria-hidden="true" />
-            {phase.step ? stepLabel(phase.step) : "Đang chờ chọn nơi lưu…"}
+            {phase.step
+              ? stepLabel(phase.step, t)
+              : t.t("backup.dialog.waitingLocation")}
           </div>
         )}
 
         {phase.kind === "done" && (
           <>
             <p className="vb-done" role="status" data-testid="backup-done">
-              Đã sao lưu <strong>{phase.result.fileName}</strong> (
-              {formatBytes(phase.result.sizeBytes)}) vào{" "}
-              <code>{phase.result.dir}</code>.
+              {t.t("backup.dialog.doneBefore")}{" "}
+              <strong>{phase.result.fileName}</strong>{" "}
+              {t.t("backup.dialog.doneSize", {
+                size: formatBytes(phase.result.sizeBytes, lang),
+              })}{" "}
+              <code>{phase.result.dir}</code>
+              {t.t("backup.dialog.doneEnd")}
             </p>
             <div className="nb-modal-actions">
               <button
@@ -171,7 +187,7 @@ export function BackupDialog({
                 onClick={onClose}
                 data-testid="backup-close"
               >
-                Xong
+                {t.t("backup.dialog.finish")}
               </button>
             </div>
           </>
@@ -180,18 +196,18 @@ export function BackupDialog({
         {phase.kind === "error" && (
           <>
             <div className="nb-error" role="alert" data-testid="backup-error">
-              {phase.message}
+              {errorMessage(phase.code, t)}
             </div>
             <div className="nb-modal-actions">
               <button type="button" className="btn-sm" onClick={onClose}>
-                Đóng
+                {t.t("common.close")}
               </button>
               <button
                 type="button"
                 className="btn-primary-sm"
                 onClick={() => setPhase({ kind: "options" })}
               >
-                Thử lại
+                {t.t("common.retry")}
               </button>
             </div>
           </>

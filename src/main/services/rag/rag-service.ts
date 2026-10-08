@@ -1,3 +1,4 @@
+import { detectQuestionLanguage } from "@shared/i18n";
 import type { ChatMessage, RagAnswer, RagAskInput } from "@shared/ipc/types";
 import type { ChatStreamOpts } from "../ai-runtime/provider";
 import {
@@ -12,8 +13,8 @@ import { systemPromptFor } from "./prompt";
 import { postprocessCitations } from "./citation";
 import {
   MAX_HISTORY_TURNS,
-  NOT_FOUND_DISPLAY,
-  REINDEXING_ANSWER,
+  NOT_FOUND_CONTENT,
+  REINDEXING_CONTENT,
 } from "./constants";
 
 // Điều phối hỏi đáp (rag:ask). DI: retrieval deps + chat. KHÔNG log câu hỏi/nội dung (Constitution III).
@@ -50,10 +51,10 @@ export interface RagServiceDeps extends RetrievalDeps {
   ) => void;
 }
 
-// Mọi nhánh "không tìm thấy" ở chế độ theo nguồn trả CÙNG một câu hiển thị (kèm gợi ý — 108 FR-016).
+// Mọi nhánh "không tìm thấy" ở chế độ theo nguồn trả CÙNG cờ notFound; câu hiển thị + gợi ý do giao diện dịch (123).
 function notFoundResult(): RagAnswer {
   return {
-    answer: NOT_FOUND_DISPLAY,
+    answer: NOT_FOUND_CONTENT,
     citations: [],
     notFound: true,
     modeUsed: "grounded",
@@ -75,10 +76,11 @@ export function createRagService(deps: RagServiceDeps) {
     // Per-notebook: notebook khác đã xong vẫn hỏi đáp bình thường.
     if (deps.reindexing && (await deps.reindexing(input.notebookId))) {
       return {
-        answer: REINDEXING_ANSWER,
+        answer: REINDEXING_CONTENT,
         citations: [],
         notFound: false,
         modeUsed: mode,
+        reindexing: true,
       };
     }
 
@@ -95,7 +97,12 @@ export function createRagService(deps: RagServiceDeps) {
     if (mode === "grounded" && scored.length === 0) return notFoundResult();
 
     const built = buildContext(scored);
-    const system = systemPromptFor(mode, built.contextText);
+    // 123 (FR-017): trả lời theo ngôn ngữ câu hỏi — chỉ định rõ khi nhận diện chắc chắn vi/en.
+    const system = systemPromptFor(
+      mode,
+      built.contextText,
+      detectQuestionLanguage(question),
+    );
     const recent = history.slice(-MAX_HISTORY_TURNS);
     const messages: ChatMessage[] = [
       { role: "system", content: system },
@@ -122,7 +129,7 @@ export function createRagService(deps: RagServiceDeps) {
   function persist(input: RagAskInput, result: RagAnswer): void {
     if (!deps.saveTurn) return;
     // 059: KHÔNG lưu thông báo "đang tái lập chỉ mục" vào lịch sử (trạng thái tạm thời).
-    if (result.answer === REINDEXING_ANSWER) return;
+    if (result.reindexing) return;
     try {
       deps.saveTurn(input.notebookId, validateQuestion(input.question), {
         content: result.answer,

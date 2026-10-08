@@ -3,8 +3,15 @@ import type { NotebookColor } from "@shared/ipc/types";
 import { PALETTE, DEFAULT_COLOR } from "@shared/notebook-palette";
 import { useModalA11y } from "../../shared/useModalA11y";
 import { IconClose } from "../../shared/icons";
+import type { ParsedIpcError } from "@shared/online-error-tag";
+import { useT } from "../../shared/i18n/i18n-context";
+import {
+  describeIpcError,
+  toParsedError,
+} from "../../shared/i18n/describe-error";
 
 // Modal tạo/sửa notebook (A8): nhập tên + chọn màu từ palette. onSubmit ném lỗi → hiện message.
+// 123: lưu ParsedIpcError, dịch lúc render (đổi ngôn ngữ thì thông báo lỗi đổi theo).
 export interface NotebookModalProps {
   mode: "create" | "edit";
   initialName?: string;
@@ -20,9 +27,10 @@ export function NotebookModal({
   onSubmit,
   onClose,
 }: NotebookModalProps): JSX.Element {
+  const t = useT();
   const [name, setName] = useState(initialName);
   const [color, setColor] = useState<NotebookColor>(initialColor);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ParsedIpcError | null>(null);
   const [busy, setBusy] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   useModalA11y({ active: true, onClose, containerRef: modalRef });
@@ -34,7 +42,7 @@ export function NotebookModal({
       await onSubmit(name, color);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Lỗi không xác định.");
+      setError(toParsedError(e));
     } finally {
       setBusy(false);
     }
@@ -52,25 +60,29 @@ export function NotebookModal({
           type="button"
           className="modal-x"
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t.t("common.close")}
           data-testid="modal-close"
         >
           <IconClose size={16} />
         </button>
-        <h3>{mode === "create" ? "Notebook mới" : "Sửa notebook"}</h3>
+        <h3>
+          {mode === "create"
+            ? t.t("notebooks.new")
+            : t.t("notebooks.modal.editTitle")}
+        </h3>
         <label className="nb-field-label" htmlFor="nb-name">
-          Tên
+          {t.t("notebooks.modal.name")}
         </label>
         <input
           id="nb-name"
           className="nb-input"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Tên notebook…"
+          placeholder={t.t("notebooks.modal.namePlaceholder")}
           data-testid="notebook-name-input"
           autoFocus
         />
-        <div className="nb-field-label">Màu</div>
+        <div className="nb-field-label">{t.t("notebooks.modal.color")}</div>
         <div className="nb-palette" data-testid="notebook-palette">
           {PALETTE.map((c) => (
             <button
@@ -78,7 +90,7 @@ export function NotebookModal({
               type="button"
               className={`nb-swatch${color === c ? " sel" : ""}`}
               style={{ background: c }}
-              aria-label={`Màu ${c}`}
+              aria-label={t.t("notebooks.modal.swatch", { color: c })}
               onClick={() => setColor(c)}
               data-testid={`swatch-${c}`}
             />
@@ -86,12 +98,12 @@ export function NotebookModal({
         </div>
         {error && (
           <div className="nb-error" data-testid="notebook-error">
-            {error}
+            {describeIpcError(error, t)}
           </div>
         )}
         <div className="nb-modal-actions">
           <button type="button" className="btn-sm" onClick={onClose}>
-            Huỷ
+            {t.t("common.cancel")}
           </button>
           <button
             type="button"
@@ -100,7 +112,9 @@ export function NotebookModal({
             disabled={busy}
             data-testid="notebook-submit"
           >
-            {mode === "create" ? "Tạo" : "Lưu"}
+            {mode === "create"
+              ? t.t("notebooks.modal.create")
+              : t.t("common.save")}
           </button>
         </div>
       </div>

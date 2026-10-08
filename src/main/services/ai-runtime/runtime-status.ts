@@ -14,8 +14,8 @@ export async function computeRuntimeStatus(
     return {
       reachable: false,
       ollamaReady: false,
-      reason:
-        "Không kết nối được Ollama (kiểm tra Ollama đã cài và đang chạy).",
+      reason: "Ollama unreachable.",
+      reasonCode: "ollamaUnreachable",
     };
   }
 
@@ -23,7 +23,8 @@ export async function computeRuntimeStatus(
     return {
       reachable: true,
       ollamaReady: false,
-      reason: "Chưa chọn mô hình trả lời.",
+      reason: "Answer model not selected.",
+      reasonCode: "modelsNotSelected",
     };
   }
 
@@ -32,7 +33,9 @@ export async function computeRuntimeStatus(
     return {
       reachable: true,
       ollamaReady: false,
-      reason: `Mô hình đã chọn không có trên máy: ${selection.chatModel}.`,
+      reason: `Selected model not installed: ${selection.chatModel}.`,
+      reasonCode: "modelsMissing",
+      reasonParams: { models: selection.chatModel },
     };
   }
 

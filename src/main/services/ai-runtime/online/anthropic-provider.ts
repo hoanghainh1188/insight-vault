@@ -1,3 +1,5 @@
+import { errorTagsOnly } from "@shared/online-error-tag";
+import { UserFacingError, encodeUserError } from "@shared/codes/user-error";
 import type {
   ChatMessage,
   ChatRequest,
@@ -75,9 +77,13 @@ export class AnthropicProvider implements LLMProvider {
   async chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult> {
     const key = await this.deps.getKey();
     if (!key)
-      throw new OnlineProviderError(`${LABEL}: chưa nhập khóa API.`, "auth");
+      throw new OnlineProviderError(
+        encodeUserError("apiKeyMissing", { provider: LABEL }),
+        "auth",
+      );
     const model = req.model ?? this.deps.getModel();
-    if (!model) throw new Error(`${LABEL}: chưa chọn mô hình.`);
+    if (!model)
+      throw new UserFacingError("modelNotSelected", { provider: LABEL });
     const headers = {
       "x-api-key": key,
       "anthropic-version": ANTHROPIC_VERSION,
@@ -118,7 +124,7 @@ export class AnthropicProvider implements LLMProvider {
 
   async embed(): Promise<EmbedResult> {
     throw new Error(
-      `${LABEL} không hỗ trợ embedding — embedding luôn dùng Ollama local.`,
+      `${LABEL} does not support embedding — embedding always uses local models.`,
     );
   }
 
@@ -143,13 +149,17 @@ export async function testOnlineChat(
     return {
       reachable: false,
       ollamaReady: false,
-      reason: `${label}: chưa nhập khóa API.`,
+      reason: `${label}: API key missing.`,
+      reasonCode: "apiKeyMissing",
+      reasonParams: { provider: label },
     };
   if (!deps.getModel())
     return {
       reachable: false,
       ollamaReady: false,
-      reason: `${label}: chưa chọn mô hình.`,
+      reason: `${label}: model not selected.`,
+      reasonCode: "modelNotSelected",
+      reasonParams: { provider: label },
     };
   try {
     await provider.chat({ messages: [{ role: "user", content: "ping" }] });
@@ -158,8 +168,13 @@ export async function testOnlineChat(
     return {
       reachable: false,
       ollamaReady: false,
-      reason:
-        e instanceof Error ? e.message : `${label}: kiểm tra kết nối thất bại.`,
+      reason: `${label}: connection test failed.`,
+      reasonCode: "connectionFailed",
+      reasonParams: { provider: label },
+      // 123 (security review): chỉ gửi THẺ lỗi (mã/loại online), không gửi thông điệp thô của provider.
+      ...(e instanceof Error && errorTagsOnly(e.message)
+        ? { reasonError: errorTagsOnly(e.message) }
+        : {}),
     };
   }
 }

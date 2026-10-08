@@ -9,7 +9,8 @@ cuộn tới đúng đoạn highlight). Có tùy chọn dùng AI online bằng A
 
 - **Khách hàng / người dùng mục tiêu:** người xử lý nhiều tài liệu và coi trọng quyền riêng tư —
   nhà nghiên cứu, luật sư, nhà báo, sinh viên, kỹ sư (dữ liệu nhạy cảm, không muốn tải lên server bên thứ ba).
-- **Ngôn ngữ tài liệu thiết kế gốc & UI:** tiếng Việt (i18n để sau).
+- **Ngôn ngữ tài liệu thiết kế gốc:** tiếng Việt. **UI:** Tiếng Việt + English (i18n #123 — khung `src/shared/i18n`,
+  mọi chuỗi giao diện qua tệp dịch; tiếng Việt là ngôn ngữ nguồn).
 - **Nền tảng (đã chốt):** desktop **Electron**, chạy **macOS + Windows**. Cộng đồng trước (miễn phí),
   freemium sau → kiến trúc "sẵn sàng thu phí" (tách tầng license/đồng bộ) nhưng **chưa xây** phần trả phí ở v1.
 - **3 điểm khác biệt bất biến (không được đánh mất):** Local-first (dữ liệu không rời máy ở chế độ mặc định) ·

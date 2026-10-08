@@ -69,10 +69,14 @@ describe("buildReport", () => {
       "2026-10-06T01:02:00.000Z renderer.error source=boundary errorType=TypeError components=Workspace>ErrorBoundary",
     );
     expect(text).not.toContain("app.start");
-    expect(text).toContain("Crash native trên máy: 2");
+    expect(text).toContain("Native crashes on this computer: 2");
+    // 123 (decision #13): khung báo cáo gửi nhà phát triển cố định English — không ký tự tiếng Việt.
+    expect(text).not.toMatch(
+      /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i,
+    );
     expect(text).toContain("2026-10-05T10:00:00.000Z");
-    expect(text).toMatch(/minidump.*không đính kèm/i);
-    expect(text).toContain("Bạn đang làm gì");
+    expect(text).toMatch(/minidump.*not attached/i);
+    expect(text).toContain("What were you doing");
   });
 
   it("không có lỗi ⇒ ghi rõ, chỉ giữ tối đa maxEvents lỗi mới nhất", () => {
@@ -82,7 +86,7 @@ describe("buildReport", () => {
         records: [],
         nativeCrashes: { count: 0, latestAt: null },
       }),
-    ).toContain("(không có lỗi nào trong nhật ký gần đây)");
+    ).toContain("(no errors in the recent log)");
     const recs = parseLogRecords(
       Array.from({ length: 30 }, (_, i) =>
         line({ ts: `t${i}`, level: "error", event: `e${i}`, meta: {} }),
@@ -148,7 +152,9 @@ describe("summarizeNativeCrashes", () => {
 
 describe("reportTitle / buildIssueUrl", () => {
   it("tiêu đề có phiên bản + HĐH", () => {
-    expect(reportTitle(ENV)).toBe("Báo lỗi: InsightVault 0.2.4 (darwin arm64)");
+    expect(reportTitle(ENV)).toBe(
+      "Bug report: InsightVault 0.2.4 (darwin arm64)",
+    );
   });
 
   it("URL đích cố định của repo, tiêu đề + nội dung được mã hoá", () => {
@@ -194,11 +200,11 @@ describe("reportTitle / buildIssueUrl", () => {
     const url = buildIssueUrl("t", body);
     expect(url.length).toBeLessThanOrEqual(MAX_URL_LENGTH);
     const sent = new URL(url).searchParams.get("body")!;
-    expect(sent).toContain("### Mô tả");
+    expect(sent).toContain("### Description");
     expect(sent).toContain("errorType=Loi19");
     expect(sent).not.toContain("errorType=Loi0 ");
-    expect(sent).toContain("### Crash native");
-    expect(sent).toMatch(/đã cắt bớt/);
+    expect(sent).toContain("### Native crashes");
+    expect(sent).toMatch(/middle trimmed/);
     expect((sent.match(/```/g) ?? []).length % 2).toBe(0);
   });
 
@@ -214,7 +220,7 @@ describe("reportTitle / buildIssueUrl", () => {
   it("nội dung quá dài ⇒ cắt cho vừa giới hạn URL kèm ghi chú", () => {
     const url = buildIssueUrl("t", "Đ".repeat(20_000));
     expect(url.length).toBeLessThanOrEqual(MAX_URL_LENGTH);
-    expect(new URL(url).searchParams.get("body")).toMatch(/đã cắt bớt/);
+    expect(new URL(url).searchParams.get("body")).toMatch(/middle trimmed/);
   });
 });
 

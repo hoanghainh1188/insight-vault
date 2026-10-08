@@ -17,6 +17,7 @@ describe("tagOnlineError / parseIpcError", () => {
     expect(parseIpcError(raw)).toEqual({
       message: "Claude: Nhà cung cấp đang giới hạn tốc độ.",
       onlineKind: "rate-limit",
+      provider: "Claude",
     });
   });
 

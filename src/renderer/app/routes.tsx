@@ -3,9 +3,7 @@ import { App } from "./App";
 import { WorkspacePlaceholder } from "../features/app-shell/placeholders";
 import { NotebooksGrid } from "../features/notebooks/NotebooksGrid";
 import { Workspace } from "../features/sources/Workspace";
-import { SettingsAiSection } from "../features/ai-runtime/SettingsAiSection";
-import { SettingsAiOnlineSection } from "../features/ai-runtime/SettingsAiOnlineSection";
-import { SettingsStorageSection } from "../features/app-shell/SettingsStorageSection";
+import { SettingsPage } from "./SettingsPage";
 import { RouteErrorFallback } from "../shared/RouteErrorFallback";
 
 // HashRouter (clarify A2) — route phản ánh khu vực, deep-link được sau. Mặc định /notebooks (A6).
@@ -21,17 +19,7 @@ export const router = createHashRouter([
       { path: "workspace/:notebookId", element: <Workspace /> },
       // Bare /workspace (rail chưa chọn notebook): nhắc chọn notebook (placeholder từ 001).
       { path: "workspace", element: <WorkspacePlaceholder /> },
-      {
-        path: "settings",
-        element: (
-          <section className="settings-page" data-testid="placeholder-settings">
-            <h2>Cài đặt</h2>
-            <SettingsAiSection />
-            <SettingsAiOnlineSection />
-            <SettingsStorageSection />
-          </section>
-        ),
-      },
+      { path: "settings", element: <SettingsPage /> },
     ],
   },
 ]);

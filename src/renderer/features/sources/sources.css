@@ -286,10 +286,18 @@
   line-height: 1.3;
   color: var(--ink-soft);
 }
+/* 123: nguồn lỗi có thêm nút (Thử lại/Retry…) + nhãn lỗi English dài ⇒ cho nút xuống dòng thay vì đè lên dòng lỗi. */
+.src.src-error {
+  flex-wrap: wrap;
+}
+.src.src-error .src-main {
+  flex-basis: 140px;
+}
 .src-actions {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+  margin-left: auto;
   align-self: center; /* nút căn giữa dòng dù icon/tên căn top */
 }
 

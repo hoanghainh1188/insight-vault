@@ -1,11 +1,18 @@
+import type { SourceErrorCode } from "../codes/source-error";
 // Kiểu trao đổi qua IPC (main ↔ renderer). Nguồn: data-model.md.
+
+/** 123: trạng thái ngôn ngữ giao diện — lựa chọn đã lưu + ngôn ngữ hiệu lực (contracts/ipc-ui-language.md). */
+export interface UiLanguageState {
+  preference: "auto" | "vi" | "en";
+  effective: "vi" | "en";
+}
 
 /** Trạng thái riêng tư — nguồn sự thật cho privacy indicator badge. v1 luôn 'local'. */
 export interface PrivacyState {
   /** 103: local / online (provider online đã bật, chưa gửi) / sending (đang có egress thật). */
   mode: "local" | "online" | "sending";
-  /** Văn bản hiển thị badge, suy ra từ mode (không hard-code rời rạc ở renderer). */
-  label: string;
+  /** 123: loại egress khi mode = sending (ai > url > model) — renderer dịch nhãn theo ngôn ngữ hiện tại. */
+  egressKind?: "ai" | "url" | "model";
 }
 
 /** Trạng thái onboarding lần đầu. Lưu bền ở OS settings store. */
@@ -100,9 +107,22 @@ export interface RuntimeStatus {
   reachable: boolean;
   /** reachable AND chat+embedding model đã chọn tồn tại trên máy. */
   ollamaReady: boolean;
-  /** Lý do khi chưa sẵn sàng (không kết nối / chưa chọn model / model thiếu). */
+  /** Lý do khi chưa sẵn sàng (English, cho nhật ký) — giao diện hiển thị theo reasonCode (123). */
   reason: string | null;
+  /** 123: mã lý do — giao diện dịch theo ngôn ngữ hiện tại. */
+  reasonCode?: RuntimeReasonCode;
+  reasonParams?: { models?: string; provider?: string };
+  /** 123: lỗi gốc khi kiểm tra kết nối online thất bại (có thể mang thẻ [[err:…]] / [[online:…]]). */
+  reasonError?: string;
 }
+
+export type RuntimeReasonCode =
+  | "ollamaUnreachable"
+  | "modelsNotSelected"
+  | "modelsMissing"
+  | "apiKeyMissing"
+  | "modelNotSelected"
+  | "connectionFailed";
 
 /** Yêu cầu/kết quả chat & embedding (nội bộ main; KHÔNG log payload — Constitution III). */
 export interface ChatMessage {
@@ -230,7 +250,8 @@ export interface Source {
   kind: SourceKind;
   title: string;
   status: SourceStatus;
-  errorLabel: string | null;
+  /** 123: mã lỗi nguồn (cột error_label lưu mã) — giao diện dịch theo ngôn ngữ hiện tại. */
+  errorCode: SourceErrorCode | null;
   pageCount: number | null;
   createdAt: number;
   updatedAt: number;
@@ -275,7 +296,7 @@ export interface SourceProgressEvent {
   status: SourceStatus;
   step: IngestStep;
   progress: number; // 0..1
-  errorLabel?: string;
+  errorCode?: SourceErrorCode;
   /** 112: sự kiện của một lần "Xử lý lại" — nguồn vẫn `ready` (dùng dữ liệu cũ) trong lúc chạy. */
   reprocess?: true;
 }
@@ -355,6 +376,8 @@ export interface RagAnswer {
   citations: Citation[];
   notFound: boolean; // true khi grounded không đủ căn cứ
   modeUsed: RagMode;
+  /** 123: notebook đang tái lập chỉ mục (059) — giao diện hiện câu dịch; không lưu lịch sử. */
+  reindexing?: boolean;
 }
 
 // ===== streaming (039) — Chat trả lời chạy dần =====
@@ -424,6 +447,8 @@ export interface StudioGenerateInput {
   kind: StudioKind;
   sourceId?: string; // 025: lọc theo 1 nguồn; bỏ trống = toàn bộ nguồn ready
   target?: AiTarget; // 098: "local" = tạo bằng Ollama sau lỗi online
+  /** 123 (FR-018): ngôn ngữ đầu ra = ngôn ngữ giao diện lúc bấm tạo; sai/thiếu ⇒ ngôn ngữ hiệu lực của main. */
+  outputLanguage?: "vi" | "en";
 }
 
 /** Input xuất kết quả Studio ra tệp .md (025). */

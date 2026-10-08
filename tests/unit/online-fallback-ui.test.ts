@@ -3,11 +3,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { act } from "react-dom/test-utils";
-import { useChat } from "../../src/renderer/features/rag-qa/useChat";
+import {
+  describeChatError,
+  useChat,
+} from "../../src/renderer/features/rag-qa/useChat";
 import { useStudio } from "../../src/renderer/features/studio/useStudio";
 import { MessageBubble } from "../../src/renderer/features/rag-qa/MessageBubble";
 import { ChatColumn } from "../../src/renderer/features/rag-qa/ChatColumn";
 import { tagOnlineError } from "../../src/shared/online-error-tag";
+import { describeIpcError } from "../../src/renderer/shared/i18n/describe-error";
+import { trVi, tVi } from "./helpers/t-vi";
 
 // 098 — lỗi AI online ⇒ nút một chạm "Trả lời bằng AI cục bộ" / "Thử lại" cho ĐÚNG lượt đó (không tự chuyển).
 
@@ -24,6 +29,8 @@ let container: HTMLDivElement;
 let root: Root;
 let api: Record<string, ReturnType<typeof vi.fn>>;
 const flush = (): Promise<void> => act(async () => undefined);
+// 123: lỗi online hiển thị = nhãn provider + câu dịch theo loại (không còn câu gốc của main).
+const ONLINE_MSG = `Claude: ${tVi("online.rate-limit")}`;
 
 beforeEach(() => {
   api = {
@@ -68,7 +75,7 @@ describe("useChat — lỗi online", () => {
     await act(async () => root.render(createElement(Harness)));
     await flush();
     await act(async () => void (await chat.send("Hợp đồng hết hạn khi nào?")));
-    expect(chat.error).toBe("Claude: Nhà cung cấp đang giới hạn tốc độ.");
+    expect(chat.error && describeChatError(chat.error, trVi)).toBe(ONLINE_MSG);
     expect(chat.failedTurn).toEqual({ question: "Hợp đồng hết hạn khi nào?" });
 
     await act(async () => void (await chat.retryFailed("local")));
@@ -162,7 +169,8 @@ describe("useChat — lỗi online", () => {
     await flush();
     await act(async () => void (await chat.retryFailed("local")));
     expect(api.ragAskStream).toHaveBeenCalledTimes(1);
-    expect(chat.error).toMatch(/AI cục bộ \(Ollama\) chưa sẵn sàng/);
+    expect(chat.error).toEqual({ kind: "localNotReady" });
+    expect(describeChatError(chat.error!, trVi)).toBe(tVi("chat.blockRuntime"));
   });
 
   it("xoá hội thoại ⇒ bỏ luôn lượt lỗi đang chờ chọn", async () => {
@@ -188,7 +196,10 @@ describe("useChat — lỗi online", () => {
     await act(async () => root.render(createElement(Harness)));
     await flush();
     await act(async () => void (await chat.send("Q")));
-    expect(chat.error).toBe("Runtime AI cục bộ chưa sẵn sàng.");
+    // 123: lỗi không thẻ (không mã, không online) ⇒ câu chung theo ngôn ngữ hiện tại.
+    expect(chat.error && describeChatError(chat.error, trVi)).toBe(
+      tVi("errors.unexpected"),
+    );
     expect(chat.failedTurn).toBeNull();
   });
 });
@@ -209,9 +220,7 @@ describe("useStudio — lỗi online", () => {
     await act(async () => root.render(createElement(Harness)));
     await flush();
     await act(async () => void (await studio.generate("summary")));
-    expect(studio.errors.summary).toBe(
-      "Claude: Nhà cung cấp đang giới hạn tốc độ.",
-    );
+    expect(describeIpcError(studio.errors.summary!, trVi)).toBe(ONLINE_MSG);
     expect(studio.onlineFailed.summary).toBe(true);
     await act(
       async () => void (await studio.generate("summary", undefined, "local")),
@@ -273,9 +282,7 @@ describe("ChatColumn — khối lỗi online", () => {
     await flush();
     const alert = container.querySelector("[role=alert]")!;
     expect(alert.tagName).toBe("P");
-    expect(alert.textContent).toBe(
-      "Claude: Nhà cung cấp đang giới hạn tốc độ.",
-    );
+    expect(alert.textContent).toBe(ONLINE_MSG);
     const local = container.querySelector<HTMLButtonElement>(
       "[data-testid=chat-local-retry]",
     )!;

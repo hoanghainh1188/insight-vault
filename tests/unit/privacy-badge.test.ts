@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import { PrivacyBadge } from "../../src/renderer/features/app-shell/PrivacyBadge";
 import type { PrivacyState } from "../../src/shared/ipc/types";
+import { I18nProvider } from "../../src/renderer/shared/i18n/I18nProvider";
 
 // 103 — badge cập nhật TỨC THÌ theo sự kiện đẩy từ main; 3 trạng thái có class riêng.
 
@@ -19,11 +20,7 @@ const off = vi.fn();
 
 beforeEach(() => {
   (window as unknown as { api: unknown }).api = {
-    getPrivacyState: () =>
-      Promise.resolve({
-        mode: "online",
-        label: "AI online đang bật · chỉ gửi khi bạn hỏi",
-      }),
+    getPrivacyState: () => Promise.resolve({ mode: "online" }),
     onPrivacyChanged: (cb: (s: PrivacyState) => void) => {
       push = cb;
       return off;
@@ -43,14 +40,33 @@ describe("PrivacyBadge", () => {
     expect(badge().className).toContain("online");
     expect(badge().textContent).toContain("chỉ gửi khi bạn hỏi");
 
-    act(() => push({ mode: "sending", label: "Đang gửi dữ liệu ra ngoài…" }));
+    act(() => push({ mode: "sending", egressKind: "url" }));
     expect(badge().className).toContain("sending");
-    expect(badge().textContent).toContain("Đang gửi dữ liệu ra ngoài");
+    expect(badge().textContent).toContain("Đang tải trang web");
 
-    act(() =>
-      push({ mode: "local", label: "Chạy cục bộ · dữ liệu không rời máy" }),
-    );
+    act(() => push({ mode: "local" }));
     expect(badge().className).not.toMatch(/online|sending/);
+    expect(badge().textContent).toContain("dữ liệu không rời máy");
+  });
+
+  it("123: nhãn theo ngôn ngữ giao diện (English), trạng thái vẫn đúng", async () => {
+    (window as unknown as { api: Record<string, unknown> }).api = {
+      ...(window as unknown as { api: Record<string, unknown> }).api,
+      getUiLanguage: () =>
+        Promise.resolve({ preference: "en", effective: "en" }),
+      onUiLanguageChanged: () => () => undefined,
+    };
+    await act(async () =>
+      root.render(
+        createElement(I18nProvider, null, createElement(PrivacyBadge)),
+      ),
+    );
+    expect(badge().textContent).toContain(
+      "Online AI is on · sends only when you ask",
+    );
+    act(() => push({ mode: "sending", egressKind: "ai" }));
+    expect(badge().className).toContain("sending");
+    expect(badge().textContent).toContain("Sending data to online AI");
   });
 
   it("gỡ đăng ký sự kiện khi unmount", async () => {

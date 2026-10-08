@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BackupSummary, VaultBackupStep } from "@shared/ipc/types";
+import type {
+  BackupSummary,
+  VaultBackupErrorCode,
+  VaultBackupStep,
+} from "@shared/ipc/types";
+import { formatDateTime } from "@shared/i18n";
 import { useModalA11y } from "../../shared/useModalA11y";
+import { useLang, useT } from "../../shared/i18n/i18n-context";
 import { errorMessage, stepLabel } from "./messages";
 
+// 123: state giữ MÃ lỗi (dịch lúc render).
 type Phase =
-  | { kind: "password"; error: string | null }
+  | { kind: "password"; error: VaultBackupErrorCode | null }
   | { kind: "working"; step: VaultBackupStep | null }
   | { kind: "summary"; summary: BackupSummary }
-  | { kind: "fatal"; message: string };
-
-const dateTime = (iso: string): string =>
-  new Date(iso).toLocaleString("vi-VN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  | { kind: "fatal"; code: VaultBackupErrorCode };
 
 interface RestoreDialogProps {
   token: string;
@@ -28,6 +29,8 @@ export function RestoreDialog({
   encrypted,
   onClose,
 }: RestoreDialogProps): JSX.Element {
+  const t = useT();
+  const lang = useLang();
   const [phase, setPhase] = useState<Phase>(
     encrypted
       ? { kind: "password", error: null }
@@ -61,12 +64,12 @@ export function RestoreDialog({
         if (r.status === "ok") {
           setPhase({ kind: "summary", summary: r.summary });
         } else if (encrypted && r.code === "badPasswordOrCorrupt") {
-          setPhase({ kind: "password", error: errorMessage(r.code) });
+          setPhase({ kind: "password", error: r.code });
         } else {
-          setPhase({ kind: "fatal", message: errorMessage(r.code) });
+          setPhase({ kind: "fatal", code: r.code });
         }
       } catch {
-        setPhase({ kind: "fatal", message: errorMessage("ioError") });
+        setPhase({ kind: "fatal", code: "ioError" });
       }
     },
     [token, encrypted],
@@ -85,8 +88,7 @@ export function RestoreDialog({
     try {
       const r = await window.api.restoreConfirm(token);
       // Thành công ⇒ app thoát + mở lại; chỉ còn nhánh lỗi cần xử lý ở đây.
-      if (r.status === "error")
-        setPhase({ kind: "fatal", message: errorMessage(r.code) });
+      if (r.status === "error") setPhase({ kind: "fatal", code: r.code });
     } catch {
       // Kênh IPC đứt vì app đang khởi động lại — bình thường.
     }
@@ -107,7 +109,7 @@ export function RestoreDialog({
       data-testid="restore-dialog"
     >
       <div className="nb-modal vb-modal" ref={ref}>
-        <h3 id="vb-restore-title">Khôi phục vault</h3>
+        <h3 id="vb-restore-title">{t.t("backup.restore.title")}</h3>
 
         {phase.kind === "password" && (
           <form
@@ -116,10 +118,10 @@ export function RestoreDialog({
               if (pw) submitPassword();
             }}
           >
-            <p className="vb-desc">
-              File sao lưu này được bảo vệ bằng mật khẩu.
-            </p>
-            <div className="nb-field-label">Mật khẩu</div>
+            <p className="vb-desc">{t.t("backup.restore.passwordProtected")}</p>
+            <div className="nb-field-label">
+              {t.t("backup.dialog.password")}
+            </div>
             <input
               className="nb-input"
               type="password"
@@ -135,12 +137,12 @@ export function RestoreDialog({
                 role="alert"
                 data-testid="restore-error"
               >
-                {phase.error}
+                {errorMessage(phase.error, t)}
               </div>
             )}
             <div className="nb-modal-actions">
               <button type="button" className="btn-sm" onClick={cancel}>
-                Huỷ
+                {t.t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -148,7 +150,7 @@ export function RestoreDialog({
                 disabled={!pw}
                 data-testid="restore-unlock"
               >
-                Mở bản sao lưu
+                {t.t("backup.restore.unlock")}
               </button>
             </div>
           </form>
@@ -162,39 +164,50 @@ export function RestoreDialog({
             data-testid="restore-progress"
           >
             <span className="vb-spinner" aria-hidden="true" />
-            {phase.step ? stepLabel(phase.step) : "Đang đọc bản sao lưu…"}
+            {phase.step
+              ? stepLabel(phase.step, t)
+              : t.t("backup.restore.reading")}
           </div>
         )}
 
         {phase.kind === "summary" && (
           <>
             <dl className="vb-summary" data-testid="restore-summary">
-              <dt>Ngày tạo</dt>
-              <dd>{dateTime(phase.summary.createdAt)}</dd>
-              <dt>Nội dung</dt>
+              <dt>{t.t("backup.restore.createdAt")}</dt>
               <dd>
-                {phase.summary.notebookCount} notebook ·{" "}
-                {phase.summary.sourceCount} nguồn
+                {formatDateTime(Date.parse(phase.summary.createdAt), lang)}
               </dd>
-              <dt>Phiên bản</dt>
+              <dt>{t.t("backup.restore.contents")}</dt>
+              <dd>
+                {t.plural(
+                  "backup.restore.notebookCount",
+                  phase.summary.notebookCount,
+                )}{" "}
+                ·{" "}
+                {t.plural(
+                  "backup.restore.sourceCount",
+                  phase.summary.sourceCount,
+                )}
+              </dd>
+              <dt>{t.t("backup.restore.version")}</dt>
               <dd>InsightVault {phase.summary.appVersion}</dd>
-              <dt>Mã hoá</dt>
-              <dd>{phase.summary.encrypted ? "Có mật khẩu" : "Không"}</dd>
+              <dt>{t.t("backup.restore.encryption")}</dt>
+              <dd>
+                {phase.summary.encrypted
+                  ? t.t("backup.restore.encrypted")
+                  : t.t("backup.restore.notEncrypted")}
+              </dd>
             </dl>
             {phase.summary.needsReindex && (
-              <p className="vb-hint">
-                Bản sao lưu dùng mô hình lập chỉ mục khác — sau khi khôi phục,
-                app sẽ tái lập chỉ mục ở nền.
-              </p>
+              <p className="vb-hint">{t.t("backup.restore.needsReindex")}</p>
             )}
             <div
               className="vb-callout danger"
               data-testid="restore-overwrite-warning"
             >
-              <strong>Toàn bộ vault hiện tại sẽ bị thay thế</strong> bằng bản
-              sao lưu này. Vault hiện tại sẽ được tự sao lưu (không mã hoá, nằm
-              cùng thư mục dữ liệu) vào <code>backups</code> trước, sau đó app
-              khởi động lại.
+              <strong>{t.t("backup.restore.overwriteStrong")}</strong>{" "}
+              {t.t("backup.restore.overwriteBefore")} <code>backups</code>
+              {t.t("backup.restore.overwriteAfter")}
             </div>
             <div className="nb-modal-actions">
               <button
@@ -203,7 +216,7 @@ export function RestoreDialog({
                 onClick={cancel}
                 data-testid="restore-cancel"
               >
-                Huỷ
+                {t.t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -211,7 +224,7 @@ export function RestoreDialog({
                 onClick={() => void confirm()}
                 data-testid="restore-confirm"
               >
-                Khôi phục và khởi động lại
+                {t.t("backup.restore.confirm")}
               </button>
             </div>
           </>
@@ -220,7 +233,7 @@ export function RestoreDialog({
         {phase.kind === "fatal" && (
           <>
             <div className="nb-error" role="alert" data-testid="restore-error">
-              {phase.message}
+              {errorMessage(phase.code, t)}
             </div>
             <div className="nb-modal-actions">
               <button
@@ -229,7 +242,7 @@ export function RestoreDialog({
                 onClick={cancel}
                 autoFocus
               >
-                Đóng
+                {t.t("common.close")}
               </button>
             </div>
           </>

@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import { app, ipcMain, BrowserWindow, clipboard, shell } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
 import type {
@@ -34,6 +35,7 @@ import type { NotebookRepo } from "../services/notebooks/notebook-repo";
 import type { SourceRepo } from "../services/ingestion/source-repo";
 import type { IngestionPipeline } from "../services/ingestion/pipeline";
 import type { VectorStore } from "../services/ingestion/vector-store";
+import type { UiLanguageService } from "../services/ui-language";
 import type { RagService } from "../services/rag/rag-service";
 import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
@@ -87,14 +89,12 @@ interface RegisterDeps {
   relinkSource: (id: unknown) => Promise<SourceRelinkResult>;
   // 112 — xử lý lại PDF (kiểm khoá kho / quy tắc / tệp gốc trong handler).
   reprocessSource: (id: unknown) => Promise<SourceReprocessResult>;
+  // 123 — ngôn ngữ giao diện (lưu lựa chọn + ngôn ngữ hiệu lực).
+  uiLanguage: UiLanguageService;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
 const MAX_RENDERER_ERROR_REPORTS = 50;
-
-/** Thông báo khi kênh ghi vault bị chặn bởi vault lock (085, R7). Không chứa dữ liệu người dùng. */
-export const VAULT_LOCKED_MESSAGE =
-  "Đang sao lưu/khôi phục — thử lại sau giây lát.";
 
 /**
  * Đăng ký IPC handler CHỈ cho các kênh whitelisted (Constitution III, US2).
@@ -123,13 +123,14 @@ export function registerIpc({
   crashService,
   relinkSource,
   reprocessSource,
+  uiLanguage,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
     fn: (...a: unknown[]) => unknown,
   ): void => {
     if (!isWhitelisted(channel)) {
-      throw new Error(`IPC channel không nằm trong whitelist: ${channel}`);
+      throw new Error(`IPC channel not whitelisted: ${channel}`);
     }
     // Truyền args từ renderer (bỏ event object đầu tiên). KHÔNG log args (có thể chứa nội dung).
     ipcMain.handle(channel, (_event, ...args) => fn(...args));
@@ -142,6 +143,9 @@ export function registerIpc({
     computeStorageInfo(dataDir.path, createFsOps()),
   );
   safeHandle(CHANNELS.getPrivacyState, () => getPrivacyState());
+  // 123: đọc/đặt ngôn ngữ giao diện; set kiểm enum ở service (giá trị khác ⇒ ném, không ghi).
+  safeHandle(CHANNELS.getUiLanguage, () => uiLanguage.get());
+  safeHandle(CHANNELS.setUiLanguage, (pref) => uiLanguage.set(pref));
   safeHandle(CHANNELS.getOnboardingState, () => getOnboardingState(store));
   safeHandle(CHANNELS.setOnboardingComplete, () =>
     setOnboardingComplete(store),
@@ -223,7 +227,8 @@ export function registerIpc({
   // source→chunk). Nhất quán 2 store (ADR lancedb-integration, FR-015).
   // 085: chặn các kênh GHI vault khi đang chụp dữ liệu / đã xác nhận khôi phục (vault lock).
   const assertVaultWritable = (): void => {
-    if (vaultLock.isLocked()) throw new Error(VAULT_LOCKED_MESSAGE);
+    // 123: mã "vaultLocked" — giao diện dịch theo ngôn ngữ hiện tại (085, R7).
+    if (vaultLock.isLocked()) throw new UserFacingError("vaultLocked");
   };
 
   safeHandle(CHANNELS.notebookDelete, async (id) => {
@@ -298,7 +303,7 @@ export function registerIpc({
   safeHandle(CHANNELS.ragAskStream, async (input) => {
     const streamId = (input as { streamId?: unknown }).streamId;
     if (typeof streamId !== "string" || streamId === "") {
-      throw new Error("streamId không hợp lệ.");
+      throw new Error("Invalid streamId.");
     }
     // Kiểm đích AI TRƯỚC khi giữ controller — ném ở đây không để lại entry mồ côi trong streamControllers.
     const target = parseAiTarget(input);
@@ -331,7 +336,7 @@ export function registerIpc({
   const notebookIdOf = (input: unknown): string => {
     const id = (input as { notebookId?: unknown }).notebookId;
     if (typeof id !== "string" || id === "") {
-      throw new Error("notebookId không hợp lệ.");
+      throw new Error("Invalid notebookId.");
     }
     return id;
   };
@@ -367,6 +372,7 @@ export function registerIpc({
       BrowserWindow.getFocusedWindow(),
       content,
       suggestedName,
+      uiLanguage.translator(),
     );
   });
 

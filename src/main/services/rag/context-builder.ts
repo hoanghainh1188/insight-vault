@@ -9,9 +9,12 @@ function pageLabel(page: number | null): string {
   return page == null ? "—" : String(page);
 }
 
-/** Khối đoạn nguồn đánh số `[n]` (định dạng chung cho buildContext + buildBalancedContext). Hàm THUẦN. */
+/**
+ * Khối đoạn nguồn đánh số `[n]` (định dạng chung cho buildContext + buildBalancedContext). Hàm THUẦN.
+ * 123: nhãn English trung tính (lời nhắc English) — văn bản đoạn nguồn giữ nguyên (FR-021).
+ */
 export function citationBlock(n: number, sc: ScoredChunk): string {
-  return `[${n}] (Nguồn: ${sc.sourceTitle}, trang ${pageLabel(sc.chunk.locator.page)})\n${sc.chunk.text}`;
+  return `[${n}] (Source: ${sc.sourceTitle}, page ${pageLabel(sc.chunk.locator.page)})\n${sc.chunk.text}`;
 }
 
 /**

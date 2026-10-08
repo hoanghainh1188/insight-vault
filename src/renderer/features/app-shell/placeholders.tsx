@@ -1,37 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { getLastNotebookId } from "../../shared/lastNotebook";
+import { useT } from "../../shared/i18n/i18n-context";
 
-// Khung nội dung rỗng cho từng khu vực. Màn thật thuộc feature khác.
-function Placeholder({
-  title,
-  hint,
-}: {
-  title: string;
-  hint: string;
-}): JSX.Element {
-  return (
-    <section
-      className="placeholder"
-      data-testid={`placeholder-${title.toLowerCase()}`}
-    >
-      <h2>{title}</h2>
-      <p>{hint}</p>
-    </section>
-  );
-}
-
-export const NotebooksPlaceholder = (): JSX.Element => (
-  <Placeholder
-    title="Notebooks"
-    hint="Danh sách notebook sẽ xuất hiện ở đây (feature sau)."
-  />
-);
+// 123: bỏ Placeholder/NotebooksPlaceholder/SettingsPlaceholder (không còn route nào dùng — màn thật đã thay).
 
 // Workspace cần 1 notebook. 025: nhớ notebook mở gần nhất → mở lại; chưa có / đã xoá → nhắc chọn.
 type WsTarget = "loading" | "pick" | string;
 
 export function WorkspacePlaceholder(): JSX.Element {
+  const t = useT();
   const [target, setTarget] = useState<WsTarget>("loading");
 
   useEffect(() => {
@@ -65,18 +43,11 @@ export function WorkspacePlaceholder(): JSX.Element {
   }
   return (
     <section className="placeholder" data-testid="placeholder-workspace">
-      <h2>Workspace</h2>
-      <p>Chọn một notebook để mở không gian 3 cột Nguồn / Chat / Studio.</p>
+      <h2>{t.t("app.workspace.title")}</h2>
+      <p>{t.t("app.workspace.hint")}</p>
       <Link className="btn-primary-sm" to="/notebooks" data-testid="ws-pick">
-        Chọn notebook
+        {t.t("app.workspace.pick")}
       </Link>
     </section>
   );
 }
-
-export const SettingsPlaceholder = (): JSX.Element => (
-  <Placeholder
-    title="Settings"
-    hint="Mô hình AI, provider, lưu trữ cục bộ (feature sau)."
-  />
-);

@@ -5,16 +5,21 @@ import type {
   StudioKind,
   StudioResult,
 } from "@shared/ipc/types";
-import { parseIpcError } from "@shared/online-error-tag";
+import type { ParsedIpcError } from "@shared/online-error-tag";
+import { toParsedError } from "../../shared/i18n/describe-error";
+import { useLang } from "../../shared/i18n/i18n-context";
 
 // Hook cột Studio: nạp kết quả đã lưu khi mở notebook (studio:list) + sinh mới theo loại (studio:generate).
 // State theo TỪNG loại (results/loading/error) để 4 nút độc lập (US2). Đổi notebook → nạp lại.
 
 export type StudioResultMap = Partial<Record<StudioKind, StudioResult>>;
 export type StudioFlagMap = Partial<Record<StudioKind, boolean>>;
-export type StudioErrorMap = Partial<Record<StudioKind, string>>;
+// 123: lưu lỗi dạng ParsedIpcError (mã) — dịch lúc render bằng describeIpcError.
+export type StudioErrorMap = Partial<Record<StudioKind, ParsedIpcError>>;
 
 export function useStudio(notebookId: string) {
+  // 123 (FR-018): Studio tạo nội dung theo ngôn ngữ giao diện TẠI THỜI ĐIỂM bấm tạo.
+  const lang = useLang();
   const [results, setResults] = useState<StudioResultMap>({});
   const [loading, setLoading] = useState<StudioFlagMap>({});
   const [errors, setErrors] = useState<StudioErrorMap>({});
@@ -92,6 +97,7 @@ export function useStudio(notebookId: string) {
           notebookId,
           kind,
           sourceId,
+          outputLanguage: lang,
           ...(local ? { target: "local" as const } : {}),
         });
         if (stale()) return false;
@@ -100,10 +106,8 @@ export function useStudio(notebookId: string) {
         return true;
       } catch (e) {
         if (stale()) return false;
-        const parsed = parseIpcError(
-          e instanceof Error ? e.message : "Không tạo được Studio.",
-        );
-        setErrors((p) => ({ ...p, [kind]: parsed.message }));
+        const parsed = toParsedError(e);
+        setErrors((p) => ({ ...p, [kind]: parsed }));
         setOnlineFailed((p) => ({
           ...p,
           [kind]: parsed.onlineKind !== null && !local,
@@ -113,7 +117,7 @@ export function useStudio(notebookId: string) {
         if (!stale()) setLoading((p) => ({ ...p, [kind]: false }));
       }
     },
-    [notebookId],
+    [notebookId, lang],
   );
 
   return {

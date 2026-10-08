@@ -106,8 +106,8 @@ describe("buildBalancedContext (021-studio coverage #65)", () => {
       charStart: 0,
       charEnd: 50,
     });
-    expect(contextText).toContain("[1] (Nguồn: A");
-    expect(contextText).toContain("[2] (Nguồn: B");
+    expect(contextText).toContain("[1] (Source: A");
+    expect(contextText).toContain("[2] (Source: B");
   });
 
   it("một nguồn duy nhất → giữ đúng thứ tự chunk của nguồn đó", () => {

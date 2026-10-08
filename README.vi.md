@@ -31,6 +31,8 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
   điều hành). Huy hiệu riêng tư hiện mỗi khi có dữ liệu gửi ra ngoài; một chạm để quay về mô hình cục bộ.
 - **Sao lưu & khôi phục** — **Cài đặt → Lưu trữ cục bộ** xuất toàn bộ vault ra 1 file `.ivbackup`, tuỳ chọn mã
   hoá bằng mật khẩu (AES-256-GCM). Bản sao lưu không gồm file gốc, mô hình đã tải và khoá API.
+- **Giao diện Tiếng Việt và English** — lần đầu theo ngôn ngữ hệ điều hành; đổi bất cứ lúc nào ở **Cài đặt › Ngôn ngữ**
+  (áp dụng ngay). Chat trả lời theo ngôn ngữ câu hỏi; Studio viết theo ngôn ngữ giao diện.
 - Tìm toàn văn trong nguồn, lịch sử chat, phím tắt, thông báo cho trình đọc màn hình.
 
 ## Cài đặt

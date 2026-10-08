@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRelink } from "../sources/useRelink";
+import { useT } from "../../shared/i18n/i18n-context";
 import { buildSegments } from "./highlight";
 import type { SourceViewerState } from "./useSourceViewer";
 
@@ -14,6 +15,7 @@ export function SourceViewer({
 }: {
   viewer: SourceViewerState;
 }): JSX.Element | null {
+  const t = useT();
   const { isOpen, content, loading, missing, target, close } = viewer;
   const hlRef = useRef<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -118,7 +120,7 @@ export function SourceViewer({
     <aside
       className="viewer"
       role="dialog"
-      aria-label="Trình xem nguồn"
+      aria-label={t.t("viewer.label")}
       data-testid="source-viewer"
     >
       <header className="vhead">
@@ -128,14 +130,16 @@ export function SourceViewer({
           onClick={close}
           data-testid="viewer-close"
         >
-          ← Quay lại chat
+          {t.t("viewer.back")}
         </button>
         <div className="vtitle">
           <span className="vname" data-testid="viewer-title">
-            {content?.title ?? "Nguồn"}
+            {content?.title ?? t.t("viewer.titleFallback")}
           </span>
           {citation && (
-            <span className="vcite">Nguồn của trích dẫn [{citation.n}]</span>
+            <span className="vcite">
+              {t.t("viewer.citationOf", { n: citation.n })}
+            </span>
           )}
           {stale && (
             <span
@@ -143,7 +147,7 @@ export function SourceViewer({
               role="status"
               data-testid="viewer-stale-note"
             >
-              Nguồn đã được xử lý lại — vị trí trích dẫn cũ không còn chính xác
+              {t.t("viewer.stale")}
             </span>
           )}
         </div>
@@ -154,20 +158,20 @@ export function SourceViewer({
               className="vpager-btn"
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage <= 1}
-              aria-label="Trang trước"
+              aria-label={t.t("viewer.prevPage")}
               data-testid="viewer-prev"
             >
               ‹
             </button>
             <span data-testid="viewer-pagenum">
-              Trang {currentPage}/{pageCount}
+              {t.t("viewer.pageOf", { page: currentPage, total: pageCount })}
             </span>
             <button
               type="button"
               className="vpager-btn"
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage >= pageCount}
-              aria-label="Trang sau"
+              aria-label={t.t("viewer.nextPage")}
               data-testid="viewer-next"
             >
               ›
@@ -177,10 +181,10 @@ export function SourceViewer({
       </header>
 
       <div className="vscroll" ref={bodyRef} data-testid="viewer-body">
-        {loading && <p className="viewer-msg">Đang tải nguồn…</p>}
+        {loading && <p className="viewer-msg">{t.t("viewer.loading")}</p>}
         {missing && (
           <p className="viewer-msg" data-testid="viewer-missing">
-            Nguồn không còn tồn tại.
+            {t.t("viewer.missing")}
           </p>
         )}
         {!loading && !missing && content && isMedia && target && (
@@ -211,9 +215,7 @@ export function SourceViewer({
             )}
             {audioError && (
               <p className="vaudio-err" data-testid="viewer-audio-error">
-                Không phát được file {isVideo ? "video" : "âm thanh"} gốc (có
-                thể đã bị xoá hoặc di chuyển). Bản bóc băng bên dưới vẫn xem
-                được.
+                {t.t(isVideo ? "viewer.videoError" : "viewer.audioError")}
               </p>
             )}
             {audioError && (
@@ -250,8 +252,7 @@ export function SourceViewer({
             </div>
             {audioError && (
               <p className="vaudio-err" data-testid="viewer-image-error">
-                Không mở được ảnh gốc (có thể đã bị xoá hoặc di chuyển). Bản bóc
-                băng bên dưới vẫn xem được.
+                {t.t("viewer.imageError")}
               </p>
             )}
             {audioError && (
@@ -266,7 +267,7 @@ export function SourceViewer({
         {!loading && !missing && content && (
           <div className="vtext">
             {segments.length === 0 && (
-              <span className="viewer-msg">(Nguồn trống)</span>
+              <span className="viewer-msg">{t.t("viewer.empty")}</span>
             )}
             {segments.map((s, i) => (
               <span key={i}>
@@ -277,7 +278,7 @@ export function SourceViewer({
                       if (el) pageRefs.current.set(s.pageMark!, el);
                     }}
                   >
-                    — Trang {s.pageMark} —
+                    {t.t("viewer.pageMark", { page: s.pageMark })}
                   </span>
                 )}
                 {s.kind === "highlight" ? (
@@ -316,6 +317,7 @@ function RelinkPrompt({
   sourceId: string;
   onRelinked: () => void;
 }): JSX.Element {
+  const t = useT();
   const { relink, busy, message } = useRelink();
   return (
     <div className="vrelink">
@@ -328,7 +330,7 @@ function RelinkPrompt({
         }
         data-testid="viewer-relink"
       >
-        {busy ? "Đang kiểm tra tệp…" : "Chọn lại tệp gốc…"}
+        {busy ? t.t("sources.relink.checking") : t.t("sources.item.relink")}
       </button>
       {message && <p className="vrelink-msg">{message}</p>}
     </div>

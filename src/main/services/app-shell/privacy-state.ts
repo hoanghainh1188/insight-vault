@@ -6,29 +6,15 @@ import type { PrivacyState } from "@shared/ipc/types";
 //   online  — provider AI online đang bật, KHÔNG có request đang chạy ("chỉ gửi khi bạn hỏi")
 //   sending — đang có egress thật (AI online, tải URL, tải model) — ưu tiên cao nhất
 
-const LABELS: Record<PrivacyState["mode"], string> = {
-  local: "Chạy cục bộ · dữ liệu không rời máy",
-  online: "AI online đang bật · chỉ gửi khi bạn hỏi",
-  sending: "Đang gửi dữ liệu ra ngoài…",
-};
-
 /**
- * Loại egress — nhãn `sending` nói RÕ đang làm gì (review 103): gửi câu hỏi tới AI online khác hẳn tải mô hình
- * (không gửi dữ liệu người dùng). Ưu tiên nhãn: ai > url > model.
+ * Loại egress — badge `sending` nói RÕ đang làm gì (review 103): gửi câu hỏi tới AI online khác hẳn tải mô hình
+ * (không gửi dữ liệu người dùng). Ưu tiên: ai > url > model.
+ * 123: main gửi MÃ (mode + egressKind), renderer dịch nhãn theo ngôn ngữ hiện tại ⇒ đổi ngôn ngữ thì badge đổi ngay
+ * mà vẫn phản ánh đúng trạng thái (Constitution I).
  */
-export type EgressKind = "ai" | "url" | "model";
+export type EgressKind = NonNullable<PrivacyState["egressKind"]>;
 
-const SENDING_LABELS: Record<EgressKind, string> = {
-  ai: "Đang gửi dữ liệu tới AI online…",
-  url: "Đang tải trang web…",
-  model: "Đang tải mô hình (cần Internet lần đầu)…",
-};
 const KIND_PRIORITY: EgressKind[] = ["ai", "url", "model"];
-
-/** Suy ra văn bản badge từ mode (không để renderer tự ghép chuỗi rời rạc). */
-export function labelForMode(mode: PrivacyState["mode"]): string {
-  return LABELS[mode];
-}
 
 // Đếm số hoạt động egress đang diễn ra theo loại (refcount — nhiều hoạt động chồng nhau an toàn).
 const egressDepth: Record<EgressKind, number> = { ai: 0, url: 0, model: 0 };
@@ -37,23 +23,22 @@ let onlineProviderActive = false;
 
 type Listener = (state: PrivacyState) => void;
 const listeners = new Set<Listener>();
-let lastKey = "local";
+let lastKey = "local|";
 
 /** Trạng thái riêng tư hiện tại: sending > online > local. */
 export function getPrivacyState(): PrivacyState {
   const active = KIND_PRIORITY.find((k) => egressDepth[k] > 0);
-  if (active) return { mode: "sending", label: SENDING_LABELS[active] };
-  const mode: PrivacyState["mode"] = onlineProviderActive ? "online" : "local";
-  return { mode, label: labelForMode(mode) };
+  if (active) return { mode: "sending", egressKind: active };
+  return { mode: onlineProviderActive ? "online" : "local" };
 }
 
 /**
- * Gọi listener CHỈ khi trạng thái hiển thị (mode + nhãn) đổi — không spam theo từng request. Listener lỗi (vd cửa
+ * Gọi listener CHỈ khi trạng thái hiển thị (mode + loại egress) đổi — không spam theo từng request. Listener lỗi (vd cửa
  * sổ vừa huỷ) KHÔNG được làm hỏng luồng nghiệp vụ gọi setEgressActive, cũng không chặn listener khác.
  */
 function notifyIfChanged(): void {
   const state = getPrivacyState();
-  const key = `${state.mode}|${state.label}`;
+  const key = `${state.mode}|${state.egressKind ?? ""}`;
   if (key === lastKey) return;
   lastKey = key;
   for (const l of listeners) {

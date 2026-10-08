@@ -33,8 +33,8 @@ describe("parsers/index", () => {
   });
 
   it("đuôi không hỗ trợ → ném", () => {
-    expect(() => detectKindFromPath("x.heic")).toThrow(/không hỗ trợ/); // heic ngoài phạm vi
-    expect(() => detectKindFromPath("y.avi")).toThrow(/không hỗ trợ/); // avi chưa hỗ trợ
+    expect(() => detectKindFromPath("x.heic")).toThrow(/unsupportedFormat/); // heic ngoài phạm vi
+    expect(() => detectKindFromPath("y.avi")).toThrow(/unsupportedFormat/); // avi chưa hỗ trợ
     expect(() => detectKindFromPath("noext")).toThrow();
   });
 

@@ -72,9 +72,9 @@ describe("runMapReduce", () => {
       const sys = messages[0].content;
       const user = messages[1].content;
       const ns = [...user.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1]));
-      if (sys.startsWith("Rút gọn"))
+      if (sys.startsWith("Condense the NOTES"))
         return ns.map((n) => `- ý gọn [${n}]`).join("\n");
-      if (sys.startsWith("Bạn trích GHI CHÚ")) {
+      if (sys.startsWith("Extract NOTES")) {
         return `- ý chính [${ns[0]}] [999]`; // [999] bịa ⇒ phải bị gỡ theo lô
       }
       return `Tóm tắt toàn bộ ${ns.map((n) => `[${n}]`).join(" ")}.`;
@@ -100,7 +100,7 @@ describe("runMapReduce", () => {
     for (const c of citations)
       expect(out.map.get(c.n)!.chunk.id).toBe(c.chunkId);
     // lượt cuối được nhắc giữ nguyên [n]
-    expect(calls[calls.length - 1][0].content).toMatch(/GIỮ NGUYÊN/);
+    expect(calls[calls.length - 1][0].content).toMatch(/KEEP the \[n\] chips/);
   });
 
   it("vượt số lượt map tối đa ⇒ truncated, chỉ tổng hợp số phần cho phép", async () => {
@@ -123,11 +123,11 @@ describe("runMapReduce", () => {
       const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
         Number(m[1]),
       );
-      if (sys.startsWith("Rút gọn")) {
+      if (sys.startsWith("Condense the NOTES")) {
         calls.push("condense");
         return `- gộp [${ns[0]}]`;
       }
-      if (sys.startsWith("Bạn trích GHI CHÚ")) {
+      if (sys.startsWith("Extract NOTES")) {
         calls.push("map");
         return ns.map((n) => `- ${"chi tiết ".repeat(30)}[${n}]`).join("\n");
       }
@@ -154,7 +154,7 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
       const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
         Number(m[1]),
       );
-      if (sys.startsWith("Bạn trích GHI CHÚ")) return `- ý [${ns[0]}]`;
+      if (sys.startsWith("Extract NOTES")) return `- ý [${ns[0]}]`;
       seenFinal = ns;
       return `Kết luận [${ns[0]}] và [2].`; // [2] có trong notebook nhưng không có trong ghi chú
     });
@@ -175,7 +175,7 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
       const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
         Number(m[1]),
       );
-      if (sys.startsWith("Bạn trích GHI CHÚ"))
+      if (sys.startsWith("Extract NOTES"))
         return `- ý chung [${ns[0]}, ${ns[1]}]`;
       return `Kết luận ${ns.map((n) => `[${n}]`).join(" ")}.`;
     });
@@ -194,7 +194,7 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
     const chat = vi.fn(async () => "Không có gì để ghi chú.");
     await expect(
       runMapReduce({ kind: "summary", groups: groups(3), budget: 900, chat }),
-    ).rejects.toThrow(/trích dẫn/);
+    ).rejects.toThrow(/studioNoNotes/);
     expect(chat).toHaveBeenCalledTimes(3 * 2); // mỗi lô thử lại 1 lần rồi mới bỏ
   });
 
@@ -205,7 +205,7 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
         Number(m[1]),
       );
       // lô đầu (đoạn [1]) luôn không trích được — kể cả lần thử lại
-      if (sys.startsWith("Bạn trích GHI CHÚ"))
+      if (sys.startsWith("Extract NOTES"))
         return ns[0] === 1 ? "rỗng" : `- ý [${ns[0]}]`;
       return `Kết luận ${ns.map((n) => `[${n}]`).join(" ")}.`;
     });
@@ -224,7 +224,7 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
       const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
         Number(m[1]),
       );
-      if (messages[0].content.startsWith("Bạn trích GHI CHÚ")) {
+      if (messages[0].content.startsWith("Extract NOTES")) {
         if (!failed) {
           failed = true;
           throw new Error("Ollama tạm lỗi");
@@ -249,8 +249,8 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
       const input = messages[1].content;
       const ns = [...input.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1]));
       // model "không chịu rút gọn" + bịa thêm [2] (có trong notebook nhưng KHÔNG có trong ghi chú)
-      if (sys.startsWith("Rút gọn")) return `${input}\n- bịa [2]`;
-      if (sys.startsWith("Bạn trích GHI CHÚ"))
+      if (sys.startsWith("Condense the NOTES")) return `${input}\n- bịa [2]`;
+      if (sys.startsWith("Extract NOTES"))
         return `- ${"x ".repeat(300)}[${ns[0]}]`;
       return `Kết luận ${ns.map((n) => `[${n}]`).join(" ")}.`;
     });
@@ -264,5 +264,36 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
     const finalUser = (chat.mock.calls.at(-1)![0] as ChatMessage[])[1].content;
     expect(finalUser.length).toBeLessThanOrEqual(900);
     expect(finalUser).not.toContain("[2]");
+  });
+});
+
+describe("123: ngôn ngữ đầu ra cho mọi bước map-reduce", () => {
+  it("map, condense, bước cuối đều dặn cùng ngôn ngữ (en); mặc định vi", async () => {
+    for (const [lang, word] of [
+      ["en", "Write in English"],
+      [undefined, "Write in Vietnamese"],
+    ] as const) {
+      const systems: string[] = [];
+      const chat = vi.fn(async (messages: ChatMessage[]) => {
+        const sys = messages[0].content;
+        systems.push(sys);
+        const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+          Number(m[1]),
+        );
+        if (sys.startsWith("Condense the NOTES")) return `- gộp [${ns[0]}]`;
+        if (sys.startsWith("Extract NOTES"))
+          return ns.map((n) => `- ${"chi tiết ".repeat(30)}[${n}]`).join("\n");
+        return `Kết luận [${ns[0]}].`;
+      });
+      await runMapReduce({
+        kind: "faq",
+        groups: groups(3),
+        budget: 900,
+        chat,
+        ...(lang ? { outputLanguage: lang } : {}),
+      });
+      expect(systems.length).toBeGreaterThan(2);
+      for (const sys of systems) expect(sys).toContain(word);
+    }
   });
 });

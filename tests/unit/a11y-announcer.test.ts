@@ -1,14 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import { createAnnouncer } from "../../src/renderer/shared/a11y/announcer";
 import {
-  CHAT_CANCELLED,
-  CHAT_STARTED,
+  chatCancelledMessage,
+  chatStartedMessage,
   chatDoneMessage,
   progressValueText,
   reindexMessage,
   sourceStatusMessage,
   studioMessage,
 } from "../../src/renderer/shared/a11y/messages";
+import { trEn } from "./helpers/t-vi";
 
 // 091 — thông báo trình đọc màn hình: chỉ MỐC trạng thái (không từng token / từng %), tiếng Việt.
 
@@ -56,16 +57,16 @@ describe("chatDoneMessage", () => {
     );
   });
   it("câu bắt đầu / huỷ do chuyển notebook", () => {
-    expect(CHAT_STARTED).toBe("Đang soạn câu trả lời…");
-    expect(CHAT_CANCELLED).toBe(
+    expect(chatStartedMessage()).toBe("Đang soạn câu trả lời…");
+    expect(chatCancelledMessage()).toBe(
       "Đã huỷ câu trả lời đang soạn vì chuyển notebook.",
     );
   });
 });
 
 describe("sourceStatusMessage", () => {
-  const ev = (status: string, errorLabel?: string) =>
-    ({ status, errorLabel }) as Parameters<typeof sourceStatusMessage>[1];
+  const ev = (status: string, errorCode?: string) =>
+    ({ status, errorCode }) as Parameters<typeof sourceStatusMessage>[1];
 
   it("chỉ báo khi trạng thái ĐỔI (bước/% thay đổi không báo)", () => {
     expect(sourceStatusMessage("processing", ev("processing"), "a.pdf")).toBe(
@@ -88,8 +89,15 @@ describe("sourceStatusMessage", () => {
       sourceStatusMessage("processing", ev("awaiting_embedding"), "a.pdf"),
     ).toBe("Nguồn “a.pdf” đang chờ nhúng.");
     expect(
+      sourceStatusMessage("processing", ev("error", "Lỗi nhúng"), "a.pdf"),
+    ).toBe("Nguồn “a.pdf” lỗi: Lỗi nhúng.");
+    // 123: mã nhãn lỗi ⇒ dịch; nhãn lạ ⇒ "Lỗi không xác định" (không hiện văn bản thô lạ)
+    expect(
+      sourceStatusMessage("processing", ev("error", "embed"), "a.pdf"),
+    ).toBe("Nguồn “a.pdf” lỗi: Lỗi nhúng.");
+    expect(
       sourceStatusMessage("processing", ev("error", "Tệp hỏng"), "a.pdf"),
-    ).toBe("Nguồn “a.pdf” lỗi: Tệp hỏng.");
+    ).toBe("Nguồn “a.pdf” lỗi: Lỗi không xác định.");
     expect(sourceStatusMessage("processing", ev("error"), "a.pdf")).toBe(
       "Nguồn “a.pdf” lỗi: không xử lý được.",
     );
@@ -100,6 +108,18 @@ describe("sourceStatusMessage", () => {
     );
     expect(sourceStatusMessage(undefined, ev("processing"), undefined)).toBe(
       "Đang xử lý nguồn.",
+    );
+  });
+
+  it("123: dịch theo translator truyền vào (English)", () => {
+    expect(
+      sourceStatusMessage("processing", ev("error", "embed"), "a.pdf", trEn),
+    ).toBe("Source “a.pdf” failed: Embedding failed.");
+    expect(chatDoneMessage({ citationCount: 1 }, trEn)).toBe(
+      "The answer is ready, 1 citation.",
+    );
+    expect(chatDoneMessage({ citationCount: 2 }, trEn)).toBe(
+      "The answer is ready, 2 citations.",
     );
   });
 

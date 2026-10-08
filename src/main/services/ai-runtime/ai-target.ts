@@ -15,7 +15,7 @@ export function parseAiTarget(input: unknown): AiTarget {
       : undefined;
   if (t === undefined || t === "active") return "active";
   if (t === "local") return "local";
-  throw new Error("Đích AI không hợp lệ.");
+  throw new Error("Invalid AI target.");
 }
 
 /** Ném lại lỗi cho IPC: lỗi provider online được gắn thẻ loại để renderer hiện nút chuyển về AI cục bộ. */

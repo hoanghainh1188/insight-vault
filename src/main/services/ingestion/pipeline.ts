@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type {
   AddSourceInput,
   AddSourceResult,
@@ -17,7 +18,8 @@ import { chunkPages, type PageText } from "./chunker";
 import { timeForCharRange } from "./audio/audio-transcript";
 import { bboxForCharRange } from "./image/image-transcript";
 import { embedTexts } from "./embed";
-import { errorLabelForStep } from "./status";
+import { errorCodeForStep } from "./status";
+import type { SourceErrorCode } from "@shared/codes/source-error";
 import { SizeLimitError, assertWithinLimit } from "./size-limits";
 import { hashBytes, urlContentHash } from "./dedup";
 import { createSerialQueue } from "./queue";
@@ -92,9 +94,9 @@ export interface IngestionPipeline {
 class StepError extends Error {
   constructor(
     readonly step: IngestStep,
-    readonly label: string,
+    readonly code: SourceErrorCode,
   ) {
-    super(label);
+    super(code);
   }
 }
 
@@ -109,12 +111,6 @@ function cleanPage(p: PageText): PageText {
     : { page: p.page, text };
 }
 
-/** 112: thông báo khi xử lý lại thất bại (nguồn vẫn dùng bản cũ). */
-export const REPROCESS_FAILED_LABEL = "Xử lý lại thất bại — vẫn dùng bản cũ.";
-/** 112: tệp gốc bị sửa sau khi yêu cầu (lúc đọc khác content_hash) ⇒ huỷ, giữ bản cũ. */
-export const REPROCESS_CHANGED_LABEL =
-  "Tệp gốc đã bị sửa so với lúc nạp — xử lý lại bị huỷ, vẫn dùng bản cũ.";
-
 export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
   const { sourceRepo, vectorStore, emit } = deps;
   const queue = createSerialQueue();
@@ -126,7 +122,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     s: Source,
     step: IngestStep,
     progress: number,
-    errorLabel?: string,
+    errorCode?: SourceErrorCode,
   ): void => {
     emit({
       sourceId: s.id,
@@ -134,7 +130,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       status: s.status,
       step,
       progress,
-      ...(errorLabel ? { errorLabel } : {}),
+      ...(errorCode ? { errorCode } : {}),
       ...(reprocessing.has(s.id) ? { reprocess: true as const } : {}),
     });
   };
@@ -156,7 +152,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     let result: ParseResult;
     try {
       if (src.kind === "url") {
-        if (!deps.parseUrl) throw new Error("URL chưa hỗ trợ");
+        if (!deps.parseUrl) throw new Error("URL parser unavailable");
         deps.setOnline?.(true, "url");
         try {
           result = await deps.parseUrl(sourceOrigin(src));
@@ -167,7 +163,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         // 051: ffmpeg đọc thẳng file gốc theo path → KHÔNG nạp cả file (tới 1GB) vào RAM. Kiểm giới hạn
         // qua stat. Tiến độ: tách audio + bóc băng gộp trong bước parse (0.1→0.25).
         if (!deps.parseVideo || !deps.statSize) {
-          throw new StepError("parse", errorLabelForStep("parse", src.kind));
+          throw new StepError("parse", errorCodeForStep("parse", src.kind));
         }
         const size = await deps.statSize(sourceOrigin(src));
         assertWithinLimit("video", size);
@@ -178,7 +174,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       } else if (src.kind === "image") {
         // 053: OCR đọc file theo path (như video, không nạp vào RAM). Tiến độ OCR trong bước parse.
         if (!deps.parseImage || !deps.statSize) {
-          throw new StepError("parse", errorLabelForStep("parse", src.kind));
+          throw new StepError("parse", errorCodeForStep("parse", src.kind));
         }
         const size = await deps.statSize(sourceOrigin(src));
         assertWithinLimit("image", size);
@@ -189,7 +185,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       } else {
         const bytes = await deps.readFile(sourceOrigin(src));
         if (expectHash !== undefined && hashBytes(bytes) !== expectHash) {
-          throw new StepError("parse", REPROCESS_CHANGED_LABEL);
+          throw new StepError("parse", "reprocessChanged");
         }
         assertWithinLimit(src.kind, bytes.byteLength);
         // Audio (045): transcribe/tải model dài → báo tiến độ phụ trong bước parse (0.1→0.25).
@@ -200,8 +196,8 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       }
     } catch (e) {
       if (e instanceof StepError) throw e;
-      if (e instanceof SizeLimitError) throw new StepError("parse", e.label);
-      throw new StepError("parse", errorLabelForStep("parse", src.kind));
+      if (e instanceof SizeLimitError) throw new StepError("parse", e.code);
+      throw new StepError("parse", errorCodeForStep("parse", src.kind));
     }
     const cleaned = result.pages
       .map((p) => cleanPage(p))
@@ -209,7 +205,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     // Video no-audio (051) / ảnh không chữ (053) → transcript rỗng: VẪN nạp thành công (ready, 0 chunk,
     // media vẫn xem được — FR-011/FR-010). Các loại khác rỗng = lỗi parse.
     if (cleaned.length === 0 && src.kind !== "video" && src.kind !== "image") {
-      throw new StepError("parse", errorLabelForStep("parse", src.kind));
+      throw new StepError("parse", errorCodeForStep("parse", src.kind));
     }
     return {
       pages: cleaned,
@@ -262,7 +258,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       vectors = res.vectors;
       dim = res.dim;
     } catch {
-      throw new StepError("embed", errorLabelForStep("embed", src.kind));
+      throw new StepError("embed", errorCodeForStep("embed", src.kind));
     }
     // Nguồn bị xoá/huỷ trong lúc embed (remove() đã dọn SQLite+vector) → KHÔNG ghi lại vector mồ côi.
     if (signal.cancelled || sourceRepo.getById(src.id) === null) return false;
@@ -277,7 +273,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       await vectorStore.deleteBySource(src.id); // idempotent (retry an toàn)
       await vectorStore.add(records);
     } catch {
-      throw new StepError("store", errorLabelForStep("store", src.kind));
+      throw new StepError("store", errorCodeForStep("store", src.kind));
     }
     return true;
   };
@@ -289,7 +285,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
   ): Promise<{ vectors: number[][]; dim: number }> => {
     const provider = deps.getProvider();
     if (!(await deps.isRuntimeReady()) || !provider) {
-      throw new StepError("embed", errorLabelForStep("embed", src.kind));
+      throw new StepError("embed", errorCodeForStep("embed", src.kind));
     }
     const onEmbedProgress = (done: number, total: number): void => {
       const s = reload(src.id);
@@ -300,7 +296,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         ? await deps.embedBatch(texts, onEmbedProgress)
         : await embedTexts(provider, texts, onEmbedProgress);
     } catch {
-      throw new StepError("embed", errorLabelForStep("embed", src.kind));
+      throw new StepError("embed", errorCodeForStep("embed", src.kind));
     }
   };
 
@@ -313,9 +309,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     id: string,
     signal: { cancelled: boolean },
   ): Promise<void> => {
-    const finish = (errorLabel?: string): void => {
+    const finish = (errorCode?: SourceErrorCode): void => {
       const s = reload(id);
-      if (s) send(s, "done", errorLabel ? 0 : 1, errorLabel);
+      if (s) send(s, "done", errorCode ? 0 : 1, errorCode);
       reprocessing.delete(id);
     };
     const src = reload(id);
@@ -337,7 +333,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       );
       if (signal.cancelled || !reload(id)) return finish();
       if (deps.isVaultLocked?.()) {
-        throw new StepError("store", REPROCESS_ERRORS.vaultLocked);
+        throw new StepError("store", "reprocessVaultLocked");
       }
       const oldIds = sourceRepo.chunkIds(id);
       added = true;
@@ -356,7 +352,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       }
       // Kiểm lại NGAY TRƯỚC hoán đổi: sao lưu/khôi phục có thể bắt đầu trong lúc ghi vector (await dài).
       if (deps.isVaultLocked?.()) {
-        throw new StepError("store", REPROCESS_ERRORS.vaultLocked);
+        throw new StepError("store", "reprocessVaultLocked");
       }
       sourceRepo.replaceChunks(id, drafts, newIds, {
         extractionVersion: PDF_EXTRACTION_VERSION,
@@ -373,13 +369,12 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     } catch (e) {
       if (added) await vectorStore.deleteByIds(newIds).catch(() => {});
       if (signal.cancelled) return finish();
-      const label = e instanceof StepError ? e.label : "";
+      // 123: chọn nhánh theo MÃ (không so chuỗi hiển thị).
+      const code = e instanceof StepError ? e.code : undefined;
       finish(
-        label === REPROCESS_ERRORS.vaultLocked
-          ? `${REPROCESS_ERRORS.vaultLocked} Xử lý lại bị huỷ, vẫn dùng bản cũ.`
-          : label === REPROCESS_CHANGED_LABEL
-            ? label
-            : REPROCESS_FAILED_LABEL,
+        code === "reprocessVaultLocked" || code === "reprocessChanged"
+          ? code
+          : "reprocessFailed",
       );
     }
   };
@@ -452,7 +447,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       if (signal.cancelled) return;
       const step = e instanceof StepError ? e.step : "parse";
       const label =
-        e instanceof StepError ? e.label : errorLabelForStep("parse", src.kind);
+        e instanceof StepError ? e.code : errorCodeForStep("parse", src.kind);
       sourceRepo.updateStatus(id, "error", label);
       const s = reload(id);
       if (s) send(s, step, 0, label);
@@ -467,11 +462,11 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         typeof input.notebookId !== "string" ||
         input.notebookId === ""
       ) {
-        throw new Error("notebookId không hợp lệ.");
+        throw new Error("Invalid notebookId.");
       }
       const origin = input.kind === "url" ? input.url : input.filePath;
       if (typeof origin !== "string" || origin.trim() === "") {
-        throw new Error("Nguồn thiếu đường dẫn tệp hoặc URL.");
+        throw new UserFacingError("sourcePathMissing");
       }
       // Constitution I (No Default Egress): nguồn tệp PHẢI là path cục bộ, KHÔNG phải URL. Chặn scheme
       // `xxx://` (http/https/file/ftp…) — một số parser (tesseract.js loadImage) tự fetch nếu path giống
@@ -480,7 +475,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
         input.kind !== "url" &&
         /^[a-z][a-z0-9+.-]*:\/\//i.test(input.filePath.trim())
       ) {
-        throw new Error("Đường dẫn tệp phải là tệp cục bộ (không phải URL).");
+        throw new UserFacingError("sourcePathNotLocal");
       }
       // Derive/validate kind từ đường dẫn (chống renderer khai man loại tệp).
       const kind =
@@ -526,9 +521,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       });
 
       if (sizeError) {
-        sourceRepo.updateStatus(source.id, "error", "Tệp quá lớn");
+        sourceRepo.updateStatus(source.id, "error", "tooLarge");
         const s = reload(source.id)!;
-        send(s, "parse", 0, "Tệp quá lớn");
+        send(s, "parse", 0, "tooLarge");
         return { source: s, duplicateWarning: dup !== null };
       }
 
@@ -538,9 +533,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
 
     async retry(id) {
       const src = sourceRepo.getById(id);
-      if (!src) throw new Error("Nguồn không tồn tại.");
+      if (!src) throw new UserFacingError("sourceNotFound");
       if (src.status !== "error")
-        throw new Error("Chỉ thử lại nguồn đang lỗi.");
+        throw new UserFacingError("sourceRetryNotError");
       await vectorStore.deleteBySource(id);
       sourceRepo.deleteChunks(id);
       sourceRepo.updateStatus(id, "queued");
@@ -552,15 +547,17 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
 
     async reprocess(id) {
       const src = sourceRepo.getById(id);
-      if (!src) throw new Error(REPROCESS_ERRORS.notFound);
-      if (src.kind !== "pdf") throw new Error(REPROCESS_ERRORS.notPdf);
-      if (queue.has(id)) throw new Error(REPROCESS_ERRORS.busy);
+      if (!src) throw new UserFacingError(REPROCESS_ERRORS.notFound);
+      if (src.kind !== "pdf")
+        throw new UserFacingError(REPROCESS_ERRORS.notPdf);
+      if (queue.has(id)) throw new UserFacingError(REPROCESS_ERRORS.busy);
       // Nguồn lỗi (chưa từng sẵn sàng) ⇒ thử lại bằng cách trích hiện hành (processFull ghi phiên bản mới).
       if (src.status === "error") {
         await api.retry(id);
         return;
       }
-      if (src.status !== "ready") throw new Error(REPROCESS_ERRORS.badStatus);
+      if (src.status !== "ready")
+        throw new UserFacingError(REPROCESS_ERRORS.badStatus);
       reprocessing.add(id);
       send(src, "parse", 0.05);
       queue.enqueue(id, (signal) => reprocessReady(id, signal));
@@ -605,7 +602,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
             }
           } catch (e) {
             const label =
-              e instanceof StepError ? e.label : errorLabelForStep("embed");
+              e instanceof StepError ? e.code : errorCodeForStep("embed");
             sourceRepo.updateStatus(src.id, "error", label);
             const s = reload(src.id);
             if (s) send(s, "embed", 0, label);
@@ -619,13 +616,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       // SerialQueue RAM đã mất → đánh dấu 'error' (retry được) để người dùng bấm "Thử lại" (B3, FR-013).
       for (const status of ["queued", "processing"] as const) {
         for (const src of sourceRepo.listByStatus(status)) {
-          sourceRepo.updateStatus(
-            src.id,
-            "error",
-            "Gián đoạn khi nạp — thử lại",
-          );
+          sourceRepo.updateStatus(src.id, "error", "interrupted");
           const s = reload(src.id);
-          if (s) send(s, "parse", 0, "Gián đoạn khi nạp — thử lại");
+          if (s) send(s, "parse", 0, "interrupted");
         }
       }
     },

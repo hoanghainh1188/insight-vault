@@ -6,7 +6,7 @@ export function planReindexBatches(
   chunkIds: string[],
   batchSize: number,
 ): string[][] {
-  if (batchSize <= 0) throw new Error("batchSize phải > 0");
+  if (batchSize <= 0) throw new Error("batchSize must be > 0");
   const batches: string[][] = [];
   for (let i = 0; i < chunkIds.length; i += batchSize) {
     batches.push(chunkIds.slice(i, i + batchSize));

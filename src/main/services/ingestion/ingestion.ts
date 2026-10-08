@@ -118,7 +118,9 @@ export async function createIngestion(opts: {
       }
       const dim = vectors[0]?.length ?? 0;
       if (dim === 0 && texts.length > 0) {
-        throw new Error("Embedding rỗng — model nhúng không trả vector.");
+        throw new Error(
+          "Empty embedding — the embedding model returned no vector.",
+        );
       }
       return { vectors, dim };
     },

@@ -18,7 +18,10 @@ let userData: string;
 function launch(): Promise<ElectronApplication> {
   return electron.launch({
     args: [MAIN, `--user-data-dir=${userData}`],
-    env: { ...process.env, IV_EMBED_FAKE: "1" } as Record<string, string>,
+    env: { ...process.env, IV_EMBED_FAKE: "1", IV_UI_LANG: "vi" } as Record<
+      string,
+      string
+    >,
   });
 }
 
@@ -62,7 +65,7 @@ test("Cài đặt → Báo lỗi… hiện bản nháp đã làm sạch, sửa �
   await expect(dialog).toBeVisible();
   const text = win.getByTestId("crash-text");
   await expect(text).toHaveValue(/InsightVault \d+\.\d+\.\d+ · Electron/);
-  await expect(text).toHaveValue(/Crash native/);
+  await expect(text).toHaveValue(/Native crashes/); // 123: khung báo cáo English cố định
   await expect(text).not.toHaveValue(/iv-e2e-crash-/); // không lộ đường dẫn userData
   await text.fill("Đã sửa bởi người dùng");
   await expect(text).toHaveValue("Đã sửa bởi người dùng");

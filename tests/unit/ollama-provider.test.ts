@@ -47,7 +47,7 @@ describe("OllamaProvider", () => {
     const p = new OllamaProvider(makeClient(), () => sel({ chatModel: null }));
     await expect(
       p.chat({ messages: [{ role: "user", content: "hi" }] }),
-    ).rejects.toThrow(/chat model/i);
+    ).rejects.toThrow(/chatModelNotSelected/);
   });
 
   it("test() báo chưa sẵn sàng khi model đã chọn không tồn tại", async () => {

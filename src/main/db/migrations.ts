@@ -1,4 +1,8 @@
 import type { Db } from "./database";
+import {
+  LEGACY_SOURCE_ERROR_LABELS,
+  SOURCE_ERROR_CODES,
+} from "@shared/codes/source-error";
 import { foldVietnamese } from "../services/ingestion/fts-fold";
 
 // Migration runner (ADR 2026-07-11-sqlite-migrations): PRAGMA user_version, append-only, 1 transaction/bước.
@@ -21,7 +25,7 @@ export class SchemaVersionError extends Error {
     readonly appVersion: number,
   ) {
     super(
-      `Schema DB (v${dbVersion}) mới hơn phiên bản ứng dụng (v${appVersion}) — không tự hạ cấp để tránh mất dữ liệu.`,
+      `DB schema (v${dbVersion}) is newer than the app (v${appVersion}) — refusing to downgrade to avoid data loss.`,
     );
     this.name = "SchemaVersionError";
   }
@@ -226,6 +230,23 @@ export const MIGRATIONS: Migration[] = [
       db.exec(
         "ALTER TABLE source ADD COLUMN extraction_version INTEGER NOT NULL DEFAULT 1",
       );
+    },
+  },
+  // 123-i18n: source.error_label lưu MÃ (SourceErrorCode) thay văn bản tiếng Việt — giao diện dịch theo ngôn ngữ
+  // hiện tại. CHỈ dữ liệu (không đổi schema); văn bản cũ ⇒ mã, giá trị lạ ⇒ "unknown", NULL giữ, mã sẵn giữ.
+  {
+    version: 10,
+    up(db) {
+      const update = db.prepare(
+        "UPDATE source SET error_label = ? WHERE error_label = ?",
+      );
+      for (const [text, code] of Object.entries(LEGACY_SOURCE_ERROR_LABELS)) {
+        update.run(code, text);
+      }
+      const codes = SOURCE_ERROR_CODES.map(() => "?").join(",");
+      db.prepare(
+        `UPDATE source SET error_label = 'unknown' WHERE error_label IS NOT NULL AND error_label NOT IN (${codes})`,
+      ).run(...SOURCE_ERROR_CODES);
     },
   },
 ];

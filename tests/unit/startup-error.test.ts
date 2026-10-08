@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { startupErrorDialog } from "../../src/main/services/app-shell/startup-error";
 import { SchemaVersionError } from "../../src/main/db/migrations";
+import { trEn } from "./helpers/t-vi";
 
 describe("startupErrorDialog", () => {
   it("SchemaVersionError → thông báo cập nhật, kèm số schema, không xoá dữ liệu", () => {
@@ -42,5 +43,18 @@ describe("startupErrorDialog", () => {
       }
     }
     expect(startupErrorDialog(new DbLocked()).errorType).toBe("DbLocked");
+  });
+});
+
+describe("123: startupErrorDialog theo ngôn ngữ", () => {
+  it("English khi translator English; vẫn không rò message thô", () => {
+    const r = startupErrorDialog(new SchemaVersionError(12, 10), trEn);
+    expect(r.title).toBe("Please update InsightVault");
+    expect(r.detail).toContain("schema v12");
+    expect(r.detail).toContain("v10");
+    const g = startupErrorDialog(new Error("/Users/secret x"), trEn);
+    expect(g.title).toBe("InsightVault failed to start");
+    expect(g.detail).toContain("error type: Error");
+    expect(g.detail).not.toContain("/Users/secret");
   });
 });

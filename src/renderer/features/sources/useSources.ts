@@ -7,6 +7,7 @@ import type {
 } from "@shared/ipc/types";
 import { announce } from "../../shared/a11y/announcer";
 import { sourceStatusMessage } from "../../shared/a11y/messages";
+import { useT } from "../../shared/i18n/i18n-context";
 
 /** Tiến độ realtime của 1 nguồn đang xử lý (037). */
 export interface SourceProgress {
@@ -14,13 +15,14 @@ export interface SourceProgress {
   progress: number; // 0..1
 }
 
-function message(e: unknown): string {
-  return e instanceof Error ? e.message : "Đã xảy ra lỗi.";
-}
-
 // Hook nguồn của một notebook: snapshot listByNotebook + cập nhật realtime qua onSourceProgress (A12).
 // Xử lý tuần tự nên số event ít → reload danh sách khi có event là đủ chính xác & đơn giản.
+// 123: lỗi IPC của add() được ném NGUYÊN (có thẻ mã lỗi) — nơi hiển thị tách bằng toParsedError + describeIpcError.
 export function useSources(notebookId: string) {
+  // 123: translator hiện tại cho câu announce trong callback sống lâu (không dùng ngôn ngữ cũ).
+  const t = useT();
+  const trRef = useRef(t);
+  trRef.current = t;
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   // Tiến độ realtime theo sourceId (037) — tái dùng SourceProgressEvent{step,progress} (011). Xoá khi nguồn
@@ -55,6 +57,7 @@ export function useSources(notebookId: string) {
         eventStatusRef.current[e.sourceId],
         e,
         titlesRef.current[e.sourceId],
+        trRef.current,
       );
       eventStatusRef.current[e.sourceId] = e.status;
       if (msg) announce(msg, e.status === "error" ? "assertive" : "polite");
@@ -74,18 +77,14 @@ export function useSources(notebookId: string) {
 
   const add = useCallback(
     async (input: AddSourceInput): Promise<boolean> => {
-      try {
-        const res = await window.api.sourceAdd(input);
-        // 091: biết tên ngay ⇒ sự kiện tiến độ đầu tiên (có thể tới trước reload) vẫn báo kèm tên.
-        titlesRef.current = {
-          ...titlesRef.current,
-          [res.source.id]: res.source.title,
-        };
-        reload();
-        return res.duplicateWarning;
-      } catch (e) {
-        throw new Error(message(e));
-      }
+      const res = await window.api.sourceAdd(input);
+      // 091: biết tên ngay ⇒ sự kiện tiến độ đầu tiên (có thể tới trước reload) vẫn báo kèm tên.
+      titlesRef.current = {
+        ...titlesRef.current,
+        [res.source.id]: res.source.title,
+      };
+      reload();
+      return res.duplicateWarning;
     },
     [reload],
   );

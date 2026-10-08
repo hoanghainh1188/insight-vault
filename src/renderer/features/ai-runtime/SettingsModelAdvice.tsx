@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ModelRecommendation, OllamaHealth } from "@shared/ipc/types";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // 059: gợi ý cỡ model chat theo RAM máy + health-check Ollama (chỉ phục vụ chat — embedding đã in-process).
 // CHỈ gợi ý/hướng dẫn, KHÔNG tự tải model. Hiển thị trong Cài đặt → AI.
@@ -9,6 +10,7 @@ export function SettingsModelAdvice({
   /** Đổi giá trị (vd khi bấm "Kiểm tra kết nối") → re-fetch gợi ý + health Ollama. */
   reloadKey?: number;
 }): JSX.Element {
+  const t = useT();
   const [rec, setRec] = useState<ModelRecommendation | null>(null);
   const [health, setHealth] = useState<OllamaHealth | null>(null);
 
@@ -27,11 +29,15 @@ export function SettingsModelAdvice({
     <div className="model-advice" data-testid="model-advice">
       {rec && (
         <p className="advice-line" data-testid="ram-advice">
-          Máy bạn có <strong>{rec.totalMemGb} GB</strong> RAM — {rec.label}.
+          {t.t("ai.advice.ramBefore")}{" "}
+          <strong>{t.t("ai.advice.ramAmount", { gb: rec.totalMemGb })}</strong>{" "}
+          {t.t("ai.advice.ramAfter", {
+            label: t.t(`ai.advice.tier.${rec.tier}`),
+          })}
           {rec.examples.length > 0 && (
             <>
               {" "}
-              Gợi ý:{" "}
+              {t.t("ai.advice.suggestions")}{" "}
               {rec.examples.map((ex, i) => (
                 <span key={ex}>
                   {i > 0 && ", "}
@@ -50,10 +56,12 @@ export function SettingsModelAdvice({
           data-testid="ollama-health"
         >
           {!health.running
-            ? "Ollama chưa chạy — cài/mở Ollama (ollama.com) rồi thử lại để dùng chat cục bộ."
+            ? t.t("ai.advice.ollamaNotRunning")
             : health.modelPulled
-              ? "Ollama đang chạy và mô hình chat đã sẵn sàng."
-              : "Ollama đang chạy nhưng mô hình chat đang chọn chưa được tải — chạy ollama pull <tên-model>."}
+              ? t.t("ai.advice.ollamaReady")
+              : t.t("ai.advice.ollamaModelMissing", {
+                  command: `ollama pull <${t.t("ai.modelNameToken")}>`,
+                })}
         </p>
       )}
     </div>

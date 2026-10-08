@@ -1,3 +1,4 @@
+import { createTranslator, type Translator } from "@shared/i18n";
 import { SchemaVersionError } from "../../db/migrations";
 
 /**
@@ -19,24 +20,26 @@ function errorTypeOf(err: unknown): string {
   return typeof err;
 }
 
-export function startupErrorDialog(err: unknown): StartupErrorDialog {
+/** 123: dịch theo translator truyền vào — lúc khởi động là ngôn ngữ OS (cài đặt có thể chưa đọc được). */
+export function startupErrorDialog(
+  err: unknown,
+  tr: Translator = createTranslator("vi"),
+): StartupErrorDialog {
   if (err instanceof SchemaVersionError) {
     return {
-      title: "Cần cập nhật InsightVault",
-      detail:
-        `Dữ liệu trên máy được tạo bởi một phiên bản InsightVault mới hơn ` +
-        `(schema v${err.dbVersion}), trong khi bản đang chạy chỉ hỗ trợ tới v${err.appVersion}.\n\n` +
-        `Vui lòng cập nhật InsightVault lên phiên bản mới nhất rồi mở lại. ` +
-        `Dữ liệu của bạn vẫn an toàn — ứng dụng cố ý không hạ cấp để tránh mất dữ liệu.`,
+      title: tr.t("dialogs.schemaNewer.title"),
+      detail: tr.t("dialogs.schemaNewer.detail", {
+        dbVersion: err.dbVersion,
+        appVersion: err.appVersion,
+      }),
       errorType: err.constructor.name,
     };
   }
 
+  const errorType = errorTypeOf(err);
   return {
-    title: "InsightVault gặp lỗi khi khởi động",
-    detail:
-      `Ứng dụng không thể khởi động (loại lỗi: ${errorTypeOf(err)}).\n\n` +
-      `Vui lòng mở lại ứng dụng. Nếu vẫn lỗi, hãy cập nhật lên phiên bản mới nhất.`,
-    errorType: errorTypeOf(err),
+    title: tr.t("dialogs.startupError.title"),
+    detail: tr.t("dialogs.startupError.detail", { errorType }),
+    errorType,
   };
 }

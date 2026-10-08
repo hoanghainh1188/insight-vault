@@ -15,9 +15,7 @@ export async function decodeAudio(bytes: Uint8Array): Promise<DecodedAudio> {
   const audioBuffer = await audioDecode(Buffer.from(bytes));
   const ch0 = audioBuffer.channelData[0];
   if (!ch0 || ch0.length === 0) {
-    throw new Error(
-      "File audio không giải mã được (không có dữ liệu âm thanh).",
-    );
+    throw new Error("Audio file could not be decoded (no audio data).");
   }
   return { samples: ch0, sampleRate: audioBuffer.sampleRate };
 }

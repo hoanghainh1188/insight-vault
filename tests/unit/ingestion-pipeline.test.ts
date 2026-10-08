@@ -302,7 +302,7 @@ describe("ingestion pipeline", () => {
       filePath: "/huge.txt",
     });
     expect(source.status).toBe("error");
-    expect(source.errorLabel).toBe("Tệp quá lớn");
+    expect(source.errorCode).toBe("tooLarge");
     await h2.pipeline.whenIdle();
     expect(h2.repo.listChunks(source.id)).toHaveLength(0);
   });
@@ -316,7 +316,7 @@ describe("ingestion pipeline", () => {
     });
     await h.pipeline.whenIdle();
     expect(h.repo.getById(a.source.id)!.status).toBe("error");
-    expect(h.repo.getById(a.source.id)!.errorLabel).toBe("Lỗi trích xuất");
+    expect(h.repo.getById(a.source.id)!.errorCode).toBe("extract");
   });
 
   it("US3: retry nguồn lỗi → ready", async () => {
@@ -397,7 +397,7 @@ describe("ingestion pipeline", () => {
     ).rejects.toThrow(/notebookId/);
     await expect(
       h.pipeline.add({ notebookId: "nb1", kind: "url", url: "  " }),
-    ).rejects.toThrow(/thiếu đường dẫn|URL/);
+    ).rejects.toThrow(/sourcePathMissing/);
     expect(h.repo.listByNotebook("nb1")).toHaveLength(0);
   });
 
@@ -409,8 +409,12 @@ describe("ingestion pipeline", () => {
       filePath: "/doc.txt",
     });
     await h.pipeline.whenIdle();
-    await expect(h.pipeline.retry(source.id)).rejects.toThrow(/đang lỗi/);
-    await expect(h.pipeline.retry("khong-co")).rejects.toThrow(/không tồn tại/);
+    await expect(h.pipeline.retry(source.id)).rejects.toThrow(
+      /sourceRetryNotError/,
+    );
+    await expect(h.pipeline.retry("khong-co")).rejects.toThrow(
+      /notebookNotFound|sourceNotFound/,
+    );
   });
 
   it("resumeAwaiting: embed lỗi → nguồn chuyển error", async () => {
@@ -429,7 +433,7 @@ describe("ingestion pipeline", () => {
     await h.pipeline.whenIdle();
     const s = h.repo.getById(source.id)!;
     expect(s.status).toBe("error");
-    expect(s.errorLabel).toBe("Lỗi nhúng");
+    expect(s.errorCode).toBe("embed");
   });
 
   it("B3: resumeInterrupted → nguồn kẹt queued/processing thành error (retry được)", async () => {
@@ -443,7 +447,7 @@ describe("ingestion pipeline", () => {
     h.pipeline.resumeInterrupted();
     const s = h.repo.getById("stuck")!;
     expect(s.status).toBe("error");
-    expect(s.errorLabel).toMatch(/Gián đoạn/);
+    expect(s.errorCode).toBe("interrupted");
 
     // retry được (origin đọc từ DB dù originCache rỗng sau "restart") → về ready.
     await h.pipeline.retry("stuck");

@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type {
   CreateNotebookInput,
   Notebook,
@@ -56,7 +57,7 @@ export function createNotebookRepo(db: Db, deps: RepoDeps = {}): NotebookRepo {
     const row = db
       .prepare(`${SELECT_NOTEBOOK} WHERE n.id = ?`)
       .get(id) as unknown as Row | undefined;
-    if (!row) throw new Error("Notebook không tồn tại.");
+    if (!row) throw new UserFacingError("notebookNotFound");
     return toNotebook(row);
   };
 
@@ -85,7 +86,7 @@ export function createNotebookRepo(db: Db, deps: RepoDeps = {}): NotebookRepo {
       const res = db
         .prepare("UPDATE notebook SET name = ?, updated_at = ? WHERE id = ?")
         .run(name, now(), id);
-      if (res.changes === 0) throw new Error("Notebook không tồn tại.");
+      if (res.changes === 0) throw new UserFacingError("notebookNotFound");
       return getById(id);
     },
 
@@ -95,7 +96,7 @@ export function createNotebookRepo(db: Db, deps: RepoDeps = {}): NotebookRepo {
       const res = db
         .prepare("UPDATE notebook SET color = ?, updated_at = ? WHERE id = ?")
         .run(color, now(), id);
-      if (res.changes === 0) throw new Error("Notebook không tồn tại.");
+      if (res.changes === 0) throw new UserFacingError("notebookNotFound");
       return getById(id);
     },
 

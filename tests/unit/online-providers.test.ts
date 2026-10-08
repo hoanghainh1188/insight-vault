@@ -101,7 +101,7 @@ describe("AnthropicProvider (031)", () => {
 
   it("thiếu key → ném; embed luôn ném (dùng Ollama)", async () => {
     const p = new AnthropicProvider(deps(okFetch({}), null));
-    await expect(p.chat({ messages: MSGS })).rejects.toThrow(/khóa API/i);
+    await expect(p.chat({ messages: MSGS })).rejects.toThrow(/apiKeyMissing/);
     await expect(
       new AnthropicProvider(deps(okFetch({}))).embed(),
     ).rejects.toThrow(/embedding/i);
@@ -183,7 +183,7 @@ describe("OpenAIProvider (031)", () => {
     const p = new OpenAIProvider(deps(okFetch({}), null));
     const s = await p.test();
     expect(s.reachable).toBe(false);
-    expect(s.reason).toMatch(/khóa API/i);
+    expect(s.reasonCode).toBe("apiKeyMissing");
   });
 
   it("chat stream (039): nối delta SSE qua onToken, trả nội dung đầy đủ", async () => {

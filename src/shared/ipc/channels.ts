@@ -8,6 +8,7 @@ import type {
   OnboardingState,
   OnlineState,
   PrivacyState,
+  UiLanguageState,
   StorageInfo,
   RagAnswer,
   RuntimeStatus,
@@ -120,6 +121,10 @@ export const CHANNELS = {
   backupProgress: "backup:progress", // event push main→renderer
   // 103: trạng thái riêng tư đổi (local/online/sending) — event push main→renderer, không polling.
   privacyChanged: "app:privacyChanged",
+  // 123: ngôn ngữ giao diện — đọc/đặt (đặt chỉ nhận auto|vi|en, main kiểm) + event push main→renderer.
+  getUiLanguage: "app:getUiLanguage",
+  setUiLanguage: "app:setUiLanguage",
+  uiLanguageChanged: "app:uiLanguageChanged",
   restorePick: "restore:pick",
   restorePrepare: "restore:prepare",
   restoreConfirm: "restore:confirm",
@@ -144,6 +149,8 @@ export interface ChannelResponse {
   [CHANNELS.getDataDir]: DataDirInfo;
   [CHANNELS.getStorageInfo]: StorageInfo;
   [CHANNELS.getPrivacyState]: PrivacyState;
+  [CHANNELS.getUiLanguage]: UiLanguageState;
+  [CHANNELS.setUiLanguage]: UiLanguageState;
   [CHANNELS.getOnboardingState]: OnboardingState;
   [CHANNELS.setOnboardingComplete]: { completed: true };
   [CHANNELS.getAppInfo]: AppInfo;

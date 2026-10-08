@@ -1,4 +1,5 @@
 // Phím tắt toàn cục (043) — logic khớp THUẦN (test được) + dữ liệu bảng trợ giúp.
+// 123: mô tả là khoá dịch (app.shortcuts.*), dịch lúc render.
 
 export type ShortcutAction = "new-notebook" | "focus-search" | "help";
 
@@ -25,16 +26,24 @@ export function matchShortcut(e: KeyLike): ShortcutAction | null {
 
 export interface ShortcutDoc {
   keys: string[]; // token; "$mod" → ⌘ (mac) / Ctrl
-  desc: string;
+  descKey: ShortcutDescKey;
 }
 
+export type ShortcutDescKey =
+  | "app.shortcuts.newNotebook"
+  | "app.shortcuts.searchNotebook"
+  | "app.shortcuts.send"
+  | "app.shortcuts.newLine"
+  | "app.shortcuts.close"
+  | "app.shortcuts.help";
+
 export const SHORTCUTS: ShortcutDoc[] = [
-  { keys: ["$mod", "N"], desc: "Tạo notebook mới" },
-  { keys: ["$mod", "K"], desc: "Tìm kiếm notebook" },
-  { keys: ["Enter"], desc: "Gửi câu hỏi (khung Chat)" },
-  { keys: ["Shift", "Enter"], desc: "Xuống dòng trong câu hỏi" },
-  { keys: ["Esc"], desc: "Đóng hộp thoại / trình xem nguồn" },
-  { keys: ["?"], desc: "Mở bảng phím tắt này" },
+  { keys: ["$mod", "N"], descKey: "app.shortcuts.newNotebook" },
+  { keys: ["$mod", "K"], descKey: "app.shortcuts.searchNotebook" },
+  { keys: ["Enter"], descKey: "app.shortcuts.send" },
+  { keys: ["Shift", "Enter"], descKey: "app.shortcuts.newLine" },
+  { keys: ["Esc"], descKey: "app.shortcuts.close" },
+  { keys: ["?"], descKey: "app.shortcuts.help" },
 ];
 
 /** Có phải macOS không (để hiển thị ⌘ thay Ctrl). */

@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type {
   ChatRequest,
   ChatResult,
@@ -39,7 +40,7 @@ export function resolveBaseUrl(
   }
   return {
     url: DEFAULT_OLLAMA_URL,
-    warning: `OLLAMA_HOST không phải localhost — bỏ qua, dùng ${DEFAULT_OLLAMA_URL}.`,
+    warning: `OLLAMA_HOST is not localhost — ignored, using ${DEFAULT_OLLAMA_URL}.`,
   };
 }
 
@@ -186,7 +187,8 @@ export function createOllamaClient(
           ? Math.max(chatTimeoutMs, LARGE_CHAT_TIMEOUT_MS)
           : chatTimeoutMs,
       );
-      if (!res.ok) throw new Error(`Ollama chat lỗi: ${res.status}`);
+      if (!res.ok)
+        throw new UserFacingError("ollamaHttp", { status: res.status });
       const data = (await res.json()) as { message?: { content?: string } };
       return { content: data.message?.content ?? "" };
     },
@@ -216,7 +218,8 @@ export function createOllamaClient(
         },
         embedTimeoutMs,
       );
-      if (!res.ok) throw new Error(`Ollama embed lỗi: ${res.status}`);
+      if (!res.ok)
+        throw new UserFacingError("ollamaHttp", { status: res.status });
       const data = (await res.json()) as { embedding?: number[] };
       return { vector: data.embedding ?? [] };
     },

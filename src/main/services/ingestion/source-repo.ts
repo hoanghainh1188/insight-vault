@@ -1,3 +1,7 @@
+import {
+  normalizeSourceErrorCode,
+  type SourceErrorCode,
+} from "@shared/codes/source-error";
 import type {
   Chunk,
   Source,
@@ -54,7 +58,7 @@ function toSource(r: SourceRow): Source {
     kind: r.kind,
     title: r.title,
     status: r.status,
-    errorLabel: r.error_label,
+    errorCode: normalizeSourceErrorCode(r.error_label),
     pageCount: r.page_count,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -121,7 +125,7 @@ export interface SourceRepo {
   updateStatus(
     id: string,
     status: SourceStatus,
-    errorLabel?: string | null,
+    errorCode?: SourceErrorCode | null,
   ): void;
   setPageCount(id: string, pageCount: number | null): void;
   setTitle(id: string, title: string): void;
@@ -300,10 +304,10 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
       return row ? toSource(row) : null;
     },
 
-    updateStatus(id, status, errorLabel = null) {
+    updateStatus(id, status, errorCode = null) {
       db.prepare(
         "UPDATE source SET status = ?, error_label = ?, updated_at = ? WHERE id = ?",
-      ).run(status, errorLabel, now(), id);
+      ).run(status, errorCode, now(), id);
     },
 
     setPageCount(id, pageCount) {
@@ -332,7 +336,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
 
     replaceChunks(sourceId, drafts, ids, meta) {
       if (ids.length !== drafts.length) {
-        throw new Error("replaceChunks: số id không khớp số chunk.");
+        throw new Error("replaceChunks: id count does not match chunk count.");
       }
       inTransaction(() => {
         db.prepare("DELETE FROM chunk WHERE source_id = ?").run(sourceId);

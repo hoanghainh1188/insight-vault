@@ -31,7 +31,7 @@ describe("size-limits", () => {
     expect(isWithinLimit("image", 50 * MB + 1)).toBe(false);
   });
 
-  it("trong giới hạn → không ném; vượt → ném SizeLimitError với nhãn 'Tệp quá lớn'", () => {
+  it("trong giới hạn → không ném; vượt → ném SizeLimitError với mã 'tooLarge'", () => {
     expect(() => assertWithinLimit("txt", 10 * MB)).not.toThrow();
     expect(isWithinLimit("txt", 10 * MB)).toBe(true);
     try {
@@ -39,7 +39,7 @@ describe("size-limits", () => {
       expect.unreachable();
     } catch (e) {
       expect(e).toBeInstanceOf(SizeLimitError);
-      expect((e as SizeLimitError).label).toBe("Tệp quá lớn");
+      expect((e as SizeLimitError).code).toBe("tooLarge");
     }
     expect(isWithinLimit("txt", 26 * MB)).toBe(false);
   });

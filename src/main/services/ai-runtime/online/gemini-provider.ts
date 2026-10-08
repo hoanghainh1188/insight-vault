@@ -1,3 +1,4 @@
+import { UserFacingError, encodeUserError } from "@shared/codes/user-error";
 import type {
   ChatMessage,
   ChatRequest,
@@ -66,9 +67,13 @@ export class GeminiProvider implements LLMProvider {
   async chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult> {
     const key = await this.deps.getKey();
     if (!key)
-      throw new OnlineProviderError(`${LABEL}: chưa nhập khóa API.`, "auth");
+      throw new OnlineProviderError(
+        encodeUserError("apiKeyMissing", { provider: LABEL }),
+        "auth",
+      );
     const model = req.model ?? this.deps.getModel();
-    if (!model) throw new Error(`${LABEL}: chưa chọn mô hình.`);
+    if (!model)
+      throw new UserFacingError("modelNotSelected", { provider: LABEL });
     const m = encodeURIComponent(model);
     if (opts?.onToken) {
       let acc = "";
@@ -106,7 +111,7 @@ export class GeminiProvider implements LLMProvider {
 
   async embed(): Promise<EmbedResult> {
     throw new Error(
-      `${LABEL} không dùng cho embedding — embedding luôn dùng Ollama local.`,
+      `${LABEL} is not used for embedding — embedding always uses local models.`,
     );
   }
 

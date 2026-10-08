@@ -1,8 +1,14 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type { ChatMessage, StudioKind } from "@shared/ipc/types";
 import type { RetrievedChunk, ScoredChunk } from "../rag/rag-types";
 import { citationBlock } from "../rag/context-builder";
 import { postprocessCitations } from "../rag/citation";
-import { systemPromptFor } from "./prompt";
+import {
+  languageReminder,
+  outputLanguageLine,
+  systemPromptFor,
+} from "./prompt";
+import type { LanguageCode } from "@shared/i18n";
 
 // 105 — map-reduce cho notebook vượt ngân sách, GIỮ chip [n] tới ĐÚNG ĐOẠN (ADR 2026-10-07-studio-large-clarify).
 // Khác phương án đã bác (2026-07-11-studio-mapreduce-citation — citation mức NGUỒN): ở đây mọi đoạn được đánh số
@@ -20,16 +26,21 @@ export interface NumberedBlock {
 
 type Chat = (messages: ChatMessage[]) => Promise<string>;
 
-const NOTES_RULES = [
-  "Mỗi ghi chú một dòng bắt đầu bằng '- ', ngắn gọn, KẾT THÚC bằng chip [n] của đoạn chứa ý đó.",
-  "Dùng ĐÚNG số [n] đã cho (không tạo số mới, không đổi số).",
-  "Chỉ dùng thông tin trong các đoạn đã cho, TUYỆT ĐỐI KHÔNG bịa. Viết tiếng Việt.",
-].join(" ");
+// 123 (FR-018, FR-019): lời nhắc English; MỌI bước dùng cùng ngôn ngữ đầu ra (ngôn ngữ giao diện lúc tạo).
+const notesRules = (lang: LanguageCode): string =>
+  [
+    "One note per line starting with '- ', short, ENDING with the [n] chip of the passage that contains the point.",
+    "Use EXACTLY the [n] numbers given (do not create or change numbers).",
+    "Use only the information in the given passages; NEVER make anything up.",
+    outputLanguageLine(lang),
+  ].join(" ");
 
-const MAP_PROMPT = `Bạn trích GHI CHÚ các ý chính từ các đoạn nguồn được ĐÁNH SỐ [n] dưới đây. ${NOTES_RULES}`;
-const CONDENSE_PROMPT = `Rút gọn các GHI CHÚ dưới đây: gộp ý trùng, bỏ chi tiết vụn, GIỮ NGUYÊN chip [n] của mỗi ý. ${NOTES_RULES}`;
+const mapPrompt = (lang: LanguageCode): string =>
+  `Extract NOTES of the main points from the source passages NUMBERED [n] below. ${notesRules(lang)}`;
+const condensePrompt = (lang: LanguageCode): string =>
+  `Condense the NOTES below: merge duplicate points, drop minor details, KEEP the [n] chip of every point. ${notesRules(lang)}`;
 const FROM_NOTES =
-  "LƯU Ý: đầu vào là GHI CHÚ đã tổng hợp từ nhiều phần của tài liệu; mỗi ghi chú kèm chip [n] trỏ về đoạn nguồn GỐC. Khi viết, GIỮ NGUYÊN các chip [n] của ý bạn dùng — KHÔNG tạo số mới.";
+  "NOTE: the input is NOTES already synthesized from many parts of the document; each note carries [n] chips pointing to the ORIGINAL source passages. When writing, KEEP the [n] chips of the points you use — do NOT create new numbers.";
 
 /** Đánh số [n] TOÀN CỤC cho mọi đoạn (theo nguồn → thứ tự đọc) + bảng n → đoạn thật. */
 export function numberAll(groups: ScoredChunk[][]): {
@@ -131,6 +142,7 @@ async function condense(
   budget: number,
   map: Map<number, RetrievedChunk>,
   chat: Chat,
+  lang: LanguageCode,
 ): Promise<{ notes: string[]; cut: boolean }> {
   const size = (ns: string[]): number => ns.join("\n").length;
   let cur = notes;
@@ -146,8 +158,8 @@ async function condense(
     )) {
       const input = batch.map((b) => b.text).join("\n");
       const raw = await chat([
-        { role: "system", content: CONDENSE_PROMPT },
-        { role: "user", content: input },
+        { role: "system", content: condensePrompt(lang) },
+        { role: "user", content: `${input}\n\n${languageReminder(lang)}` },
       ]);
       next.push(...cleanNotes(raw, subsetIn(input, map)));
     }
@@ -165,6 +177,8 @@ export interface MapReduceInput {
   budget: number;
   chat: Chat;
   maxMapCalls?: number;
+  /** 123: ngôn ngữ đầu ra cho mọi bước (mặc định vi). */
+  outputLanguage?: LanguageCode;
 }
 
 export interface MapReduceOutput {
@@ -184,6 +198,7 @@ export async function runMapReduce({
   budget,
   chat,
   maxMapCalls = MAX_MAP_CALLS,
+  outputLanguage = "vi",
 }: MapReduceInput): Promise<MapReduceOutput> {
   const { blocks, map } = numberAll(groups);
   const allBatches = packBatches(blocks, budget);
@@ -197,8 +212,11 @@ export async function runMapReduce({
       batch.map((b) => [b.n, map.get(b.n)!] as [number, RetrievedChunk]),
     );
     const messages: ChatMessage[] = [
-      { role: "system", content: MAP_PROMPT },
-      { role: "user", content: input },
+      { role: "system", content: mapPrompt(outputLanguage) },
+      {
+        role: "user",
+        content: `${input}\n\n${languageReminder(outputLanguage)}`,
+      },
     ];
     // Thử lại 1 lần khi lỗi tạm (Ollama vừa nạp lại…) hoặc ghi chú không có [n] hợp lệ — không mất cả lượt tạo.
     let got: string[] = [];
@@ -214,18 +232,22 @@ export async function runMapReduce({
   }
   if (notes.length === 0) {
     // Không để bước cuối viết từ đầu vào rỗng (sẽ bịa) — báo rõ cho người dùng.
-    throw new Error(
-      "Mô hình không trích được ghi chú kèm trích dẫn từ tài liệu. Vui lòng thử lại hoặc chọn mô hình khác.",
-    );
+    throw new UserFacingError("studioNoNotes");
   }
 
-  const condensed = await condense(notes, budget, map, chat);
+  const condensed = await condense(notes, budget, map, chat, outputLanguage);
   notes = condensed.notes;
   const finalInput = notes.join("\n");
 
   const raw = await chat([
-    { role: "system", content: `${systemPromptFor(kind)}\n\n${FROM_NOTES}` },
-    { role: "user", content: finalInput },
+    {
+      role: "system",
+      content: `${systemPromptFor(kind, outputLanguage)}\n\n${FROM_NOTES}`,
+    },
+    {
+      role: "user",
+      content: `${finalInput}\n\n${languageReminder(outputLanguage)}`,
+    },
   ]);
 
   return {

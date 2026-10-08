@@ -12,7 +12,7 @@ const src = (over: Partial<Source> = {}): Source => ({
   kind: "pdf",
   title: "a.pdf",
   status: "ready",
-  errorLabel: null,
+  errorCode: null,
   pageCount: 1,
   createdAt: 1,
   updatedAt: 1,

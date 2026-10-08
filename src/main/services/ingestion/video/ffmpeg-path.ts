@@ -11,7 +11,7 @@ export function resolveFfmpegPathFrom(
   isPackaged: boolean,
 ): string {
   if (!rawPath) {
-    throw new Error("ffmpeg-static không khả dụng trên nền tảng này");
+    throw new Error("ffmpeg-static is not available on this platform");
   }
   return isPackaged
     ? rawPath.replace("app.asar", "app.asar.unpacked")
@@ -25,7 +25,7 @@ export function resolveFfmpegPath(isPackaged: boolean): string {
     isPackaged,
   );
   if (!existsSync(p)) {
-    throw new Error("Không tìm thấy binary ffmpeg (đóng gói lệch?)");
+    throw new Error("ffmpeg binary not found (packaging mismatch?)");
   }
   return p;
 }

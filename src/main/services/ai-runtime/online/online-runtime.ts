@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type {
   OnlineProviderId,
   OnlineProviderView,
@@ -103,15 +104,14 @@ export function createOnlineRuntime(deps: OnlineRuntimeDeps): OnlineRuntime {
         input.apiKey.trim() === "" ||
         input.apiKey.length > MAX_KEY_LEN
       ) {
-        throw new Error("Khóa API hoặc nhà cung cấp không hợp lệ.");
+        throw new UserFacingError("apiKeyInvalidInput");
       }
       await secretStore.setKey(input.id, input.apiKey.trim());
       return buildState();
     },
 
     async deleteProviderKey(id) {
-      if (!isOnlineProviderId(id))
-        throw new Error("Nhà cung cấp không hợp lệ.");
+      if (!isOnlineProviderId(id)) throw new Error("Invalid provider.");
       await secretStore.deleteKey(id);
       // Xoá key của provider đang active → không dùng được nữa → về local.
       const config = getOnlineConfig(store);
@@ -125,7 +125,7 @@ export function createOnlineRuntime(deps: OnlineRuntimeDeps): OnlineRuntime {
 
     async setProviderModel(input) {
       if (!isOnlineProviderId(input?.id)) {
-        throw new Error("Nhà cung cấp không hợp lệ.");
+        throw new Error("Invalid provider.");
       }
       const model = input.model === null ? null : validOnlineModel(input.model);
       const config = getOnlineConfig(store);
@@ -138,11 +138,13 @@ export function createOnlineRuntime(deps: OnlineRuntimeDeps): OnlineRuntime {
 
     async setActiveProvider(id) {
       if (id !== null && !isOnlineProviderId(id)) {
-        throw new Error("Nhà cung cấp không hợp lệ.");
+        throw new Error("Invalid provider.");
       }
       // Bật provider online → yêu cầu đã có key (không bật provider rỗng key).
       if (id !== null && !(await secretStore.hasKey(id))) {
-        throw new Error(`${PROVIDER_LABELS[id]}: chưa nhập khóa API.`);
+        throw new UserFacingError("apiKeyMissing", {
+          provider: PROVIDER_LABELS[id],
+        });
       }
       const config = getOnlineConfig(store);
       applyActive(setOnlineConfig(store, { ...config, activeOnlineId: id }));
@@ -154,7 +156,7 @@ export function createOnlineRuntime(deps: OnlineRuntimeDeps): OnlineRuntime {
         return {
           reachable: false,
           ollamaReady: false,
-          reason: "Nhà cung cấp không hợp lệ.",
+          reason: "Invalid provider.",
         };
       }
       return providers.get(id)!.test();

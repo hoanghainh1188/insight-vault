@@ -13,7 +13,7 @@ const src = (over: Partial<Source> = {}): Source => ({
   kind: "pdf",
   title: "a.pdf",
   status: "ready",
-  errorLabel: null,
+  errorCode: null,
   pageCount: 1,
   createdAt: 1,
   updatedAt: 1,
@@ -58,12 +58,13 @@ describe("checkReprocessable", () => {
   });
 
   it("thông điệp đúng contract", () => {
+    // 123: mã lỗi người-dùng-thấy (giao diện dịch), không còn văn bản tiếng Việt.
     expect(REPROCESS_ERRORS).toEqual({
-      vaultLocked: expect.stringMatching(/sao lưu|khôi phục/),
-      notFound: "Nguồn không tồn tại.",
-      notPdf: "Chỉ xử lý lại nguồn PDF.",
-      busy: "Nguồn đang được xử lý.",
-      badStatus: "Chỉ xử lý lại nguồn sẵn sàng hoặc lỗi.",
+      vaultLocked: "vaultLocked",
+      notFound: "sourceNotFound",
+      notPdf: "reprocessNotPdf",
+      busy: "reprocessBusy",
+      badStatus: "reprocessBadStatus",
     });
   });
 });

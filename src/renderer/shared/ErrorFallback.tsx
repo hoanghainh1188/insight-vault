@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CrashReportDialog } from "./crash-report/CrashReportDialog";
+import { useT } from "./i18n/i18n-context";
 import "./error-fallback.css";
 
 interface ErrorFallbackProps {
@@ -13,10 +14,12 @@ type OpenState = "idle" | "opening" | "failed";
 
 // Giao diện lỗi (088): thay màn trắng / trang lỗi mặc định khi 1 component ném lỗi. Không hiện chi tiết kỹ thuật
 // (có thể dính nội dung tài liệu); chi tiết an toàn nằm ở thư mục nhật ký trên máy.
+// 123: là function component ⇒ dùng useT() được (ErrorBoundary là class, chỉ render component này).
 export function ErrorFallback({
   onRetry,
   resetRoute,
 }: ErrorFallbackProps): JSX.Element {
+  const t = useT();
   const [open, setOpen] = useState<OpenState>("idle");
   const [reporting, setReporting] = useState(false);
 
@@ -41,20 +44,20 @@ export function ErrorFallback({
         <span className="error-fallback-mark" aria-hidden="true">
           !
         </span>
-        <h2>Đã xảy ra lỗi ở phần này</h2>
+        <h2>{t.t("app.errorFallback.title")}</h2>
         <p>
-          Dữ liệu của bạn vẫn an toàn trên máy. Hãy thử lại; nếu lỗi lặp lại, mở
-          thư mục nhật ký và gửi tệp <code>main.log</code> khi báo lỗi — nhật ký
-          không chứa nội dung tài liệu.
+          {t.t("app.errorFallback.bodyBefore")}
+          <code>main.log</code>
+          {t.t("app.errorFallback.bodyAfter")}
         </p>
         <div className="error-fallback-actions">
           {onRetry && (
             <button type="button" className="btn-primary-sm" onClick={onRetry}>
-              Thử lại
+              {t.t("common.retry")}
             </button>
           )}
           <button type="button" className="btn-outline-sm" onClick={reload}>
-            Tải lại ứng dụng
+            {t.t("app.errorFallback.reload")}
           </button>
           {/* 093: gửi báo cáo ngay từ màn hình lỗi (người dùng xem/sửa rồi tự gửi). */}
           <button
@@ -62,7 +65,7 @@ export function ErrorFallback({
             className="error-fallback-link error-fallback-push"
             onClick={() => setReporting(true)}
           >
-            Báo lỗi…
+            {t.t("app.logs.report")}
           </button>
           <button
             type="button"
@@ -70,11 +73,11 @@ export function ErrorFallback({
             disabled={open === "opening"}
             onClick={() => void openLogs()}
           >
-            Mở thư mục nhật ký
+            {t.t("app.logs.open")}
           </button>
         </div>
         {open === "failed" && (
-          <p className="error-fallback-note">Không mở được thư mục nhật ký.</p>
+          <p className="error-fallback-note">{t.t("app.logs.openFailed")}</p>
         )}
       </div>
       {reporting && <CrashReportDialog onClose={() => setReporting(false)} />}

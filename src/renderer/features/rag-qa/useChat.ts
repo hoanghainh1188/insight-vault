@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AiTarget, Citation, RagMode, RagTurn } from "@shared/ipc/types";
-import { parseIpcError } from "@shared/online-error-tag";
+import type { Translator } from "@shared/i18n";
+import type { ParsedIpcError } from "@shared/online-error-tag";
 import { announce } from "../../shared/a11y/announcer";
+import { useT } from "../../shared/i18n/i18n-context";
 import {
-  CHAT_CANCELLED,
-  CHAT_STARTED,
+  describeIpcError,
+  toParsedError,
+} from "../../shared/i18n/describe-error";
+import {
+  chatCancelledMessage,
+  chatStartedMessage,
   chatDoneMessage,
 } from "../../shared/a11y/messages";
 
@@ -16,11 +22,31 @@ export interface ChatMessage {
   content: string;
   citations?: Citation[];
   notFound?: boolean;
+  /** 123: thông báo "đang tái lập chỉ mục" (không lưu) — hiển thị câu dịch theo ngôn ngữ hiện tại. */
+  reindexing?: boolean;
   /** 071: chế độ đã dùng — "open" → badge "không dựa trên nguồn". */
   modeUsed?: RagMode;
   streaming?: boolean; // 039: đang nhận token (render text thô, chưa chip)
   /** 098: trả lời bằng AI cục bộ sau lỗi online (người dùng bấm) — nhãn minh bạch, chỉ trong phiên. */
   answeredLocally?: boolean;
+}
+
+/** 123: lỗi Chat lưu dạng MÃ (không lưu chuỗi đã dịch) — dịch lúc render bằng describeChatError. */
+export type ChatError =
+  | { kind: "ipc"; error: ParsedIpcError }
+  | { kind: "clearFailed" | "localNotReady" | "notSent" };
+
+export function describeChatError(err: ChatError, tr: Translator): string {
+  switch (err.kind) {
+    case "ipc":
+      return describeIpcError(err.error, tr);
+    case "clearFailed":
+      return tr.t("chat.errors.clearFailed");
+    case "localNotReady":
+      return tr.t("chat.blockRuntime");
+    case "notSent":
+      return tr.t("chat.errors.notSent");
+  }
 }
 
 /** 098: lượt lỗi do provider online, chờ người dùng chọn "AI cục bộ" hoặc "Thử lại". */
@@ -32,7 +58,7 @@ export function useChat(notebookId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [mode, setMode] = useState<RagMode>("grounded");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ChatError | null>(null);
   const [failedTurn, setFailedTurn] = useState<FailedTurn | null>(null);
   const [runtimeReady, setRuntimeReady] = useState<boolean | null>(null);
   const [hasReadySources, setHasReadySources] = useState(false);
@@ -41,6 +67,10 @@ export function useChat(notebookId: string) {
   const activeStreamRef = useRef<string | null>(null);
   // 091: người dùng bấm Dừng ⇒ câu báo kết thúc là "Đã dừng" thay vì "Đã có câu trả lời".
   const stopRequestedRef = useRef(false);
+  // 123: translator HIỆN TẠI cho câu báo trình đọc màn hình trong callback sống lâu (đổi ngôn ngữ giữa stream).
+  const t = useT();
+  const trRef = useRef(t);
+  trRef.current = t;
 
   // Đăng ký nhận token (039) một lần — nối delta vào bong bóng assistant đang stream (khớp streamId).
   useEffect(() => {
@@ -67,7 +97,7 @@ export function useChat(notebookId: string) {
       activeStreamRef.current = null;
       setStreamingId(null);
       // 091: lượt bị huỷ không còn câu báo kết thúc ⇒ báo huỷ để "Đang soạn…" không treo lơ lửng.
-      announce(CHAT_CANCELLED);
+      announce(chatCancelledMessage(trRef.current));
     }
     setError(null);
     setFailedTurn(null);
@@ -101,7 +131,7 @@ export function useChat(notebookId: string) {
     window.api
       .chatClear(notebookId)
       .then(() => setMessages([]))
-      .catch(() => setError("Không xoá được hội thoại."));
+      .catch(() => setError({ kind: "clearFailed" }));
   }, [notebookId]);
 
   const refreshReadiness = useCallback(() => {
@@ -166,7 +196,7 @@ export function useChat(notebookId: string) {
       ]);
       setLoading(true);
       stopRequestedRef.current = false;
-      announce(CHAT_STARTED);
+      announce(chatStartedMessage(trRef.current));
       try {
         const res = await window.api.ragAskStream({
           notebookId,
@@ -179,11 +209,14 @@ export function useChat(notebookId: string) {
         // Lượt đã bị huỷ/đổi notebook giữa chừng → không ghi đè (streamId không còn active).
         if (activeStreamRef.current !== streamId) return;
         announce(
-          chatDoneMessage({
-            citationCount: res.citations.length,
-            notFound: res.notFound,
-            stopped: stopRequestedRef.current,
-          }),
+          chatDoneMessage(
+            {
+              citationCount: res.citations.length,
+              notFound: res.notFound,
+              stopped: stopRequestedRef.current,
+            },
+            trRef.current,
+          ),
         );
         // Thay bong bóng streaming bằng kết quả cuối (markdown + chip hậu kiểm).
         setMessages((prev) => {
@@ -198,6 +231,7 @@ export function useChat(notebookId: string) {
               citations: res.citations,
               notFound: res.notFound,
               modeUsed: res.modeUsed,
+              ...(res.reindexing ? { reindexing: true } : {}),
               ...(local ? { answeredLocally: true } : {}),
             },
           ];
@@ -205,10 +239,8 @@ export function useChat(notebookId: string) {
       } catch (e) {
         if (activeStreamRef.current === streamId) {
           // 098: tách thẻ lỗi online (main gắn) — lỗi provider online ⇒ giữ lượt để người dùng chọn AI cục bộ.
-          const parsed = parseIpcError(
-            e instanceof Error ? e.message : "Không hỏi được.",
-          );
-          setError(parsed.message);
+          const parsed = toParsedError(e);
+          setError({ kind: "ipc", error: parsed });
           if (parsed.onlineKind && !local) setFailedTurn({ question: q });
           // Lỗi mạng giữa stream (khác Dừng): GIỮ phần đã nhận (token đã tới bong bóng) — chỉ chốt lại
           // (streaming:false) để người dùng không mất phần đã đọc; bong bóng rỗng thì gỡ. (spec Edge Case)
@@ -241,11 +273,7 @@ export function useChat(notebookId: string) {
       if (!failedTurn) return;
       // Không gửi được (Ollama ngừng chạy giữa phiên…) ⇒ báo rõ thay vì bấm mà không có gì xảy ra (ADR 098).
       if (!canSend) {
-        setError(
-          target === "local"
-            ? "AI cục bộ (Ollama) chưa sẵn sàng. Mở Cài đặt để bật/chọn mô hình."
-            : "Chưa gửi được — kiểm tra AI trong Cài đặt rồi thử lại.",
-        );
+        setError({ kind: target === "local" ? "localNotReady" : "notSent" });
         return;
       }
       await send(failedTurn.question, {

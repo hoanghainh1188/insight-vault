@@ -16,11 +16,11 @@ export const SIZE_LIMITS: Record<SourceKind, number> = {
   image: 50 * MB, // 053 — ảnh OCR (tesseract.js)
 };
 
-/** Lỗi vượt giới hạn — nhãn thân thiện dùng cho error_label của nguồn. */
+/** Lỗi vượt giới hạn — mã lỗi nguồn "tooLarge" (123: lưu mã, giao diện dịch). */
 export class SizeLimitError extends Error {
-  readonly label = "Tệp quá lớn";
+  readonly code = "tooLarge" as const;
   constructor() {
-    super("Nguồn vượt giới hạn kích thước cho phép.");
+    super("Source exceeds the allowed size limit.");
     this.name = "SizeLimitError";
   }
 }

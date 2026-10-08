@@ -13,13 +13,14 @@ export class OnlineProviderError extends Error {
   }
 }
 
+// 123: thông điệp English cho nhật ký/kỹ thuật — giao diện dịch theo `kind` (thẻ [[online:kind]], khoá online.<kind>).
 const LABELS: Record<OnlineProviderError["kind"], string> = {
-  auth: "Khóa API không hợp lệ hoặc đã hết hạn.",
-  "rate-limit": "Nhà cung cấp đang giới hạn tốc độ, vui lòng thử lại sau.",
-  timeout: "Máy chủ AI online phản hồi quá lâu (hết thời gian chờ).",
-  network: "Không kết nối được tới máy chủ AI online (kiểm tra mạng).",
-  server: "Máy chủ AI online gặp lỗi, vui lòng thử lại.",
-  unknown: "Gọi AI online thất bại.",
+  auth: "Invalid or expired API key.",
+  "rate-limit": "Provider is rate-limiting requests.",
+  timeout: "Online AI server timed out.",
+  network: "Could not reach the online AI server.",
+  server: "Online AI server error.",
+  unknown: "Online AI request failed.",
 };
 
 /** Ánh xạ HTTP status → OnlineProviderError với thông báo rõ ràng. */

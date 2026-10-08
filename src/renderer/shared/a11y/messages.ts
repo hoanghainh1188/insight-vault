@@ -1,11 +1,20 @@
 import type { SourceProgressEvent, SourceStatus } from "@shared/ipc/types";
+import { createTranslator, type Translator } from "@shared/i18n";
+import { normalizeSourceErrorCode } from "@shared/codes/source-error";
 
-// 091 — câu thông báo trình đọc màn hình (thuần, tiếng Việt). Mỗi hàm trả null khi KHÔNG nên báo (trạng thái
-// không đổi) — tránh lặp lại liên tục theo từng sự kiện tiến độ.
+// 091 — câu thông báo trình đọc màn hình (thuần). Mỗi hàm trả null khi KHÔNG nên báo (trạng thái không đổi) — tránh
+// lặp lại liên tục theo từng sự kiện tiến độ. 123: dịch theo Translator truyền vào (mặc định tiếng Việt) — gọi với
+// translator HIỆN TẠI lúc announce (hàng đợi LiveRegion giữ chuỗi đã dịch).
 
-export const CHAT_STARTED = "Đang soạn câu trả lời…";
-export const CHAT_CANCELLED =
-  "Đã huỷ câu trả lời đang soạn vì chuyển notebook.";
+const VI = createTranslator("vi");
+
+export function chatStartedMessage(tr: Translator = VI): string {
+  return tr.t("a11y.chatStarted");
+}
+
+export function chatCancelledMessage(tr: Translator = VI): string {
+  return tr.t("a11y.chatCancelled");
+}
 
 export interface ChatDoneInput {
   citationCount: number;
@@ -13,36 +22,56 @@ export interface ChatDoneInput {
   stopped?: boolean;
 }
 
-export function chatDoneMessage({
-  citationCount,
-  notFound,
-  stopped,
-}: ChatDoneInput): string {
-  if (stopped) return "Đã dừng. Giữ phần câu trả lời đã nhận.";
+export function chatDoneMessage(
+  { citationCount, notFound, stopped }: ChatDoneInput,
+  tr: Translator = VI,
+): string {
+  if (stopped) return tr.t("a11y.chatStopped");
   // 108: câu thông báo ngắn cho trình đọc màn hình — CỐ Ý không kèm gợi ý (gợi ý nằm trong câu trả lời hiển thị).
-  if (notFound) return "Không tìm thấy thông tin trong nguồn.";
+  if (notFound) return tr.t("a11y.chatNotFound");
   return citationCount > 0
-    ? `Đã có câu trả lời, ${citationCount} trích dẫn.`
-    : "Đã có câu trả lời.";
+    ? tr.plural("a11y.chatDoneCitations", citationCount)
+    : tr.t("a11y.chatDone");
+}
+
+/** Nhãn lỗi nguồn (mã, hoặc văn bản Việt cũ) ⇒ câu theo ngôn ngữ hiện tại. */
+export function sourceErrorText(
+  raw: string | null | undefined,
+  tr: Translator = VI,
+): string {
+  const code = normalizeSourceErrorCode(raw);
+  return code
+    ? tr.t(`sources.error.${code}`)
+    : tr.t("a11y.sourceErrorFallback");
 }
 
 export function sourceStatusMessage(
   prev: SourceStatus | undefined,
-  event: Pick<SourceProgressEvent, "status" | "errorLabel">,
+  event: Pick<SourceProgressEvent, "status" | "errorCode">,
   title: string | undefined,
+  tr: Translator = VI,
 ): string | null {
   if (prev === event.status) return null;
-  const name = title ? `nguồn “${title}”` : "nguồn";
-  const Name = title ? `Nguồn “${title}”` : "Nguồn";
+  const named = title !== undefined && title !== "";
   switch (event.status) {
     case "processing":
-      return `Đang xử lý ${name}.`;
+      return named
+        ? tr.t("a11y.sourceProcessingNamed", { title })
+        : tr.t("a11y.sourceProcessing");
     case "awaiting_embedding":
-      return `${Name} đang chờ nhúng.`;
+      return named
+        ? tr.t("a11y.sourceAwaitingNamed", { title })
+        : tr.t("a11y.sourceAwaiting");
     case "ready":
-      return `${Name} đã sẵn sàng.`;
-    case "error":
-      return `${Name} lỗi: ${event.errorLabel ?? "không xử lý được"}.`;
+      return named
+        ? tr.t("a11y.sourceReadyNamed", { title })
+        : tr.t("a11y.sourceReady");
+    case "error": {
+      const error = sourceErrorText(event.errorCode, tr);
+      return named
+        ? tr.t("a11y.sourceErrorNamed", { title, error })
+        : tr.t("a11y.sourceError", { error });
+    }
     default:
       return null; // queued: chưa có gì để báo
   }
@@ -52,17 +81,28 @@ export function sourceStatusMessage(
 export function reindexMessage(
   prev: boolean | null,
   next: boolean,
+  tr: Translator = VI,
 ): string | null {
-  if (next && prev !== true) return "Đang tái lập chỉ mục nguồn…";
-  if (!next && prev === true) return "Đã tái lập chỉ mục nguồn xong.";
+  if (next && prev !== true) return tr.t("a11y.reindexStart");
+  if (!next && prev === true) return tr.t("a11y.reindexDone");
   return null;
 }
 
-export function studioMessage(label: string, phase: "start" | "done"): string {
-  return phase === "start" ? `Đang tạo ${label}…` : `Đã tạo xong ${label}.`;
+export function studioMessage(
+  label: string,
+  phase: "start" | "done",
+  tr: Translator = VI,
+): string {
+  return phase === "start"
+    ? tr.t("a11y.studioStart", { label })
+    : tr.t("a11y.studioDone", { label });
 }
 
 /** aria-valuetext cho thanh tiến độ: "Nhúng, 40%". */
-export function progressValueText(step: string, pct: number): string {
-  return `${step}, ${pct}%`;
+export function progressValueText(
+  step: string,
+  pct: number,
+  tr: Translator = VI,
+): string {
+  return tr.t("a11y.progressValue", { step, pct });
 }

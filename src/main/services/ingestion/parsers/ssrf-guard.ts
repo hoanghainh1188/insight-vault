@@ -99,7 +99,6 @@ export function isBlockedHostname(host: string): boolean {
 }
 
 export class SsrfError extends Error {
-  readonly label = "Lỗi tải trang";
   constructor(msg: string) {
     super(msg);
     this.name = "SsrfError";
@@ -115,21 +114,21 @@ export function assertSafeUrl(rawUrl: string): URL {
   try {
     u = new URL(rawUrl);
   } catch {
-    throw new SsrfError("URL không hợp lệ.");
+    throw new SsrfError("Invalid URL.");
   }
   if (u.protocol !== "http:" && u.protocol !== "https:") {
-    throw new SsrfError("Chỉ hỗ trợ http/https.");
+    throw new SsrfError("Only http/https is supported.");
   }
   const host = u.hostname.replace(/^\[|\]$/g, "");
-  if (isBlockedHostname(host)) throw new SsrfError("Địa chỉ nội bộ bị chặn.");
+  if (isBlockedHostname(host)) throw new SsrfError("Internal address blocked.");
   // Nếu host đã là IP literal → kiểm ngay.
   if (/^[\d.]+$/.test(host) || host.includes(":")) {
-    if (isBlockedIp(host)) throw new SsrfError("Địa chỉ nội bộ bị chặn.");
+    if (isBlockedIp(host)) throw new SsrfError("Internal address blocked.");
   }
   return u;
 }
 
 /** Ném nếu IP phân giải được thuộc dải nội bộ (gọi sau DNS lookup, cho mỗi hop). */
 export function assertResolvedIpAllowed(ip: string): void {
-  if (isBlockedIp(ip)) throw new SsrfError("Địa chỉ nội bộ bị chặn.");
+  if (isBlockedIp(ip)) throw new SsrfError("Internal address blocked.");
 }

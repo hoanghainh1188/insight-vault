@@ -7,10 +7,12 @@ import { SourceViewer } from "../source-viewer/SourceViewer";
 import { useSourceViewer } from "../source-viewer/useSourceViewer";
 import { useColumnWidths } from "./useColumnWidths";
 import { setLastNotebookId } from "../../shared/lastNotebook";
+import { useT } from "../../shared/i18n/i18n-context";
 
 // Workspace 3 cột (prototype S2). Cột NGUỒN (011) + Chat (013) + Studio (021). Quản state trình xem nguồn
 // (019). 025: kéo đổi độ rộng cột (splitter + CSS var) + nhớ notebook gần nhất (nav).
 export function Workspace(): JSX.Element {
+  const t = useT();
   const { notebookId } = useParams<{ notebookId: string }>();
   const viewer = useSourceViewer();
   const { widths, onDragSrc, onDragStudio } = useColumnWidths();
@@ -40,7 +42,7 @@ export function Workspace(): JSX.Element {
         onPointerDown={onDragSrc}
         role="separator"
         aria-orientation="vertical"
-        aria-label="Kéo đổi độ rộng cột Nguồn"
+        aria-label={t.t("sources.list.resizeSources")}
       />
       <ChatColumn notebookId={notebookId} onCite={viewer.openCitation} />
       <div
@@ -49,7 +51,7 @@ export function Workspace(): JSX.Element {
         onPointerDown={onDragStudio}
         role="separator"
         aria-orientation="vertical"
-        aria-label="Kéo đổi độ rộng cột Studio"
+        aria-label={t.t("sources.list.resizeStudio")}
       />
       <StudioColumn notebookId={notebookId} onCite={viewer.openCitation} />
       <SourceViewer viewer={viewer} />

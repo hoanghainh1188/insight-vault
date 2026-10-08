@@ -1,13 +1,11 @@
 import { app, BrowserWindow, dialog } from "electron";
+import type { Translator } from "@shared/i18n";
 import type { BackupDialogs } from "./backup-service";
+import { backupDialogTexts } from "../ui-language/dialog-texts";
 
 // Adapter hộp thoại Electron cho sao lưu/khôi phục (085). Đường dẫn file CHỈ đến từ đây (main) — renderer không
 // gửi path. `IV_E2E_DIALOG_PATH` (chỉ khi CHƯA đóng gói, cùng cách gác như IV_EMBED_FAKE) thay hộp thoại native
 // cho E2E; bản đóng gói luôn dùng hộp thoại thật. Loại khỏi coverage (I/O Electron).
-
-const FILTERS = [
-  { name: "Bản sao lưu InsightVault", extensions: ["ivbackup"] },
-];
 
 function e2ePath(): string | null | undefined {
   if (app.isPackaged) return undefined;
@@ -16,16 +14,20 @@ function e2ePath(): string | null | undefined {
   return v === "" ? null : v; // "" ⇒ mô phỏng người dùng huỷ
 }
 
-export function createElectronDialogs(): BackupDialogs {
+export function createElectronDialogs(
+  translator: () => Translator,
+): BackupDialogs {
   return {
     async chooseSavePath(defaultName) {
       const fake = e2ePath();
       if (fake !== undefined) return fake;
       const win = BrowserWindow.getFocusedWindow();
+      // 123: tiêu đề + bộ lọc theo ngôn ngữ giao diện lúc mở hộp thoại.
+      const texts = backupDialogTexts(translator());
       const opts = {
-        title: "Sao lưu vault",
+        title: texts.saveTitle,
         defaultPath: defaultName,
-        filters: FILTERS,
+        filters: texts.filters,
       };
       const r = win
         ? await dialog.showSaveDialog(win, opts)
@@ -39,9 +41,10 @@ export function createElectronDialogs(): BackupDialogs {
       const fake = e2ePath();
       if (fake !== undefined) return fake;
       const win = BrowserWindow.getFocusedWindow();
+      const texts = backupDialogTexts(translator());
       const opts = {
-        title: "Khôi phục vault",
-        filters: FILTERS,
+        title: texts.openTitle,
+        filters: texts.filters,
         properties: ["openFile" as const],
       };
       const r = win

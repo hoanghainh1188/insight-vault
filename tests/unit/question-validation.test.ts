@@ -10,7 +10,7 @@ describe("validateMode", () => {
   it("chấp nhận grounded/open; ném giá trị lạ", () => {
     expect(validateMode("grounded")).toBe("grounded");
     expect(validateMode("open")).toBe("open");
-    expect(() => validateMode("xxx")).toThrow(/Chế độ/);
+    expect(() => validateMode("xxx")).toThrow(/Invalid answer mode/);
     expect(() => validateMode(null)).toThrow();
   });
 });
@@ -34,7 +34,7 @@ describe("validateHistory", () => {
           content: "a",
         })),
       ),
-    ).toThrow(/quá dài/);
+    ).toThrow(/TooLong/);
     expect(() => validateHistory([{ role: "system", content: "a" }])).toThrow();
     expect(() => validateHistory([{ role: "user", content: 123 }])).toThrow();
     // Nội dung lịch sử RẤT dài (> MAX_HISTORY_CONTENT_LEN) mới ném.
@@ -56,11 +56,15 @@ describe("validateQuestion", () => {
     );
   });
   it("rỗng / chỉ khoảng trắng → ném", () => {
-    expect(() => validateQuestion("")).toThrow(/để trống/);
-    expect(() => validateQuestion("   ")).toThrow(/để trống/);
+    expect(() => validateQuestion("")).toThrow(
+      /notebookNameEmpty|questionEmpty/,
+    );
+    expect(() => validateQuestion("   ")).toThrow(
+      /notebookNameEmpty|questionEmpty/,
+    );
   });
   it("> 2000 ký tự → ném", () => {
-    expect(() => validateQuestion("a".repeat(2001))).toThrow(/quá dài/);
+    expect(() => validateQuestion("a".repeat(2001))).toThrow(/TooLong/);
     expect(validateQuestion("a".repeat(2000))).toHaveLength(2000);
   });
   it("không phải chuỗi → ném", () => {

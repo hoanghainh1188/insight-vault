@@ -29,7 +29,7 @@ const pdf = (over: Partial<Source> = {}): Source => ({
   kind: "pdf",
   title: "bao-cao.pdf",
   status: "ready",
-  errorLabel: null,
+  errorCode: null,
   pageCount: 3,
   createdAt: 1,
   updatedAt: 1,
@@ -145,7 +145,7 @@ describe("SourceItem — Xử lý lại (112)", () => {
         ev({
           step: "done",
           progress: 0,
-          errorLabel: "Xử lý lại thất bại — vẫn dùng bản cũ.",
+          errorCode: "reprocessFailed",
         }),
       ),
     );
@@ -173,9 +173,10 @@ describe("SourceItem — Xử lý lại (112)", () => {
     expect(q("source-reprocess-progress")).toBeNull();
   });
 
-  it("IPC ném (vd đang sao lưu) ⇒ hiện thông điệp lỗi", async () => {
+  it("IPC ném (vd đang sao lưu) ⇒ hiện thông điệp lỗi theo mã", async () => {
+    // 123: main gắn thẻ mã lỗi người-dùng-thấy; renderer dịch theo ngôn ngữ hiện tại.
     api.sourceReprocess.mockRejectedValueOnce(
-      new Error("Đang sao lưu/khôi phục — thử lại sau giây lát."),
+      new Error("Đang sao lưu/khôi phục [[err:vaultLocked]]"),
     );
     render(pdf());
     await click("source-reprocess");

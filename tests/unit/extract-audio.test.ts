@@ -83,7 +83,7 @@ describe("extractAudioTo16kWav (051)", () => {
       spawn,
       timeoutMs: 20,
     });
-    await expect(p).rejects.toThrow(/quá thời gian/);
+    await expect(p).rejects.toThrow(/timed out/);
     expect(proc.kill).toHaveBeenCalled();
   });
 });
