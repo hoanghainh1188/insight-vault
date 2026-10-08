@@ -12,6 +12,10 @@ on:
         type: choice
         options: [sweep, current]
         default: sweep
+      rerank:
+        description: "109: danh sách model reranker (phẩy) để đo — trống = không đo rerank"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -36,16 +40,21 @@ jobs:
         run: |
           v=$(sed -n 's/^export const EMBEDDING_MODEL_VERSION = "\(.*\)";/\1/p' src/main/services/embedding/model-version.ts)
           echo "version=$v" >> "$GITHUB_OUTPUT"
+          # 109: model reranker cũng tải vào cùng thư mục ⇒ khoá theo danh sách model (đổi danh sách ⇒ cache mới).
+          r=$(printf '%s' "${{ inputs.rerank }}" | sha256sum | cut -c1-12)
+          echo "rerank=$r" >> "$GITHUB_OUTPUT"
 
-      - name: Cache mô hình e5
+      - name: Cache mô hình (e5 + reranker 109)
         uses: actions/cache@v4
         with:
           path: tests/eval/.cache/models
-          key: eval-model-${{ steps.model.outputs.version }}
+          key: eval-model-${{ steps.model.outputs.version }}-${{ steps.model.outputs.rerank }}
+          restore-keys: eval-model-${{ steps.model.outputs.version }}-
 
       - name: Đo truy xuất
         env:
           EVAL_MODE: ${{ inputs.mode }}
+          EVAL_RERANK: ${{ inputs.rerank }}
         run: npm run eval:retrieval
 
       - name: Lưu báo cáo

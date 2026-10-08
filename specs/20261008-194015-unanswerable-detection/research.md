@@ -41,6 +41,17 @@ ném lỗi; `AutoModel` rơi về `PreTrainedModel` chạy phiên ONNX thô và 
 
 **Alternatives:** pipeline text-classification (sai cho cặp); gọi onnxruntime-node trực tiếp (thêm việc tự tokenizer — không cần).
 
+**Kết quả smoke-test (T001, 2026-10-08, macOS arm64, Node 24, transformers.js 4.x, cache `tests/eval/.cache/models`):**
+
+| Model | Nạp | Đầu vào ONNX | Điểm (vi liên quan / vi không / en→vi liên quan / en→vi không) | Nạp / suy luận 4 cặp |
+| ----- | --- | ------------ | ---------------------------------------------------------------- | -------------------- |
+| a1 mmarco-mMiniLMv2 (`model_qint8_arm64`, `AutoModelForSequenceClassification`) | OK | `input_ids`, `attention_mask` | 0,987 / 0,050 / 0,993 / 0,485 | 5,3 s (gồm tải) / 21 ms |
+| a2 gte-multilingual-reranker (`q8`, `AutoModel` — cảnh báo "Unknown model class new", rơi về lớp cơ sở) | OK | `input_ids`, `attention_mask`, `token_type_ids` (tokenizer tự cấp) | 0,673 / 0,086 / 0,642 / 0,275 | 7,7 s (gồm tải) / 24 ms |
+
+Cả hai chạy được ⇒ giữ cả hai trong đo. Nhận xét sơ bộ (4 cặp, chưa kết luận): a1 phân tách mạnh với vi nhưng cặp en→vi không liên quan vẫn 0,49 —
+cần ngưỡng/đo English kỹ; a2 thang điểm thấp hơn nhưng khoảng cách liên quan/không ổn định hơn giữa vi và en. Tệp x64 của a1 (`model_quint8_avx2`)
+chưa chạy thử (máy arm64) — xác minh ở CI ubuntu x64 khi chạy công cụ đo.
+
 ## R3 — Chọn tệp ONNX theo nền tảng (a1)
 
 **Decision:** `process.arch === "arm64"` ⇒ `model_qint8_arm64`; còn lại ⇒ `model_quint8_avx2` (Windows x64). Nếu nạp tệp lượng tử lỗi ⇒ không tự

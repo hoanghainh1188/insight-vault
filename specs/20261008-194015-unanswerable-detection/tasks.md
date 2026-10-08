@@ -18,12 +18,12 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Smoke-test nạp cross-encoder bằng `@huggingface/transformers` trong Node (script tạm ngoài repo hoặc bản nháp `tests/eval/lib/rerank.ts`):
+- [X] T001 Smoke-test nạp cross-encoder bằng `@huggingface/transformers` trong Node (script tạm ngoài repo hoặc bản nháp `tests/eval/lib/rerank.ts`):
       a1 `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` với `model_file_name` `model_qint8_arm64` + `dtype: "fp32"` qua `AutoModelForSequenceClassification`;
       a2 `onnx-community/gte-multilingual-reranker-base` `dtype: "q8"` qua `AutoModel` (research R2) — tokenizer cặp `text_pair`, `sigmoid(logits)`;
       ghi kết quả (nạp được? cần `token_type_ids`? điểm cặp liên quan > không liên quan cho 1 ví dụ vi + 1 en→vi) vào
       `specs/20261008-194015-unanswerable-detection/research.md` (mục R2 "Kết quả smoke-test"). Model không nạp được ⇒ ghi lý do, loại khỏi đo.
-- [ ] T002 [P] Đảm bảo `tests/eval/.cache/` đã gitignore và workflow `.github/workflows/eval-retrieval.yml` cache cả model reranker
+- [X] T002 [P] Đảm bảo `tests/eval/.cache/` đã gitignore và workflow `.github/workflows/eval-retrieval.yml` cache cả model reranker
       (khoá cache theo danh sách model).
 
 ---
