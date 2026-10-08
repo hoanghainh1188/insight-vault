@@ -92,3 +92,33 @@ export function IconClose(p: IconProps): JSX.Element {
     </svg>
   );
 }
+
+/** 142: xử lý lại / thử lại (mũi tên vòng). */
+export function IconRefresh(p: IconProps): JSX.Element {
+  return (
+    <svg {...base(p)}>
+      <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+      <path d="M20 4v7h-7" />
+    </svg>
+  );
+}
+
+/** 142: xoá (thùng rác). */
+export function IconTrash(p: IconProps): JSX.Element {
+  return (
+    <svg {...base(p)}>
+      <path d="M4 7h16M10 11v6M14 11v6" />
+      <path d="M6 7l1 13h10l1-13M9 7V4h6v3" />
+    </svg>
+  );
+}
+
+/** 142: chọn lại tệp gốc (liên kết). */
+export function IconLink(p: IconProps): JSX.Element {
+  return (
+    <svg {...base(p)}>
+      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+    </svg>
+  );
+}

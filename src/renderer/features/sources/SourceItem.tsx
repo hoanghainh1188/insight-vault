@@ -7,6 +7,7 @@ import { useT } from "../../shared/i18n/i18n-context";
 import { useRelink } from "./useRelink";
 import { useReprocess } from "./useReprocess";
 import type { SourceProgress } from "./useSources";
+import { IconLink, IconRefresh, IconTrash } from "../../shared/icons";
 
 const KIND_ICON: Record<Source["kind"], string> = {
   pdf: "PDF",
@@ -83,10 +84,7 @@ export function SourceItem({
     void reproc.start();
   };
   return (
-    <li
-      className={source.status === "error" ? "src src-error" : "src"}
-      data-testid={`source-${source.id}`}
-    >
+    <li className="src" data-testid={`source-${source.id}`}>
       <span className={`src-icon kind-${source.kind}`}>
         {KIND_ICON[source.kind]}
       </span>
@@ -213,51 +211,58 @@ export function SourceItem({
           </div>
         )}
       </div>
+      {/* 142: nút ICON (không chữ) — tên đọc qua aria-label (kèm tên nguồn), tooltip qua title; không đè tên/trạng thái. */}
       <div className="src-actions">
         {source.status === "error" && (
           <button
             type="button"
-            className="nb-icon-btn"
+            className="src-act"
+            aria-label={t.t("sources.item.retryAria", { title: source.title })}
+            title={t.t("common.retry")}
             onClick={() => onRetry(source.id)}
             data-testid="source-retry"
           >
-            {t.t("common.retry")}
+            <IconRefresh size={16} />
           </button>
         )}
         {canReprocess && !confirming && (
           <button
             type="button"
-            className="nb-icon-btn"
+            className="src-act"
             aria-label={t.t("sources.item.reprocessAria", {
               title: source.title,
             })}
+            title={t.t("sources.item.reprocess")}
             onClick={() => setConfirming(true)}
             data-testid="source-reprocess"
           >
-            {t.t("sources.item.reprocess")}
+            <IconRefresh size={16} />
           </button>
         )}
         {canRelink && (
           <button
             type="button"
-            className="nb-icon-btn"
+            className="src-act"
             disabled={relinking}
             aria-label={t.t("sources.item.relinkAria", {
               title: source.title,
             })}
+            title={t.t("sources.item.relink")}
             onClick={() => void relinkThenRetry()}
             data-testid="source-relink"
           >
-            {t.t("sources.item.relink")}
+            <IconLink size={16} />
           </button>
         )}
         <button
           type="button"
-          className="nb-icon-btn danger"
+          className="src-act danger"
+          aria-label={t.t("sources.item.deleteAria", { title: source.title })}
+          title={t.t("common.delete")}
           onClick={() => onDelete(source.id)}
           data-testid="source-delete"
         >
-          {t.t("common.delete")}
+          <IconTrash size={16} />
         </button>
       </div>
     </li>
