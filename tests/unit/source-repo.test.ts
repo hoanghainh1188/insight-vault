@@ -66,10 +66,10 @@ describe("source-repo", () => {
       origin: "/a",
       contentHash: "h",
     });
-    repo.updateStatus(s.id, "error", "Lỗi trích xuất");
+    repo.updateStatus(s.id, "error", "extract");
     const after = repo.getById(s.id)!;
     expect(after.status).toBe("error");
-    expect(after.errorLabel).toBe("Lỗi trích xuất");
+    expect(after.errorCode).toBe("extract");
     repo.setPageCount(s.id, 5);
     expect(repo.getById(s.id)!.pageCount).toBe(5);
   });

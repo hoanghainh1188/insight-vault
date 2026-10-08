@@ -9,10 +9,11 @@ import {
 // 112 (FR-011, research R9): migration #9 — source.extraction_version INTEGER NOT NULL DEFAULT 1. ADD COLUMN thuần,
 // append-only; nguồn cũ = 1 (cách trích trước 112).
 
+const LATEST = Math.max(...MIGRATIONS.map((m) => m.version));
+
 describe("migration #9 — extraction_version", () => {
-  it("có migration version=9 và là migration mới nhất", () => {
+  it("có migration version=9", () => {
     expect(MIGRATIONS.some((m) => m.version === 9)).toBe(true);
-    expect(Math.max(...MIGRATIONS.map((m) => m.version))).toBe(9);
   });
 
   it("nâng từ v8 ⇒ cột tồn tại, nguồn cũ = 1, NOT NULL", () => {
@@ -30,7 +31,7 @@ describe("migration #9 — extraction_version", () => {
     ).run("s1", "nb1", "pdf", "t", "/p.pdf", "ready", "h", 1, 1);
 
     runMigrations(db);
-    expect(getUserVersion(db)).toBe(9);
+    expect(getUserVersion(db)).toBe(LATEST);
     const row = db
       .prepare("SELECT extraction_version FROM source WHERE id=?")
       .get("s1") as { extraction_version: number };
@@ -46,6 +47,6 @@ describe("migration #9 — extraction_version", () => {
     const db = openDatabase(":memory:");
     runMigrations(db);
     expect(() => runMigrations(db)).not.toThrow();
-    expect(getUserVersion(db)).toBe(9);
+    expect(getUserVersion(db)).toBe(LATEST);
   });
 });

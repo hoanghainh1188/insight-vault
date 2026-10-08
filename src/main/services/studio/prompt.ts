@@ -26,7 +26,7 @@ const BY_KIND: Record<StudioKind, string> = {
 export function systemPromptFor(kind: StudioKind): string {
   const task = BY_KIND[kind];
   if (!task) {
-    throw new Error(`StudioKind không hợp lệ: ${String(kind)}`);
+    throw new Error(`Invalid StudioKind: ${String(kind)}`);
   }
   return `${COMMON}\n\n${task}`;
 }

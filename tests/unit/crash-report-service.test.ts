@@ -44,9 +44,9 @@ describe("createCrashService", () => {
   it("bản nháp: tiêu đề + nội dung từ nhật ký + mọi crash native trên máy", () => {
     const { svc } = setup();
     const d = svc.getReport();
-    expect(d.title).toBe("Báo lỗi: InsightVault 0.2.4 (win32 x64)");
+    expect(d.title).toBe("Bug report: InsightVault 0.2.4 (win32 x64)");
     expect(d.text).toContain("runtime.uncaught errorType=RangeError");
-    expect(d.text).toContain("Crash native trên máy: 2");
+    expect(d.text).toContain("Native crashes on this computer: 2");
   });
 
   it("thông báo: phiên bất thường + chỉ đếm crash native SAU lần xem trước", () => {
@@ -138,9 +138,7 @@ describe("createCrashService", () => {
         throw new Error("ENOENT");
       },
     });
-    expect(svc.getReport().text).toContain(
-      "(không có lỗi nào trong nhật ký gần đây)",
-    );
+    expect(svc.getReport().text).toContain("(no errors in the recent log)");
     expect(svc.getNotice().newNativeCrashes).toBe(0);
   });
 });

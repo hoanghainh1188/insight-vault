@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type { NotebookColor } from "@shared/ipc/types";
 import { isPaletteColor } from "./palette";
 
@@ -9,10 +10,10 @@ export const NAME_MAX_LEN = 100;
 export function validateName(raw: unknown): string {
   const name = typeof raw === "string" ? raw.trim() : "";
   if (name.length === 0) {
-    throw new Error("Tên notebook không được để trống.");
+    throw new UserFacingError("notebookNameEmpty");
   }
   if (name.length > NAME_MAX_LEN) {
-    throw new Error(`Tên notebook tối đa ${NAME_MAX_LEN} ký tự.`);
+    throw new UserFacingError("notebookNameTooLong", { max: NAME_MAX_LEN });
   }
   return name;
 }
@@ -20,7 +21,7 @@ export function validateName(raw: unknown): string {
 /** Trả màu nếu thuộc palette; ném nếu không. */
 export function validateColor(raw: unknown): NotebookColor {
   if (!isPaletteColor(raw)) {
-    throw new Error("Màu notebook không hợp lệ (phải chọn từ bảng màu).");
+    throw new Error("Invalid notebook color (must be from the palette).");
   }
   return raw;
 }
@@ -28,7 +29,7 @@ export function validateColor(raw: unknown): NotebookColor {
 /** Trả id nếu là chuỗi non-empty; ném lỗi nghiệp vụ rõ ràng (thay vì để node:sqlite ném TypeError). */
 export function validateId(raw: unknown): string {
   if (typeof raw !== "string" || raw.length === 0) {
-    throw new Error("Notebook id không hợp lệ.");
+    throw new Error("Invalid notebook id.");
   }
   return raw;
 }

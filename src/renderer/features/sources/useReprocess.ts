@@ -64,8 +64,8 @@ export function useReprocess(sourceId: string, title: string): ReprocessState {
       if (e.step === "done") {
         setRunning(false);
         setPct(0);
-        if (e.errorLabel) {
-          report({ kind: "progressError", label: e.errorLabel });
+        if (e.errorCode) {
+          report({ kind: "progressError", label: e.errorCode });
         } else {
           announce(
             trRef.current.t("sources.reprocess.done", { title }),

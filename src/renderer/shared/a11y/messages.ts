@@ -47,7 +47,7 @@ export function sourceErrorText(
 
 export function sourceStatusMessage(
   prev: SourceStatus | undefined,
-  event: Pick<SourceProgressEvent, "status" | "errorLabel">,
+  event: Pick<SourceProgressEvent, "status" | "errorCode">,
   title: string | undefined,
   tr: Translator = VI,
 ): string | null {
@@ -67,7 +67,7 @@ export function sourceStatusMessage(
         ? tr.t("a11y.sourceReadyNamed", { title })
         : tr.t("a11y.sourceReady");
     case "error": {
-      const error = sourceErrorText(event.errorLabel, tr);
+      const error = sourceErrorText(event.errorCode, tr);
       return named
         ? tr.t("a11y.sourceErrorNamed", { title, error })
         : tr.t("a11y.sourceError", { error });

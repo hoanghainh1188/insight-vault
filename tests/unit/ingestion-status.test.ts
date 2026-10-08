@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   SOURCE_STATUSES,
   canTransition,
-  errorLabelForStep,
+  errorCodeForStep,
 } from "../../src/main/services/ingestion/status";
 import {
   hashBytes,
@@ -31,10 +31,12 @@ describe("status transitions", () => {
     expect(canTransition("queued", "ready")).toBe(false); // phải qua processing
   });
 
-  it("nhãn lỗi theo bước; url→'Lỗi tải trang'", () => {
-    expect(errorLabelForStep("parse")).toBe("Lỗi trích xuất");
-    expect(errorLabelForStep("parse", "url")).toBe("Lỗi tải trang");
-    expect(errorLabelForStep("embed")).toBe("Lỗi nhúng");
+  it("mã lỗi theo bước; url→'fetch' (123: lưu mã)", () => {
+    expect(errorCodeForStep("parse")).toBe("extract");
+    expect(errorCodeForStep("parse", "url")).toBe("fetch");
+    expect(errorCodeForStep("embed")).toBe("embed");
+    expect(errorCodeForStep("store")).toBe("store");
+    expect(errorCodeForStep("done")).toBe("generic");
   });
 });
 

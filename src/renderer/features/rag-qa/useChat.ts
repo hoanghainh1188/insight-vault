@@ -22,6 +22,8 @@ export interface ChatMessage {
   content: string;
   citations?: Citation[];
   notFound?: boolean;
+  /** 123: thông báo "đang tái lập chỉ mục" (không lưu) — hiển thị câu dịch theo ngôn ngữ hiện tại. */
+  reindexing?: boolean;
   /** 071: chế độ đã dùng — "open" → badge "không dựa trên nguồn". */
   modeUsed?: RagMode;
   streaming?: boolean; // 039: đang nhận token (render text thô, chưa chip)
@@ -229,6 +231,7 @@ export function useChat(notebookId: string) {
               citations: res.citations,
               notFound: res.notFound,
               modeUsed: res.modeUsed,
+              ...(res.reindexing ? { reindexing: true } : {}),
               ...(local ? { answeredLocally: true } : {}),
             },
           ];

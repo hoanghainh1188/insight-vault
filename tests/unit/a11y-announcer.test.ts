@@ -65,8 +65,8 @@ describe("chatDoneMessage", () => {
 });
 
 describe("sourceStatusMessage", () => {
-  const ev = (status: string, errorLabel?: string) =>
-    ({ status, errorLabel }) as Parameters<typeof sourceStatusMessage>[1];
+  const ev = (status: string, errorCode?: string) =>
+    ({ status, errorCode }) as Parameters<typeof sourceStatusMessage>[1];
 
   it("chỉ báo khi trạng thái ĐỔI (bước/% thay đổi không báo)", () => {
     expect(sourceStatusMessage("processing", ev("processing"), "a.pdf")).toBe(

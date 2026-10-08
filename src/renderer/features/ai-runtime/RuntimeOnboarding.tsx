@@ -1,3 +1,4 @@
+import { runtimeReasonText } from "./runtime-reason";
 import { useState } from "react";
 import { useRuntimeStatus } from "./useRuntimeStatus";
 import { useT } from "../../shared/i18n/i18n-context";
@@ -21,7 +22,9 @@ export function RuntimeOnboarding(): JSX.Element | null {
       <div className="runtime-banner-body">
         <b>{t.t("ai.onboarding.title")}</b>{" "}
         <span data-testid="runtime-reason">
-          {readFailed ? t.t("ai.runtime.statusUnreadable") : status.reason}
+          {readFailed
+            ? t.t("ai.runtime.statusUnreadable")
+            : (runtimeReasonText(status, t) ?? t.t("ai.local.notReady"))}
         </span>{" "}
         {t.t("ai.onboarding.hintBefore")}{" "}
         <span className="mono">ollama.com</span>

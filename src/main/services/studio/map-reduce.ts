@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type { ChatMessage, StudioKind } from "@shared/ipc/types";
 import type { RetrievedChunk, ScoredChunk } from "../rag/rag-types";
 import { citationBlock } from "../rag/context-builder";
@@ -214,9 +215,7 @@ export async function runMapReduce({
   }
   if (notes.length === 0) {
     // Không để bước cuối viết từ đầu vào rỗng (sẽ bịa) — báo rõ cho người dùng.
-    throw new Error(
-      "Mô hình không trích được ghi chú kèm trích dẫn từ tài liệu. Vui lòng thử lại hoặc chọn mô hình khác.",
-    );
+    throw new UserFacingError("studioNoNotes");
   }
 
   const condensed = await condense(notes, budget, map, chat);

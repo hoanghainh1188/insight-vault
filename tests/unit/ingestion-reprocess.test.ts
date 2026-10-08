@@ -169,7 +169,7 @@ describe("pipeline.reprocess — thành công", () => {
       ),
     ).toBe(true);
     expect(h.events.at(-1)).toMatchObject({ step: "done", progress: 1 });
-    expect(h.events.at(-1)!.errorLabel).toBeUndefined();
+    expect(h.events.at(-1)!.errorCode).toBeUndefined();
   });
 
   it("trong lúc chạy, dữ liệu cũ vẫn dùng được (chunk cũ còn tới khi hoán đổi)", async () => {
@@ -190,7 +190,7 @@ describe("pipeline.reprocess — thành công", () => {
   it("nguồn error ⇒ như thử lại bằng cách trích mới (version 2, ready)", async () => {
     const h = harness();
     const id = await h.ingestOld();
-    h.repo.updateStatus(id, "error", "x");
+    h.repo.updateStatus(id, "error", "extract");
     await h.pipeline.reprocess(id);
     await h.pipeline.whenIdle();
     const s = h.repo.getById(id)!;
@@ -217,7 +217,7 @@ describe("pipeline.reprocess — lỗi / huỷ ⇒ giữ bản cũ", () => {
       expect(h.events.at(-1)).toMatchObject({
         reprocess: true,
         status: "ready",
-        errorLabel: "Xử lý lại thất bại — vẫn dùng bản cũ.",
+        errorCode: "reprocessFailed",
       });
     },
   );
@@ -229,7 +229,7 @@ describe("pipeline.reprocess — lỗi / huỷ ⇒ giữ bản cũ", () => {
     await h.pipeline.reprocess(id);
     await h.pipeline.whenIdle();
     expect(h.repo.getById(id)!.extractionVersion).toBe(2);
-    expect(h.events.at(-1)!.errorLabel).toBeUndefined();
+    expect(h.events.at(-1)!.errorCode).toBeUndefined();
   });
 
   it("huỷ trước khi hoán đổi ⇒ không đổi gì, kết thúc không lỗi", async () => {
@@ -245,7 +245,7 @@ describe("pipeline.reprocess — lỗi / huỷ ⇒ giữ bản cũ", () => {
     await h.pipeline.whenIdle();
     expect(h.snapshot(id)).toEqual(before);
     expect(h.events.at(-1)).toMatchObject({ reprocess: true, step: "done" });
-    expect(h.events.at(-1)!.errorLabel).toBeUndefined();
+    expect(h.events.at(-1)!.errorCode).toBeUndefined();
   });
 
   it("cancelReprocess khi không có gì đang chạy ⇒ false", async () => {
@@ -262,7 +262,7 @@ describe("pipeline.reprocess — lỗi / huỷ ⇒ giữ bản cũ", () => {
     await h.pipeline.reprocess(id);
     await h.pipeline.whenIdle();
     expect(h.snapshot(id)).toEqual(before);
-    expect(h.events.at(-1)!.errorLabel).toMatch(/sao lưu|khôi phục/);
+    expect(h.events.at(-1)!.errorCode).toBe("reprocessVaultLocked");
   });
 
   it("nguồn bị xoá giữa chừng ⇒ không ghi gì", async () => {
@@ -279,15 +279,13 @@ describe("pipeline.reprocess — lỗi / huỷ ⇒ giữ bản cũ", () => {
     expect(h.vectors.size).toBe(0);
   });
 
-  it("đang trong hàng đợi ⇒ reprocess ném 'Nguồn đang được xử lý.'", async () => {
+  it("đang trong hàng đợi ⇒ reprocess ném mã reprocessBusy", async () => {
     const h = harness();
     const id = await h.ingestOld();
     let release!: () => void;
     h.ctl.gate = new Promise((r) => (release = r));
     await h.pipeline.reprocess(id);
-    await expect(h.pipeline.reprocess(id)).rejects.toThrow(
-      "Nguồn đang được xử lý.",
-    );
+    await expect(h.pipeline.reprocess(id)).rejects.toThrow("reprocessBusy");
     release();
     await h.pipeline.whenIdle();
   });
@@ -340,7 +338,7 @@ describe("pipeline.reprocess — sửa theo review (112)", () => {
     expect(h.pipeline.isReprocessing()).toBe(false);
     // sự kiện sau này của b không còn cờ reprocess
     h.events.length = 0;
-    h.repo.updateStatus(b, "error", "x");
+    h.repo.updateStatus(b, "error", "extract");
     await h.pipeline.retry(b);
     await h.pipeline.whenIdle();
     expect(
@@ -360,7 +358,7 @@ describe("pipeline.reprocess — sửa theo review (112)", () => {
     await h.pipeline.reprocess(id);
     await h.pipeline.whenIdle();
     expect(h.snapshot(id)).toEqual(before);
-    expect(h.events.at(-1)!.errorLabel).toMatch(/sao lưu|khôi phục/);
+    expect(h.events.at(-1)!.errorCode).toBe("reprocessVaultLocked");
   });
 
   it("(B2) isReprocessing() true khi có lần xử lý lại đang chờ/chạy (sao lưu coi là bận)", async () => {
@@ -384,7 +382,7 @@ describe("pipeline.reprocess — sửa theo review (112)", () => {
     await h.pipeline.reprocess(id);
     await h.pipeline.whenIdle();
     expect(h.snapshot(id)).toEqual(before);
-    expect(h.events.at(-1)!.errorLabel).toMatch(/đã bị sửa/);
+    expect(h.events.at(-1)!.errorCode).toBe("reprocessChanged");
   });
 
   it("(nên sửa 2) pipeline.reprocess từ chối nguồn không phải PDF", async () => {
@@ -396,7 +394,7 @@ describe("pipeline.reprocess — sửa theo review (112)", () => {
     });
     await h.pipeline.whenIdle();
     await expect(h.pipeline.reprocess(source.id)).rejects.toThrow(
-      "Chỉ xử lý lại nguồn PDF.",
+      "reprocessNotPdf",
     );
   });
 

@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type { SourceKind } from "@shared/ipc/types";
 import type { PageText } from "../chunker";
 import type { TimeMapEntry } from "../audio/audio-transcript";
@@ -58,7 +59,7 @@ export function detectKindFromPath(
   const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
   const kind = EXT_KIND[ext];
   if (!kind || kind === "url") {
-    throw new Error(`Định dạng tệp không hỗ trợ: .${ext}`);
+    throw new UserFacingError("unsupportedFormat", { ext });
   }
   return kind;
 }

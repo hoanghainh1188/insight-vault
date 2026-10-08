@@ -84,8 +84,8 @@ describe("ollama-client", () => {
     });
     await expect(
       c.chat({ messages: [{ role: "user", content: "hi" }] }),
-    ).rejects.toThrow(/chat/i);
-    await expect(c.embed({ text: "abc" })).rejects.toThrow(/embed/i);
+    ).rejects.toThrow(/ollamaHttp/);
+    await expect(c.embed({ text: "abc" })).rejects.toThrow(/ollamaHttp/);
   });
 
   it("chat/embed ném khi fetch reject (abort/timeout / mất kết nối)", async () => {

@@ -36,7 +36,9 @@ export function MessageBubble({
   const content =
     !isUser && message.notFound && !message.streaming
       ? `${t.t("chat.notFound")} ${t.t("chat.notFoundHint")}`
-      : message.content;
+      : !isUser && message.reindexing && !message.streaming
+        ? t.t("chat.reindexing")
+        : message.content;
   const exportMd = (): string =>
     formatAnswerMarkdown(content, message.citations ?? [], t);
 

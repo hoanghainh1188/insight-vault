@@ -24,7 +24,7 @@ function repoWith(kind: "audio" | "url" | "pdf" = "audio") {
     contentHash: "HASH-GOC",
   });
   // Nguồn tệp gốc bị di chuyển ⇒ lần xử lý/thử lại lỗi (trạng thái thực tế khi người dùng chọn lại tệp).
-  repo.updateStatus("s1", "error", "Không đọc được tệp.");
+  repo.updateStatus("s1", "error", "extract");
   return repo;
 }
 

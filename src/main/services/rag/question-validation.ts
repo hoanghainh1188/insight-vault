@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type { RagMode, RagTurn } from "@shared/ipc/types";
 import { MAX_QUESTION_LEN, MAX_HISTORY_CONTENT_LEN } from "./constants";
 
@@ -8,11 +9,11 @@ export const MAX_HISTORY_ITEMS = 50;
 
 /** Trim + kiểm non-empty + ≤ MAX_QUESTION_LEN. Ném lỗi thân thiện nếu sai. Trả câu hỏi đã trim. */
 export function validateQuestion(raw: unknown): string {
-  if (typeof raw !== "string") throw new Error("Câu hỏi không hợp lệ.");
+  if (typeof raw !== "string") throw new Error("Invalid question.");
   const q = raw.trim();
-  if (q === "") throw new Error("Câu hỏi không được để trống.");
+  if (q === "") throw new UserFacingError("questionEmpty");
   if (q.length > MAX_QUESTION_LEN) {
-    throw new Error(`Câu hỏi quá dài (tối đa ${MAX_QUESTION_LEN} ký tự).`);
+    throw new UserFacingError("questionTooLong", { max: MAX_QUESTION_LEN });
   }
   return q;
 }
@@ -23,15 +24,15 @@ export function validateQuestion(raw: unknown): string {
  */
 export function validateMode(raw: unknown): RagMode {
   if (raw === "grounded" || raw === "open") return raw;
-  throw new Error("Chế độ trả lời không hợp lệ.");
+  throw new Error("Invalid answer mode.");
 }
 
 /** Kiểm lịch sử hội thoại: mảng ≤ MAX_HISTORY_ITEMS, mỗi lượt role hợp lệ + content chuỗi ≤ giới hạn. */
 export function validateHistory(raw: unknown): RagTurn[] {
   if (raw == null) return [];
-  if (!Array.isArray(raw)) throw new Error("Lịch sử hội thoại không hợp lệ.");
+  if (!Array.isArray(raw)) throw new Error("Invalid conversation history.");
   if (raw.length > MAX_HISTORY_ITEMS) {
-    throw new Error("Lịch sử hội thoại quá dài.");
+    throw new UserFacingError("historyTooLong");
   }
   return raw.map((t): RagTurn => {
     const role = (t as { role?: unknown })?.role;
@@ -41,7 +42,7 @@ export function validateHistory(raw: unknown): RagTurn[] {
       typeof content !== "string" ||
       content.length > MAX_HISTORY_CONTENT_LEN
     ) {
-      throw new Error("Lịch sử hội thoại không hợp lệ.");
+      throw new Error("Invalid conversation history.");
     }
     return { role, content };
   });

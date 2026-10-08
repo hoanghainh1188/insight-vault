@@ -1,3 +1,4 @@
+import { runtimeReasonText } from "./runtime-reason";
 import { useEffect, useState, useCallback } from "react";
 import type { Model, ModelSelection } from "@shared/ipc/types";
 import { ModelSelect } from "./ModelSelect";
@@ -80,7 +81,8 @@ export function SettingsAiSection(): JSX.Element {
         <div className="ai-note" data-testid="ai-status-reason">
           {readFailed
             ? t.t("ai.runtime.statusUnreadable")
-            : (status?.reason ?? t.t("ai.local.notReady"))}
+            : ((status && runtimeReasonText(status, t)) ??
+              t.t("ai.local.notReady"))}
         </div>
       )}
 

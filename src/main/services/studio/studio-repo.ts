@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type { Citation, StudioKind, StudioResult } from "@shared/ipc/types";
 import type { Db } from "../../db/database";
 
@@ -74,7 +75,7 @@ export function createStudioRepo(db: Db, deps: RepoDeps = {}): StudioRepo {
       ).run(uuid(), notebookId, kind, content, citationsJson, ts, ts);
 
       const saved = this.getByNotebookKind(notebookId, kind);
-      if (!saved) throw new Error("Lưu kết quả Studio thất bại.");
+      if (!saved) throw new UserFacingError("studioSaveFailed");
       return saved;
     },
 

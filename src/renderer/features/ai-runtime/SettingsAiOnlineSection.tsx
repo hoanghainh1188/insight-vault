@@ -1,3 +1,5 @@
+import type { RuntimeStatus } from "@shared/ipc/types";
+import { runtimeReasonText } from "./runtime-reason";
 import { useState } from "react";
 import type { OnlineProviderId, OnlineProviderView } from "@shared/ipc/types";
 import type { ParsedIpcError } from "@shared/online-error-tag";
@@ -14,11 +16,11 @@ import {
 
 const CUSTOM = "__custom__";
 
-// 123: kết quả kiểm tra kết nối giữ dạng trạng thái (dịch lúc render); reason đến từ main — hiển thị nguyên.
+// 123: kết quả kiểm tra kết nối giữ dạng trạng thái + mã lý do từ main (dịch lúc render).
 type TestState =
   | { kind: "testing" }
   | { kind: "ok" }
-  | { kind: "failed"; reason: string | null };
+  | { kind: "failed"; status: RuntimeStatus | null };
 
 export function SettingsAiOnlineSection(): JSX.Element {
   const t = useT();
@@ -128,7 +130,7 @@ function ProviderRow({
   onSetModel: (model: string | null) => void;
   onRequestActivate: () => void;
   onDeactivate: () => void;
-  onTest: () => Promise<{ reachable: boolean; reason: string | null }>;
+  onTest: () => Promise<RuntimeStatus>;
 }): JSX.Element {
   const t = useT();
   const [draftKey, setDraftKey] = useState("");
@@ -240,10 +242,10 @@ function ProviderRow({
                   setTestState(
                     s.reachable
                       ? { kind: "ok" }
-                      : { kind: "failed", reason: s.reason },
+                      : { kind: "failed", status: s },
                   ),
                 )
-                .catch(() => setTestState({ kind: "failed", reason: null }));
+                .catch(() => setTestState({ kind: "failed", status: null }));
             }}
           >
             {t.t("ai.testConnection")}
@@ -258,7 +260,9 @@ function ProviderRow({
               ? t.t("ai.online.testing")
               : testState.kind === "ok"
                 ? t.t("ai.online.testOk")
-                : (testState.reason ?? t.t("ai.online.testFailed"))}
+                : ((testState.status &&
+                    runtimeReasonText(testState.status, t)) ??
+                  t.t("ai.online.testFailed"))}
           </span>
         )}
       </div>

@@ -58,10 +58,10 @@ describe("notebook-repo", () => {
   it("rename/setColor notebook không tồn tại → ném", () => {
     const r = repo();
     expect(() => r.rename({ id: "khong-co", name: "x" })).toThrow(
-      /không tồn tại/,
+      /notebookNotFound/,
     );
     expect(() => r.setColor({ id: "khong-co", color: C0 })).toThrow(
-      /không tồn tại/,
+      /notebookNotFound/,
     );
   });
 

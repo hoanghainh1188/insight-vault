@@ -29,7 +29,7 @@ const pdf = (over: Partial<Source> = {}): Source => ({
   kind: "pdf",
   title: "bao-cao.pdf",
   status: "ready",
-  errorLabel: null,
+  errorCode: null,
   pageCount: 3,
   createdAt: 1,
   updatedAt: 1,
@@ -145,7 +145,7 @@ describe("SourceItem — Xử lý lại (112)", () => {
         ev({
           step: "done",
           progress: 0,
-          errorLabel: "Xử lý lại thất bại — vẫn dùng bản cũ.",
+          errorCode: "reprocessFailed",
         }),
       ),
     );

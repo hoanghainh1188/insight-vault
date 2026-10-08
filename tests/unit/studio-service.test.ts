@@ -201,6 +201,6 @@ describe("studio-service — ngân sách theo model", () => {
         kind: "summary",
         sourceId: "khong-co",
       }),
-    ).rejects.toThrow(/chưa sẵn sàng/);
+    ).rejects.toThrow(/studioSourceNotReady|studioNoReadySources/);
   });
 });

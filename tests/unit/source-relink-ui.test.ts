@@ -132,7 +132,7 @@ const errSource = (kind: Source["kind"]): Source =>
     kind,
     title: "phong-van.mp3",
     status: "error",
-    errorLabel: "Không đọc được tệp.",
+    errorCode: "extract",
   }) as Source;
 
 describe("SourceItem — nguồn lỗi", () => {

@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { dialog, type BrowserWindow } from "electron";
 import type { StudioExportResult } from "@shared/ipc/types";
+import type { Translator } from "@shared/i18n";
 import { sanitizeName } from "./export-name";
 
 // Xuất kết quả Studio ra tệp .md (025). Ghi file CHỈ ở main qua hộp thoại lưu người dùng chủ động chọn
@@ -14,20 +15,21 @@ export async function exportMarkdown(
   win: BrowserWindow | null,
   content: string,
   suggestedName: string,
+  tr: Translator,
 ): Promise<StudioExportResult> {
   // Validate tại biên IPC (defense-in-depth): chỉ nhận chuỗi.
   if (typeof content !== "string" || typeof suggestedName !== "string") {
-    throw new Error("Yêu cầu xuất tệp không hợp lệ.");
+    throw new Error("Invalid export request.");
   }
   const defaultPath = `${sanitizeName(suggestedName)}.md`;
   const result = win
     ? await dialog.showSaveDialog(win, {
         defaultPath,
-        filters: [{ name: "Markdown", extensions: ["md"] }],
+        filters: [{ name: tr.t("dialogs.export.filter"), extensions: ["md"] }],
       })
     : await dialog.showSaveDialog({
         defaultPath,
-        filters: [{ name: "Markdown", extensions: ["md"] }],
+        filters: [{ name: tr.t("dialogs.export.filter"), extensions: ["md"] }],
       });
 
   if (result.canceled || !result.filePath) {

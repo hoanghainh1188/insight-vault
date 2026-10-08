@@ -1,4 +1,5 @@
 import type { IngestStep, SourceStatus } from "@shared/ipc/types";
+import type { SourceErrorCode } from "@shared/codes/source-error";
 
 // Trạng thái nguồn + chuyển trạng thái hợp lệ (data-model state machine). Hàm thuần.
 
@@ -23,18 +24,21 @@ export function canTransition(from: SourceStatus, to: SourceStatus): boolean {
   return ALLOWED[from].includes(to);
 }
 
-// Nhãn lỗi thân thiện theo bước lỗi (FR-013, A14). Chi tiết kỹ thuật KHÔNG lộ (chỉ log redact).
-const STEP_ERROR_LABEL: Record<IngestStep, string> = {
-  parse: "Lỗi trích xuất",
-  clean: "Lỗi trích xuất",
-  chunk: "Lỗi trích xuất",
-  embed: "Lỗi nhúng",
-  store: "Lỗi lưu trữ",
-  done: "Lỗi",
+// Mã lỗi theo bước lỗi (FR-013, A14; 123: lưu MÃ, giao diện dịch). Chi tiết kỹ thuật KHÔNG lộ (chỉ log redact).
+const STEP_ERROR_CODE: Record<IngestStep, SourceErrorCode> = {
+  parse: "extract",
+  clean: "extract",
+  chunk: "extract",
+  embed: "embed",
+  store: "store",
+  done: "generic",
 };
 
-/** Nhãn lỗi cho một bước pipeline. URL fetch coi là bước 'parse' → "Lỗi tải trang" nếu là url. */
-export function errorLabelForStep(step: IngestStep, kind?: string): string {
-  if (step === "parse" && kind === "url") return "Lỗi tải trang";
-  return STEP_ERROR_LABEL[step];
+/** Mã lỗi cho một bước pipeline. URL fetch coi là bước 'parse' → "fetch" nếu là url. */
+export function errorCodeForStep(
+  step: IngestStep,
+  kind?: string,
+): SourceErrorCode {
+  if (step === "parse" && kind === "url") return "fetch";
+  return STEP_ERROR_CODE[step];
 }

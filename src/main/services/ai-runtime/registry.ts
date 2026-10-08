@@ -13,20 +13,20 @@ export class ProviderRegistry {
 
   setActive(id: string): void {
     if (!this.providers.has(id)) {
-      throw new Error(`Provider chưa đăng ký: ${id}`);
+      throw new Error(`Provider not registered: ${id}`);
     }
     this.activeId = id;
   }
 
   getActive(): LLMProvider {
-    if (!this.activeId) throw new Error("Chưa có provider nào được đăng ký.");
+    if (!this.activeId) throw new Error("No provider registered.");
     return this.providers.get(this.activeId)!;
   }
 
   /** Provider theo id (098: lượt "AI cục bộ" lấy thẳng Ollama, không đổi provider đang bật). */
   get(id: string): LLMProvider {
     const p = this.providers.get(id);
-    if (!p) throw new Error(`Provider chưa đăng ký: ${id}`);
+    if (!p) throw new Error(`Provider not registered: ${id}`);
     return p;
   }
 

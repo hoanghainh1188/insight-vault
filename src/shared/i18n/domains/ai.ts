@@ -29,10 +29,24 @@ export const aiVi = {
     moreModelsBefore: "Tải thêm mô hình: chạy",
     moreModelsAfter: "trong terminal, xem thư viện tại ollama.com/library",
   },
+  runtimeReason: {
+    ollamaUnreachable:
+      "Không kết nối được Ollama (kiểm tra Ollama đã cài và đang chạy).",
+    modelsNotSelected: "Chưa chọn đủ mô hình trả lời và mô hình embedding.",
+    modelsMissing: "Mô hình đã chọn không có trên máy: {models}.",
+    apiKeyMissing: "{provider}: chưa nhập khóa API.",
+    modelNotSelected: "{provider}: chưa chọn mô hình.",
+    connectionFailed: "{provider}: kiểm tra kết nối thất bại.",
+  },
   advice: {
     ramBefore: "Máy bạn có",
     ramAmount: "{gb} GB",
     ramAfter: "RAM — {label}.",
+    tier: {
+      small: "Model nhỏ (~3B) — hợp máy RAM thấp",
+      medium: "Model vừa (7–8B) — cân bằng chất lượng/tốc độ",
+      large: "Model lớn (14B+) — chất lượng cao, cần nhiều RAM",
+    },
     suggestions: "Gợi ý:",
     ollamaNotRunning:
       "Ollama chưa chạy — cài/mở Ollama (ollama.com) rồi thử lại để dùng chat cục bộ.",
@@ -101,10 +115,25 @@ export const aiEn: Widen<typeof aiVi> = {
     moreModelsAfter:
       "in a terminal, and browse the library at ollama.com/library",
   },
+  runtimeReason: {
+    ollamaUnreachable:
+      "Couldn't connect to Ollama (check that Ollama is installed and running).",
+    modelsNotSelected: "Choose both an answer model and an embedding model.",
+    modelsMissing:
+      "Selected models aren't installed on this computer: {models}.",
+    apiKeyMissing: "{provider}: no API key entered.",
+    modelNotSelected: "{provider}: no model selected.",
+    connectionFailed: "{provider}: connection test failed.",
+  },
   advice: {
     ramBefore: "Your computer has",
     ramAmount: "{gb} GB",
     ramAfter: "of RAM — {label}.",
+    tier: {
+      small: "Small model (~3B) — suits low-RAM computers",
+      medium: "Medium model (7–8B) — balances quality and speed",
+      large: "Large model (14B+) — high quality, needs lots of RAM",
+    },
     suggestions: "Suggestions:",
     ollamaNotRunning:
       "Ollama isn't running — install/open Ollama (ollama.com), then try again to use local chat.",

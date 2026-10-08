@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type { SourceReprocessResult } from "@shared/ipc/types";
 import type { IngestionPipeline } from "./pipeline";
 import { REPROCESS_ERRORS, checkReprocessable } from "./reprocess-guard";
@@ -21,7 +22,7 @@ export function createReprocessRequest(
   return async (sourceId) => {
     const vaultLocked = deps.isVaultLocked();
     if (typeof sourceId !== "string" || sourceId === "") {
-      throw new Error(
+      throw new UserFacingError(
         vaultLocked ? REPROCESS_ERRORS.vaultLocked : REPROCESS_ERRORS.notFound,
       );
     }
@@ -29,9 +30,9 @@ export function createReprocessRequest(
       queued: false, // pipeline.reprocess tự từ chối nguồn đang trong hàng đợi (REPROCESS_ERRORS.busy)
       vaultLocked,
     });
-    if (blocked) throw new Error(blocked);
+    if (blocked) throw new UserFacingError(blocked);
     const info = deps.repo.getRelinkInfo(sourceId);
-    if (!info) throw new Error(REPROCESS_ERRORS.notFound);
+    if (!info) throw new UserFacingError(REPROCESS_ERRORS.notFound);
     try {
       if (!(await deps.fileExists(info.origin))) return { status: "missing" };
       const { hash } = await deps.hashFile(info.origin);

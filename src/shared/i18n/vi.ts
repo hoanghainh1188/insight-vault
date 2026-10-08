@@ -9,6 +9,7 @@ import { studioVi } from "./domains/studio";
 import { aiVi } from "./domains/ai";
 import { backupVi } from "./domains/backup";
 import { crashVi } from "./domains/crash";
+import { dialogsVi } from "./domains/dialogs";
 import { a11yVi } from "./domains/a11y";
 
 // 123 — tệp dịch NGÔN NGỮ NGUỒN (tiếng Việt), ghép từ các domain ở ./domains (mỗi domain một tệp để nhiều người
@@ -26,5 +27,6 @@ export const vi = {
   ai: aiVi,
   backup: backupVi,
   crash: crashVi,
+  dialogs: dialogsVi,
   a11y: a11yVi,
 } as const;

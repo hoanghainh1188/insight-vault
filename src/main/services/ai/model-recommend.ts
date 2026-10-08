@@ -21,7 +21,7 @@ export function recommendChatModel(totalMemBytes: number): ModelRecommendation {
   if (totalMemBytes < 8 * GB) {
     return {
       tier: "small",
-      label: "Model nhỏ (~3B) — hợp máy RAM thấp",
+      label: "Small model (~3B)",
       examples: ["qwen2.5:3b", "gemma2:2b", "llama3.2:3b"],
       totalMemGb,
     };
@@ -29,14 +29,14 @@ export function recommendChatModel(totalMemBytes: number): ModelRecommendation {
   if (totalMemBytes <= 16 * GB) {
     return {
       tier: "medium",
-      label: "Model vừa (7–8B) — cân bằng chất lượng/tốc độ",
+      label: "Medium model (7-8B)",
       examples: ["qwen2.5:7b", "llama3.1:8b", "mistral:7b"],
       totalMemGb,
     };
   }
   return {
     tier: "large",
-    label: "Model lớn (14B+) — chất lượng cao, cần nhiều RAM",
+    label: "Large model (14B+)",
     examples: ["qwen2.5:14b", "gemma2:27b"],
     totalMemGb,
   };

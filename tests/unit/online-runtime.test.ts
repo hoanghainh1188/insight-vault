@@ -60,7 +60,7 @@ describe("online-runtime (031)", () => {
 
   it("setProviderKey → hasKey true; setActive không key → ném", async () => {
     await expect(ctx.rt.setActiveProvider("openai")).rejects.toThrow(
-      /khóa API/i,
+      /apiKeyMissing/,
     );
     const s = await ctx.rt.setProviderKey({ id: "openai", apiKey: "sk-1" });
     expect(s.providers.find((p) => p.id === "openai")!.hasKey).toBe(true);
@@ -111,7 +111,7 @@ describe("online-runtime (031)", () => {
     expect(bad.providers.find((p) => p.id === "openai")!.model).toBeNull();
     await expect(
       ctx.rt.setActiveProvider("evil" as OnlineProviderId),
-    ).rejects.toThrow(/không hợp lệ/i);
+    ).rejects.toThrow(/Invalid provider|apiKeyInvalidInput/);
   });
 
   it("syncActiveFromConfig: provider active mất key → về local", async () => {

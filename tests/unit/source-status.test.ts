@@ -7,8 +7,8 @@ import {
 import type { Source } from "@shared/ipc/types";
 import { trEn } from "./helpers/t-vi";
 
-const s = (status: Source["status"], errorLabel: string | null = null) =>
-  ({ status, errorLabel }) as Pick<Source, "status" | "errorLabel">;
+const s = (status: Source["status"], errorCode: string | null = null) =>
+  ({ status, errorCode }) as Pick<Source, "status" | "errorCode">;
 
 describe("source-status", () => {
   it("statClass: ready→ready, error→err, còn lại→proc", () => {
@@ -19,7 +19,7 @@ describe("source-status", () => {
     expect(statClass("awaiting_embedding")).toBe("proc");
   });
 
-  it("statusLabel: dùng errorLabel khi lỗi, ngược lại nhãn chuẩn", () => {
+  it("statusLabel: dùng errorCode khi lỗi, ngược lại nhãn chuẩn", () => {
     expect(statusLabel(s("ready"))).toBe("Sẵn sàng");
     expect(statusLabel(s("awaiting_embedding"))).toBe("Chờ nhúng");
     expect(statusLabel(s("error", "Tệp quá lớn"))).toBe("Tệp quá lớn");

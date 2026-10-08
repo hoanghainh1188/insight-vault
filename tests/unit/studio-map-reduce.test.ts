@@ -194,7 +194,7 @@ describe("runMapReduce — hậu kiểm chặt (review 105)", () => {
     const chat = vi.fn(async () => "Không có gì để ghi chú.");
     await expect(
       runMapReduce({ kind: "summary", groups: groups(3), budget: 900, chat }),
-    ).rejects.toThrow(/trích dẫn/);
+    ).rejects.toThrow(/studioNoNotes/);
     expect(chat).toHaveBeenCalledTimes(3 * 2); // mỗi lô thử lại 1 lần rồi mới bỏ
   });
 

@@ -18,7 +18,7 @@ function audioSource(id: string): Source {
     kind: "audio",
     title: "clip",
     status: "ready",
-    errorLabel: null,
+    errorCode: null,
     pageCount: null,
     createdAt: 0,
     updatedAt: 0,

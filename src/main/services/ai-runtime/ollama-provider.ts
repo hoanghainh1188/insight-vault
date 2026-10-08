@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type {
   ChatRequest,
   ChatResult,
@@ -23,13 +24,13 @@ export class OllamaProvider implements LLMProvider {
 
   async chat(req: ChatRequest, opts?: ChatStreamOpts): Promise<ChatResult> {
     const model = req.model ?? this.getSelection().chatModel;
-    if (!model) throw new Error("Chưa chọn mô hình trả lời (chat model).");
+    if (!model) throw new UserFacingError("chatModelNotSelected");
     return this.client.chat({ ...req, model }, opts);
   }
 
   async embed(req: EmbedRequest): Promise<EmbedResult> {
     const model = req.model ?? this.getSelection().embeddingModel;
-    if (!model) throw new Error("Chưa chọn mô hình embedding.");
+    if (!model) throw new UserFacingError("embeddingModelNotSelected");
     return this.client.embed({ ...req, model });
   }
 

@@ -42,7 +42,9 @@ export function PrivacyBadge(): JSX.Element {
       ? t.t("app.privacy.checking")
       : state === "fallback"
         ? t.t("app.privacy.local")
-        : state.label;
+        : state.mode === "sending"
+          ? t.t(`app.privacy.sending.${state.egressKind ?? "ai"}`)
+          : t.t(`app.privacy.${state.mode}Full`);
   return (
     <span
       className={`privacy-badge${mode === "local" ? "" : ` ${mode}`}`}

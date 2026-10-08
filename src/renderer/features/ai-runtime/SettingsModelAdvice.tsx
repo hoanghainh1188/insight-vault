@@ -31,7 +31,9 @@ export function SettingsModelAdvice({
         <p className="advice-line" data-testid="ram-advice">
           {t.t("ai.advice.ramBefore")}{" "}
           <strong>{t.t("ai.advice.ramAmount", { gb: rec.totalMemGb })}</strong>{" "}
-          {t.t("ai.advice.ramAfter", { label: rec.label })}
+          {t.t("ai.advice.ramAfter", {
+            label: t.t(`ai.advice.tier.${rec.tier}`),
+          })}
           {rec.examples.length > 0 && (
             <>
               {" "}

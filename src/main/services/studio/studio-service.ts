@@ -1,3 +1,4 @@
+import { UserFacingError } from "@shared/codes/user-error";
 import type {
   Chunk,
   ChatMessage,
@@ -43,7 +44,7 @@ export function createStudioService(deps: StudioServiceDeps) {
   async function generate(input: StudioGenerateInput): Promise<StudioResult> {
     const { notebookId, kind, sourceId } = input;
     if (!notebookId || !isStudioKind(kind)) {
-      throw new Error("Yêu cầu Studio không hợp lệ.");
+      throw new Error("Invalid Studio request.");
     }
 
     // Gom chunk theo NHÓM NGUỒN (mỗi nguồn 1 mảng, chunk theo ordinal). buildBalancedContext chia đều
@@ -63,10 +64,8 @@ export function createStudioService(deps: StudioServiceDeps) {
       }
     }
     if (totalChunks === 0) {
-      throw new Error(
-        sourceId
-          ? "Nguồn đã chọn chưa sẵn sàng. Chờ lập chỉ mục xong rồi thử lại."
-          : "Chưa có nguồn sẵn sàng để tạo Studio. Hãy nạp nguồn trước.",
+      throw new UserFacingError(
+        sourceId ? "studioSourceNotReady" : "studioNoReadySources",
       );
     }
 
@@ -96,7 +95,7 @@ export function createStudioService(deps: StudioServiceDeps) {
     const { answer, citations } = postprocessCitations(raw, map);
 
     if (answer.trim() === "") {
-      throw new Error("Mô hình không tạo được nội dung. Vui lòng thử lại.");
+      throw new UserFacingError("studioEmptyOutput");
     }
     // Grounded fallback: có nội dung nhưng model không chèn [n] hợp lệ → gắn nguồn đã dùng (kiểm chứng được).
     const finalCitations =

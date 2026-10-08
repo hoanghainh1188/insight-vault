@@ -31,7 +31,7 @@ describe("runtime-status", () => {
     );
     expect(s.reachable).toBe(false);
     expect(s.ollamaReady).toBe(false);
-    expect(s.reason).toMatch(/không kết nối/i);
+    expect(s.reasonCode).toBe("ollamaUnreachable");
   });
 
   it("kết nối nhưng chưa chọn đủ model → not ready", async () => {
@@ -41,7 +41,7 @@ describe("runtime-status", () => {
     );
     expect(s.reachable).toBe(true);
     expect(s.ollamaReady).toBe(false);
-    expect(s.reason).toMatch(/chưa chọn/i);
+    expect(s.reasonCode).toBe("modelsNotSelected");
   });
 
   it("model đã chọn không có trên máy → not ready, nêu model thiếu", async () => {
@@ -51,6 +51,8 @@ describe("runtime-status", () => {
     );
     expect(s.ollamaReady).toBe(false);
     expect(s.reason).toContain("missing");
+    expect(s.reasonCode).toBe("modelsMissing");
+    expect(s.reasonParams?.models).toContain("missing");
   });
 
   it("kết nối + model đủ + tồn tại → ready", async () => {

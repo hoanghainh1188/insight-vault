@@ -73,7 +73,20 @@ import { BACKUP_WAIT_TIMEOUT_MS } from "./services/vector-maintenance/constants"
 import { createFsOps } from "./services/app-shell/storage-fs";
 import { dirSize } from "./services/app-shell/storage-info";
 import { createElectronDialogs } from "./services/vault-backup/dialogs";
-import { createUiLanguageService } from "./services/ui-language";
+import {
+  createUiLanguageService,
+  startupLanguage,
+} from "./services/ui-language";
+import { createTranslator } from "@shared/i18n";
+
+/** 123: locale OS ưu tiên đầu tiên; an toàn cả trước app.whenReady (getLocale có thể rỗng). */
+function systemLocale(): string | undefined {
+  try {
+    return app.getPreferredSystemLanguages()[0] ?? app.getLocale();
+  } catch {
+    return undefined;
+  }
+}
 
 // 049: đăng ký scheme iv-media:// là privileged (stream + fetch API) TRƯỚC khi app ready — cho <audio> phát
 // file audio gốc qua main (renderer sandbox không đọc FS). Handler đăng ký ở whenReady (cần sourceRepo).
@@ -159,7 +172,11 @@ let keepSessionMarker = false;
 let fatalHandled = false;
 function handleFatalStartup(err: unknown): void {
   if (fatalHandled) return;
-  const { title, detail, errorType } = startupErrorDialog(err);
+  // 123: ngôn ngữ OS (cài đặt có thể chưa đọc được ở giai đoạn này).
+  const { title, detail, errorType } = startupErrorDialog(
+    err,
+    createTranslator(startupLanguage(systemLocale())),
+  );
   // 088: lỗi muộn (đã có cửa sổ) ghi riêng "runtime.uncaught" để phân biệt khi đọc nhật ký.
   logError(everShownWindow ? "runtime.uncaught" : "startup.error", {
     errorType,
@@ -278,9 +295,10 @@ app
       // 088: không log đường dẫn (chứa tên tài khoản) — dialog bên dưới đã hiện cho người dùng.
       logError("datadir.error", { ready: false });
       keepSessionMarker = true;
+      const trStartup = createTranslator(startupLanguage(systemLocale()));
       dialog.showErrorBox(
-        "Không tạo được thư mục dữ liệu",
-        `InsightVault không thể tạo thư mục dữ liệu tại:\n${dataDir.path}\n\nKiểm tra quyền truy cập hoặc dung lượng ổ đĩa rồi mở lại ứng dụng.`,
+        trStartup.t("dialogs.dataDir.title"),
+        trStartup.t("dialogs.dataDir.detail", { path: dataDir.path }),
       );
       app.quit();
       return;
@@ -301,7 +319,7 @@ app
     // 123: ngôn ngữ giao diện — lựa chọn ở store, auto ⇒ locale OS; IV_UI_LANG chỉ cho bản chưa đóng gói (e2e/dev).
     const uiLanguage = createUiLanguageService({
       store,
-      osLocale: () => app.getPreferredSystemLanguages()[0] ?? app.getLocale(),
+      osLocale: systemLocale,
       envOverride: process.env.IV_UI_LANG,
       isPackaged: app.isPackaged,
     });
@@ -381,7 +399,7 @@ app
         search: (v, nb, k) => ingestion.vectorStore.search(v, nb, k),
         getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
         sourceTitle: (sid) =>
-          ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
+          ingestion.sourceRepo.getById(sid)?.title ?? "Source",
         // 055 hybrid: BM25 keyword (FTS5) + vector cho MMR. rewrite qua provider active (badge egress 031).
         searchBm25: (nb, query, k) => keywordStore.searchBm25(nb, query, k),
         getVectorsByIds: (ids) => ingestion.vectorStore.getVectorsByIds(ids),
@@ -449,7 +467,7 @@ app
       searchBm25: (nb, query, k) => keywordStore.searchBm25(nb, query, k),
       getChunksByIds: (ids) => ingestion.sourceRepo.getChunksByIds(ids),
       getSourceTitle: (sid) =>
-        ingestion.sourceRepo.getById(sid)?.title ?? "Nguồn",
+        ingestion.sourceRepo.getById(sid)?.title ?? "Source",
     });
 
     // 085 vault-backup: busy = nguồn queued/processing hoặc reindex nền; khoá chặn ghi lúc chụp/sau xác nhận.
@@ -487,7 +505,7 @@ app
       appVersion: app.getVersion(),
       getConfig: () => ({ ...(store.store as Record<string, unknown>) }),
       lock: vaultLock,
-      dialogs: createElectronDialogs(),
+      dialogs: createElectronDialogs(() => uiLanguage.translator()),
       emit: (p) => {
         for (const w of BrowserWindow.getAllWindows()) {
           if (!w.isDestroyed()) w.webContents.send(CHANNELS.backupProgress, p);
@@ -570,7 +588,7 @@ app
       // 101: chọn lại tệp gốc — hộp thoại ở main + kiểm cùng nội dung (cùng hàm băm lúc nạp).
       relinkSource: createRelink({
         repo: ingestion.sourceRepo,
-        pickFile: pickSourceFile,
+        pickFile: (opts) => pickSourceFile(opts, uiLanguage.translator()),
         hashFile: hashFileStreaming,
         realpath: (p) => realpath(p),
         isLocked: () => vaultLock.isLocked(),

@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   getPrivacyState,
-  labelForMode,
   onPrivacyChange,
   setEgressActive,
   setOnlineProviderActive,
@@ -25,11 +24,7 @@ describe("privacy-state", () => {
 
   it("provider online active → mode online (031) — 'chỉ gửi khi bạn hỏi'", () => {
     setOnlineProviderActive(true);
-    expect(getPrivacyState()).toEqual({
-      mode: "online",
-      label: labelForMode("online"),
-    });
-    expect(labelForMode("online")).toContain("chỉ gửi khi bạn hỏi");
+    expect(getPrivacyState()).toEqual({ mode: "online" });
     setOnlineProviderActive(false);
     expect(getPrivacyState().mode).toBe("local");
   });
@@ -47,13 +42,14 @@ describe("privacy-state", () => {
     expect(getPrivacyState().mode).toBe("online");
   });
 
-  it("3 nhãn khác nhau; local nói 'cục bộ', sending nói 'đang gửi'", () => {
-    const labels = new Set(
-      ["local", "online", "sending"].map((m) => labelForMode(m as never)),
-    );
-    expect(labels.size).toBe(3);
-    expect(labelForMode("local")).toContain("cục bộ");
-    expect(labelForMode("sending")).toContain("Đang gửi");
+  it("123: sending kèm egressKind theo ưu tiên ai > url > model; không còn nhãn chữ từ main", () => {
+    setEgressActive(true, "model");
+    expect(getPrivacyState()).toEqual({ mode: "sending", egressKind: "model" });
+    setEgressActive(true, "url");
+    expect(getPrivacyState()).toEqual({ mode: "sending", egressKind: "url" });
+    setEgressActive(true, "ai");
+    expect(getPrivacyState()).toEqual({ mode: "sending", egressKind: "ai" });
+    expect("label" in getPrivacyState()).toBe(false);
   });
 
   it("listener chỉ được gọi khi MODE đổi", () => {

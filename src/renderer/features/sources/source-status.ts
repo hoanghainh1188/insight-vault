@@ -16,11 +16,11 @@ export function statClass(status: SourceStatus): "ready" | "proc" | "err" {
 
 /** Nhãn hiển thị cho một trạng thái; lỗi có error_label (mã hoặc văn bản Việt cũ) ⇒ dịch nhãn lỗi. */
 export function statusLabel(
-  source: Pick<Source, "status" | "errorLabel">,
+  source: Pick<Source, "status" | "errorCode">,
   tr: Translator = VI,
 ): string {
-  if (source.status === "error" && source.errorLabel)
-    return sourceErrorText(source.errorLabel, tr);
+  if (source.status === "error" && source.errorCode)
+    return sourceErrorText(source.errorCode, tr);
   return tr.t(`sources.status.${source.status}`);
 }
 

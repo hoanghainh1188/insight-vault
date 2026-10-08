@@ -15,6 +15,13 @@ export const appVi = {
   privacy: {
     local: "Chạy cục bộ",
     checking: "Đang kiểm tra trạng thái…",
+    localFull: "Chạy cục bộ · dữ liệu không rời máy",
+    onlineFull: "AI online đang bật · chỉ gửi khi bạn hỏi",
+    sending: {
+      ai: "Đang gửi dữ liệu tới AI online…",
+      url: "Đang tải trang web…",
+      model: "Đang tải mô hình (cần Internet lần đầu)…",
+    },
   },
   onboarding: {
     title: "Chào mừng đến InsightVault",
@@ -77,6 +84,13 @@ export const appEn: Widen<typeof appVi> = {
   privacy: {
     local: "Running locally",
     checking: "Checking status…",
+    localFull: "Running locally · data stays on this device",
+    onlineFull: "Online AI is on · sends only when you ask",
+    sending: {
+      ai: "Sending data to online AI…",
+      url: "Loading web page…",
+      model: "Downloading model (Internet needed the first time)…",
+    },
   },
   onboarding: {
     title: "Welcome to InsightVault",
