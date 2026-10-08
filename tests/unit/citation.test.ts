@@ -76,3 +76,19 @@ describe("citationsFromMap (nguồn dự phòng)", () => {
     expect(citationsFromMap(new Map())).toEqual([]);
   });
 });
+
+describe("#129: trích dẫn gộp [1, 2]", () => {
+  it("tách và hậu kiểm từng số: hợp lệ giữ, ngoài phạm vi gỡ", () => {
+    const r = postprocessCitations(
+      "Gia vị [1, 2]. Khác [3, 9].",
+      mapOf(1, 2, 3),
+    );
+    expect(r.answer).toBe("Gia vị [1] [2]. Khác [3].");
+    expect(r.citations.map((c) => c.n)).toEqual([1, 2, 3]);
+  });
+  it("câu chỉ có trích dẫn gộp vẫn có citation (không bị coi là không tìm thấy)", () => {
+    expect(
+      postprocessCitations("Đáp [1-2].", mapOf(1, 2)).citations,
+    ).toHaveLength(2);
+  });
+});

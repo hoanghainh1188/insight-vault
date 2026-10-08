@@ -1,5 +1,6 @@
 import type { Root, Text } from "mdast";
 import { visit, SKIP } from "unist-util-visit";
+import { expandGroupedCitations } from "@shared/citations/expand-grouped";
 
 // remark plugin (029): tách token [n] trong các text node thành phần tử <cite-chip data-n>. Chạy SAU remark-gfm
 // (trên mdast, TRƯỚC khi sang hast) → chip [n] hoạt động cả trong đoạn văn, danh sách, ô bảng. KHÔNG duyệt
@@ -22,7 +23,8 @@ export function remarkCite() {
   return (tree: Root): void => {
     visit(tree, "text", (node: Text, index, parent) => {
       if (index == null || parent == null) return;
-      const value = node.value;
+      // #129: nội dung đã lưu trước bản vá có thể còn "[1, 2]" — tách để mỗi số thành chip.
+      const value = expandGroupedCitations(node.value);
       CITE_RE.lastIndex = 0;
       if (!CITE_RE.test(value)) return;
 

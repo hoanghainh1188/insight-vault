@@ -85,16 +85,6 @@ export function packBatches<T extends { text: string }>(
 const joined = (items: { text: string }[]): string =>
   items.map((i) => i.text).join("\n\n");
 
-/** Tách chip gộp "[1, 2]" / "[1,2,3]" thành "[1] [2]" — model hay viết gộp; regex hậu kiểm chỉ khớp [n]. */
-function splitGroupedCitations(text: string): string {
-  return text.replace(/\[(\d+(?:\s*,\s*\d+)+)\]/g, (_w, list: string) =>
-    list
-      .split(",")
-      .map((d) => `[${d.trim()}]`)
-      .join(" "),
-  );
-}
-
 /** Bảng con: chỉ các n THỰC SỰ có mặt trong `text` (đầu vào của bước đó). */
 function subsetIn(
   text: string,
@@ -114,7 +104,7 @@ function cleanNotes(
   raw: string,
   allowed: Map<number, RetrievedChunk>,
 ): string[] {
-  const { answer } = postprocessCitations(splitGroupedCitations(raw), allowed);
+  const { answer } = postprocessCitations(raw, allowed);
   return answer
     .split("\n")
     .map((l) => l.trim())

@@ -18,7 +18,11 @@ const cite: Citation = {
   locator: { page: 1, charStart: 0, charEnd: 5 },
 };
 
-function render(content: string, onCite?: (c: Citation) => void): HTMLElement {
+function render(
+  content: string,
+  onCite?: (c: Citation) => void,
+  citeByN: Map<number, Citation> = new Map([[1, cite]]),
+): HTMLElement {
   const host = document.createElement("div");
   document.body.appendChild(host);
   const root = createRoot(host);
@@ -26,7 +30,7 @@ function render(content: string, onCite?: (c: Citation) => void): HTMLElement {
     root.render(
       createElement(MarkdownContent, {
         content,
-        citeByN: new Map([[1, cite]]),
+        citeByN,
         onCite,
       }),
     ),
@@ -79,5 +83,24 @@ describe("MarkdownContent render (029)", () => {
     const host = render("dòng một\ndòng hai\n\nđoạn hai");
     // 2 đoạn: {dòng một + dòng hai} và {đoạn hai} — KHÔNG tách 3 dòng cứng như parser cũ.
     expect(host.querySelectorAll("p.md-p")).toHaveLength(2);
+  });
+});
+
+describe("#129: trích dẫn gộp trong nội dung đã lưu", () => {
+  it("[1, 2] ⇒ 2 chip bấm được", () => {
+    const host = render(
+      "gia vị [1, 2].",
+      undefined,
+      new Map([
+        [1, cite],
+        [2, { ...cite, n: 2, chunkId: "c2" }],
+      ]),
+    );
+    expect(
+      host.querySelector('button.cite[data-testid="cite-1"]'),
+    ).toBeTruthy();
+    expect(
+      host.querySelector('button.cite[data-testid="cite-2"]'),
+    ).toBeTruthy();
   });
 });
