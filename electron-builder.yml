@@ -74,6 +74,12 @@ win:
     - "!node_modules/onnxruntime-node/bin/napi-v6/linux/**"
 
 nsis:
+  # 145: bộ cài đa ngôn ngữ — tiếng Việt trên Windows tiếng Việt, còn lại English (tự chọn theo ngôn ngữ hệ điều hành).
+  multiLanguageInstaller: true
+  installerLanguages:
+    - en_US
+    - vi_VN
+  displayLanguageSelector: false
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
