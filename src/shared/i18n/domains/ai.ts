@@ -65,8 +65,9 @@ export const aiVi = {
     title: "Bộ chấm độ liên quan",
     status: {
       unavailable: "Không dùng",
-      idle: "Chưa tải — sẽ tự tải (~120 MB) khi có nguồn sẵn sàng.",
+      idle: "Chưa nạp — sẽ tự nạp khi có nguồn sẵn sàng (lần đầu tải ~120 MB).",
       downloading: "Đang tải bộ chấm độ liên quan (~120 MB, một lần)…",
+      loading: "Đang nạp bộ chấm độ liên quan…",
       ready: "Sẵn sàng — câu hỏi không có trong nguồn được báo ngay.",
       error:
         "Chưa tải được — hỏi đáp vẫn hoạt động bình thường; sẽ thử lại sau.",
@@ -163,8 +164,9 @@ export const aiEn: Widen<typeof aiVi> = {
     title: "Relevance checker",
     status: {
       unavailable: "Not used",
-      idle: "Not downloaded — downloads automatically (~120 MB) once a source is ready.",
+      idle: "Not loaded yet — loads automatically once a source is ready (~120 MB download the first time).",
       downloading: "Downloading the relevance checker (~120 MB, one time)…",
+      loading: "Loading the relevance checker…",
       ready:
         "Ready — questions not covered by your sources are reported right away.",
       error:
