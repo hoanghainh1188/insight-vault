@@ -25,4 +25,14 @@ export const VI_LITERAL_ALLOWLIST: ReadonlyArray<{
     reason:
       "Ví dụ nhãn '(không dựa trên nguồn)' (chế độ Mở rộng, Constitution II) + câu cố định 'Không tìm thấy trong nguồn.' dẫn hướng model khi nguồn không có câu trả lời (nội dung gửi model, không phải UI).",
   },
+  {
+    file: "src/shared/i18n/detect-language.ts",
+    reason:
+      "Regex ký tự riêng tiếng Việt để nhận diện ngôn ngữ câu hỏi (không phải chuỗi giao diện).",
+  },
+  {
+    file: "src/main/services/ingestion/fts-fold.ts",
+    reason:
+      "Regex đ/Đ ⇒ d/D khi gấp dấu cho tìm toàn văn FTS5 (055) — xử lý dữ liệu, không phải chuỗi giao diện.",
+  },
 ];

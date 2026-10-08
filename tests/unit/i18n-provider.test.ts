@@ -143,3 +143,22 @@ describe("I18nProvider", () => {
     expect(q("title")?.textContent).toBe("Cài đặt");
   });
 });
+
+describe("123 review: IPC treo ⇒ dự phòng", () => {
+  it("getUiLanguage không bao giờ trả ⇒ sau 1,5 s vẫn render tiếng Việt", async () => {
+    vi.useFakeTimers();
+    (window as unknown as { api: unknown }).api = {
+      getUiLanguage: () => new Promise(() => undefined),
+      onUiLanguageChanged: () => () => undefined,
+    };
+    act(() =>
+      root.render(createElement(I18nProvider, null, createElement(Title))),
+    );
+    expect(q("title")).toBeNull();
+    await act(async () => {
+      vi.advanceTimersByTime(1600);
+    });
+    expect(q("title")?.textContent).toBe("Cài đặt");
+    vi.useRealTimers();
+  });
+});

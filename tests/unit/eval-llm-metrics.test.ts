@@ -9,7 +9,7 @@ const run = (over: Partial<LlmRun>): LlmRun => ({
   type: "answerable",
   notFound: false,
   citationCount: 1,
-  answer: "The bay has many islands [1].",
+  answer: "The bay is known for its many islands [1].",
   ...over,
 });
 

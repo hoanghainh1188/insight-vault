@@ -158,7 +158,7 @@ export const backupEn: Widen<typeof backupVi> = {
     encrypted: "Password-protected",
     notEncrypted: "None",
     needsReindex:
-      "This backup uses a different indexing model — after restoring, the app will reindex in the background.",
+      "This backup uses a different embedding model — after restoring, the app will reindex in the background.",
     overwriteStrong: "Your entire current vault will be replaced",
     overwriteBefore:
       "by this backup. The current vault will first be backed up automatically (unencrypted, in the same data folder) to",

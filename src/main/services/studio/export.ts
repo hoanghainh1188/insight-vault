@@ -3,6 +3,7 @@ import { dialog, type BrowserWindow } from "electron";
 import type { StudioExportResult } from "@shared/ipc/types";
 import type { Translator } from "@shared/i18n";
 import { sanitizeName } from "./export-name";
+import { exportDialogFilters } from "../ui-language/dialog-texts";
 
 // Xuất kết quả Studio ra tệp .md (025). Ghi file CHỈ ở main qua hộp thoại lưu người dùng chủ động chọn
 // (Constitution I/III — không tự ghi/gửi, không egress). KHÔNG log nội dung. sanitizeName tách export-name.ts.
@@ -25,11 +26,11 @@ export async function exportMarkdown(
   const result = win
     ? await dialog.showSaveDialog(win, {
         defaultPath,
-        filters: [{ name: tr.t("dialogs.export.filter"), extensions: ["md"] }],
+        filters: exportDialogFilters(tr),
       })
     : await dialog.showSaveDialog({
         defaultPath,
-        filters: [{ name: tr.t("dialogs.export.filter"), extensions: ["md"] }],
+        filters: exportDialogFilters(tr),
       });
 
   if (result.canceled || !result.filePath) {

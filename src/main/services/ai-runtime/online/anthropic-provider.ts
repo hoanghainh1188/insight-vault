@@ -1,3 +1,4 @@
+import { errorTagsOnly } from "@shared/online-error-tag";
 import { UserFacingError, encodeUserError } from "@shared/codes/user-error";
 import type {
   ChatMessage,
@@ -170,7 +171,10 @@ export async function testOnlineChat(
       reason: `${label}: connection test failed.`,
       reasonCode: "connectionFailed",
       reasonParams: { provider: label },
-      ...(e instanceof Error ? { reasonError: e.message } : {}),
+      // 123 (security review): chỉ gửi THẺ lỗi (mã/loại online), không gửi thông điệp thô của provider.
+      ...(e instanceof Error && errorTagsOnly(e.message)
+        ? { reasonError: errorTagsOnly(e.message) }
+        : {}),
     };
   }
 }

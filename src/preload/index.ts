@@ -152,7 +152,6 @@ const api = {
     ipcRenderer.on(CHANNELS.sourceProgress, listener);
     return () => ipcRenderer.removeListener(CHANNELS.sourceProgress, listener);
   },
-  /** 103: nhận trạng thái riêng tư mới mỗi khi main đổi mode (badge cập nhật tức thì). Trả hàm huỷ. */
   // 123: ngôn ngữ giao diện — đọc/đặt (enum) + nghe sự kiện đổi (trả hàm huỷ).
   getUiLanguage: (): Promise<import("@shared/ipc/types").UiLanguageState> =>
     ipcRenderer.invoke(CHANNELS.getUiLanguage),
@@ -171,6 +170,7 @@ const api = {
     return () =>
       ipcRenderer.removeListener(CHANNELS.uiLanguageChanged, listener);
   },
+  /** 103: nhận trạng thái riêng tư mới mỗi khi main đổi mode (badge cập nhật tức thì). Trả hàm huỷ. */
   onPrivacyChanged: (
     cb: (s: import("@shared/ipc/types").PrivacyState) => void,
   ): (() => void) => {

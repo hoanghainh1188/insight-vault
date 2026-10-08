@@ -97,3 +97,41 @@ describe("parseIpcError (mở rộng)", () => {
     });
   });
 });
+
+describe("123 security: errorTagsOnly + giới hạn độ dài", () => {
+  it("giữ thẻ + nhà cung cấp, bỏ văn bản thô", async () => {
+    const { errorTagsOnly } = await import("../../src/shared/online-error-tag");
+    const raw = tagOnlineError(
+      "OpenAI: 401 https://api.example/v1?key=secret body={...}",
+      "auth",
+    );
+    const t = errorTagsOnly(raw)!;
+    expect(t).not.toContain("secret");
+    expect(parseIpcError(t)).toMatchObject({
+      onlineKind: "auth",
+      provider: "OpenAI",
+    });
+    const enc = encodeUserError("modelNotSelected", { provider: "OpenAI" });
+    expect(parseIpcError(errorTagsOnly(enc)!)).toMatchObject({
+      code: "modelNotSelected",
+      params: { provider: "OpenAI" },
+    });
+    expect(errorTagsOnly("plain failure without tag")).toBeUndefined();
+  });
+
+  it("chuỗi rất dài không làm treo, vẫn tách được thẻ cuối", () => {
+    const long = " ".repeat(100_000) + "x [[err:vaultLocked]]";
+    const t0 = Date.now();
+    expect(parseIpcError(long).code).toBe("vaultLocked");
+    expect(Date.now() - t0).toBeLessThan(200);
+  });
+});
+
+describe("123 review: tham số dài bị cắt khi mã hoá (không mất khi giải mã)", () => {
+  it("chuỗi > 200 ký tự ⇒ cắt còn 200", () => {
+    const p = parseIpcError(
+      encodeUserError("unsupportedFormat", { ext: "x".repeat(500) }),
+    );
+    expect(p.params?.ext).toHaveLength(200);
+  });
+});

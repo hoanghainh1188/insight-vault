@@ -116,7 +116,7 @@ export const coreEn: Widen<typeof coreVi> = {
     studioNoNotes:
       "The model couldn't extract cited notes from the documents. Try again or choose another model.",
     studioSaveFailed: "Couldn't save the Studio result.",
-    chatModelNotSelected: "No answer (chat) model selected.",
+    chatModelNotSelected: "No answer model selected.",
     embeddingModelNotSelected: "No embedding model selected.",
     ollamaHttp: "Ollama returned error {status}.",
     apiKeyMissing: "{provider}: no API key entered.",

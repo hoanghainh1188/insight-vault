@@ -60,12 +60,12 @@ describe("MessageBubble — câu do app sinh theo ngôn ngữ hiện tại", () 
   it("reindexing ⇒ câu dịch", async () => {
     await render({
       role: "assistant",
-      content: "Re-indexing sources. Please try again shortly.",
+      content: "Reindexing sources. Please try again shortly.",
       citations: [],
       reindexing: true,
     });
     expect(container.textContent).toContain(
-      "Re-indexing sources (updating the local search engine)",
+      "Reindexing sources (updating the local search engine)",
     );
   });
 

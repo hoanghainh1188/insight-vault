@@ -86,7 +86,7 @@ ELSE 'unknown' END WHERE error_label IS NOT NULL AND error_label NOT IN (<các m
 
 ### RuntimeStatus (mở rộng)
 
-- Thêm `reasonCode?: "ollamaUnreachable" | "modelsNotSelected" | "modelsMissing" | "providerInvalid" | "apiKeyMissing" |
+- Thêm `reasonCode?: "ollamaUnreachable" | "modelsNotSelected" | "modelsMissing" | "apiKeyMissing" |
 "modelNotSelected" | "connectionFailed"` + `reasonParams?: { models?: string; provider?: string }`.
 - `reason` giữ (tương thích, dùng cho log) nhưng renderer hiển thị theo `reasonCode`.
 

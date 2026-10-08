@@ -137,9 +137,9 @@ export const aiEn: Widen<typeof aiVi> = {
     suggestions: "Suggestions:",
     ollamaNotRunning:
       "Ollama isn't running — install/open Ollama (ollama.com), then try again to use local chat.",
-    ollamaReady: "Ollama is running and the chat model is ready.",
+    ollamaReady: "Ollama is running and the answer model is ready.",
     ollamaModelMissing:
-      "Ollama is running, but the selected chat model hasn't been downloaded — run {command}.",
+      "Ollama is running, but the selected answer model hasn't been downloaded — run {command}.",
   },
   onboarding: {
     title: "The local AI runtime isn't ready.",

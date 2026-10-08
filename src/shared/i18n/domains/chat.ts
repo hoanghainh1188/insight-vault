@@ -100,5 +100,5 @@ export const chatEn: Widen<typeof chatVi> = {
   notFoundHint:
     "Try asking more specifically, or switch to Extended mode if you accept content beyond your documents.",
   reindexing:
-    "Re-indexing sources (updating the local search engine). Please try again in a moment.",
+    "Reindexing sources (updating the local search engine). Please try again in a moment.",
 };

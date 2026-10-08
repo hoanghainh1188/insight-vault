@@ -27,6 +27,8 @@ function api(): UiLanguageApi {
     {}) as UiLanguageApi;
 }
 
+const FALLBACK_MS = 1500;
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<UiLanguageState | null>(null);
 
@@ -36,6 +38,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const off = a.onUiLanguageChanged?.((s) => {
       if (alive) setState(s);
     });
+    // Dự phòng: IPC không bao giờ trả về ⇒ sau 1,5 s vẫn hiện app (tiếng Việt) thay vì màn trắng.
+    const fallback = setTimeout(() => {
+      if (alive)
+        setState((prev) => prev ?? { preference: "auto", effective: "vi" });
+    }, FALLBACK_MS);
     if (a.getUiLanguage) {
       a.getUiLanguage().then(
         (s) => alive && setState((prev) => prev ?? s),
@@ -48,6 +55,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
     return () => {
       alive = false;
+      clearTimeout(fallback);
       off?.();
     };
   }, []);

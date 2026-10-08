@@ -7,6 +7,7 @@ import type { LanguageCode } from "./languages";
 const VI_CHAR =
   /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/giu;
 /** Từ chức năng English phổ biến — đủ để phân biệt với tiếng Việt không dấu và các ngôn ngữ Latin khác. */
+// Bỏ các từ trùng tiếng Việt không dấu (do, to, me, as, be, in, on, it, or…) để không nhận nhầm (review 123).
 const EN_FUNCTION_WORDS = new Set([
   "the",
   "is",
@@ -22,15 +23,10 @@ const EN_FUNCTION_WORDS = new Set([
   "which",
   "whose",
   "does",
-  "do",
   "did",
   "of",
-  "in",
-  "on",
   "for",
-  "to",
   "and",
-  "or",
   "about",
   "with",
   "from",
@@ -38,9 +34,7 @@ const EN_FUNCTION_WORDS = new Set([
   "that",
   "these",
   "those",
-  "it",
   "its",
-  "be",
   "can",
   "could",
   "should",
@@ -53,12 +47,12 @@ const EN_FUNCTION_WORDS = new Set([
   "describe",
   "list",
   "tell",
-  "me",
   "my",
   "your",
   "by",
-  "as",
 ]);
+/** Cần ≥ 2 từ chức năng English (1 từ dễ trùng ngẫu nhiên, vd "the" trong "the nao"). */
+const MIN_EN_FUNCTION_WORDS = 2;
 const MIN_WORDS = 3;
 /** ≥ 1 ký tự Việt trên 15 chữ cái ⇒ câu tiếng Việt (câu English có vài tên riêng Việt vẫn dưới ngưỡng). */
 const VI_DENSITY = 1 / 15;
@@ -75,7 +69,8 @@ export function detectQuestionLanguage(text: string): LanguageCode | undefined {
   if (viChars >= letters * VI_DENSITY) return "vi";
   const lower = words.map((w) => w.toLowerCase());
   const asciiWords = lower.filter((w) => /^[a-z]+$/.test(w)).length;
-  const hasFunctionWord = lower.some((w) => EN_FUNCTION_WORDS.has(w));
-  if (hasFunctionWord && asciiWords * 2 >= words.length) return "en";
+  const functionWords = lower.filter((w) => EN_FUNCTION_WORDS.has(w)).length;
+  if (functionWords >= MIN_EN_FUNCTION_WORDS && asciiWords * 2 >= words.length)
+    return "en";
   return undefined;
 }

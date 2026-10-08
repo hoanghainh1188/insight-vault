@@ -5,6 +5,7 @@
 
 import {
   decodeUserErrorParams,
+  encodeUserError,
   isUserErrorCode,
   type UserErrorCode,
   type UserErrorParams,
@@ -21,8 +22,11 @@ export const ONLINE_ERROR_KINDS = [
 
 export type OnlineErrorKind = (typeof ONLINE_ERROR_KINDS)[number];
 
-const TAG_RE = /\s*\[\[online:([a-z-]+)\]\]\s*$/;
-const ERR_TAG_RE = /\s*\[\[err:([A-Za-z]+)(?:\|([^\]]*))?\]\]\s*$/;
+const TAG_RE = /\s{0,16}\[\[online:([a-z-]{1,20})\]\]\s{0,16}$/;
+const ERR_TAG_RE =
+  /\s{0,16}\[\[err:([A-Za-z]{1,40})(?:\|([^\]]{0,2048}))?\]\]\s{0,16}$/;
+/** 123 (security review): giới hạn độ dài chuỗi lỗi trước khi chạy regex. */
+const MAX_RAW_LEN = 8192;
 /** Tiền tố nhãn nhà cung cấp của lỗi online: "Claude (Anthropic): …". */
 const PROVIDER_PREFIX_RE = /^([^:]{1,60}):\s/;
 const ELECTRON_PREFIX_RE =
@@ -45,7 +49,8 @@ export interface ParsedIpcError {
 }
 
 export function parseIpcError(raw: string): ParsedIpcError {
-  let message = raw.replace(ELECTRON_PREFIX_RE, "");
+  const bounded = raw.length > MAX_RAW_LEN ? raw.slice(-MAX_RAW_LEN) : raw;
+  let message = bounded.replace(ELECTRON_PREFIX_RE, "");
   let onlineKind: OnlineErrorKind | null = null;
   const m = TAG_RE.exec(message);
   if (m) {
@@ -69,4 +74,18 @@ export function parseIpcError(raw: string): ParsedIpcError {
     }
   }
   return out;
+}
+
+/**
+ * 123 (security review): chỉ giữ THẺ (mã lỗi người-dùng-thấy / loại lỗi online) của một thông điệp lỗi — dùng khi
+ * gửi lỗi gốc sang renderer (vd RuntimeStatus.reasonError) để không mang theo văn bản thô (URL, thân phản hồi SDK).
+ * Không có thẻ ⇒ undefined.
+ */
+export function errorTagsOnly(message: string): string | undefined {
+  const p = parseIpcError(message);
+  const parts: string[] = [];
+  if (p.code) parts.push(encodeUserError(p.code, p.params));
+  if (p.onlineKind) parts.push(`[[online:${p.onlineKind}]]`);
+  if (parts.length === 0) return undefined;
+  return `${p.provider ? `${p.provider}: ` : ""}error ${parts.join(" ")}`;
 }

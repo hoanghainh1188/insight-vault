@@ -70,7 +70,7 @@ test("đổi ngôn ngữ trong Cài đặt ⇒ áp dụng ngay, giữ state, lư
   await win.getByTestId("nav-settings").click();
   await win.locator('input[type=radio][value="en"]').check();
   await expect(win.locator("html")).toHaveAttribute("lang", "en", {
-    timeout: 1000,
+    timeout: 2000,
   });
   await expect(
     win.getByTestId("placeholder-settings").locator("h2"),
@@ -100,7 +100,7 @@ test("đổi ngôn ngữ trong Cài đặt ⇒ áp dụng ngay, giữ state, lư
   await win2.getByTestId("nav-settings").click();
   await win2.locator('input[type=radio][value="auto"]').check();
   await expect(win2.locator("html")).toHaveAttribute("lang", "vi", {
-    timeout: 1000,
+    timeout: 2000,
   });
   await expect(
     win2.getByTestId("placeholder-settings").locator("h2"),

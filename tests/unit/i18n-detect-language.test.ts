@@ -66,3 +66,20 @@ describe("detectQuestionLanguage", () => {
     ).toBeUndefined();
   });
 });
+
+describe("123 review: tiếng Việt không dấu không bị nhận nhầm English", () => {
+  it("câu Việt không dấu có từ trùng English ⇒ undefined", () => {
+    for (const q of [
+      "cho toi biet do dai cua to chuc",
+      "the nao la quyen cong dan",
+      "ban co the tom tat tai lieu nay khong",
+    ]) {
+      expect(detectQuestionLanguage(q), q).toBeUndefined();
+    }
+  });
+  it("câu English vẫn nhận đúng", () => {
+    expect(detectQuestionLanguage("What is the history of the lake?")).toBe(
+      "en",
+    );
+  });
+});

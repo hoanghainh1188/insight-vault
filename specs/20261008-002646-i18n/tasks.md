@@ -173,7 +173,7 @@ Mỗi task: thêm khoá vào `src/shared/i18n/vi.ts` (giữ nguyên văn tiếng
 - [X] T081 [P] Append glossary `docs/00-glossary.md` (không prettier): ngôn ngữ giao diện (`uiLanguage`), ngôn ngữ hiệu lực (`effective language`), tệp dịch (`message catalog`), khoá dịch (`message key`), mã nhãn lỗi nguồn (`SourceErrorCode`), lỗi người-dùng-thấy (`UserFacingError`), ngôn ngữ đầu ra (`outputLanguage`), nhãn UI English chuẩn (Sources only / Extended / Reprocess / Privacy indicator…). **Không sửa** dòng `NOT_FOUND_DISPLAY` hiện có — ghi chú cần PR glossary riêng
 - [X] T082 [P] Cập nhật `README.md` (English: UI English + Vietnamese, chọn ở Settings › Language; bỏ câu "UI Vietnamese only") và `README.vi.md` tương ứng; `CLAUDE.md` dòng "Ngôn ngữ tài liệu thiết kế gốc & UI: tiếng Việt (i18n để sau)" ⇒ ghi UI Việt + English (i18n #123)
 - [ ] T083 Đánh dấu `[X]` các task đã xong trong `specs/20261008-002646-i18n/tasks.md`; chạy quickstart.md mục 1–6 (phần tay ghi kết quả vào PR), gồm kiểm tay SC-008: ngắt mạng, chạy cả hai ngôn ngữ ⇒ không yêu cầu mạng mới
-- [ ] T084 Test gate cuối: `npm run lint`, `npm test` (coverage ≥ 80%), `npm run build`, `npm run test:e2e`, `EVAL_MODE=current npm run eval:retrieval` ("hồi quy OK"); commit "docs(123): ADR i18n, glossary, README EN/VI, CLAUDE.md"
+- [X] T084 Test gate cuối: `npm run lint`, `npm test` (coverage ≥ 80%), `npm run build`, `npm run test:e2e`, `EVAL_MODE=current npm run eval:retrieval` ("hồi quy OK"); commit "docs(123): ADR i18n, glossary, README EN/VI, CLAUDE.md"
 
 ---
 

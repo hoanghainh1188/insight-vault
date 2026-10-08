@@ -60,9 +60,18 @@ export function encodeUserError(
   code: UserErrorCode,
   params?: UserErrorParams,
 ): string {
+  // Cắt chuỗi quá dài (giải mã bỏ giá trị > MAX_PARAM_LEN ⇒ tránh mất tham số) — review 123.
+  const safe = params
+    ? Object.fromEntries(
+        Object.entries(params).map(([k, v]) => [
+          k,
+          typeof v === "string" ? v.slice(0, MAX_PARAM_LEN) : v,
+        ]),
+      )
+    : undefined;
   const payload =
-    params && Object.keys(params).length > 0
-      ? `|${toBase64Url(JSON.stringify(params))}`
+    safe && Object.keys(safe).length > 0
+      ? `|${toBase64Url(JSON.stringify(safe))}`
       : "";
   return `${code} [[err:${code}${payload}]]`;
 }
