@@ -4,6 +4,7 @@ import type { RelevanceConfig } from "../../../src/main/services/rag/relevance-f
 import type { EvalMetrics } from "../../../src/main/services/rag/relevance-calibration";
 import type { Histogram } from "./metrics";
 import type { LlmResult } from "./harness";
+import type { LlmSummary } from "./llm-metrics";
 
 // 108: báo cáo công cụ đo — console + tests/eval/reports/<ts>/report.{json,md} (gitignore). I/O, không tính coverage.
 
@@ -143,9 +144,13 @@ export function renderMarkdown(r: EvalReport): string {
     ? [
         "## End-to-end qua LLM (tham khảo — không xét ĐẠT)",
         "",
-        "notFoundRate" in r.llm
-          ? `- model \`${r.llm.model}\`: ${pct(r.llm.notFoundRate)} câu hold-out có đáp án bị trả "không tìm thấy" (n=${r.llm.n})`
-          : `- bỏ qua: ${r.llm.skipped}`,
+        ...("notFoundRate" in r.llm
+          ? [
+              `- model \`${r.llm.model}\`: ${pct(r.llm.notFoundRate)} câu hold-out có đáp án bị trả "không tìm thấy" (n=${r.llm.n})`,
+              "",
+              ...llmSummaryTable(r.llm.summary),
+            ]
+          : [`- bỏ qua: ${r.llm.skipped}`]),
         "",
       ]
     : [];
@@ -172,4 +177,19 @@ export function writeReport(r: EvalReport, outRoot: string): string {
   writeFileSync(join(dir, "report.json"), JSON.stringify(r, null, 2));
   writeFileSync(join(dir, "report.md"), renderMarkdown(r));
   return dir;
+}
+
+/** 123 (SC-006): bảng phần LLM theo ngôn ngữ câu hỏi (vi = hold-out, en = mọi câu English). */
+function llmSummaryTable(sum: LlmSummary): string[] {
+  const p = (v: number | null): string => (v === null ? "—" : pct(v));
+  const row = (lang: "vi" | "en"): string => {
+    const g = sum[lang];
+    return `| ${lang} | ${g.answerable} | ${p(g.citedRate)} | ${p(g.falseNotFoundRate)} | ${p(g.languageMatchRate)} (n=${g.languageDetected}) | ${g.unanswerable} | ${p(g.correctRefusalRate)} |`;
+  };
+  return [
+    '| Nhóm | Có đáp án | Có [n] hợp lệ | Trả nhầm "không tìm thấy" | Đúng ngôn ngữ | Không đáp án | Từ chối đúng |',
+    "|---|---|---|---|---|---|---|",
+    row("vi"),
+    row("en"),
+  ];
 }

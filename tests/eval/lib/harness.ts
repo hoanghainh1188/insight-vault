@@ -1,3 +1,4 @@
+import { summarizeLlmRuns, type LlmRun, type LlmSummary } from "./llm-metrics";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -275,7 +276,8 @@ export async function evaluateConfig(
 }
 
 export type LlmResult =
-  { notFoundRate: number; n: number; model: string } | { skipped: string };
+  | { notFoundRate: number; n: number; model: string; summary: LlmSummary }
+  | { skipped: string };
 
 /**
  * Phần end-to-end THAM KHẢO (FR-008, research R9): rag-service thật + Ollama cục bộ, chế độ theo nguồn, câu hold-out
@@ -303,10 +305,12 @@ export async function runWithLlm(
     chatStream: async (messages) =>
       (await client.chat({ model, messages })).content,
   });
+  // 123 (SC-006): câu tiếng Việt hold-out (có + không đáp án) và MỌI câu English ⇒ đo [n] hợp lệ, từ chối đúng,
+  // trả nhầm "không tìm thấy", ngôn ngữ câu trả lời khớp câu hỏi. Giữ chỉ số cũ (vi hold-out có đáp án).
   const sample = questions.filter(
-    (q) => q.lang === "vi" && q.split === "holdout" && q.type === "answerable",
+    (q) => (q.lang === "vi" && q.split === "holdout") || q.lang === "en",
   );
-  let notFound = 0;
+  const runs: LlmRun[] = [];
   for (const q of sample) {
     const res = await svc.ask({
       notebookId: index.notebookId,
@@ -314,11 +318,22 @@ export async function runWithLlm(
       mode: "grounded",
       history: [],
     });
-    if (res.notFound) notFound += 1;
+    runs.push({
+      lang: q.lang,
+      type: q.type,
+      notFound: res.notFound,
+      citationCount: res.citations.length,
+      answer: res.answer,
+    });
   }
+  const viAns = runs.filter((r) => r.lang === "vi" && r.type === "answerable");
   return {
-    notFoundRate: sample.length === 0 ? 0 : notFound / sample.length,
-    n: sample.length,
+    notFoundRate:
+      viAns.length === 0
+        ? 0
+        : viAns.filter((r) => r.notFound).length / viAns.length,
+    n: viAns.length,
     model,
+    summary: summarizeLlmRuns(runs),
   };
 }
