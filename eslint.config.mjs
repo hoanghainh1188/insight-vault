@@ -10,6 +10,7 @@ export default tseslint.config(
       'build/**',
       'node_modules/**',
       'coverage/**',
+      '.claude/**',
       'test-results/**',
       'playwright-report/**',
     ],
