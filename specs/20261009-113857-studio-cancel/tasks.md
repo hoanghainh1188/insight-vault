@@ -83,14 +83,14 @@
 
 ## Phase 4: Polish
 
-- [ ] T017 E2E `tests/e2e/studio-cancel.spec.ts` (khuôn `studio-progress.spec.ts`): `window.api.studioCancel` tồn tại, không `invoke` chung; Ollama giả HTTP ghi
+- [X] T017 E2E `tests/e2e/studio-cancel.spec.ts` (khuôn `studio-progress.spec.ts`): `window.api.studioCancel` tồn tại, không `invoke` chung; Ollama giả HTTP ghi
       số request `/api/chat` + sự kiện `close`, lượt map thứ 2 treo ~20 s; tài liệu ~40.000 ký tự; thấy "Đang đọc phần 2/" ⇒ bấm `studio-cancel-<kind>` ⇒ server
       thấy kết nối đóng ≤ 2 s, không request mới trong 3 s, thẻ về nghỉ, không `studio-error-*`, `studioList` không có kết quả mới; kịch bản có kết quả cũ ⇒ Tạo lại
       ⇒ Huỷ ⇒ card cũ nguyên vẹn; đổi notebook giữa lúc tạo ⇒ server thấy `close`; (supersede) gọi `studioGenerate` lần 2 cùng loại với `generationId` mới qua `window.api` ⇒ kết nối của lượt đầu `close`, lượt đầu reject `studioCancelled`; ảnh chụp cột Studio 900 px vi/en (không tràn).
-- [ ] T018 [P] ADR `docs/04-decisions/2026-10-09-studio-cancel.md` (IPC, sổ lượt + owner + supersede, điểm kiểm huỷ, huỷ ≠ timeout, tự huỷ khi rời notebook thay
+- [X] T018 [P] ADR `docs/04-decisions/2026-10-09-studio-cancel.md` (IPC, sổ lượt + owner + supersede, điểm kiểm huỷ, huỷ ≠ timeout, tự huỷ khi rời notebook thay
       146 #8, A→B→A; giới hạn đã biết: request online đã tới có thể bị tính phí, Ollama có thể không dừng sinh ngay — theo kết quả đo thủ công) + append dòng
       `docs/04-decisions/INDEX.md` bằng script.
-- [ ] T019 Test gate: `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; chạy thủ công quickstart mục 1–4 với Ollama
+- [X] T019 Test gate: `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; chạy thủ công quickstart mục 1–4 với Ollama
       cục bộ (ghi kết quả "Ollama dừng sinh" vào ADR).
 
 ---

@@ -191,7 +191,10 @@ test("146 — nhiều phần: đọc i/N tăng dần rồi viết; cửa sổ nh
       .poll(
         async () => {
           if ((await prog.count()) > 0) {
-            const t = ((await prog.textContent()) ?? "").trim();
+            // 149: thẻ có thêm nút Huỷ ⇒ chỉ đọc dòng pha.
+            const t = (
+              (await prog.locator(".studio-progress-text").textContent()) ?? ""
+            ).trim();
             if (t && seen[seen.length - 1] !== t) seen.push(t);
           }
           return card.count();
