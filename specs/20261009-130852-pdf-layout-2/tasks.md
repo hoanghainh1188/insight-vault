@@ -44,17 +44,17 @@
 
 ## Phase 3: Đợt 2 (PR2) — User Story 2 + 5: Trang xoay + phiên bản + gợi ý Xử lý lại (Priority: P1 / P3)
 
-- [ ] T007 [US2] Mở rộng `tests/fixtures/pdf/make-pdf.ts`: `rotate: 0 | 90 | 180 | 270`, tuỳ chọn vẽ nội dung theo hướng ngược để hiển thị thẳng, `cropBox` lệch gốc; `samples.ts`
+- [X] T007 [US2] Mở rộng `tests/fixtures/pdf/make-pdf.ts`: `rotate: 0 | 90 | 180 | 270`, tuỳ chọn vẽ nội dung theo hướng ngược để hiển thị thẳng, `cropBox` lệch gốc; `samples.ts`
       `rotated90/180/270` (cùng nội dung với `twoColumns` + `borderlessTable`), `cropOffset`; test fixture (`pdf-fixture.test.ts`) đọc được `/Rotate`.
-- [ ] T008 [US2] Viết test TRƯỚC `tests/unit/pdf-adapter.test.ts`: `toDisplayItem(item, vpTransform)` 0 / 90 / 180 / 270 (toạ độ hiển thị, `rotated` theo hướng hiển thị),
+- [X] T008 [US2] Viết test TRƯỚC `tests/unit/pdf-adapter.test.ts`: `toDisplayItem(item, vpTransform)` 0 / 90 / 180 / 270 (toạ độ hiển thị, `rotated` theo hướng hiển thị),
       ghi chú bên lề vẫn `rotated`; `tests/unit/pdf-parse-layout.test.ts`: `parsePdf` của `rotated90/270` == văn bản trang thẳng, `rotated180` (chữ hiển thị thẳng) == trang
       thẳng, `cropOffset` đúng, PDF không xoay không đổi. FAIL ⇒ sửa `src/main/services/ingestion/parsers/pdf.ts` (viewport, `toDisplayItem` — tách `pdf-viewport.ts` nếu
       dài; dự phòng hệ chưa xoay khi lỗi) ⇒ xanh. Ghi kết quả thí nghiệm pdf.js vào ADR.
-- [ ] T009 [US5] Viết test TRƯỚC: `tests/unit/ingestion-pdf-blocks.test.ts` `PDF_EXTRACTION_VERSION === 3`; `tests/unit/reprocess-hint.test.ts` `reprocessHintKey(1|2|3)`;
+- [X] T009 [US5] Viết test TRƯỚC: `tests/unit/ingestion-pdf-blocks.test.ts` `PDF_EXTRACTION_VERSION === 3`; `tests/unit/reprocess-hint.test.ts` `reprocessHintKey(1|2|3)`;
       `SourceItem` (jsdom, có sẵn `tests/unit/source-reprocess-ui.test.ts`) — v1 ⇒ câu "giữ bố cục", v2 ⇒ câu "cải thiện bảng, trang xoay và gạch nối", v3 ⇒ không gợi ý.
       FAIL ⇒ sửa `src/shared/ipc/types.ts` (3), `reprocessHintKey` (`src/renderer/features/sources/reprocess-hint.ts`), `SourceItem.tsx`, i18n `sources.item.reprocessHintV2`
       (+ aria) vi / en ⇒ xanh; `tests/e2e/source-reprocess.spec.ts` cập nhật câu.
-- [ ] T010 ADR phần (c) + phiên bản; perf `pdf-parse-perf` thêm trang xoay vào mẫu 50 trang (≤ 2×). **Commit + PR2.**
+- [X] T010 ADR phần (c) + phiên bản; perf `pdf-parse-perf` thêm trang xoay vào mẫu 50 trang (≤ 2×). **Commit + PR2.**
 
 ---
 

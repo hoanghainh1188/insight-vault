@@ -1,3 +1,4 @@
+import { reprocessHintKey } from "./reprocess-hint";
 import { useEffect, useState } from "react";
 import { PDF_EXTRACTION_VERSION, type Source } from "@shared/ipc/types";
 import type { Translator } from "@shared/i18n";
@@ -70,6 +71,8 @@ export function SourceItem({
   const reproc = useReprocess(source.id, source.title);
   const [confirming, setConfirming] = useState(false);
   const isPdf = source.kind === "pdf";
+  // 147: câu gợi ý theo phiên bản trích xuất của nguồn (v1 "giữ bố cục", v2 "cải thiện bảng, trang xoay và gạch nối").
+  const hintKey = isPdf ? reprocessHintKey(source.extractionVersion) : null;
   const showHint =
     isPdf &&
     source.status === "ready" &&
@@ -141,7 +144,7 @@ export function SourceItem({
         )}
         {showHint && (
           <span className="src-hint" data-testid="source-reprocess-hint">
-            {t.t("sources.item.reprocessHint")}
+            {t.t(`sources.item.${hintKey ?? "reprocessHint"}`)}
           </span>
         )}
         {reproc.running && (
@@ -229,9 +232,12 @@ export function SourceItem({
           <button
             type="button"
             className="src-act"
-            aria-label={t.t("sources.item.reprocessAria", {
-              title: source.title,
-            })}
+            aria-label={t.t(
+              hintKey === "reprocessHintV2"
+                ? "sources.item.reprocessAriaV2"
+                : "sources.item.reprocessAria",
+              { title: source.title },
+            )}
             title={t.t("sources.item.reprocess")}
             onClick={() => setConfirming(true)}
             data-testid="source-reprocess"

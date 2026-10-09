@@ -52,6 +52,10 @@ export const sourcesVi = {
     reprocess: "Xử lý lại",
     reprocessAria: "Xử lý lại {title} để giữ bố cục",
     reprocessHint: "Xử lý lại để giữ bố cục",
+    // 147: PDF đã có bố cục (phiên bản 2)
+    reprocessHintV2: "Xử lý lại để cải thiện bảng, trang xoay và gạch nối",
+    reprocessAriaV2:
+      "Xử lý lại {title} để cải thiện bảng, trang xoay và gạch nối",
     reprocessProgressLabel: "Tiến độ xử lý lại {title}",
     reprocessRunning: "Đang xử lý lại · {pct}%",
     reprocessConfirmLabel: "Xử lý lại {title}",
@@ -161,6 +165,10 @@ export const sourcesEn: Widen<typeof sourcesVi> = {
     reprocess: "Reprocess",
     reprocessAria: "Reprocess {title} to keep the layout",
     reprocessHint: "Reprocess to keep the layout",
+    reprocessHintV2:
+      "Reprocess to improve tables, rotated pages and hyphenation",
+    reprocessAriaV2:
+      "Reprocess {title} to improve tables, rotated pages and hyphenation",
     reprocessProgressLabel: "Reprocessing progress for {title}",
     reprocessRunning: "Reprocessing · {pct}%",
     reprocessConfirmLabel: "Reprocess {title}",

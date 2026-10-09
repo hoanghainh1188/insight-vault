@@ -8,7 +8,10 @@ import type {
   VectorStore,
 } from "../../src/main/services/ingestion/vector-store";
 import type { ParseResult } from "../../src/main/services/ingestion/parsers";
-import type { SourceProgressEvent } from "@shared/ipc/types";
+import {
+  PDF_EXTRACTION_VERSION,
+  type SourceProgressEvent,
+} from "@shared/ipc/types";
 
 // 112 (FR-010, FR-015, FR-016; research R10): "Xử lý lại" nguồn PDF — dựng chunk + vector mới trong RAM rồi hoán đổi
 // nguyên tử; nguồn GIỮ `ready` suốt quá trình; lỗi/huỷ ở bất kỳ bước nào ⇒ dữ liệu cũ nguyên vẹn.
@@ -141,7 +144,7 @@ function harness() {
 }
 
 describe("pipeline.reprocess — thành công", () => {
-  it("thứ tự add(mới) → replaceChunks → deleteByIds(cũ); version 2; nguồn giữ ready", async () => {
+  it("thứ tự add(mới) → replaceChunks → deleteByIds(cũ); phiên bản hiện hành; nguồn giữ ready", async () => {
     const h = harness();
     const id = await h.ingestOld();
     const oldIds = h.repo.chunkIds(id);
@@ -156,7 +159,7 @@ describe("pipeline.reprocess — thành công", () => {
     expect(chunks[0].text).toContain("New layout text");
     expect([...h.vectors.keys()].every((k) => k.startsWith("new-"))).toBe(true);
     const s = h.repo.getById(id)!;
-    expect(s.extractionVersion).toBe(2);
+    expect(s.extractionVersion).toBe(PDF_EXTRACTION_VERSION);
     expect(s.status).toBe("ready");
     // mọi sự kiện đều đánh dấu reprocess và status ready; có tiến độ parse theo trang; kết thúc "done"
     expect(h.events.length).toBeGreaterThan(0);
@@ -184,10 +187,10 @@ describe("pipeline.reprocess — thành công", () => {
     expect(h.repo.getById(id)!.status).toBe("ready");
     release();
     await h.pipeline.whenIdle();
-    expect(h.repo.getById(id)!.extractionVersion).toBe(2);
+    expect(h.repo.getById(id)!.extractionVersion).toBe(PDF_EXTRACTION_VERSION);
   });
 
-  it("nguồn error ⇒ như thử lại bằng cách trích mới (version 2, ready)", async () => {
+  it("nguồn error ⇒ như thử lại bằng cách trích mới (phiên bản hiện hành, ready)", async () => {
     const h = harness();
     const id = await h.ingestOld();
     h.repo.updateStatus(id, "error", "extract");
@@ -195,7 +198,7 @@ describe("pipeline.reprocess — thành công", () => {
     await h.pipeline.whenIdle();
     const s = h.repo.getById(id)!;
     expect(s.status).toBe("ready");
-    expect(s.extractionVersion).toBe(2);
+    expect(s.extractionVersion).toBe(PDF_EXTRACTION_VERSION);
   });
 });
 
@@ -228,7 +231,7 @@ describe("pipeline.reprocess — lỗi / huỷ ⇒ giữ bản cũ", () => {
     h.ctl.fail = "deleteOld";
     await h.pipeline.reprocess(id);
     await h.pipeline.whenIdle();
-    expect(h.repo.getById(id)!.extractionVersion).toBe(2);
+    expect(h.repo.getById(id)!.extractionVersion).toBe(PDF_EXTRACTION_VERSION);
     expect(h.events.at(-1)!.errorCode).toBeUndefined();
   });
 

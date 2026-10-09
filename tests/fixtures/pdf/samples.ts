@@ -1,4 +1,8 @@
-import type { FixturePage, FixtureText } from "./make-pdf";
+import {
+  rotateForDisplay,
+  type FixturePage,
+  type FixtureText,
+} from "./make-pdf";
 
 // 112: các PDF mẫu tự sinh (research R13) + văn bản kỳ vọng sau khi dựng bố cục. Cỡ chữ 10, bước dòng 12 trong đoạn,
 // khoảng cách đoạn 26 (> 1,5 × 10). Trang 600×800 điểm. Bề rộng ký tự cố định 0,5 em ⇒ chữ 10pt rộng 5pt/ký tự.
@@ -257,5 +261,21 @@ export function manyItems(n: number): Sample {
   return {
     pages: [page(texts)],
     expected: [texts.map((t) => t.text).join(" ")],
+  };
+}
+
+// 147 (c): cùng nội dung với mẫu gốc nhưng trang có /Rotate (vẽ xoay ngược để HIỂN THỊ thẳng) ⇒ văn bản trích phải giống hệt.
+export function rotatedSample(base: Sample, r: 90 | 180 | 270): Sample {
+  return {
+    pages: base.pages.map((p) => rotateForDisplay(p, r)),
+    expected: base.expected,
+  };
+}
+
+// 147 (c): MediaBox lệch gốc (CropBox / MediaBox không bắt đầu ở 0,0) ⇒ văn bản như mẫu gốc.
+export function offsetOrigin(base: Sample): Sample {
+  return {
+    pages: base.pages.map((p) => ({ ...p, origin: { x: 100, y: 50 } })),
+    expected: base.expected,
   };
 }

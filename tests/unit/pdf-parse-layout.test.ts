@@ -105,3 +105,32 @@ describe("parsePdf — ngân sách thời gian dựng bố cục (112 security h
     expect(normal.pages[0].text).toContain("\n\n");
   });
 });
+
+// 147 (c, research R3): trang có /Rotate — áp xoay trang (viewport pdf.js) trước khi dựng bố cục ⇒ cùng nội dung hiển thị thì
+// văn bản trích GIỐNG HỆT trang thẳng; MediaBox lệch gốc cũng vậy; PDF không xoay không đổi.
+import { rotatedSample, offsetOrigin } from "../fixtures/pdf/samples";
+
+describe("parsePdf — trang xoay /Rotate (147)", () => {
+  for (const r of [90, 180, 270] as const) {
+    it(`/Rotate ${r}: hai cột + bảng ⇒ văn bản như trang thẳng`, async () => {
+      for (const base of [twoColumns(), borderlessTable()]) {
+        expect(await texts(rotatedSample(base, r))).toEqual(base.expected);
+      }
+    });
+  }
+
+  it("ghi chú bên lề (chữ xoay thật so với trang) trên trang /Rotate 90 vẫn xử lý riêng như trước", async () => {
+    const base = rotatedPage();
+    expect(await texts(rotatedSample(base, 90))).toEqual(base.expected);
+  });
+
+  it("MediaBox lệch gốc ⇒ văn bản như mẫu gốc (bảng vẫn nhận ra)", async () => {
+    const base = borderlessTable();
+    expect(await texts(offsetOrigin(base))).toEqual(base.expected);
+  });
+
+  it("PDF không xoay không đổi", async () => {
+    const base = twoColumns();
+    expect(await texts(base)).toEqual(base.expected);
+  });
+});
