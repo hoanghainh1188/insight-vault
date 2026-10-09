@@ -15,6 +15,7 @@ import type {
   SetProviderKeyInput,
   SetProviderModelInput,
   StudioGenerateInput,
+  StudioProgressEvent,
   ModelRecommendation,
   OllamaHealth,
   RerankerStatus,
@@ -42,6 +43,7 @@ import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
 import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
+import { createStudioProgressEmitter } from "../services/studio/progress-emitter";
 import {
   getSourceContent,
   type SourceContentRequest,
@@ -138,6 +140,19 @@ export function registerIpc({
     }
     // Truyền args từ renderer (bỏ event object đầu tiên). KHÔNG log args (có thể chứa nội dung).
     ipcMain.handle(channel, (_event, ...args) => fn(...args));
+  };
+  /**
+   * 146: như safeHandle nhưng truyền kèm `sender` (webContents của cửa sổ đã gọi) — để đẩy sự kiện CHỈ về đúng cửa sổ đó.
+   * KHÔNG log args.
+   */
+  const safeHandleWithSender = (
+    channel: string,
+    fn: (sender: Electron.WebContents, ...a: unknown[]) => unknown,
+  ): void => {
+    if (!isWhitelisted(channel)) {
+      throw new Error(`IPC channel not whitelisted: ${channel}`);
+    }
+    ipcMain.handle(channel, (event, ...args) => fn(event.sender, ...args));
   };
 
   // app-shell (001)
@@ -354,11 +369,18 @@ export function registerIpc({
   });
 
   // studio (021) — tổng hợp toàn notebook (đọc chunk + chat CHỈ ở main). KHÔNG log content/citations.
-  safeHandle(CHANNELS.studioGenerate, async (input) => {
+  // 146: tiến độ Studio đẩy qua studio:progress CHỈ về cửa sổ đã gọi (review bảo mật) — chỉ khi renderer gửi generationId hợp
+  // lệ. KHÔNG log payload.
+  safeHandleWithSender(CHANNELS.studioGenerate, async (sender, input) => {
     const target = parseAiTarget(input);
+    const emitStudioProgress = (e: StudioProgressEvent): void => {
+      if (!sender.isDestroyed()) sender.send(CHANNELS.studioProgress, e);
+    };
     try {
+      const studioInput = input as StudioGenerateInput;
       return await studioServices[target].generate(
-        input as StudioGenerateInput,
+        studioInput,
+        createStudioProgressEmitter(studioInput, emitStudioProgress),
       );
     } catch (e) {
       return rethrowForIpc(e);

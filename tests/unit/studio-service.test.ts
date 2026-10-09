@@ -225,3 +225,43 @@ describe("123 (FR-018): ngôn ngữ đầu ra Studio", () => {
     expect(calls[1].messages[0].content).toContain("Write in Vietnamese");
   });
 });
+
+// 146: generate(input, onProgress?) — một lượt ⇒ đúng một sự kiện writing (không index/total); nhiều phần ⇒ chuỗi của map-reduce;
+// không truyền onProgress ⇒ như cũ.
+describe("146: studio-service — tiến độ", () => {
+  it("một lượt ⇒ đúng một sự kiện writing, không index/total", async () => {
+    const { svc } = setup({ perSource: 2, budget: 50_000 });
+    const evs: unknown[] = [];
+    await svc.generate({ notebookId: "nb1", kind: "summary" }, (e) =>
+      evs.push(e),
+    );
+    expect(evs).toEqual([{ phase: "writing" }]);
+  });
+
+  it("nhiều phần ⇒ reading 1/N..N/N rồi writing (N = parts)", async () => {
+    const { svc } = setup({ perSource: 6, budget: 1000 });
+    const evs: { phase: string; index?: number; total?: number }[] = [];
+    const r = await svc.generate({ notebookId: "nb1", kind: "faq" }, (e) =>
+      evs.push(e),
+    );
+    const N = r.parts!;
+    expect(N).toBeGreaterThan(1);
+    expect(evs).toEqual([
+      ...Array.from({ length: N }, (_, i) => ({
+        phase: "reading",
+        index: i + 1,
+        total: N,
+      })),
+      { phase: "writing" },
+    ]);
+  });
+
+  it("onProgress ném lỗi ở một lượt ⇒ vẫn tạo xong như khi không truyền", async () => {
+    const { svc } = setup({ perSource: 2, budget: 50_000 });
+    const a = await svc.generate({ notebookId: "nb1", kind: "summary" });
+    const b = await svc.generate({ notebookId: "nb1", kind: "summary" }, () => {
+      throw new Error("x");
+    });
+    expect(b.content).toBe(a.content);
+  });
+});

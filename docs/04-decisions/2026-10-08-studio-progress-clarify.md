@@ -1,0 +1,23 @@
+# Tiến độ Studio (phần i/N) — clarify (146)
+
+- Ngày: 2026-10-08
+- Feature: `146-studio-progress` (issue #146)
+- Nguồn: intake `docs/intake/146-studio-progress.md` (11 ambiguity) — người dùng (Hải) chọn **toàn bộ phương án khuyên dùng**.
+- Liên quan: ADR 105 (Studio map-reduce, hoãn tiến độ i/N), 039 (stream chat — `streamId` do renderer sinh), 091 (a11y thông báo),
+  098 (provider online + tạo bằng AI cục bộ), 123 (i18n).
+
+## Quyết định (người dùng chốt)
+
+| #   | Câu hỏi                   | Quyết định                                                                                                                                                                                                                                                                                   |
+| --- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Độ mịn tiến độ            | **Phần i/N + tên pha:** pha đọc (map) "Đang đọc phần i/N…" với `i` = phần đang đọc (phát trước mỗi lượt map), N khớp `parts` (≤ 12); pha rút gọn chỉ tên pha (số vòng không biết trước); pha cuối "Đang viết…". Thử lại trong cùng phần không phát sự kiện mới.                              |
+| 2   | Thời gian còn lại         | **Không hiển thị ở v1** (tốc độ model cục bộ thất thường).                                                                                                                                                                                                                                   |
+| 3   | Nút Huỷ                   | **Tách issue riêng**; #146 chỉ làm tiến độ. "works with cancel" trong issue hiểu là bỏ sự kiện cũ khi đổi notebook/lượt mới. Sự kiện mang `generationId` để thêm Huỷ sau.                                                                                                                    |
+| 4   | Trình bày                 | **Dòng pha + thanh tiến độ** trong vùng kết quả của loại đó: xác định ở pha đọc (i/N), bất định ở pha khác; thay skeleton khi chưa có kết quả, nằm trên card cũ khi "Tạo lại"; nhãn nút giữ "Đang tạo…"; thanh `role="progressbar"` có `aria-valuetext`; tôn trọng `prefers-reduced-motion`. |
+| 5   | Trình đọc màn hình        | Giữ thông báo bắt đầu/xong hiện có; **thêm khi đổi pha và ở mốc ~50% pha đọc**; tối đa ~5–6 câu mỗi lượt, mức `polite`, có tên loại.                                                                                                                                                         |
+| 6   | Tạo 1 lượt                | Main vẫn phát pha **`writing` không đếm** ⇒ UI "Đang viết…" bất định, nhất quán.                                                                                                                                                                                                             |
+| 7   | Nhiều loại cùng lúc       | **Tiến độ riêng từng loại**; ghi giới hạn đã biết (chạy song song có thể chậm hơn).                                                                                                                                                                                                          |
+| 8   | Rời notebook rồi quay lại | **Giữ như hiện tại** (bỏ sự kiện cũ, không phục hồi tiến độ); ghi giới hạn đã biết; phục hồi + chặn tạo trùng tách issue sau.                                                                                                                                                                |
+| 9   | Kênh                      | **Kênh push mới `studio:progress`** (whitelist preload), payload `{generationId, notebookId, kind, phase, index?, total?}`; `generationId` do renderer sinh trong `StudioGenerateInput`; thiếu id ⇒ main không phát; `phase ∈ reading                                                        | condensing | writing`; kết quả/lỗi vẫn về qua `invoke`. |
+| 10  | Throttle                  | **Không throttle ở main**; renderer chỉ nhận sự kiện đúng `generationId` đang chạy và bỏ sự kiện lùi.                                                                                                                                                                                        |
+| 11  | Câu chữ                   | vi "Đang đọc phần {i}/{n}…", "Đang rút gọn ghi chú…", "Đang viết…"; en "Reading part {i} of {n}…", "Condensing notes…", "Writing…"; khoá `studio.progress.*`, `a11y.studioProgress*`.                                                                                                        |

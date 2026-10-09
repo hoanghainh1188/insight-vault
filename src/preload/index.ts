@@ -213,6 +213,17 @@ const api = {
     ipcRenderer.invoke(CHANNELS.studioGenerate, input),
   studioList: (notebookId: string): Promise<StudioResult[]> =>
     ipcRenderer.invoke(CHANNELS.studioList, notebookId),
+  /** 146: nhận tiến độ tạo Studio (push từ main, kênh chỉ nhận). Trả hàm huỷ đăng ký. */
+  onStudioProgress: (
+    cb: (e: import("@shared/ipc/types").StudioProgressEvent) => void,
+  ): (() => void) => {
+    const listener = (
+      _e: unknown,
+      payload: import("@shared/ipc/types").StudioProgressEvent,
+    ): void => cb(payload);
+    ipcRenderer.on(CHANNELS.studioProgress, listener);
+    return () => ipcRenderer.removeListener(CHANNELS.studioProgress, listener);
+  },
   studioExport: (input: StudioExportInput): Promise<StudioExportResult> =>
     ipcRenderer.invoke(CHANNELS.studioExport, input),
   // 059 — gợi ý model theo RAM + health Ollama + trạng thái tái lập chỉ mục.

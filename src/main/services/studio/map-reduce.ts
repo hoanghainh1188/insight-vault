@@ -1,5 +1,9 @@
 import { UserFacingError } from "@shared/codes/user-error";
-import type { ChatMessage, StudioKind } from "@shared/ipc/types";
+import type {
+  ChatMessage,
+  StudioKind,
+  StudioProgressEvent,
+} from "@shared/ipc/types";
 import type { RetrievedChunk, ScoredChunk } from "../rag/rag-types";
 import { citationBlock } from "../rag/context-builder";
 import { postprocessCitations } from "../rag/citation";
@@ -25,6 +29,26 @@ export interface NumberedBlock {
 }
 
 type Chat = (messages: ChatMessage[]) => Promise<string>;
+
+/** 146: một bước tiến độ (caller gắn generationId/notebookId/kind trước khi gửi). */
+export type StudioProgressStep = Pick<
+  StudioProgressEvent,
+  "phase" | "index" | "total"
+>;
+export type OnStudioProgress = (step: StudioProgressStep) => void;
+
+/** 146: gọi callback tiến độ an toàn — lỗi (vd cửa sổ đã đóng) KHÔNG làm hỏng lượt tạo. */
+export function safeProgress(
+  onProgress: OnStudioProgress | undefined,
+): OnStudioProgress {
+  return (step) => {
+    try {
+      onProgress?.(step);
+    } catch {
+      // nuốt — tiến độ chỉ là phụ
+    }
+  };
+}
 
 // 123 (FR-018, FR-019): lời nhắc English; MỌI bước dùng cùng ngôn ngữ đầu ra (ngôn ngữ giao diện lúc tạo).
 const notesRules = (lang: LanguageCode): string =>
@@ -133,6 +157,7 @@ async function condense(
   map: Map<number, RetrievedChunk>,
   chat: Chat,
   lang: LanguageCode,
+  progress: OnStudioProgress,
 ): Promise<{ notes: string[]; cut: boolean }> {
   const size = (ns: string[]): number => ns.join("\n").length;
   let cur = notes;
@@ -141,6 +166,7 @@ async function condense(
     round < MAX_CONDENSE_ROUNDS && size(cur) > budget;
     round += 1
   ) {
+    if (round === 0) progress({ phase: "condensing" }); // 146: một lần, chỉ khi thật sự có vòng rút gọn
     const next: string[] = [];
     for (const batch of packBatches(
       cur.map((text) => ({ text })),
@@ -169,6 +195,8 @@ export interface MapReduceInput {
   maxMapCalls?: number;
   /** 123: ngôn ngữ đầu ra cho mọi bước (mặc định vi). */
   outputLanguage?: LanguageCode;
+  /** 146: tiến độ — reading i/N · condensing · writing. Không ảnh hưởng kết quả. */
+  onProgress?: OnStudioProgress;
 }
 
 export interface MapReduceOutput {
@@ -189,14 +217,18 @@ export async function runMapReduce({
   chat,
   maxMapCalls = MAX_MAP_CALLS,
   outputLanguage = "vi",
+  onProgress,
 }: MapReduceInput): Promise<MapReduceOutput> {
+  const progress = safeProgress(onProgress);
   const { blocks, map } = numberAll(groups);
   const allBatches = packBatches(blocks, budget);
   const batches = allBatches.slice(0, maxMapCalls);
 
   let notes: string[] = [];
   let emptyBatches = 0;
-  for (const batch of batches) {
+  for (const [i, batch] of batches.entries()) {
+    // 146: một sự kiện mỗi phần, TRƯỚC lượt map đầu tiên (thử lại trong cùng phần không phát thêm).
+    progress({ phase: "reading", index: i + 1, total: batches.length });
     const input = joined(batch);
     const batchMap = new Map(
       batch.map((b) => [b.n, map.get(b.n)!] as [number, RetrievedChunk]),
@@ -225,10 +257,18 @@ export async function runMapReduce({
     throw new UserFacingError("studioNoNotes");
   }
 
-  const condensed = await condense(notes, budget, map, chat, outputLanguage);
+  const condensed = await condense(
+    notes,
+    budget,
+    map,
+    chat,
+    outputLanguage,
+    progress,
+  );
   notes = condensed.notes;
   const finalInput = notes.join("\n");
 
+  progress({ phase: "writing" });
   const raw = await chat([
     {
       role: "system",

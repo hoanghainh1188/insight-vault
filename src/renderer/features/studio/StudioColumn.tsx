@@ -1,7 +1,12 @@
-import { useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { AiTarget, Citation, StudioKind } from "@shared/ipc/types";
 import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
+import { StudioProgress } from "./StudioProgress";
+import {
+  progressAnnouncement,
+  type StudioProgressMap,
+} from "./studio-progress";
 import { announce } from "../../shared/a11y/announcer";
 import { studioMessage } from "../../shared/a11y/messages";
 import { useT } from "../../shared/i18n/i18n-context";
@@ -29,6 +34,7 @@ export function StudioColumn({
     errors,
     onlineFailed,
     localKinds,
+    progress,
     generate,
     ollamaReady,
     hasReadySources,
@@ -38,6 +44,25 @@ export function StudioColumn({
   // 123: translator HIỆN TẠI cho câu báo xong (về sau await — người dùng có thể đã đổi ngôn ngữ).
   const trRef = useRef(t);
   trRef.current = t;
+  // 146 (clarify #5): báo trình đọc màn hình khi tiến độ của một loại đổi pha / tới mốc giữa (polite, có tên loại).
+  const prevProgress = useRef<StudioProgressMap>({});
+  useEffect(() => {
+    const tr = trRef.current;
+    for (const kind of KINDS) {
+      const next = progress[kind];
+      const prev = prevProgress.current[kind];
+      if (next && next !== prev) {
+        const msg = progressAnnouncement(
+          prev,
+          next,
+          tr.t(`studio.kind.${kind}`),
+          tr,
+        );
+        if (msg) announce(msg);
+      }
+    }
+    prevProgress.current = progress;
+  }, [progress]);
   // Phạm vi tổng hợp (US2): "" = tất cả nguồn; else sourceId.
   const [scope, setScope] = useState("");
   const scopeId = scope === "" ? undefined : scope;
@@ -121,7 +146,12 @@ export function StudioColumn({
           const label = t.t(`studio.kind.${kind}`);
           const err = errors[kind];
           const res = results[kind];
-          // Skeleton khi đang tạo lần đầu (chưa có kết quả cũ) — US3.
+          const prog = loading[kind] ? progress[kind] : undefined;
+          // 146: đang tạo lần đầu và đã có tiến độ ⇒ dòng pha + thanh thay skeleton.
+          if (prog && !res) {
+            return <StudioProgress key={kind} kind={kind} progress={prog} />;
+          }
+          // Skeleton khi đang tạo lần đầu (chưa có kết quả cũ, chưa có tiến độ) — US3.
           if (loading[kind] && !res) {
             return (
               <div
@@ -178,14 +208,17 @@ export function StudioColumn({
           }
           if (!res) return null;
           return (
-            <StudioResultCard
-              key={kind}
-              result={res}
-              regenerating={loading[kind] === true}
-              onRegenerate={() => void run(kind)}
-              onCite={onCite}
-              local={localKinds[kind] === true}
-            />
+            <Fragment key={kind}>
+              {/* 146: đang Tạo lại ⇒ tiến độ nằm trên card cũ (card vẫn đọc được). */}
+              {prog && <StudioProgress kind={kind} progress={prog} onCard />}
+              <StudioResultCard
+                result={res}
+                regenerating={loading[kind] === true}
+                onRegenerate={() => void run(kind)}
+                onCite={onCite}
+                local={localKinds[kind] === true}
+              />
+            </Fragment>
           );
         })}
       </div>
