@@ -2,6 +2,7 @@ import { test, expect, type ElectronApplication } from "@playwright/test";
 import { appendFile, copyFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { PDF_EXTRACTION_VERSION } from "../../src/shared/ipc/types";
 import { launchFresh, dismissOnboarding } from "./helper";
 
 // 112 — "Xử lý lại" PDF trên app thật (IV_EMBED_FAKE=1 qua helper): kênh whitelisted chỉ nhận id; PDF nạp mới ghi
@@ -27,7 +28,7 @@ test("whitelist: window.api có sourceReprocess/Cancel, không có hàm nhận �
   expect(keys.some((k) => /reprocessPath|reprocessAll/i.test(k))).toBe(false);
 });
 
-test("PDF: nạp mới ⇒ phiên bản 2; xử lý lại ⇒ vẫn sẵn sàng; tệp sửa ⇒ mismatch; tệp mất ⇒ missing", async () => {
+test("PDF: nạp mới ⇒ phiên bản hiện hành; xử lý lại ⇒ vẫn sẵn sàng; tệp sửa ⇒ mismatch; tệp mất ⇒ missing", async () => {
   const win = await app.firstWindow();
   await dismissOnboarding(win);
   const pdf = join(dir, "bao-cao.pdf");
@@ -48,7 +49,7 @@ test("PDF: nạp mới ⇒ phiên bản 2; xử lý lại ⇒ vẫn sẵn sàng;
   );
   const get = () => win.evaluate((id) => window.api.sourceGet(id), sourceId);
   await expect.poll(async () => (await get())?.status).toBe("ready");
-  expect((await get())?.extractionVersion).toBe(2);
+  expect((await get())?.extractionVersion).toBe(PDF_EXTRACTION_VERSION);
 
   const before = (await get())!.updatedAt;
   expect(
