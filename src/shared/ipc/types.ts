@@ -454,6 +454,23 @@ export interface StudioGenerateInput {
   target?: AiTarget; // 098: "local" = tạo bằng Ollama sau lỗi online
   /** 123 (FR-018): ngôn ngữ đầu ra = ngôn ngữ giao diện lúc bấm tạo; sai/thiếu ⇒ ngôn ngữ hiệu lực của main. */
   outputLanguage?: "vi" | "en";
+  /** 146: định danh lượt tạo (renderer sinh) — thiếu/không hợp lệ ⇒ main không phát tiến độ. */
+  generationId?: string;
+}
+
+/** 146: pha tiến độ Studio — thứ tự tăng dần (renderer bỏ sự kiện lùi). */
+export type StudioProgressPhase = "reading" | "condensing" | "writing";
+
+/** 146: sự kiện push `studio:progress` — KHÔNG mang nội dung tài liệu/ghi chú. `index`/`total` chỉ ở pha `reading`. */
+export interface StudioProgressEvent {
+  generationId: string;
+  notebookId: string;
+  kind: StudioKind;
+  phase: StudioProgressPhase;
+  /** Phần đang đọc, 1-based. */
+  index?: number;
+  /** Số phần thực chạy (= `parts`). */
+  total?: number;
 }
 
 /** Input xuất kết quả Studio ra tệp .md (025). */

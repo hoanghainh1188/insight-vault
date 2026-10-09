@@ -13,13 +13,13 @@
 
 ## Phase 1: Setup / Foundational
 
-- [ ] T001 Append glossary bằng script (KHÔNG prettier) TRƯỚC khi đặt tên: `StudioProgressEvent`, `StudioProgressPhase` (`reading`/`condensing`/`writing`),
+- [X] T001 Append glossary bằng script (KHÔNG prettier) TRƯỚC khi đặt tên: `StudioProgressEvent`, `StudioProgressPhase` (`reading`/`condensing`/`writing`),
       `generationId` (định danh lượt tạo Studio), tiến độ bất định (indeterminate progress) — `docs/00-glossary.md`.
-- [ ] T002 Viết test TRƯỚC `tests/unit/studio-progress-id.test.ts` cho `isValidGenerationId` (chuỗi `[A-Za-z0-9_-]{1,64}` hợp lệ; rỗng, > 64, ký tự lạ, không
+- [X] T002 Viết test TRƯỚC `tests/unit/studio-progress-id.test.ts` cho `isValidGenerationId` (chuỗi `[A-Za-z0-9_-]{1,64}` hợp lệ; rỗng, > 64, ký tự lạ, không
       phải chuỗi ⇒ false). Chạy thấy FAIL.
-- [ ] T003 Hiện thực `src/shared/studio-progress.ts` (`isValidGenerationId`, `STUDIO_PROGRESS_PHASES` theo thứ tự) và thêm kiểu `StudioProgressPhase`,
+- [X] T003 Hiện thực `src/shared/studio-progress.ts` (`isValidGenerationId`, `STUDIO_PROGRESS_PHASES` theo thứ tự) và thêm kiểu `StudioProgressPhase`,
       `StudioProgressEvent`, `StudioGenerateInput.generationId?` vào `src/shared/ipc/types.ts`; T002 xanh.
-- [ ] T004 Viết test TRƯỚC: thêm `studio:progress` vào kỳ vọng `tests/unit/studio-channels-whitelist.test.ts` (và `tests/unit/ipc-whitelist.test.ts` nếu liệt kê);
+- [X] T004 Viết test TRƯỚC: thêm `studio:progress` vào kỳ vọng `tests/unit/studio-channels-whitelist.test.ts` (và `tests/unit/ipc-whitelist.test.ts` nếu liệt kê);
       chạy thấy FAIL; rồi thêm `studioProgress: "studio:progress"` vào `src/shared/ipc/channels.ts` (kiểu push) ⇒ xanh.
 
 ---

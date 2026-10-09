@@ -113,6 +113,7 @@ export const CHANNELS = {
   // studio (021) — tổng hợp tri thức từ notebook
   studioGenerate: "studio:generate",
   studioList: "studio:list",
+  studioProgress: "studio:progress", // 146: event push main→renderer (KHÔNG vào ChannelResponse)
   // studio export (025) — xuất kết quả ra tệp .md
   studioExport: "studio:export",
   // 059 embed-in-process — trạng thái tái lập chỉ mục

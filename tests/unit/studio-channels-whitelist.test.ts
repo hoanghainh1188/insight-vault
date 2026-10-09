@@ -18,6 +18,11 @@ describe("studio IPC whitelist", () => {
     expect(isWhitelisted("studio:list")).toBe(true);
   });
 
+  it("146: studio:progress (push main→renderer) whitelisted", () => {
+    expect(CHANNELS.studioProgress).toBe("studio:progress");
+    expect(isWhitelisted("studio:progress")).toBe(true);
+  });
+
   it("kênh studio:* ngoài danh sách bị từ chối", () => {
     expect(isWhitelisted("studio:rawChunks")).toBe(false);
     expect(isWhitelisted("studio:delete")).toBe(false);
