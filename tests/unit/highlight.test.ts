@@ -71,3 +71,40 @@ describe("buildSegments", () => {
     }
   });
 });
+
+// 157: vùng tô sáng bắt đầu/kết thúc bằng khoảng trắng/xuống dòng (chunk mở đầu bằng "\n\n" sau câu trước) ⇒ nhãn [n] neo vào
+// mảnh inline gần như rỗng ở CUỐI dòng trước (dựng dọc, đè chữ) + vạch tô sáng lẻ ở cuối. Bỏ khoảng trắng hai đầu trước khi cắt.
+describe("buildSegments — bỏ khoảng trắng hai đầu vùng tô sáng (157)", () => {
+  const text = "sauce.\n\nIn 2017, Vietnam made a day.\n\nNext.";
+  const start = text.indexOf("\n\nIn");
+  const end = text.indexOf("Next.");
+
+  it("đoạn highlight bắt đầu ở ký tự thật đầu tiên và kết thúc ở ký tự thật cuối cùng", () => {
+    const segs = buildSegments(text, { charStart: start, charEnd: end });
+    const hl = segs.filter((s) => s.kind === "highlight");
+    expect(hl).toHaveLength(1);
+    expect(hl[0].text).toBe("In 2017, Vietnam made a day.");
+    expect(segs.map((s) => s.text).join("")).toBe(text);
+  });
+
+  it("vùng chỉ toàn khoảng trắng ⇒ giữ nguyên (không mất highlight, không crash)", () => {
+    const segs = buildSegments(text, {
+      charStart: text.indexOf("\n\n"),
+      charEnd: text.indexOf("\n\n") + 2,
+    });
+    expect(segs.filter((s) => s.kind === "highlight")).toHaveLength(1);
+    expect(segs.map((s) => s.text).join("")).toBe(text);
+  });
+});
+
+describe("CSS .hltag (157)", () => {
+  it("nhãn [n] luôn trên một dòng", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync(
+      "src/renderer/features/source-viewer/source-viewer.css",
+      "utf8",
+    );
+    const body = /\.vtext \.hltag\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(body).toMatch(/white-space:\s*nowrap/);
+  });
+});

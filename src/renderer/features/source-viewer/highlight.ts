@@ -20,13 +20,14 @@ export function buildSegments(
   pageBreaks: PageBreak[] = [],
 ): Segment[] {
   const len = text.length;
-  const hl =
+  const valid =
     highlight &&
     highlight.charStart >= 0 &&
     highlight.charEnd <= len &&
     highlight.charStart < highlight.charEnd
       ? highlight
       : null;
+  const hl = valid ? trimRange(text, valid) : null;
 
   const bounds = new Set<number>([0, len]);
   if (hl) {
@@ -57,4 +58,19 @@ export function buildSegments(
     segs.push(seg);
   }
   return segs;
+}
+
+/**
+ * 157: bỏ khoảng trắng/xuống dòng ở hai đầu vùng tô sáng — chunk thường mở đầu bằng "\n\n" sau câu trước, khiến nhãn [n]
+ * neo vào mảnh inline rỗng ở cuối dòng trước (dựng dọc, đè chữ). Vùng toàn khoảng trắng ⇒ giữ nguyên.
+ */
+function trimRange(
+  text: string,
+  r: { charStart: number; charEnd: number },
+): { charStart: number; charEnd: number } {
+  let start = r.charStart;
+  let end = r.charEnd;
+  while (start < end && /\s/.test(text[start])) start++;
+  while (end > start && /\s/.test(text[end - 1])) end--;
+  return start < end ? { charStart: start, charEnd: end } : r;
 }
