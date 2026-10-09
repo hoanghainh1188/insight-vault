@@ -71,3 +71,38 @@ export function progressText(p: StudioProgressState, tr: Translator): string {
   if (p.phase === "reading") return tr.t("studio.progress.readingNoCount");
   return tr.t("studio.progress.writing");
 }
+
+/**
+ * 146 (clarify #5): câu báo trình đọc màn hình khi tiến độ đổi — vào pha đọc lần đầu, mốc giữa pha đọc (total ≥ 3,
+ * index = ceil(total/2)), sang rút gọn, sang viết (chỉ khi có pha trước — một lượt đã có câu bắt đầu/xong). null còn lại.
+ * `prev` của lượt khác coi như chưa có.
+ */
+export function progressAnnouncement(
+  prev: StudioProgressState | undefined,
+  next: StudioProgressState,
+  label: string,
+  tr: Translator,
+): string | null {
+  const before =
+    prev && prev.generationId === next.generationId ? prev : undefined;
+  if (next.phase === "reading") {
+    if (next.index === undefined || next.total === undefined) return null;
+    const entering = before?.phase !== "reading";
+    const mid =
+      next.total >= 3 &&
+      next.index === Math.ceil(next.total / 2) &&
+      before?.index !== next.index;
+    return entering || mid
+      ? tr.t("a11y.studioProgressReading", {
+          label,
+          i: next.index,
+          n: next.total,
+        })
+      : null;
+  }
+  if (before?.phase === next.phase) return null;
+  if (next.phase === "condensing") {
+    return tr.t("a11y.studioProgressCondensing", { label });
+  }
+  return before ? tr.t("a11y.studioProgressWriting", { label }) : null;
+}

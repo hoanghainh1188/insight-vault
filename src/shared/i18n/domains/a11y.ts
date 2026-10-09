@@ -25,6 +25,10 @@ export const a11yVi = {
   reindexDone: "Đã tái lập chỉ mục nguồn xong.",
   studioStart: "Đang tạo {label}…",
   studioDone: "Đã tạo xong {label}.",
+  // 146 (clarify #5): đổi pha / mốc giữa pha đọc
+  studioProgressReading: "{label}: đang đọc phần {i}/{n}.",
+  studioProgressCondensing: "{label}: đang rút gọn ghi chú.",
+  studioProgressWriting: "{label}: đang viết.",
   progressValue: "{step}, {pct}%",
 } as const;
 
@@ -52,5 +56,8 @@ export const a11yEn: Widen<typeof a11yVi> = {
   reindexDone: "Finished reindexing sources.",
   studioStart: "Creating {label}…",
   studioDone: "Finished creating {label}.",
+  studioProgressReading: "{label}: reading part {i} of {n}.",
+  studioProgressCondensing: "{label}: condensing notes.",
+  studioProgressWriting: "{label}: writing.",
   progressValue: "{step}, {pct}%",
 };

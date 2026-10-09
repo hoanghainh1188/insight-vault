@@ -87,3 +87,64 @@ describe("StudioProgress", () => {
     expect(m?.[1] ?? "").toMatch(/studio-progress[\s\S]*animation:\s*none/);
   });
 });
+
+// 146 (analyze L3): StudioColumn gọi announce đúng câu khi tiến độ của một loại đổi pha.
+import { vi } from "vitest";
+import type {
+  StudioGenerateInput,
+  StudioProgressEvent,
+} from "@shared/ipc/types";
+
+const announced = vi.hoisted(() => [] as string[]);
+vi.mock("../../src/renderer/shared/a11y/announcer", () => ({
+  announce: (msg: string) => announced.push(msg),
+}));
+const { StudioColumn } =
+  await import("../../src/renderer/features/studio/StudioColumn");
+
+describe("StudioColumn — thông báo đổi pha (L3)", () => {
+  it("vào pha đọc + đổi sang viết ⇒ announce câu tiến độ có tên loại", async () => {
+    announced.length = 0;
+    let push: (e: StudioProgressEvent) => void = () => undefined;
+    let input: StudioGenerateInput | undefined;
+    (window as unknown as { api: unknown }).api = {
+      aiGetRuntimeStatus: () => Promise.resolve({ ollamaReady: true }),
+      sourceListByNotebook: () =>
+        Promise.resolve([
+          { id: "s1", notebookId: "nb1", status: "ready", title: "A" },
+        ]),
+      onSourceProgress: () => () => undefined,
+      onStudioProgress: (cb: (e: StudioProgressEvent) => void) => {
+        push = cb;
+        return () => undefined;
+      },
+      studioList: () => Promise.resolve([]),
+      studioGenerate: (i: StudioGenerateInput) => {
+        input = i;
+        return new Promise(() => undefined);
+      },
+    };
+    await act(async () =>
+      root.render(createElement(StudioColumn, { notebookId: "nb1" })),
+    );
+    await act(async () => {});
+    const btn = container.querySelector(
+      "[data-testid=studio-btn-summary]",
+    ) as HTMLButtonElement;
+    act(() => btn.click());
+    const base = {
+      generationId: input!.generationId!,
+      notebookId: "nb1",
+      kind: "summary" as const,
+    };
+    act(() => push({ ...base, phase: "reading", index: 1, total: 4 }));
+    act(() => push({ ...base, phase: "reading", index: 2, total: 4 }));
+    act(() => push({ ...base, phase: "writing" }));
+    expect(announced).toEqual([
+      "Đang tạo Tóm tắt tài liệu…",
+      "Tóm tắt tài liệu: đang đọc phần 1/4.",
+      "Tóm tắt tài liệu: đang đọc phần 2/4.",
+      "Tóm tắt tài liệu: đang viết.",
+    ]);
+  });
+});

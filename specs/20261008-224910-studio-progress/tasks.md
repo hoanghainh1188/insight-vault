@@ -71,10 +71,10 @@
 
 ## Phase 4: User Story 3 — Thông báo trình đọc màn hình (Priority: P2)
 
-- [ ] T018 [US3] Viết test TRƯỚC (trong `tests/unit/studio-progress.test.ts`) cho `progressAnnouncement(prev, next, label, tr)`: câu khi vào `reading` lần đầu,
+- [X] T018 [US3] Viết test TRƯỚC (trong `tests/unit/studio-progress.test.ts`) cho `progressAnnouncement(prev, next, label, tr)`: câu khi vào `reading` lần đầu,
       `condensing`, `writing` (khi có pha trước); mốc giữa khi `total ≥ 3` và `index = ceil(total/2)`; null còn lại; tổng số câu một lượt 6 phần ≤ 6 (gồm start/done hiện có).
       Chạy thấy FAIL.
-- [ ] T019 [US3] Hiện thực `progressAnnouncement` + khoá `a11y.studioProgress{Reading,Condensing,Writing}` vi/en (`src/shared/i18n/domains/a11y.ts`); gọi `announce`
+- [X] T019 [US3] Hiện thực `progressAnnouncement` + khoá `a11y.studioProgress{Reading,Condensing,Writing}` vi/en (`src/shared/i18n/domains/a11y.ts`); gọi `announce`
       trong `StudioColumn.tsx` khi tiến độ của loại đổi; T018 xanh.
 
 ---

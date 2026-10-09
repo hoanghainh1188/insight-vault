@@ -1,8 +1,12 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { AiTarget, Citation, StudioKind } from "@shared/ipc/types";
 import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
 import { StudioProgress } from "./StudioProgress";
+import {
+  progressAnnouncement,
+  type StudioProgressMap,
+} from "./studio-progress";
 import { announce } from "../../shared/a11y/announcer";
 import { studioMessage } from "../../shared/a11y/messages";
 import { useT } from "../../shared/i18n/i18n-context";
@@ -40,6 +44,25 @@ export function StudioColumn({
   // 123: translator HIỆN TẠI cho câu báo xong (về sau await — người dùng có thể đã đổi ngôn ngữ).
   const trRef = useRef(t);
   trRef.current = t;
+  // 146 (clarify #5): báo trình đọc màn hình khi tiến độ của một loại đổi pha / tới mốc giữa (polite, có tên loại).
+  const prevProgress = useRef<StudioProgressMap>({});
+  useEffect(() => {
+    const tr = trRef.current;
+    for (const kind of KINDS) {
+      const next = progress[kind];
+      const prev = prevProgress.current[kind];
+      if (next && next !== prev) {
+        const msg = progressAnnouncement(
+          prev,
+          next,
+          tr.t(`studio.kind.${kind}`),
+          tr,
+        );
+        if (msg) announce(msg);
+      }
+    }
+    prevProgress.current = progress;
+  }, [progress]);
   // Phạm vi tổng hợp (US2): "" = tất cả nguồn; else sourceId.
   const [scope, setScope] = useState("");
   const scopeId = scope === "" ? undefined : scope;

@@ -120,3 +120,104 @@ describe("progressText", () => {
     );
   });
 });
+
+// 146 (T018, clarify #5): câu đọc màn hình — khi vào pha đọc lần đầu, đổi sang rút gọn / viết (writing chỉ khi có pha trước),
+// mốc giữa pha đọc (total ≥ 3, index = ceil(total/2)); null còn lại. Một lượt 6 phần ≤ 6 câu (gồm bắt đầu/xong hiện có).
+import { progressAnnouncement } from "../../src/renderer/features/studio/studio-progress";
+import type { StudioProgressState } from "../../src/renderer/features/studio/studio-progress";
+
+describe("progressAnnouncement", () => {
+  const vi_ = createTranslator("vi");
+  const en_ = createTranslator("en");
+  const st = (
+    phase: StudioProgressState["phase"],
+    index?: number,
+    total?: number,
+    generationId = "g",
+  ): StudioProgressState => ({ generationId, phase, index, total });
+
+  it("vào pha đọc lần đầu ⇒ câu có tên loại + phần i/N", () => {
+    expect(
+      progressAnnouncement(undefined, st("reading", 1, 6), "Ý chính", vi_),
+    ).toBe("Ý chính: đang đọc phần 1/6.");
+  });
+
+  it("mốc giữa: total ≥ 3 và index = ceil(total/2) ⇒ có câu; các phần khác ⇒ null", () => {
+    expect(
+      progressAnnouncement(
+        st("reading", 2, 6),
+        st("reading", 3, 6),
+        "Ý chính",
+        vi_,
+      ),
+    ).toBe("Ý chính: đang đọc phần 3/6.");
+    expect(
+      progressAnnouncement(
+        st("reading", 3, 6),
+        st("reading", 4, 6),
+        "Ý chính",
+        vi_,
+      ),
+    ).toBeNull();
+    expect(
+      progressAnnouncement(
+        st("reading", 1, 2),
+        st("reading", 2, 2),
+        "Ý chính",
+        vi_,
+      ),
+    ).toBeNull();
+    expect(
+      progressAnnouncement(
+        st("reading", 1, 5),
+        st("reading", 3, 5),
+        "Ý chính",
+        vi_,
+      ),
+    ).not.toBeNull();
+  });
+
+  it("đổi sang rút gọn / viết ⇒ câu tương ứng (English)", () => {
+    expect(
+      progressAnnouncement(st("reading", 6, 6), st("condensing"), "FAQ", en_),
+    ).toBe("FAQ: condensing notes.");
+    expect(
+      progressAnnouncement(st("condensing"), st("writing"), "FAQ", en_),
+    ).toBe("FAQ: writing.");
+  });
+
+  it("một lượt (writing không có pha trước) ⇒ null — đã có câu bắt đầu/xong", () => {
+    expect(
+      progressAnnouncement(undefined, st("writing"), "FAQ", en_),
+    ).toBeNull();
+  });
+
+  it("cùng pha, không phải mốc ⇒ null; lượt khác coi như chưa có pha trước", () => {
+    expect(
+      progressAnnouncement(st("writing"), st("writing"), "FAQ", en_),
+    ).toBeNull();
+    expect(
+      progressAnnouncement(
+        st("writing", undefined, undefined, "old"),
+        st("reading", 1, 4),
+        "FAQ",
+        en_,
+      ),
+    ).toBe("FAQ: reading part 1 of 4.");
+  });
+
+  it("một lượt 6 phần có rút gọn: tổng câu (gồm bắt đầu + xong) ≤ 6", () => {
+    const seq: StudioProgressState[] = [
+      ...Array.from({ length: 6 }, (_, i) => st("reading", i + 1, 6)),
+      st("condensing"),
+      st("writing"),
+    ];
+    let prev: StudioProgressState | undefined;
+    let count = 2; // bắt đầu + xong
+    for (const next of seq) {
+      if (progressAnnouncement(prev, next, "Tóm tắt", vi_)) count += 1;
+      prev = next;
+    }
+    expect(count).toBeLessThanOrEqual(6);
+  });
+});
