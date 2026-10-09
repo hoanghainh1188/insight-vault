@@ -3,8 +3,10 @@ import {
   AutoTokenizer,
 } from "@huggingface/transformers";
 import { app } from "electron";
+import { existsSync } from "node:fs";
 import { logEvent } from "../../logging";
 import { RerankBusyError, RerankNotReadyError } from "../rag/rerank-filter";
+import { isRerankerCached, rerankerCacheFiles } from "./cache";
 import { fakeRerankScore } from "./fake-score";
 import {
   canRetryDownload,
@@ -73,11 +75,21 @@ export function createReranker(opts: {
     if (state === "error" && !canRetryDownload(lastFailedAt, Date.now())) {
       return;
     }
-    const next = nextRerankerState(state, "start");
-    if (next === state) return; // đang tải / đã sẵn sàng
+    // 153: đã có đủ tệp trong cache ⇒ chỉ nạp từ đĩa ("loading"), KHÔNG bật chỉ báo ra mạng.
+    const cached = isRerankerCached(
+      rerankerCacheFiles(
+        opts.cacheDir,
+        opts.model,
+        opts.revision,
+        opts.modelFile,
+      ),
+      existsSync,
+    );
+    const next = nextRerankerState(state, "start", { cached });
+    if (next === state) return; // đang tải/nạp / đã sẵn sàng
     state = next;
-    logEvent("rerank.model.load", { model: opts.model });
-    opts.setOnline?.(true, "model");
+    logEvent("rerank.model.load", { model: opts.model, cached });
+    if (!cached) opts.setOnline?.(true, "model");
     void (async () => {
       try {
         const tok = (await AutoTokenizer.from_pretrained(
@@ -98,7 +110,7 @@ export function createReranker(opts: {
           errorType: e instanceof Error ? e.constructor.name : typeof e,
         });
       } finally {
-        opts.setOnline?.(false, "model");
+        if (!cached) opts.setOnline?.(false, "model");
       }
     })();
   };
