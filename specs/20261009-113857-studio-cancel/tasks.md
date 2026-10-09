@@ -2,6 +2,8 @@
 
 **Input**: `specs/20261009-113857-studio-cancel/` (plan, spec, research R1–R7, data-model, contracts/studio-cancel.md, quickstart)
 
+> **Sửa sau analyze (2026-10-09):** A1 — `finish()` trả lý do huỷ + `cancelLogFields` thuần có test (T006); kịch bản supersede trong e2e (T017).
+
 **Tests**: BẮT BUỘC (Constitution IV — TDD): hàm / module thuần viết test trước, chạy thấy FAIL rồi mới code.
 
 **Quy ước**: không chạy prettier lên `docs/00-glossary.md`, `docs/04-decisions/INDEX.md` (sửa bằng script). Commit theo phase. `[P]` = khác tệp, không phụ thuộc.
@@ -10,19 +12,19 @@
 
 ## Phase 1: Setup / Foundational — lỗi huỷ + nối signal ở provider
 
-- [ ] T001 Append glossary bằng script (KHÔNG prettier) TRƯỚC khi đặt tên: huỷ lượt tạo Studio (`studio:cancel`, `studioCancel`), sổ lượt
+- [X] T001 Append glossary bằng script (KHÔNG prettier) TRƯỚC khi đặt tên: huỷ lượt tạo Studio (`studio:cancel`, `studioCancel`), sổ lượt
       (`createGenerationRegistry`, `CancelReason`), lỗi huỷ (`ChatAbortedError` / mã `studioCancelled`), lượt hiện hành (`isCurrentGeneration`) — `docs/00-glossary.md`.
-- [ ] T002 Viết test TRƯỚC `tests/unit/chat-abort.test.ts` cho `src/main/services/ai-runtime/abort.ts`: `ChatAbortedError` (name, `isChatAborted`),
+- [X] T002 Viết test TRƯỚC `tests/unit/chat-abort.test.ts` cho `src/main/services/ai-runtime/abort.ts`: `ChatAbortedError` (name, `isChatAborted`),
       `assertNotAborted(undefined | chưa abort | đã abort)`, `linkAbort(outer, controller)` — outer đã abort ⇒ controller abort ngay; outer abort sau ⇒ controller
       abort; `unlink()` gỡ listener (abort sau unlink không ảnh hưởng); outer undefined ⇒ no-op. Chạy thấy FAIL; hiện thực ⇒ xanh.
-- [ ] T003 [P] Viết test TRƯỚC trong `tests/unit/ollama-client.test.ts`: nhánh không-stream với `fetchFn` giả tôn trọng `init.signal` — signal ngoài abort trong
+- [X] T003 [P] Viết test TRƯỚC trong `tests/unit/ollama-client.test.ts`: nhánh không-stream với `fetchFn` giả tôn trọng `init.signal` — signal ngoài abort trong
       lúc fetch ⇒ ném `ChatAbortedError` (không phải `UserFacingError("ollamaHttp")` / timeout); abort trong lúc đọc body ⇒ `ChatAbortedError`; không truyền
       signal ⇒ như cũ; timeout nội bộ vẫn là lỗi cũ. Chạy thấy FAIL; sửa `src/main/services/ai-runtime/ollama-client.ts` (dùng `linkAbort`, phạm vi gồm
       `res.json()`) ⇒ xanh.
-- [ ] T004 [P] Viết test TRƯỚC `tests/unit/online-http-abort.test.ts`: `callJson({…, signal})` — abort ⇒ `ChatAbortedError` (KHÔNG `OnlineProviderError`
+- [X] T004 [P] Viết test TRƯỚC `tests/unit/online-http-abort.test.ts`: `callJson({…, signal})` — abort ⇒ `ChatAbortedError` (KHÔNG `OnlineProviderError`
       kind `timeout`); egress kết thúc (badge về nghỉ — kiểm qua `withEgress` / privacy state); timeout thật vẫn `OnlineProviderError(timeout)`. Chạy thấy FAIL;
       sửa `src/main/services/ai-runtime/online/online-http.ts` (`CallJsonOptions.signal`, kiểm `aborted` trước `errorForCause`) ⇒ xanh.
-- [ ] T005 Truyền `opts.signal` vào `callJson` ở nhánh không-stream của `openai-provider.ts`, `anthropic-provider.ts`, `gemini-provider.ts`
+- [X] T005 Truyền `opts.signal` vào `callJson` ở nhánh không-stream của `openai-provider.ts`, `anthropic-provider.ts`, `gemini-provider.ts`
       (`src/main/services/ai-runtime/online/`); thêm 1 test mỗi provider (fetch giả, abort ⇒ `ChatAbortedError`) vào `tests/unit/online-providers.test.ts` (viết test TRƯỚC, thấy FAIL); sửa chú thích
       `ChatStreamOpts.signal` ở `provider.ts` (áp cả nhánh không-stream).
 
@@ -37,7 +39,8 @@
 - [ ] T006 [US1] Viết test TRƯỚC `tests/unit/generation-registry.test.ts` cho `createGenerationRegistry` (`src/main/services/studio/generation-registry.ts`):
       register trả signal; `cancel` đúng owner ⇒ `true` + signal aborted + `reason`; owner khác / id lạ / đã finish / đã huỷ ⇒ `false`; `finish` idempotent;
       register cùng `(notebookId, kind)` ⇒ lượt cũ aborted `superseded`; khác kind / notebook không ảnh hưởng; `abortAllFor(owner)` chỉ lượt của owner (`window`);
-      `abortAll`. Chạy thấy FAIL; hiện thực ⇒ xanh.
+      `abortAll`; (analyze A1) `finish(id)` trả `reason` nếu lượt đã bị huỷ (null nếu không) và hàm thuần `cancelLogFields(kind, lastPhase, reason)` ⇒
+      `{kind, phase, reason}` (phase mặc định `"start"`, không id / notebook). Chạy thấy FAIL; hiện thực ⇒ xanh.
 - [ ] T007 [US1] Viết test TRƯỚC trong `tests/unit/studio-map-reduce.test.ts`: `signal` aborted trước phần đầu ⇒ 0 lượt chat; abort trong lúc chat phần 2 (chat giả
       ném `ChatAbortedError`) ⇒ KHÔNG thử lại (tổng lượt gọi = 2), ném `ChatAbortedError`; abort giữa vòng rút gọn ⇒ không gọi lô kế; abort trước bước viết ⇒
       không gọi bước cuối; không phát tiến độ sau khi abort; không truyền signal ⇒ test cũ giữ kỳ vọng. Chạy thấy FAIL; sửa `map-reduce.ts` (truyền signal vào

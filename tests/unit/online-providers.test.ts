@@ -205,3 +205,35 @@ describe("OpenAIProvider (031)", () => {
     expect(res.content).toBe("Xin chào");
   });
 });
+
+// 149: nhánh KHÔNG-stream (Studio) của cả 3 provider truyền signal ⇒ huỷ = ChatAbortedError, không phải OnlineProviderError(timeout).
+import { ChatAbortedError } from "../../src/main/services/ai-runtime/abort";
+
+describe("3 provider — huỷ nhánh không-stream (149)", () => {
+  const hanging = (): typeof fetch =>
+    vi.fn(
+      (_u: string, init?: RequestInit) =>
+        new Promise<Response>((_r, reject) =>
+          init!.signal!.addEventListener("abort", () =>
+            reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
+          ),
+        ),
+    ) as unknown as typeof fetch;
+
+  it.each([
+    ["OpenAI", (f: typeof fetch) => new OpenAIProvider(deps(f))],
+    ["Anthropic", (f: typeof fetch) => new AnthropicProvider(deps(f))],
+    ["Gemini", (f: typeof fetch) => new GeminiProvider(deps(f))],
+  ])("%s: abort ⇒ ChatAbortedError", async (_name, make) => {
+    const outer = new AbortController();
+    const p = make(hanging()).chat(
+      { messages: MSGS },
+      { signal: outer.signal },
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    outer.abort();
+    const err = await p.catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ChatAbortedError);
+    expect(err).not.toBeInstanceOf(OnlineProviderError);
+  });
+});

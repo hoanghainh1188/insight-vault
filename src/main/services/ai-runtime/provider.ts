@@ -7,9 +7,10 @@ import type {
 } from "@shared/ipc/types";
 
 /** Tuỳ chọn streaming cho chat (039). onToken có → provider stream (gọi mỗi delta) + vẫn trả content đầy
- * đủ. Không có → hành vi chờ-trọn như cũ (Studio giữ nguyên). signal → huỷ giữa chừng. */
+ * đủ. Không có → hành vi chờ-trọn (Studio). signal → huỷ giữa chừng (cả hai nhánh). */
 export interface ChatStreamOpts {
   onToken?: (delta: string) => void;
+  /** Huỷ: stream (039) giữ phần đã nhận; 149 — nhánh không-stream (Studio) ném ChatAbortedError (≠ timeout). */
   signal?: AbortSignal;
 }
 
