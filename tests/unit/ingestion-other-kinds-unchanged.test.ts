@@ -13,6 +13,7 @@ import type { SourceKind } from "@shared/ipc/types";
 
 // 112 (FR-023, SC-007): các loại nguồn KHÁC PDF phải cho văn bản + chunk y hệt trước feature. Snapshot được chụp từ
 // code trên main TRƯỚC khi sửa chunker/pipeline và KHÔNG được cập nhật về sau.
+// Ngoại lệ có chủ đích: 159 dời đầu chunk chồng lấn tới ranh giới câu/từ — chỉ charStart + đầu text đổi, cập nhật 1 lần.
 
 const FIXTURES = join(__dirname, "..", "fixtures");
 
