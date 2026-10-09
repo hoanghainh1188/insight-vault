@@ -8,7 +8,7 @@ import {
 import { SIZE_LIMITS } from "../size-limits";
 
 // Fetch + trích nội dung chính từ URL (FR-004/019, A6). CHỈ ở main. Chặn SSRF mỗi hop redirect.
-// Adapter thư viện (jsdom/readability/turndown) — loại khỏi ngưỡng coverage; SSRF logic đã test ở ssrf-guard.
+// Adapter thư viện (jsdom/readability) — HTML→văn bản thuần ở url-text.ts (150, đã test) — loại khỏi ngưỡng coverage; SSRF logic đã test ở ssrf-guard.
 
 const MAX_REDIRECTS = 5;
 
@@ -81,18 +81,19 @@ export async function fetchAndParseUrl(rawUrl: string): Promise<ParseResult> {
 
   const { JSDOM } = await import("jsdom");
   const { Readability } = await import("@mozilla/readability");
-  const TurndownService = (await import("turndown")).default;
+  const { articleHtmlToText } = await import("./url-text");
 
   const dom = new JSDOM(html, { url: rawUrl });
   const article = new Readability(dom.window.document).parse();
   if (!article || !article.content) {
     throw new Error("Could not extract the main content of the page.");
   }
-  const markdown = new TurndownService().turndown(article.content);
+  // 150: chỉ giữ chữ (bỏ cú pháp liên kết/ảnh/dấu chú thích) — văn bản chính tắc cho locator.
+  const text = articleHtmlToText(article.content);
 
   return {
     pageCount: null,
     title: article.title ?? undefined,
-    pages: [{ page: null, text: markdown }],
+    pages: [{ page: null, text }],
   };
 }
