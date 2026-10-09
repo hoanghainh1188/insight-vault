@@ -4,6 +4,8 @@ import { parsePdf } from "../../src/main/services/ingestion/parsers/pdf";
 import { makePdf } from "../fixtures/pdf/make-pdf";
 import {
   borderlessTable,
+  decimalTable,
+  financialTable,
   rotatedSample,
   twoColumns,
 } from "../fixtures/pdf/samples";
@@ -38,12 +40,15 @@ async function best(fn: () => Promise<unknown>, runs = 3): Promise<number> {
 }
 
 describe("SC-006 — hiệu năng trích PDF có bố cục", () => {
-  it("50 trang (2 cột + bảng) ⇒ mới ≤ 2× cũ", async () => {
+  it("50 trang (2 cột + bảng + trang xoay + bảng số) ⇒ mới ≤ 2× cũ", async () => {
     // 147: mẫu hỗn hợp có thêm trang /Rotate 90 (xoay qua viewport) — đo cả chi phí xoay trang.
+    // 147 (b): thêm bảng số căn phải / căn thập phân — đo chi phí đường phụ nhận bảng số.
     const kinds = [
       () => twoColumns().pages[0],
       () => borderlessTable().pages[0],
       () => rotatedSample(twoColumns(), 90).pages[0],
+      () => financialTable().pages[0],
+      () => decimalTable().pages[0],
     ];
     const pages = Array.from({ length: 50 }, (_, i) =>
       kinds[i % kinds.length](),

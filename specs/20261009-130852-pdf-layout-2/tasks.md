@@ -60,14 +60,14 @@
 
 ## Phase 4: Đợt 3 (PR3) — User Story 3: Bảng số căn phải (Priority: P2)
 
-- [ ] T011 [US3] `samples.ts`: `financialTable` (4 cột số căn phải, tiêu đề 2 dòng căn phải / giữa, số âm ngoặc, `1.234,5` và `1,234.5`, hàng tổng), `decimalTable`; mẫu âm
+- [X] T011 [US3] `samples.ts`: `financialTable` (4 cột số căn phải, tiêu đề 2 dòng căn phải / giữa, số âm ngoặc, `1.234,5` và `1,234.5`, hàng tổng), `decimalTable`; mẫu âm
       `tocNoLeader`, `keyValueList`, `justifiedParagraph`, `signatureBlock`.
-- [ ] T012 [US3] Viết test TRƯỚC `tests/unit/pdf-layout-numeric.test.ts`: `looksNumeric` (dương / âm: ngày, mã, số trang, chữ), `decimalAnchor`. FAIL ⇒ hiện thực
+- [X] T012 [US3] Viết test TRƯỚC `tests/unit/pdf-layout-numeric.test.ts`: `looksNumeric` (dương / âm: ngày, mã, số trang, chữ), `decimalAnchor`. FAIL ⇒ hiện thực
       `src/main/services/ingestion/pdf-layout/numeric.ts` ⇒ xanh.
-- [ ] T013 [US3] Viết test TRƯỚC trong `tests/unit/pdf-layout-tables.test.ts` + `pdf-parse-layout.test.ts`: `financialTable` / `decimalTable` ⇒ bảng Markdown đúng ô; mẫu âm ⇒ 0
+- [X] T013 [US3] Viết test TRƯỚC trong `tests/unit/pdf-layout-tables.test.ts` + `pdf-parse-layout.test.ts`: `financialTable` / `decimalTable` ⇒ bảng Markdown đúng ô; mẫu âm ⇒ 0
       bảng; mọi test bảng căn trái hiện có giữ kỳ vọng; lỗi trong đường phụ (chèn lỗi) ⇒ kết quả như trước đường phụ. FAIL ⇒ hiện thực `detectRightAlignedTable` trong
       `tables.ts` (đường phụ + ngưỡng R5 + try/catch) ⇒ xanh.
-- [ ] T014 Perf mẫu thêm bảng số (≤ 2×); ADR phần (b) + số đo. **Commit + PR3.**
+- [X] T014 Perf mẫu thêm bảng số (≤ 2×); ADR phần (b) + số đo. **Commit + PR3.**
 
 ---
 

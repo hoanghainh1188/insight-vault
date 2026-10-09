@@ -134,3 +134,47 @@ describe("parsePdf — trang xoay /Rotate (147)", () => {
     expect(await texts(base)).toEqual(base.expected);
   });
 });
+
+// 147 (b, SC-003): bảng số căn phải / căn thập phân ⇒ bảng đúng ô; mẫu âm ⇒ 0 bảng nhầm (bảng căn trái kiểm ở các test trên).
+import {
+  decimalTable,
+  financialTable,
+  justifiedParagraph,
+  keyValueList,
+  signatureBlock,
+  tocNoLeader,
+} from "../fixtures/pdf/samples";
+
+describe("parsePdf — bảng số căn phải (147 b)", () => {
+  it.each([
+    [
+      "báo cáo tài chính (4 cột số, tiêu đề 2 dòng, ngoặc âm, hàng tổng)",
+      financialTable,
+    ],
+    ["căn dấu thập phân", decimalTable],
+  ] as const)("mẫu dương: %s", async (_n, make) => {
+    const s = make();
+    expect(await texts(s)).toEqual(s.expected);
+  });
+
+  it.each([
+    ["mục lục không chấm dẫn", tocNoLeader],
+    ["danh sách nhãn–giá trị", keyValueList],
+    ["đoạn căn đều hai bên", justifiedParagraph],
+    ["khối chữ ký hai bên", signatureBlock],
+  ] as const)("mẫu âm: %s ⇒ không có bảng", async (_n, make) => {
+    const s = make();
+    const r = await parsePdf(makePdf(s.pages));
+    expect(r.pages.map((p) => p.text)).toEqual(s.expected);
+    expect(r.pages[0].blocks).toBeUndefined();
+  });
+
+  it("bảng số trả block trỏ đúng vùng bảng", async () => {
+    const r = await parsePdf(makePdf(financialTable().pages));
+    const p = r.pages[0];
+    expect(p.blocks).toHaveLength(1);
+    const t = p.text.slice(p.blocks![0].start, p.blocks![0].end);
+    expect(t.startsWith("| Item | Fiscal 2025 |")).toBe(true);
+    expect(t.endsWith("| Total | 657.5 | 601.4 | 9.3% | 53.3% |")).toBe(true);
+  });
+});
