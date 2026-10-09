@@ -96,6 +96,35 @@ describe("buildViewerBlocks", () => {
     expect(tt.cells.flat(2).every((s) => s.kind === "plain")).toBe(true);
   });
 
+  it("#171: dòng trống ngay SAU bảng không tô (không còn vạch tô lẻ); chữ sau đó vẫn tô", () => {
+    const a = TEXT.indexOf("2024");
+    const blocks = buildViewerBlocks(
+      TEXT,
+      { charStart: a, charEnd: TEXT.length },
+      [],
+      TABLES,
+    );
+    const after = blocks[2];
+    if (after.kind !== "text") throw new Error();
+    expect(after.segments).toEqual([
+      { text: "\n\n", kind: "plain" },
+      { text: "Kết thúc.", kind: "highlight" },
+    ]);
+    expect(highlighted(blocks)).toBe("20242.000 tỷKết thúc.");
+  });
+
+  it("#171: vùng tô chỉ phủ dòng trống sau bảng ⇒ không có đoạn tô nào trong khối sau bảng", () => {
+    const blocks = buildViewerBlocks(
+      TEXT,
+      { charStart: TABLES[0].end, charEnd: TABLES[0].end + 2 },
+      [],
+      TABLES,
+    );
+    const after = blocks[2];
+    if (after.kind !== "text") throw new Error();
+    expect(after.segments.every((s) => s.kind === "plain")).toBe(true);
+  });
+
   it("chỉ đoạn tô ĐẦU TIÊN mang first (nhãn [n] + cuộn tới)", () => {
     const a = TEXT.indexOf("Năm");
     const blocks = buildViewerBlocks(

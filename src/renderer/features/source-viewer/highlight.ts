@@ -96,19 +96,24 @@ export function buildViewerBlocks(
   const hl = adjustHighlight(text, highlight);
   const pageAt = pageMap(text.length, pageBreaks);
   const blocks: ViewerBlock[] = [];
-  const pushText = (from: number, to: number, beforeTable: boolean): void => {
+  const pushText = (
+    from: number,
+    to: number,
+    edges: { beforeTable: boolean; afterTable: boolean },
+  ): void => {
     if (to <= from) return;
     // mốc trang đúng tại `from` vẫn phải hiện ⇒ segmentRange lấy mốc ở chính `from`
-    const segments = segmentRange(text, from, to, hl, pageAt);
+    const raw = segmentRange(text, from, to, hl, pageAt);
+    const lead = edges.afterTable ? untintLeadingSpace(raw) : raw;
     blocks.push({
       kind: "text",
-      segments: beforeTable ? untintTrailingSpace(segments) : segments,
+      segments: edges.beforeTable ? untintTrailingSpace(lead) : lead,
     });
   };
   let cursor = 0;
   for (const t of [...tables].sort((a, b) => a.start - b.start)) {
     if (t.start < cursor || t.end > text.length) continue;
-    pushText(cursor, t.start, true);
+    pushText(cursor, t.start, { beforeTable: true, afterTable: cursor > 0 });
     const rows = [t.header, ...t.rows];
     const block: ViewerBlock = {
       kind: "table",
@@ -126,7 +131,7 @@ export function buildViewerBlocks(
     blocks.push(block);
     cursor = t.end;
   }
-  pushText(cursor, text.length, false);
+  pushText(cursor, text.length, { beforeTable: false, afterTable: cursor > 0 });
   return markFirst(blocks);
 }
 
@@ -144,6 +149,25 @@ function untintTrailingSpace(segs: Segment[]): Segment[] {
     return [...segs.slice(0, -1), tail];
   }
   return [...segs.slice(0, -1), { ...last, text: body }, tail];
+}
+
+/**
+ * #171: khoảng trắng đầu khối văn bản ngay SAU bảng (dòng trống ngăn cách) KHÔNG tô — đối xứng với untintTrailingSpace. Không mutate.
+ */
+function untintLeadingSpace(segs: Segment[]): Segment[] {
+  const first = segs[0];
+  if (!first || first.kind !== "highlight") return segs;
+  const body = first.text.replace(/^\s+/u, "");
+  if (body === first.text) return segs;
+  const head: Segment = {
+    text: first.text.slice(0, first.text.length - body.length),
+    kind: "plain",
+  };
+  if (first.pageMark !== undefined) head.pageMark = first.pageMark;
+  if (body === "") return [head, ...segs.slice(1)];
+  const rest: Segment = { ...first, text: body };
+  delete rest.pageMark;
+  return [head, rest, ...segs.slice(1)];
 }
 
 /** Đặt `first` cho đoạn tô sáng đầu tiên theo thứ tự hiển thị (bản sao — không mutate). */
