@@ -3,11 +3,12 @@ import { buildSegments } from "../../src/renderer/features/source-viewer/highlig
 
 describe("buildSegments", () => {
   it("chia [before | highlight | after]", () => {
-    const segs = buildSegments("0123456789", { charStart: 3, charEnd: 6 });
+    // 159: ranh giới vùng tô là ranh giới chữ (giữa chữ ⇒ trình xem nới về đầu chữ — test riêng bên dưới).
+    const segs = buildSegments("012 345 6789", { charStart: 4, charEnd: 7 });
     expect(segs).toEqual([
-      { text: "012", kind: "plain" },
+      { text: "012 ", kind: "plain" },
       { text: "345", kind: "highlight" },
-      { text: "6789", kind: "plain" },
+      { text: " 6789", kind: "plain" },
     ]);
   });
 
@@ -18,7 +19,7 @@ describe("buildSegments", () => {
   });
 
   it("highlight ở cuối → không có 'after'", () => {
-    const segs = buildSegments("abcdef", { charStart: 3, charEnd: 6 });
+    const segs = buildSegments("abc def", { charStart: 4, charEnd: 7 });
     expect(segs[segs.length - 1]).toEqual({ text: "def", kind: "highlight" });
   });
 
@@ -37,15 +38,15 @@ describe("buildSegments", () => {
   });
 
   it("chèn mốc trang theo pageBreaks", () => {
-    // text 10 ký tự, trang 1 tại 0, trang 2 tại 5
-    const segs = buildSegments("0123456789", { charStart: 6, charEnd: 8 }, [
+    // text 10 ký tự, trang 1 tại 0, trang 2 tại 5 (vùng tô [6,8) bắt đầu ở đầu chữ — 159)
+    const segs = buildSegments("01234 67 9", { charStart: 6, charEnd: 8 }, [
       { page: 1, offset: 0 },
       { page: 2, offset: 5 },
     ]);
     expect(segs[0].pageMark).toBe(1); // đoạn đầu (offset 0)
     const p2 = segs.find((s) => s.pageMark === 2);
     expect(p2).toBeDefined();
-    expect(p2!.text.startsWith("5")).toBe(true);
+    expect(p2!.text.startsWith(" ")).toBe(true);
     // vẫn có đoạn highlight [6,8)
     expect(segs.some((s) => s.kind === "highlight" && s.text === "67")).toBe(
       true,
@@ -106,5 +107,57 @@ describe("CSS .hltag (157)", () => {
     );
     const body = /\.vtext \.hltag\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
     expect(body).toMatch(/white-space:\s*nowrap/);
+  });
+});
+
+// 159 (phần hiển thị): chunk chồng lấn bắt đầu giữa chữ (chunker lùi 150 ký tự thô). Trình xem không tô một mảnh chữ:
+// - mảnh là ĐUÔI NGẮN của đoạn trước (tới xuống dòng) ⇒ bỏ qua, tô từ đoạn kế;
+// - còn lại ⇒ nới về đầu chữ. Chỉ đổi hiển thị — locator/dữ liệu không đổi.
+describe("buildSegments — không bắt đầu giữa chữ (159)", () => {
+  const hlText = (text: string, start: number, end: number): string =>
+    buildSegments(text, { charStart: start, charEnd: end })
+      .filter((s) => s.kind === "highlight")
+      .map((s) => s.text)
+      .join("");
+
+  it("mảnh đuôi đoạn trước ('sauc|e.' + xuống dòng) ⇒ tô từ đoạn kế", () => {
+    const text = "herbs and sauce.\n\nIn 2017, Vietnam made a day.\n\nNext.";
+    const start = text.indexOf("e.\n\nIn");
+    const end = text.indexOf("\n\nNext");
+    expect(hlText(text, start, end)).toBe("In 2017, Vietnam made a day.");
+  });
+
+  it("giữa chữ trong câu ('etymo|logy of its name') ⇒ nới về đầu chữ", () => {
+    const text = "as well as to the etymology of its name. The Hanoi style.";
+    const start = text.indexOf("logy");
+    expect(hlText(text, start, text.length)).toBe(
+      "etymology of its name. The Hanoi style.",
+    );
+  });
+
+  it("chữ tiếng Việt có dấu ('Ph|ở bò') ⇒ nới về đầu chữ", () => {
+    const text = "Món Phở bò rất ngon.";
+    const start = text.indexOf("ở bò");
+    expect(hlText(text, start, text.length)).toBe("Phở bò rất ngon.");
+  });
+
+  it("đã ở đầu chữ / đầu văn bản ⇒ không đổi", () => {
+    const text = "Alpha beta gamma.";
+    expect(hlText(text, text.indexOf("beta"), text.length)).toBe("beta gamma.");
+    expect(hlText(text, 0, 5)).toBe("Alpha");
+  });
+
+  it("đuôi dài (không xuống dòng gần) ⇒ không bỏ cả câu, chỉ nới về đầu chữ", () => {
+    const text = `word${"x".repeat(5)} continues with a long sentence that keeps going and going without any line break here.`;
+    const start = 6;
+    expect(hlText(text, start, text.length).startsWith("wordxxxxx")).toBe(true);
+  });
+
+  it("mảnh đuôi chiếm trọn vùng tô ⇒ giữ nguyên (không mất highlight)", () => {
+    const text = "sauce.\n\nNext.";
+    const start = text.indexOf("e.");
+    const segs = buildSegments(text, { charStart: start, charEnd: start + 2 });
+    expect(segs.filter((s) => s.kind === "highlight")).toHaveLength(1);
+    expect(segs.map((s) => s.text).join("")).toBe(text);
   });
 });
