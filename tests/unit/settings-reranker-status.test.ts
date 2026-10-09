@@ -59,6 +59,24 @@ describe("SettingsRerankerStatus", () => {
     expect(line()?.getAttribute("data-state")).toBe("ready");
   });
 
+  it("loading (153) ⇒ 'đang nạp', không nói 'đang tải ~120 MB'; làm mới tới khi ready", async () => {
+    install("loading", "ready");
+    await render();
+    expect(line()?.getAttribute("data-state")).toBe("loading");
+    expect(line()?.textContent).toContain("Đang nạp");
+    expect(line()?.textContent).not.toContain("120 MB");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(line()?.getAttribute("data-state")).toBe("ready");
+  });
+
+  it("idle (153) ⇒ câu trung tính, không khẳng định 'chưa tải'", async () => {
+    install("idle");
+    await render();
+    expect(line()?.textContent).not.toContain("Chưa tải");
+  });
+
   it("downloading ⇒ làm mới định kỳ tới khi ready", async () => {
     install("downloading", "downloading", "ready");
     await render();

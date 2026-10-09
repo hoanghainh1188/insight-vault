@@ -94,9 +94,10 @@ export interface OllamaHealth {
   modelPulled: boolean;
 }
 
-/** 109 — trạng thái bộ chấm độ liên quan (kênh chỉ đọc ai:getRerankerStatus); unavailable = bản ghi hiệu chuẩn không bật. */
+/** 109 — trạng thái bộ chấm độ liên quan (kênh chỉ đọc ai:getRerankerStatus); unavailable = bản ghi hiệu chuẩn không bật;
+ * 153: loading = nạp từ cache (không tải). */
 export type RerankerStatus =
-  "unavailable" | "idle" | "downloading" | "ready" | "error";
+  "unavailable" | "idle" | "downloading" | "loading" | "ready" | "error";
 
 /** 059 — trạng thái tái lập chỉ mục (đổi engine embedding). */
 export interface ReindexStatus {
