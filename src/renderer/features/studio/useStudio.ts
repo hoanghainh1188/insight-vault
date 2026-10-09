@@ -15,6 +15,11 @@ import type {
 import type { ParsedIpcError } from "@shared/online-error-tag";
 import { toParsedError } from "../../shared/i18n/describe-error";
 import { useLang } from "../../shared/i18n/i18n-context";
+import {
+  applyStudioProgress,
+  type ActiveGenerationIds,
+  type StudioProgressMap,
+} from "./studio-progress";
 
 // Hook cột Studio: nạp kết quả đã lưu khi mở notebook (studio:list) + sinh mới theo loại (studio:generate).
 // State theo TỪNG loại (results/loading/error) để 4 nút độc lập (US2). Đổi notebook → nạp lại.
@@ -45,6 +50,19 @@ export function useStudio(notebookId: string) {
   const hasReadySources = readySources.length > 0;
   // 091 (review S3): notebook hiện tại — kết quả của lượt tạo cũ về muộn sau khi chuyển notebook thì bỏ.
   const notebookRef = useRef(notebookId);
+  // 146: tiến độ theo loại + generationId của lượt đang chạy (sự kiện lượt khác / notebook khác bị bỏ).
+  const [progress, setProgress] = useState<StudioProgressMap>({});
+  const activeIds = useRef<ActiveGenerationIds>({});
+
+  useEffect(() => {
+    // Mock cũ trong test có thể thiếu kênh này — không có thì chỉ là không hiện tiến độ.
+    const off = window.api.onStudioProgress?.((e) =>
+      setProgress((p) =>
+        applyStudioProgress(p, activeIds.current, notebookRef.current, e),
+      ),
+    );
+    return off;
+  }, []);
 
   // Trạng thái sẵn sàng (mirror useChat): model + danh sách nguồn ready (cho dropdown lọc — US2).
   const refreshReadiness = useCallback(() => {
@@ -69,6 +87,8 @@ export function useStudio(notebookId: string) {
   useEffect(() => {
     let cancelled = false;
     notebookRef.current = notebookId;
+    activeIds.current = {};
+    setProgress({});
     setResults({});
     setErrors({});
     setLoading({});
@@ -100,6 +120,10 @@ export function useStudio(notebookId: string) {
     ): Promise<boolean> => {
       const stale = (): boolean => notebookRef.current !== notebookId;
       const local = target === "local";
+      // 146: mỗi lần bấm Tạo/Tạo lại/Tạo bằng AI cục bộ = một lượt mới ⇒ id mới; sự kiện của lượt trước bị bỏ.
+      const generationId = crypto.randomUUID();
+      activeIds.current = { ...activeIds.current, [kind]: generationId };
+      setProgress((p) => ({ ...p, [kind]: undefined }));
       setLoading((p) => ({ ...p, [kind]: true }));
       setErrors((p) => ({ ...p, [kind]: undefined }));
       setOnlineFailed((p) => ({ ...p, [kind]: false }));
@@ -109,6 +133,7 @@ export function useStudio(notebookId: string) {
           kind,
           sourceId,
           outputLanguage: lang,
+          generationId,
           ...(local ? { target: "local" as const } : {}),
         });
         if (stale()) return false;
@@ -126,6 +151,11 @@ export function useStudio(notebookId: string) {
         return false;
       } finally {
         if (!stale()) setLoading((p) => ({ ...p, [kind]: false }));
+        // 146: xong/lỗi ⇒ xoá tiến độ — chỉ khi vẫn là lượt đang chạy của loại này.
+        if (activeIds.current[kind] === generationId) {
+          activeIds.current = { ...activeIds.current, [kind]: undefined };
+          setProgress((p) => ({ ...p, [kind]: undefined }));
+        }
       }
     },
     [notebookId, lang],
@@ -137,6 +167,7 @@ export function useStudio(notebookId: string) {
     errors,
     onlineFailed,
     localKinds,
+    progress,
     generate,
     ollamaReady,
     hasReadySources,

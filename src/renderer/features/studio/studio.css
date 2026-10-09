@@ -211,3 +211,67 @@
 .studio-error p {
   margin: 0;
 }
+
+/* 146: tiến độ tạo — dòng pha + thanh (xác định ở pha đọc, bất định ở pha khác). Chỉ animate transform (compositor). */
+.studio-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.studio-progress-text {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+.studio-progress-bar {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+.studio-progress-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  border-radius: inherit;
+  transform-origin: left center;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+.studio-progress-bar.indeterminate .studio-progress-fill {
+  width: 35%;
+  right: auto;
+  animation: studio-progress-slide 1.4s var(--ease-out-expo) infinite;
+}
+@keyframes studio-progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+/* Card cũ đang được tạo lại: thanh nằm trên card, gọn hơn. */
+.studio-progress.on-card {
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* L1: không trượt — thanh bất định đứng yên (dòng pha vẫn báo trạng thái). */
+  .studio-progress-bar.indeterminate .studio-progress-fill {
+    animation: none;
+    transform: none;
+    width: 100%;
+    opacity: 0.45;
+  }
+  .studio-progress-fill {
+    transition: none;
+  }
+}

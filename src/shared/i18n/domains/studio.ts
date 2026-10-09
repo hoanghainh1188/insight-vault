@@ -31,6 +31,14 @@ export const studioVi = {
   truncated:
     "Tài liệu quá dài nên phần cuối chưa được tổng hợp — hãy lọc theo từng nguồn để tổng hợp đầy đủ.",
   exportName: "{kind} — {date}",
+  // 146 (clarify #11): tiến độ khi tạo
+  progress: {
+    reading: "Đang đọc phần {i}/{n}…",
+    readingNoCount: "Đang đọc tài liệu…",
+    condensing: "Đang rút gọn ghi chú…",
+    writing: "Đang viết…",
+    label: "Tiến độ tạo {kind}",
+  },
 } as const;
 
 export const studioEn: Widen<typeof studioVi> = {
@@ -62,4 +70,11 @@ export const studioEn: Widen<typeof studioVi> = {
   truncated:
     "The document is too long, so the last part wasn't summarized — filter by individual source for a complete summary.",
   exportName: "{kind} — {date}",
+  progress: {
+    reading: "Reading part {i} of {n}…",
+    readingNoCount: "Reading the document…",
+    condensing: "Condensing notes…",
+    writing: "Writing…",
+    label: "{kind} progress",
+  },
 };

@@ -51,18 +51,18 @@
 
 **Goal**: thẻ đúng loại hiện dòng pha + thanh tiến độ; bỏ sự kiện lượt khác/lùi; xoá khi xong/lỗi/đổi notebook.
 
-- [ ] T012 [US4] Viết test TRƯỚC `tests/unit/studio-progress.test.ts` cho `applyStudioProgress` (áp khi id + notebook khớp; bỏ id lạ, notebook khác, index lùi, pha lùi;
+- [X] T012 [US4] Viết test TRƯỚC `tests/unit/studio-progress.test.ts` cho `applyStudioProgress` (áp khi id + notebook khớp; bỏ id lạ, notebook khác, index lùi, pha lùi;
       không mutate) và `progressText` (vi/en đúng câu clarify #11). Chạy thấy FAIL.
-- [ ] T013 [US4] Hiện thực `src/renderer/features/studio/studio-progress.ts`; thêm khoá i18n `studio.progress.{reading,condensing,writing,label}` vi/en vào
+- [X] T013 [US4] Hiện thực `src/renderer/features/studio/studio-progress.ts`; thêm khoá i18n `studio.progress.{reading,condensing,writing,label}` vi/en vào
       `src/shared/i18n/domains/studio.ts`; T012 xanh.
-- [ ] T014 [US4] Viết test TRƯỚC (jsdom) `tests/unit/studio-progress-hook.test.ts` cho `useStudio`: mỗi `generate` gửi `generationId` mới; sự kiện đúng id ⇒
+- [X] T014 [US4] Viết test TRƯỚC (jsdom) `tests/unit/studio-progress-hook.test.ts` cho `useStudio`: mỗi `generate` gửi `generationId` mới; sự kiện đúng id ⇒
       `progress[kind]` cập nhật; sự kiện lượt cũ (tạo lại) bị bỏ; kết quả/lỗi ⇒ xoá tiến độ; đổi notebook ⇒ xoá; hai loại song song độc lập; (analyze L2) "Tạo bằng AI cục bộ" (`target: "local"`) cũng gửi `generationId` mới và
   nhận tiến độ riêng, sự kiện của lượt online lỗi trước đó bị bỏ. Chạy thấy FAIL.
-- [ ] T015 [US4] Sửa `src/renderer/features/studio/useStudio.ts` (sinh id bằng `crypto.randomUUID()`, `activeIds` ref, đăng ký `onStudioProgress`, trả `progress`);
+- [X] T015 [US4] Sửa `src/renderer/features/studio/useStudio.ts` (sinh id bằng `crypto.randomUUID()`, `activeIds` ref, đăng ký `onStudioProgress`, trả `progress`);
       T014 xanh; `tests/unit/studio-notebook-switch.test.ts` vẫn xanh.
-- [ ] T016 [US1] Viết test TRƯỚC (jsdom) `tests/unit/studio-progress-ui.test.ts` cho `StudioProgress`: pha đọc ⇒ "Đang đọc phần 2/5…" + `role="progressbar"`
+- [X] T016 [US1] Viết test TRƯỚC (jsdom) `tests/unit/studio-progress-ui.test.ts` cho `StudioProgress`: pha đọc ⇒ "Đang đọc phần 2/5…" + `role="progressbar"`
       có `aria-valuenow=2`/`aria-valuemax=5`; pha khác ⇒ bất định (không valuenow, có `aria-valuetext`); English khi ngôn ngữ en; (analyze L3) `StudioColumn` gọi `announce` đúng câu khi tiến độ của một loại đổi pha (mock `announce`). Chạy thấy FAIL.
-- [ ] T017 [US1] Hiện thực `src/renderer/features/studio/StudioProgress.tsx` + kiểu trong `src/renderer/features/studio/studio.css` (thanh xác định/bất định,
+- [X] T017 [US1] Hiện thực `src/renderer/features/studio/StudioProgress.tsx` + kiểu trong `src/renderer/features/studio/studio.css` (thanh xác định/bất định,
       `@media (prefers-reduced-motion: reduce)` tắt hiệu ứng — (analyze L1) kiểm bằng ảnh chụp e2e với `reducedMotion: "reduce"` ở T020 và test đọc CSS có khối
   media này; không tràn ở cột hẹp); sửa `src/renderer/features/studio/StudioColumn.tsx`: có tiến độ và chưa có kết
       quả ⇒ thay skeleton; có kết quả cũ ⇒ hiện trên card; nút giữ "Đang tạo…"; T016 xanh; `tests/unit/studio-parts-ui.test.ts` vẫn xanh.
