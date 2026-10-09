@@ -279,3 +279,183 @@ export function offsetOrigin(base: Sample): Sample {
     expected: base.expected,
   };
 }
+
+// 147 (b, research R5): bảng số căn phải / căn dấu thập phân (mẫu dương) và các khối "trông như bảng" không phải bảng (mẫu âm).
+// Bề rộng ký tự cố định 5pt ⇒ căn phải tại R: x = R − 5·độ dài; căn thập phân tại P: x = P − 5·độ dài phần trước dấu thập phân.
+
+const CHAR = SIZE * 0.5;
+const at = (x: number, y: number, text: string): FixtureText => ({
+  x,
+  y,
+  size: SIZE,
+  text,
+});
+const rightAt = (r: number, y: number, text: string): FixtureText =>
+  at(r - CHAR * text.length, y, text);
+const centerAt = (c: number, y: number, text: string): FixtureText =>
+  at(c - (CHAR * text.length) / 2, y, text);
+const intPart = (s: string): string => s.split(".")[0];
+const decimalAt = (p: number, y: number, text: string): FixtureText =>
+  at(p - CHAR * intPart(text).length, y, text);
+
+const mdRow = (r: readonly string[]) =>
+  `|${r.map((c) => (c === "" ? " " : ` ${c} `)).join("|")}|`;
+const md = (rows: readonly string[][]) =>
+  [
+    mdRow(rows[0]),
+    `|${rows[0].map(() => "---").join("|")}|`,
+    ...rows.slice(1).map(mdRow),
+  ].join("\n");
+
+const FIN_RIGHTS = [280, 370, 450, 540];
+const FIN_ROWS = [
+  ["Revenue", "1,234.5", "1.100,0", "12.2%", "100.0%"],
+  ["Cost of sales", "(456.7)", "(400.0)", "14.2%", "(37.0%)"],
+  ["Gross profit", "777.8", "700.0", "11.1%", "63.0%"],
+  ["Operating expenses", "(120.3)", "(98.6)", "22.0%", "(9.7%)"],
+  ["Total", "657.5", "601.4", "9.3%", "53.3%"],
+];
+
+/** Báo cáo tài chính: 4 cột số căn phải, tiêu đề 2 dòng (giữa / phải), số âm trong ngoặc, `1.234,5` và `1,234.5`, hàng tổng. */
+export function financialTable(): Sample {
+  const intro = paragraph(50, 60, ["Income statement in thousands."]);
+  const y0 = intro.next;
+  const head1 = [
+    at(50, y0, "Item"),
+    centerAt(FIN_RIGHTS[0] - 17.5, y0, "Fiscal"),
+    centerAt(FIN_RIGHTS[1] - 17.5, y0, "Fiscal"),
+    rightAt(FIN_RIGHTS[2], y0, "Change"),
+    rightAt(FIN_RIGHTS[3], y0, "Share"),
+  ];
+  const head2 = ["2025", "2024", "(%)", "(%)"].map((t, j) =>
+    rightAt(FIN_RIGHTS[j], y0 + 11, t),
+  );
+  const body = FIN_ROWS.flatMap((r, i) => {
+    const y = y0 + 25 + i * 14;
+    return [
+      at(50, y, r[0]),
+      ...r.slice(1).map((c, j) => rightAt(FIN_RIGHTS[j], y, c)),
+    ];
+  });
+  const outro = paragraph(50, y0 + 25 + 4 * 14 + 30, [
+    "Figures are unaudited.",
+  ]);
+  return {
+    pages: [
+      page([...intro.texts, ...head1, ...head2, ...body, ...outro.texts]),
+    ],
+    expected: [
+      [
+        "Income statement in thousands.",
+        md([
+          ["Item", "Fiscal 2025", "Fiscal 2024", "Change (%)", "Share (%)"],
+          ...FIN_ROWS,
+        ]),
+        "Figures are unaudited.",
+      ].join("\n\n"),
+    ],
+  };
+}
+
+const DEC_POINTS = [300, 450];
+const DEC_ROWS = [
+  ["A", "12.5", "0.25"],
+  ["B", "3.25", "1.5"],
+  ["C", "100.125", "12"],
+  ["D", "7", "3.125"],
+];
+
+/** Bảng căn theo dấu thập phân (mép phải KHÔNG thẳng hàng). */
+export function decimalTable(): Sample {
+  const y0 = 80;
+  const head = [
+    at(50, y0, "Sample"),
+    at(DEC_POINTS[0] - 20, y0, "Mass (g)"),
+    at(DEC_POINTS[1] - 20, y0, "Ratio"),
+  ];
+  const body = DEC_ROWS.flatMap((r, i) => {
+    const y = y0 + 14 + i * 14;
+    return [
+      at(50, y, r[0]),
+      ...r.slice(1).map((c, j) => decimalAt(DEC_POINTS[j], y, c)),
+    ];
+  });
+  return {
+    pages: [page([...head, ...body])],
+    expected: [md([["Sample", "Mass (g)", "Ratio"], ...DEC_ROWS])],
+  };
+}
+
+/** Mục lục KHÔNG có chấm dẫn: tên mục + số trang căn phải (số nguyên tăng dần) ⇒ không phải bảng. */
+export function tocNoLeader(): Sample {
+  const rows = [
+    ["Introduction", "5"],
+    ["Background", "18"],
+    ["Methods", "42"],
+    ["Results", "107"],
+    ["Discussion", "236"],
+  ];
+  const texts = rows.flatMap((r, i) => [
+    at(50, 60 + i * 14, r[0]),
+    rightAt(550, 60 + i * 14, r[1]),
+  ]);
+  return {
+    pages: [page(texts)],
+    expected: [rows.map((r) => r.join(" ")).join(" ")],
+  };
+}
+
+/** Danh sách nhãn–giá trị (giá trị ngay sau nhãn, không theo cột) ⇒ không phải bảng. */
+export function keyValueList(): Sample {
+  const rows = [
+    ["Name:", "Nguyen Van An"],
+    ["Date of birth:", "01/02/1990"],
+    ["ID number:", "012345678901"],
+    ["Phone:", "0912 345 678"],
+    ["Salary:", "15,000,000"],
+  ];
+  const texts = rows.flatMap((r, i) => [
+    at(50, 60 + i * 14, r[0]),
+    at(50 + CHAR * r[0].length + 15, 60 + i * 14, r[1]),
+  ]);
+  return {
+    pages: [page(texts)],
+    expected: [rows.map((r) => r.join(" ")).join(" ")],
+  };
+}
+
+/** Đoạn căn đều hai bên: khoảng giãn rộng (> 1 em) tách dòng thành 2 cụm ở vị trí khác nhau mỗi dòng ⇒ không phải bảng. */
+export function justifiedParagraph(): Sample {
+  const rows = [
+    ["The company reported", "total revenue of 1,234.5 thousand in the year,"],
+    ["an increase of 12.2% compared with the previous", "year, mainly due"],
+    ["to higher sales volumes in the", "domestic market and stable prices"],
+    ["across all of its principal product lines during", "the half."],
+  ];
+  const texts = rows.flatMap((r, i) => [
+    at(50, 60 + i * 12, r[0]),
+    at(50 + CHAR * r[0].length + 12, 60 + i * 12, r[1]),
+  ]);
+  return {
+    pages: [page(texts)],
+    expected: [rows.map((r) => r.join(" ")).join(" ")],
+  };
+}
+
+/** Khối chữ ký hai bên, căn giữa từng bên ⇒ không phải bảng. */
+export function signatureBlock(): Sample {
+  const rows = [
+    ["PARTY A", "PARTY B"],
+    ["(Signature and full name)", "(Signature and full name)"],
+    ["Nguyen Van An", "Tran Thi Binh"],
+    ["Date: 01/03/2025", "Date: 02/03/2025"],
+  ];
+  const texts = rows.flatMap((r, i) => [
+    centerAt(150, 60 + i * 14, r[0]),
+    centerAt(450, 60 + i * 14, r[1]),
+  ]);
+  return {
+    pages: [page(texts)],
+    expected: [rows.map((r) => r.join(" ")).join(" ")],
+  };
+}
