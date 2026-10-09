@@ -231,3 +231,56 @@ describe("chunkPages — overlap không bắt đầu giữa bảng ngắn (112 r
     }
   });
 });
+
+describe("chunkPages — chunk chồng lấn bắt đầu ở ranh giới từ (159)", () => {
+  // Từ dài khác nhau để `end - overlap` rơi giữa từ ở nhiều vị trí.
+  const words = (n: number): string =>
+    Array.from(
+      { length: n },
+      (_, i) => `tu${"x".repeat(i % 9)}${i}${i % 7 === 6 ? "." : ""}`,
+    ).join(" ");
+  const startsInsideWord = (full: string, start: number): boolean =>
+    start > 0 && /\S/.test(full[start - 1]) && /\S/.test(full[start]);
+
+  it("không chunk nào (trừ chunk đầu trang) bắt đầu giữa một từ", () => {
+    const pages: PageText[] = [{ page: null, text: words(900) }];
+    const full = joinPages(pages);
+    const chunks = chunkPages(pages);
+    expect(chunks.length).toBeGreaterThan(3);
+    for (const c of chunks.slice(1)) {
+      expect(startsInsideWord(full, c.locator.charStart)).toBe(false);
+      expect(c.text).toBe(full.slice(c.locator.charStart, c.locator.charEnd));
+    }
+  });
+
+  it("overlap vẫn khác rỗng và số chunk xấp xỉ như trước", () => {
+    const text = words(900);
+    const chunks = chunkPages([{ page: null, text }]);
+    for (let i = 1; i < chunks.length; i++) {
+      expect(chunks[i].locator.charStart).toBeLessThan(
+        chunks[i - 1].locator.charEnd,
+      );
+    }
+    const stride = CHUNK_SIZE - CHUNK_OVERLAP;
+    expect(chunks.length).toBeLessThanOrEqual(
+      Math.ceil(text.length / (stride / 2)),
+    );
+  });
+
+  it("ưu tiên ranh giới câu trong nửa đầu vùng overlap", () => {
+    const chunks = chunkPages([{ page: null, text: words(900) }]);
+    const full = joinPages([{ page: null, text: words(900) }]);
+    // Câu kết bằng "." mỗi 7 từ (~60 ký tự) ⇒ luôn có kết câu trong 75 ký tự đầu overlap.
+    for (const c of chunks.slice(1)) {
+      expect(full.slice(c.locator.charStart - 2, c.locator.charStart)).toBe(
+        ". ",
+      );
+    }
+  });
+
+  it("không có khoảng trắng trong vùng overlap ⇒ giữ offset cũ (vẫn tiến)", () => {
+    const text = "a".repeat(3000);
+    const chunks = chunkPages([{ page: null, text }]);
+    expect(chunks[1].locator.charStart).toBe(CHUNK_SIZE - CHUNK_OVERLAP);
+  });
+});

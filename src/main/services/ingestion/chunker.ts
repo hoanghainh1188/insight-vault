@@ -45,6 +45,27 @@ function findBreak(text: string, from: number, to: number): number {
   return to;
 }
 
+/**
+ * 159: dời điểm bắt đầu chunk kế (sau overlap) TIẾN tới ranh giới gần nhất trong [start, end) để chunk không mở đầu
+ * bằng mảnh từ: ưu tiên kết câu/xuống dòng trong nửa đầu vùng overlap, rồi tới đầu từ kế tiếp; không có → giữ start.
+ */
+function snapStart(text: string, start: number, end: number): number {
+  if (start <= 0) return start;
+  const sentenceLimit = start + Math.floor((end - start) / 2);
+  const sentence = /[.!?]\s+|\n+/g;
+  sentence.lastIndex = start;
+  const s = sentence.exec(text);
+  if (s && s.index < sentenceLimit && s.index + s[0].length < end) {
+    return s.index + s[0].length;
+  }
+  if (/\s/.test(text[start - 1])) return start; // đã ở đầu từ
+  const space = /\s+/g;
+  space.lastIndex = start;
+  const w = space.exec(text);
+  if (w && w.index + w[0].length < end) return w.index + w[0].length;
+  return start;
+}
+
 type Block = { start: number; end: number };
 
 const inside = (b: Block, x: number): boolean => x > b.start && x < b.end;
@@ -114,7 +135,7 @@ function splitRanges(
     ranges.push({ start: pos, end });
     if (end >= len) break;
     // Lùi lại overlap ký tự cho chunk kế; đảm bảo luôn tiến ít nhất 1.
-    let next = Math.max(end - overlap, pos + 1);
+    let next = snapStart(text, Math.max(end - overlap, pos + 1), end);
     if (blocks.length > 0) {
       next = adjustStart(text, next, pos, size, blocks);
       if (next <= pos) next = end;
