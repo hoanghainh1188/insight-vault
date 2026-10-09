@@ -73,14 +73,14 @@
 
 ## Phase 5: Đợt 4 (PR4) — User Story 4: Gạch nối (Priority: P2)
 
-- [ ] T015 [US4] Tập cặp từ gắn nhãn `tests/fixtures/pdf/hyphen-pairs.ts` (≥ 40: ngắt thật, ghép thật có / không bằng chứng, gạch treo, tiếng Việt, U+2010 / U+2011);
+- [X] T015 [US4] Tập cặp từ gắn nhãn `tests/fixtures/pdf/hyphen-pairs.ts` (≥ 40: ngắt thật, ghép thật có / không bằng chứng, gạch treo, tiếng Việt, U+2010 / U+2011);
       `samples.ts` `hyphenCompounds` (Anh + Việt, có "long-term" giữa dòng).
-- [ ] T016 [US4] Viết test TRƯỚC `tests/unit/pdf-layout-hyphen.test.ts` cho `decideHyphen` + `buildLexicon` (`src/main/services/ingestion/pdf-layout/hyphen.ts`): từng luật R6,
+- [X] T016 [US4] Viết test TRƯỚC `tests/unit/pdf-layout-hyphen.test.ts` cho `decideHyphen` + `buildLexicon` (`src/main/services/ingestion/pdf-layout/hyphen.ts`): từng luật R6,
       tiếng Việt ⇒ keep, mâu thuẫn bằng chứng ⇒ default, tập cặp từ ⇒ ≥ 95% đúng nhóm "chắc" và không kém hành vi cũ, 0 tiếng Việt nối dính. FAIL ⇒ hiện thực ⇒ xanh.
-- [ ] T017 [US4] Sửa `tests/unit/pdf-layout-paragraphs.test.ts` (`hợp-đồng` thay `hợpđồng`; `long-term` khi có lexicon; `hyphenated` giữ) — viết trước, FAIL; sửa `paragraphs.ts`
+- [X] T017 [US4] Sửa `tests/unit/pdf-layout-paragraphs.test.ts` (`hợp-đồng` thay `hợpđồng`; `long-term` khi có lexicon; `hyphenated` giữ) — viết trước, FAIL; sửa `paragraphs.ts`
       (`appendLine` dùng `decideHyphen`), `tables.ts` (phần tiếp ô), `parsers/pdf.ts` (tiền quét lexicon khi có ngắt dòng gạch; dự phòng hành vi cũ) ⇒ xanh;
       `tests/unit/fts-hyphen.test.ts`: chunk "long-term" khớp truy vấn "long term" và "long-term".
-- [ ] T018 Perf mẫu thêm gạch nối (≤ 2×, lexicon trượt nếu vượt); ADR đầy đủ (4 phần, số đo, Giới hạn: ô gộp, gạch vắt cột / trang, ngôn ngữ khác, 180°) + INDEX; test gate:
+- [X] T018 Perf mẫu thêm gạch nối (≤ 2×, lexicon trượt nếu vượt); ADR đầy đủ (4 phần, số đo, Giới hạn: ô gộp, gạch vắt cột / trang, ngôn ngữ khác, 180°) + INDEX; test gate:
       `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; quickstart thủ công. **Commit + PR4.**
 
 ---

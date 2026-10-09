@@ -459,3 +459,23 @@ export function signatureBlock(): Sample {
     expected: [rows.map((r) => r.join(" ")).join(" ")],
   };
 }
+
+// 147 (a, research R6): từ ghép có gạch ở ngắt dòng. "long-term" có bằng chứng giữa dòng cùng trang; "well-known" chỉ có bằng chứng ở
+// TRANG SAU (cần tiền quét cả tài liệu); "infor-"/"mation" là ngắt từ thật; tiếng Việt giữ gạch, nối liền.
+export function hyphenCompounds(): Sample {
+  const a = paragraph(50, 60, [
+    "We prefer a long-term view. Our long-",
+    "term plan relies on infor-",
+    "mation and on a well-",
+    "known method.",
+  ]);
+  const b = paragraph(50, a.next, ["Bản hợp-", "đồng này có hiệu lực."]);
+  const c = paragraph(50, 60, ["The well-known method is simple."]);
+  return {
+    pages: [page([...a.texts, ...b.texts]), page(c.texts)],
+    expected: [
+      "We prefer a long-term view. Our long-term plan relies on information and on a well-known method.\n\nBản hợp-đồng này có hiệu lực.",
+      "The well-known method is simple.",
+    ],
+  };
+}

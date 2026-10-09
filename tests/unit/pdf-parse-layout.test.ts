@@ -178,3 +178,29 @@ describe("parsePdf — bảng số căn phải (147 b)", () => {
     expect(t.endsWith("| Total | 657.5 | 601.4 | 9.3% | 53.3% |")).toBe(true);
   });
 });
+
+// 147 (a, US4): gạch nối cuối dòng — bằng chứng cùng trang và TRANG SAU (tiền quét cả tài liệu); ngắt thật nối liền; tiếng Việt giữ gạch.
+import { hyphenCompounds } from "../fixtures/pdf/samples";
+
+describe("parsePdf — gạch nối (147 a)", () => {
+  it("long-term / well-known (bằng chứng ở trang sau) giữ gạch; infor-mation nối liền; hợp-đồng giữ gạch", async () => {
+    const s = hyphenCompounds();
+    expect(await texts(s)).toEqual(s.expected);
+  });
+
+  it("vượt giới hạn giữ item ⇒ bằng chứng trượt: chỉ thấy trang đã gặp + chính trang (well-known ở trang sau không dùng được)", async () => {
+    const s = hyphenCompounds();
+    const r = await parsePdf(makePdf(s.pages), undefined, {
+      hyphenRetainMaxItems: 0,
+    });
+    expect(r.pages[0].text).toBe(
+      s.expected[0].replace("well-known method", "wellknown method"),
+    );
+    expect(r.pages[1].text).toBe(s.expected[1]);
+  });
+
+  it("mẫu gạch nối 112 không đổi", async () => {
+    const s = hyphenated();
+    expect(await texts(s)).toEqual(s.expected);
+  });
+});
