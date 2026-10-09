@@ -31,6 +31,9 @@ export const studioVi = {
   truncated:
     "Tài liệu quá dài nên phần cuối chưa được tổng hợp — hãy lọc theo từng nguồn để tổng hợp đầy đủ.",
   exportName: "{kind} — {date}",
+  // 149: Huỷ (nhãn hiển thị dùng common.cancel)
+  cancelAria: "Huỷ tạo {kind}",
+  cancelling: "Đang huỷ…",
   // 146 (clarify #11): tiến độ khi tạo
   progress: {
     reading: "Đang đọc phần {i}/{n}…",
@@ -70,6 +73,8 @@ export const studioEn: Widen<typeof studioVi> = {
   truncated:
     "The document is too long, so the last part wasn't summarized — filter by individual source for a complete summary.",
   exportName: "{kind} — {date}",
+  cancelAria: "Cancel creating {kind}",
+  cancelling: "Cancelling…",
   progress: {
     reading: "Reading part {i} of {n}…",
     readingNoCount: "Reading the document…",

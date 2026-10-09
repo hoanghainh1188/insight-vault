@@ -3,6 +3,9 @@ import type { AiTarget, Citation, StudioKind } from "@shared/ipc/types";
 import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
 import { StudioProgress } from "./StudioProgress";
+import { StudioCancel } from "./StudioCancel";
+import { cancelFocusTarget } from "./studio-generation";
+import { studioCancelledMessage } from "../../shared/a11y/messages";
 import {
   progressAnnouncement,
   type StudioProgressMap,
@@ -35,7 +38,9 @@ export function StudioColumn({
     onlineFailed,
     localKinds,
     progress,
+    cancelling,
     generate,
+    cancel,
     ollamaReady,
     hasReadySources,
     readySources,
@@ -79,17 +84,56 @@ export function StudioColumn({
 
   // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
   // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
+  // 149: vùng cột — tìm nút để trả focus sau khi huỷ (nút Huỷ biến mất).
+  const colRef = useRef<HTMLElement>(null);
+  // 149: loại có nút Huỷ đang giữ focus lúc bấm ⇒ sau khi huỷ mới trả focus (không cướp focus nếu người dùng đã đi nơi khác).
+  const cancelFocused = useRef<Partial<Record<StudioKind, HTMLElement>>>({});
+
+  const onCancel = (kind: StudioKind, el: HTMLElement | null): void => {
+    if (el && document.activeElement === el) cancelFocused.current[kind] = el;
+    cancel(kind);
+  };
+
+  const restoreFocusAfterCancel = (kind: StudioKind): void => {
+    const was = cancelFocused.current[kind];
+    delete cancelFocused.current[kind];
+    // Nút Huỷ đã gỡ khỏi DOM ⇒ focus rơi về body; chỉ trả focus khi người dùng chưa đi nơi khác.
+    if (
+      !was ||
+      (document.activeElement &&
+        document.activeElement !== document.body &&
+        document.activeElement !== was)
+    ) {
+      return;
+    }
+    const target =
+      cancelFocusTarget(results[kind] !== undefined) === "regenerate"
+        ? `[data-testid=studio-regen-${kind}]`
+        : `[data-testid=studio-btn-${kind}]`;
+    colRef.current?.querySelector<HTMLElement>(target)?.focus();
+  };
+
+  // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
+  // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
+  // 149: kết cục "cancelled" ⇒ câu huỷ + trả focus; "stale" ⇒ im lặng (lượt đã bị thay / rời notebook).
   const run = async (kind: StudioKind, target?: AiTarget): Promise<void> => {
     const tr = trRef.current;
     announce(studioMessage(tr.t(`studio.kind.${kind}`), "start", tr));
-    if (await generate(kind, scopeId, target)) {
-      const done = trRef.current;
-      announce(studioMessage(done.t(`studio.kind.${kind}`), "done", done));
+    const outcome = await generate(kind, scopeId, target);
+    const now = trRef.current;
+    const label = now.t(`studio.kind.${kind}`);
+    if (outcome === "done") {
+      announce(studioMessage(label, "done", now));
+    } else if (outcome === "cancelled") {
+      announce(studioCancelledMessage(label, now));
+      // đợi React gỡ nút Huỷ rồi mới trả focus
+      queueMicrotask(() => restoreFocusAfterCancel(kind));
     }
   };
 
   return (
     <section
+      ref={colRef}
       className="studio-col"
       aria-label={t.t("studio.title")}
       data-testid="studio-col"
@@ -148,21 +192,46 @@ export function StudioColumn({
           const res = results[kind];
           const prog = loading[kind] ? progress[kind] : undefined;
           // 146: đang tạo lần đầu và đã có tiến độ ⇒ dòng pha + thanh thay skeleton.
+          // 149: nút Huỷ mỗi khi loại đang tạo — cùng hàng dòng pha / khung chờ / trên card cũ.
+          const cancelBtn = loading[kind] ? (
+            <StudioCancel
+              kind={kind}
+              cancelling={cancelling[kind] === true}
+              onCancel={() =>
+                onCancel(
+                  kind,
+                  colRef.current?.querySelector<HTMLElement>(
+                    `[data-testid=studio-cancel-${kind}]`,
+                  ) ?? null,
+                )
+              }
+            />
+          ) : null;
           if (prog && !res) {
-            return <StudioProgress key={kind} kind={kind} progress={prog} />;
+            return (
+              <StudioProgress
+                key={kind}
+                kind={kind}
+                progress={prog}
+                action={cancelBtn}
+              />
+            );
           }
           // Skeleton khi đang tạo lần đầu (chưa có kết quả cũ, chưa có tiến độ) — US3.
           if (loading[kind] && !res) {
             return (
-              <div
-                key={kind}
-                className="studio-skeleton"
-                data-testid={`studio-skeleton-${kind}`}
-                aria-hidden="true"
-              >
-                <span className="sk-line" />
-                <span className="sk-line" />
-                <span className="sk-line short" />
+              <div key={kind} className="studio-running">
+                {/* 149: nút Huỷ NGOÀI khung chờ (khung chờ aria-hidden) — có ngay trước sự kiện tiến độ đầu. */}
+                <div className="studio-progress-head">{cancelBtn}</div>
+                <div
+                  className="studio-skeleton"
+                  data-testid={`studio-skeleton-${kind}`}
+                  aria-hidden="true"
+                >
+                  <span className="sk-line" />
+                  <span className="sk-line" />
+                  <span className="sk-line short" />
+                </div>
               </div>
             );
           }
@@ -210,7 +279,20 @@ export function StudioColumn({
           return (
             <Fragment key={kind}>
               {/* 146: đang Tạo lại ⇒ tiến độ nằm trên card cũ (card vẫn đọc được). */}
-              {prog && <StudioProgress kind={kind} progress={prog} onCard />}
+              {prog ? (
+                <StudioProgress
+                  kind={kind}
+                  progress={prog}
+                  onCard
+                  action={cancelBtn}
+                />
+              ) : (
+                cancelBtn && (
+                  <div className="studio-progress-head on-card">
+                    {cancelBtn}
+                  </div>
+                )
+              )}
               <StudioResultCard
                 result={res}
                 regenerating={loading[kind] === true}

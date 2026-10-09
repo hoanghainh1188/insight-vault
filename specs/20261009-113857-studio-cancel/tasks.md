@@ -61,21 +61,21 @@
 
 ## Phase 3: User Story 1 + 2 + 4 — Renderer: nút Huỷ, kết cục, lượt hiện hành, tự huỷ (Priority: P1/P2)
 
-- [ ] T012 [US4] Viết test TRƯỚC `tests/unit/studio-generation.test.ts` cho `src/renderer/features/studio/studio-generation.ts`: `isCurrentGeneration`
+- [X] T012 [US4] Viết test TRƯỚC `tests/unit/studio-generation.test.ts` cho `src/renderer/features/studio/studio-generation.ts`: `isCurrentGeneration`
       (khớp / khác id / loại không có), `outcomeOf` (mã `studioCancelled` ⇒ cancelled; lỗi khác / online ⇒ failed), `cancelFocusTarget(hasResult)`. FAIL ⇒ hiện thực ⇒ xanh.
-- [ ] T013 [US1] Viết test TRƯỚC (jsdom) `tests/unit/studio-cancel-hook.test.ts` cho `useStudio`: `cancel(kind)` gọi `studioCancel(id, "user")` + `cancelling[kind]`;
+- [X] T013 [US1] Viết test TRƯỚC (jsdom) `tests/unit/studio-cancel-hook.test.ts` cho `useStudio`: `cancel(kind)` gọi `studioCancel(id, "user")` + `cancelling[kind]`;
       kết cục huỷ ⇒ trả `"cancelled"`, không `errors` / `onlineFailed`, `loading` tắt, tiến độ xoá, kết quả cũ giữ; lượt resolve dù đã bấm Huỷ ⇒ `"done"`;
       A→B→A: kết quả lượt cũ về muộn KHÔNG ghi `results` / không tắt `loading` / không đổi `localKinds` của lượt mới (trả `"stale"`); đổi notebook ⇒
       `studioCancel(id, "navigate")` cho mọi lượt đang chạy; unmount ⇒ như trên; lượt "Tạo bằng AI cục bộ" huỷ ⇒ về nghỉ, không khôi phục lỗi online;
       hai loại song song: huỷ một loại không ảnh hưởng loại kia. Chạy thấy FAIL.
-- [ ] T014 [US1] Sửa `src/renderer/features/studio/useStudio.ts` (kết cục 4 trạng thái qua `isCurrentGeneration` / `outcomeOf`, `cancel`, `cancelling`,
+- [X] T014 [US1] Sửa `src/renderer/features/studio/useStudio.ts` (kết cục 4 trạng thái qua `isCurrentGeneration` / `outcomeOf`, `cancel`, `cancelling`,
       tự huỷ khi đổi notebook / unmount); T013 xanh; `studio-notebook-switch`, `studio-progress-hook`, `online-fallback-ui` vẫn xanh (cập nhật mock
       `studioCancel` nếu cần, không đổi kỳ vọng).
-- [ ] T015 [US1] Viết test TRƯỚC (jsdom) `tests/unit/studio-cancel-ui.test.ts`: `StudioCancel` — nhãn "Huỷ" / "Cancel", `aria-label` "Huỷ tạo Tóm tắt tài liệu" /
+- [X] T015 [US1] Viết test TRƯỚC (jsdom) `tests/unit/studio-cancel-ui.test.ts`: `StudioCancel` — nhãn "Huỷ" / "Cancel", `aria-label` "Huỷ tạo Tóm tắt tài liệu" /
       "Cancel creating …", sau bấm "Đang huỷ…" `disabled`; `StudioColumn` — nút Huỷ hiện mỗi khi đang tạo (trước tiến độ đầu: cạnh skeleton; có tiến độ: cạnh
       dòng pha; Tạo lại: trên card cũ); kết cục huỷ ⇒ `announce("Đã huỷ tạo …")` đúng một lần, không khối lỗi, focus về "Tạo lại" (có card) hoặc nút loại khi
       focus đang ở nút Huỷ; CSS hàng pha + nút không tràn (`min-width: 0`, `flex-wrap`). Chạy thấy FAIL.
-- [ ] T016 [US1] Hiện thực `src/renderer/features/studio/StudioCancel.tsx`, sửa `StudioColumn.tsx` (đặt nút, announce theo kết cục `run`, focus), `studio.css`;
+- [X] T016 [US1] Hiện thực `src/renderer/features/studio/StudioCancel.tsx`, sửa `StudioColumn.tsx` (đặt nút, announce theo kết cục `run`, focus), `studio.css`;
       khoá i18n `studio.cancelAria`, `studio.cancelling` (`src/shared/i18n/domains/studio.ts`), `a11y.studioCancelled` (`a11y.ts`) vi/en; T015 xanh;
       `studio-progress-ui`, `studio-parts-ui` vẫn xanh.
 

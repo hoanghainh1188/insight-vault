@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { StudioKind } from "@shared/ipc/types";
 import { useT } from "../../shared/i18n/i18n-context";
 import { progressText, type StudioProgressState } from "./studio-progress";
@@ -10,12 +11,15 @@ interface StudioProgressProps {
   progress: StudioProgressState;
   /** Đặt trên card kết quả cũ (đang Tạo lại) — gọn hơn. */
   onCard?: boolean;
+  /** 149: nút cùng hàng dòng pha (Huỷ). */
+  action?: ReactNode;
 }
 
 export function StudioProgress({
   kind,
   progress,
   onCard = false,
+  action,
 }: StudioProgressProps): JSX.Element {
   const t = useT();
   const text = progressText(progress, t);
@@ -32,7 +36,10 @@ export function StudioProgress({
       className={`studio-progress${onCard ? " on-card" : ""}`}
       data-testid={`studio-progress-${kind}`}
     >
-      <p className="studio-progress-text">{text}</p>
+      <div className="studio-progress-head">
+        <p className="studio-progress-text">{text}</p>
+        {action}
+      </div>
       <div
         role="progressbar"
         className={`studio-progress-bar${determinate ? "" : " indeterminate"}`}

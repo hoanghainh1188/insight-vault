@@ -89,6 +89,10 @@ export function cancelLogFields(
   kind: StudioKind,
   lastPhase: StudioProgressPhase | undefined,
   reason: CancelReason,
-): { kind: StudioKind; phase: StudioProgressPhase | "start"; reason: CancelReason } {
+): {
+  kind: StudioKind;
+  phase: StudioProgressPhase | "start";
+  reason: CancelReason;
+} {
   return { kind, phase: lastPhase ?? "start", reason };
 }

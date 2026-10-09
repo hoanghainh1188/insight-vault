@@ -6,7 +6,7 @@ import { act } from "react-dom/test-utils";
 import { useStudio } from "../../src/renderer/features/studio/useStudio";
 
 // 091 (review S3) — Studio đang tạo mà người dùng chuyển notebook: kết quả về muộn KHÔNG được ghi vào notebook
-// mới và generate trả false (để UI không báo "Đã tạo xong" sai cho trình đọc màn hình).
+// mới và generate trả "stale" (149; trước là false — để UI không báo "Đã tạo xong" sai cho trình đọc màn hình).
 
 (
   globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -28,6 +28,7 @@ beforeEach(() => {
     sourceListByNotebook: () => Promise.resolve([]),
     onSourceProgress: () => () => undefined,
     onStudioProgress: () => () => undefined, // 146
+    studioCancel: () => Promise.resolve({ cancelled: true }), // 149
     studioList: () => Promise.resolve([]),
     studioGenerate: vi.fn(() => new Promise((r) => (resolveGen = r))),
   };
@@ -37,9 +38,9 @@ beforeEach(() => {
 afterEach(() => act(() => root.unmount()));
 
 describe("useStudio — chuyển notebook giữa lúc tạo", () => {
-  it("kết quả về muộn bị bỏ, generate trả false, không kẹt trạng thái đang tạo", async () => {
+  it("kết quả về muộn bị bỏ, generate trả 'stale', không kẹt trạng thái đang tạo", async () => {
     await act(async () => root.render(createElement(Harness, { nb: "A" })));
-    let done: Promise<boolean> = Promise.resolve(true);
+    let done: Promise<string> = Promise.resolve("done");
     act(() => {
       done = hook.generate("summary");
     });
@@ -49,21 +50,21 @@ describe("useStudio — chuyển notebook giữa lúc tạo", () => {
     await act(async () => {
       resolveGen({ kind: "summary", content: "của A", citations: [] });
     });
-    expect(await done).toBe(false);
+    expect(await done).toBe("stale"); // 149: kết cục thay boolean (false ⇒ "stale")
     expect(hook.results.summary).toBeUndefined();
     expect(hook.loading.summary).toBeFalsy();
   });
 
-  it("cùng notebook ⇒ ghi kết quả, trả true", async () => {
+  it("cùng notebook ⇒ ghi kết quả, trả 'done'", async () => {
     await act(async () => root.render(createElement(Harness, { nb: "A" })));
-    let done: Promise<boolean> = Promise.resolve(false);
+    let done: Promise<string> = Promise.resolve("stale");
     act(() => {
       done = hook.generate("summary");
     });
     await act(async () => {
       resolveGen({ kind: "summary", content: "ok", citations: [] });
     });
-    expect(await done).toBe(true);
+    expect(await done).toBe("done"); // 149: true ⇒ "done"
     expect(hook.results.summary).toBeDefined();
   });
 });
