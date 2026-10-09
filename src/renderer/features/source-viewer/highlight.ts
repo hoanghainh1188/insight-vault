@@ -27,7 +27,7 @@ export function buildSegments(
     highlight.charStart < highlight.charEnd
       ? highlight
       : null;
-  const hl = valid ? trimRange(text, valid) : null;
+  const hl = valid ? alignStart(text, trimRange(text, valid)) : null;
 
   const bounds = new Set<number>([0, len]);
   if (hl) {
@@ -73,4 +73,40 @@ function trimRange(
   while (start < end && /\s/.test(text[start])) start++;
   while (end > start && /\s/.test(text[end - 1])) end--;
   return start < end ? { charStart: start, charEnd: end } : r;
+}
+
+/** Ký tự thuộc một chữ (chữ cái mọi ngôn ngữ, dấu kết hợp, chữ số). */
+const WORD_CHAR = /[\p{L}\p{M}\p{N}]/u;
+
+/** Đuôi đoạn trước dài tối đa bao nhiêu ký tự thì được bỏ qua (vd "e." của "sauce."). */
+const TAIL_MAX = 40;
+
+/**
+ * 159 (phần hiển thị): chunk chồng lấn có thể bắt đầu GIỮA CHỮ (chunker lùi overlap theo ký tự thô). Không tô một mảnh chữ:
+ * - mảnh là đuôi ngắn của đoạn trước (gặp xuống dòng trong TAIL_MAX ký tự) ⇒ bắt đầu ở ký tự thật đầu tiên sau xuống dòng;
+ * - còn lại ⇒ nới về đầu chữ.
+ * Chỉ đổi hiển thị; vùng sau khi chỉnh rỗng ⇒ giữ nguyên.
+ */
+function alignStart(
+  text: string,
+  r: { charStart: number; charEnd: number },
+): { charStart: number; charEnd: number } {
+  const { charStart: start, charEnd: end } = r;
+  if (
+    start === 0 ||
+    !WORD_CHAR.test(text[start - 1]) ||
+    !WORD_CHAR.test(text[start])
+  ) {
+    return r;
+  }
+  const nl = text.indexOf("\n", start);
+  if (nl !== -1 && nl - start <= TAIL_MAX && nl < end) {
+    let next = nl;
+    while (next < end && /\s/.test(text[next])) next++;
+    if (next < end) return { charStart: next, charEnd: end };
+    return r;
+  }
+  let ws = start;
+  while (ws > 0 && WORD_CHAR.test(text[ws - 1])) ws--;
+  return { charStart: ws, charEnd: end };
 }
