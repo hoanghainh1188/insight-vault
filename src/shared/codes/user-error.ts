@@ -23,6 +23,7 @@ export const USER_ERROR_CODES = [
   "studioEmptyOutput",
   "studioNoNotes",
   "studioSaveFailed",
+  "studioCancelled", // 149: kết cục huỷ — renderer KHÔNG hiện như lỗi
   "chatModelNotSelected",
   "embeddingModelNotSelected",
   "ollamaHttp",

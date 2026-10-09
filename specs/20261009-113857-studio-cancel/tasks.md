@@ -36,26 +36,26 @@
 
 **Independent Test**: unit với chat giả: huỷ ở mọi điểm ⇒ không thêm lượt gọi, repo không `upsert`, lỗi mã `studioCancelled`; registry đúng owner / supersede.
 
-- [ ] T006 [US1] Viết test TRƯỚC `tests/unit/generation-registry.test.ts` cho `createGenerationRegistry` (`src/main/services/studio/generation-registry.ts`):
+- [X] T006 [US1] Viết test TRƯỚC `tests/unit/generation-registry.test.ts` cho `createGenerationRegistry` (`src/main/services/studio/generation-registry.ts`):
       register trả signal; `cancel` đúng owner ⇒ `true` + signal aborted + `reason`; owner khác / id lạ / đã finish / đã huỷ ⇒ `false`; `finish` idempotent;
       register cùng `(notebookId, kind)` ⇒ lượt cũ aborted `superseded`; khác kind / notebook không ảnh hưởng; `abortAllFor(owner)` chỉ lượt của owner (`window`);
       `abortAll`; (analyze A1) `finish(id)` trả `reason` nếu lượt đã bị huỷ (null nếu không) và hàm thuần `cancelLogFields(kind, lastPhase, reason)` ⇒
       `{kind, phase, reason}` (phase mặc định `"start"`, không id / notebook). Chạy thấy FAIL; hiện thực ⇒ xanh.
-- [ ] T007 [US1] Viết test TRƯỚC trong `tests/unit/studio-map-reduce.test.ts`: `signal` aborted trước phần đầu ⇒ 0 lượt chat; abort trong lúc chat phần 2 (chat giả
+- [X] T007 [US1] Viết test TRƯỚC trong `tests/unit/studio-map-reduce.test.ts`: `signal` aborted trước phần đầu ⇒ 0 lượt chat; abort trong lúc chat phần 2 (chat giả
       ném `ChatAbortedError`) ⇒ KHÔNG thử lại (tổng lượt gọi = 2), ném `ChatAbortedError`; abort giữa vòng rút gọn ⇒ không gọi lô kế; abort trước bước viết ⇒
       không gọi bước cuối; không phát tiến độ sau khi abort; không truyền signal ⇒ test cũ giữ kỳ vọng. Chạy thấy FAIL; sửa `map-reduce.ts` (truyền signal vào
       `chat`, `assertNotAborted` ở ranh giới, rethrow trong retry) ⇒ xanh.
-- [ ] T008 [US1] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: `generate(input, {onProgress, signal})` (đổi chữ ký — cập nhật các test 146 gọi
+- [X] T008 [US1] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: `generate(input, {onProgress, signal})` (đổi chữ ký — cập nhật các test 146 gọi
       `generate(input, cb)`); abort sau `contextInfo` ⇒ 0 lượt chat; chat ném `ChatAbortedError` ⇒ ném `UserFacingError` mã `studioCancelled`; abort sau lượt
       chat cuối nhưng trước `upsert` ⇒ repo `upsert` KHÔNG được gọi; không signal ⇒ như cũ. Chạy thấy FAIL; sửa `studio-service.ts`; thêm mã `studioCancelled`
       vào `src/shared/codes/user-error.ts` + thông điệp dự phòng vi/en (`src/shared/i18n/domains/core.ts`, cạnh `studioNoNotes`) ⇒ xanh.
-- [ ] T009 [US1] Viết test TRƯỚC: thêm `studio:cancel` vào `tests/unit/studio-channels-whitelist.test.ts`; FAIL; thêm `studioCancel: "studio:cancel"` +
+- [X] T009 [US1] Viết test TRƯỚC: thêm `studio:cancel` vào `tests/unit/studio-channels-whitelist.test.ts`; FAIL; thêm `studioCancel: "studio:cancel"` +
       `ChannelResponse` `{ cancelled: boolean }` vào `src/shared/ipc/channels.ts` ⇒ xanh.
-- [ ] T010 [US1] Nối dây (I/O mỏng, không logic): `src/main/index.ts` `deps.chat(messages, o)` ⇒ `provider.chat({messages, numCtx}, {signal: o?.signal})`;
+- [X] T010 [US1] Nối dây (I/O mỏng, không logic): `src/main/index.ts` `deps.chat(messages, o)` ⇒ `provider.chat({messages, numCtx}, {signal: o?.signal})`;
       `src/main/ipc/register.ts` — `studio:generate` (qua `safeHandleWithSender`) đăng ký sổ khi `generationId` hợp lệ, truyền `{onProgress, signal}`,
       `finally` `finish`, log `studio.cancelled {kind, phase, reason}` khi kết cục huỷ (phase gần nhất theo emitter); `studio:cancel(id, reason)` ⇒
       `registry.cancel(id, sender, reason ∈ user|navigate)`; `sender.once("destroyed")` ⇒ `abortAllFor`; `window-all-closed` ⇒ `abortAll`. Không log id / nội dung.
-- [ ] T011 [P] [US1] Thêm `studioCancel(generationId, reason?)` vào `src/preload/index.ts`.
+- [X] T011 [P] [US1] Thêm `studioCancel(generationId, reason?)` vào `src/preload/index.ts`.
 
 ---
 

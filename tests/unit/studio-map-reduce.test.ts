@@ -428,3 +428,126 @@ describe("runMapReduce — onProgress (146)", () => {
     expect([...withThrow.map.keys()]).toEqual([...base.map.keys()]);
   });
 });
+
+// 149 (research R2): signal — kiểm ở ranh giới bước; huỷ trong vòng thử lại KHÔNG gọi lần 2; không phát tiến độ sau huỷ.
+import { ChatAbortedError } from "../../src/main/services/ai-runtime/abort";
+
+describe("runMapReduce — huỷ (149)", () => {
+  /** chat giả: đếm lượt theo loại; `abortAt(n, kind)` ⇒ ở lượt thứ n của loại đó: abort controller rồi ném ChatAbortedError. */
+  function abortingChat(
+    ctl: AbortController,
+    at: { kind: "map" | "condense" | "final"; n: number } | null,
+    opts: { condense?: boolean } = {},
+  ) {
+    const count = { map: 0, condense: 0, final: 0 };
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      const sys = messages[0].content;
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      const kind = sys.startsWith("Condense the NOTES")
+        ? "condense"
+        : sys.startsWith("Extract NOTES")
+          ? "map"
+          : "final";
+      count[kind] += 1;
+      if (at && at.kind === kind && at.n === count[kind]) {
+        ctl.abort();
+        throw new ChatAbortedError();
+      }
+      if (kind === "condense") return `- gộp [${ns[0]}]`;
+      if (kind === "map")
+        return opts.condense
+          ? ns.map((n) => `- ${"chi tiết ".repeat(30)}[${n}]`).join("\n")
+          : `- ý [${ns[0]}]`;
+      return `Kết luận [${ns[0]}].`;
+    });
+    return { chat, count };
+  }
+
+  it("signal đã abort trước ⇒ 0 lượt chat, ném ChatAbortedError", async () => {
+    const ctl = new AbortController();
+    ctl.abort();
+    const { chat } = abortingChat(ctl, null);
+    await expect(
+      runMapReduce({
+        kind: "summary",
+        groups: groups(3),
+        budget: 900,
+        chat,
+        signal: ctl.signal,
+      }),
+    ).rejects.toBeInstanceOf(ChatAbortedError);
+    expect(chat).not.toHaveBeenCalled();
+  });
+
+  it("huỷ trong lượt map phần 2 ⇒ KHÔNG thử lại, không gọi phần 3 / bước cuối", async () => {
+    const ctl = new AbortController();
+    const { chat, count } = abortingChat(ctl, { kind: "map", n: 2 });
+    await expect(
+      runMapReduce({
+        kind: "summary",
+        groups: groups(3),
+        budget: 900,
+        chat,
+        signal: ctl.signal,
+      }),
+    ).rejects.toBeInstanceOf(ChatAbortedError);
+    expect(count).toEqual({ map: 2, condense: 0, final: 0 });
+  });
+
+  it("huỷ trong vòng rút gọn ⇒ không gọi lô rút gọn kế tiếp / bước cuối", async () => {
+    const ctl = new AbortController();
+    const { chat, count } = abortingChat(
+      ctl,
+      { kind: "condense", n: 1 },
+      { condense: true },
+    );
+    await expect(
+      runMapReduce({
+        kind: "summary",
+        groups: groups(3),
+        budget: 900,
+        chat,
+        signal: ctl.signal,
+      }),
+    ).rejects.toBeInstanceOf(ChatAbortedError);
+    expect(count.condense).toBe(1);
+    expect(count.final).toBe(0);
+  });
+
+  it("huỷ giữa các bước (sau lượt map cuối) ⇒ không gọi bước cuối, không phát 'writing'", async () => {
+    const ctl = new AbortController();
+    const evs: string[] = [];
+    let maps = 0;
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      if (messages[0].content.startsWith("Extract NOTES")) {
+        maps += 1;
+        return `- ý [${ns[0]}]`;
+      }
+      return `Kết luận [${ns[0]}].`;
+    });
+    const p = runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat,
+      signal: ctl.signal,
+      onProgress: (e) => {
+        evs.push(e.phase);
+        // huỷ ngay khi lượt đọc cuối vừa phát (trước khi bước cuối bắt đầu)
+        if (e.phase === "reading" && e.index === e.total)
+          queueMicrotask(() => ctl.abort());
+      },
+    });
+    await expect(p).rejects.toBeInstanceOf(ChatAbortedError);
+    expect(
+      chat.mock.calls.every((c) => c[0][0].content.startsWith("Extract NOTES")),
+    ).toBe(true);
+    expect(evs).not.toContain("writing");
+    expect(maps).toBeGreaterThan(0);
+  });
+});

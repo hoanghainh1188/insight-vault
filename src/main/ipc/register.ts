@@ -16,6 +16,7 @@ import type {
   SetProviderModelInput,
   StudioGenerateInput,
   StudioProgressEvent,
+  StudioProgressPhase,
   ModelRecommendation,
   OllamaHealth,
   RerankerStatus,
@@ -44,6 +45,12 @@ import type { StudioService } from "../services/studio/studio-service";
 import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
 import { createStudioProgressEmitter } from "../services/studio/progress-emitter";
+import {
+  cancelLogFields,
+  createGenerationRegistry,
+} from "../services/studio/generation-registry";
+import type { OnStudioProgress } from "../services/studio/map-reduce";
+import { isValidGenerationId } from "@shared/studio-progress";
 import {
   getSourceContent,
   type SourceContentRequest,
@@ -371,21 +378,73 @@ export function registerIpc({
   // studio (021) — tổng hợp toàn notebook (đọc chunk + chat CHỈ ở main). KHÔNG log content/citations.
   // 146: tiến độ Studio đẩy qua studio:progress CHỈ về cửa sổ đã gọi (review bảo mật) — chỉ khi renderer gửi generationId hợp
   // lệ. KHÔNG log payload.
+  // 149: sổ lượt tạo Studio đang chạy — huỷ theo generationId (chỉ cửa sổ đã bắt đầu), lượt mới cùng (notebook, loại) thay lượt cũ,
+  // cửa sổ đóng ⇒ huỷ. Log studio.cancelled chỉ loại/pha/lý do (không id, không nội dung).
+  const studioRuns = createGenerationRegistry<Electron.WebContents>();
+  const watchedSenders = new WeakSet<Electron.WebContents>();
   safeHandleWithSender(CHANNELS.studioGenerate, async (sender, input) => {
     const target = parseAiTarget(input);
+    const studioInput = input as StudioGenerateInput;
     const emitStudioProgress = (e: StudioProgressEvent): void => {
       if (!sender.isDestroyed()) sender.send(CHANNELS.studioProgress, e);
     };
+    const emit = createStudioProgressEmitter(studioInput, emitStudioProgress);
+    let lastPhase: StudioProgressPhase | undefined;
+    const onProgress: OnStudioProgress = (step) => {
+      lastPhase = step.phase;
+      emit?.(step);
+    };
+    const id = isValidGenerationId(studioInput.generationId)
+      ? studioInput.generationId
+      : null;
+    let signal: AbortSignal | undefined;
+    if (id) {
+      if (!watchedSenders.has(sender)) {
+        watchedSenders.add(sender);
+        sender.once("destroyed", () =>
+          studioRuns.abortAllFor(sender, "window"),
+        );
+      }
+      ({ signal } = studioRuns.register({
+        generationId: id,
+        notebookId: studioInput.notebookId,
+        kind: studioInput.kind,
+        owner: sender,
+      }));
+    }
+    let cancelled = false;
     try {
-      const studioInput = input as StudioGenerateInput;
-      return await studioServices[target].generate(
-        studioInput,
-        createStudioProgressEmitter(studioInput, emitStudioProgress),
-      );
+      return await studioServices[target].generate(studioInput, {
+        onProgress,
+        signal,
+      });
     } catch (e) {
+      cancelled = e instanceof UserFacingError && e.code === "studioCancelled";
       return rethrowForIpc(e);
+    } finally {
+      const reason = id ? studioRuns.finish(id) : null;
+      if (cancelled && reason) {
+        logEvent(
+          "studio.cancelled",
+          cancelLogFields(studioInput.kind, lastPhase, reason),
+        );
+      }
     }
   });
+  // 149: huỷ theo generationId — id sai / lạ / của cửa sổ khác ⇒ {cancelled:false}, không ném. reason chỉ "user" | "navigate".
+  safeHandleWithSender(
+    CHANNELS.studioCancel,
+    (sender, generationId, reason) => ({
+      cancelled: isValidGenerationId(generationId)
+        ? studioRuns.cancel(
+            generationId,
+            sender,
+            reason === "navigate" ? "navigate" : "user",
+          )
+        : false,
+    }),
+  );
+  app.on("window-all-closed", () => studioRuns.abortAll("window"));
   safeHandle(CHANNELS.studioList, (id) =>
     studioServices.active.list(id as string),
   );

@@ -114,6 +114,7 @@ export const CHANNELS = {
   studioGenerate: "studio:generate",
   studioList: "studio:list",
   studioProgress: "studio:progress", // 146: event push main→renderer (KHÔNG vào ChannelResponse)
+  studioCancel: "studio:cancel", // 149: huỷ lượt tạo theo generationId
   // studio export (025) — xuất kết quả ra tệp .md
   studioExport: "studio:export",
   // 059 embed-in-process — trạng thái tái lập chỉ mục
@@ -207,6 +208,7 @@ export interface ChannelResponse {
   // studio (021)
   [CHANNELS.studioGenerate]: StudioResult;
   [CHANNELS.studioList]: StudioResult[];
+  [CHANNELS.studioCancel]: { cancelled: boolean };
   // studio export (025)
   [CHANNELS.studioExport]: StudioExportResult;
   // chat-history (027)
