@@ -13,7 +13,7 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Append glossary bằng script (KHÔNG prettier): lưới bảng / ô bảng (`parsePdfTables`, `PdfTable`, `TableCell`), công tắc dạng xem (Dạng lưới / Dạng văn bản),
+- [X] T001 Append glossary bằng script (KHÔNG prettier): lưới bảng / ô bảng (`parsePdfTables`, `PdfTable`, `TableCell`), công tắc dạng xem (Dạng lưới / Dạng văn bản),
       xoay trang hiển thị (`toDisplayItem`, viewport), bảng số căn phải (`detectRightAlignedTable`, `looksNumeric`), quyết định gạch nối (`decideHyphen`, `Lexicon`) —
       `docs/00-glossary.md`.
 
@@ -25,18 +25,18 @@
 
 **Independent Test**: PDF đã nạp có bảng ⇒ lưới + tô sáng đúng; "Dạng văn bản" như cũ; nguồn không phải PDF không đổi.
 
-- [ ] T002 [US1] Viết test TRƯỚC `tests/unit/pdf-tables.test.ts` cho `parsePdfTables` (`src/shared/pdf-tables.ts`): bảng `renderTable` chuẩn ⇒ ô đúng `{start,end,text}`
+- [X] T002 [US1] Viết test TRƯỚC `tests/unit/pdf-tables.test.ts` cho `parsePdfTables` (`src/shared/pdf-tables.ts`): bảng `renderTable` chuẩn ⇒ ô đúng `{start,end,text}`
       (không gồm `|`, đệm), ô rỗng, `\|` trong ô, nhiều bảng, bảng hai trang (không vắt `pageBreaks`), dòng `| x | y |` lẻ trong đoạn văn ⇒ không phải bảng, số ô lệch ⇒ không,
       thiếu hàng phân cách ⇒ không; đầu vào dị thường (văn bản rất dài, `|` lồng) không ném — trả `[]` (FR-012); `numericColumns`; test thuộc tính `text.slice(c.start, c.end)` khớp `c.text` (trừ thoát). Chạy thấy FAIL; hiện thực ⇒ xanh.
-- [ ] T003 [US1] Viết test TRƯỚC trong `tests/unit/highlight.test.ts`: `buildSegments(text, hl, pageBreaks, tables)` ⇒ khối `text` / `table`; vùng tô bắt đầu giữa ô, phủ
+- [X] T003 [US1] Viết test TRƯỚC trong `tests/unit/highlight.test.ts`: `buildSegments(text, hl, pageBreaks, tables)` ⇒ khối `text` / `table`; vùng tô bắt đầu giữa ô, phủ
       nhiều hàng, phủ trọn ô, nằm hẳn ngoài bảng; thuộc tính: hợp ký tự được tô == `text.slice(a,b)` bỏ ký tự khung; 157/159 (trimRange / alignStart) vẫn áp; không truyền
       `tables` ⇒ kết quả như cũ (test cũ giữ kỳ vọng). FAIL ⇒ sửa `src/renderer/features/source-viewer/highlight.ts` ⇒ xanh.
-- [ ] T004 [US1] Viết test TRƯỚC (jsdom) `tests/unit/source-table-ui.test.ts`: `SourceTable` có vai trò `table`, `columnheader` (hàng đầu), `aria-label` "Bảng 1 — trang 2"
+- [X] T004 [US1] Viết test TRƯỚC (jsdom) `tests/unit/source-table-ui.test.ts`: `SourceTable` có vai trò `table`, `columnheader` (hàng đầu), `aria-label` "Bảng 1 — trang 2"
       (vi / en), ô số căn phải, `<mark>` đúng ô + nhãn `[n]` ở đoạn tô đầu; `SourceViewer` với nguồn PDF có bảng ⇒ lưới mặc định, công tắc `viewer-view-text` ⇒ văn bản cũ,
       lựa chọn nhớ trong phiên (sessionStorage, chịu lỗi), nguồn `md` ⇒ không lưới / không công tắc; `parsePdfTables` ném (mock) ⇒ hiển thị văn bản như cũ (FR-012); CSS bảng có `overflow-x: auto` + vùng cuộn `tabindex=0`. FAIL.
-- [ ] T005 [US1] Hiện thực `src/renderer/features/source-viewer/SourceTable.tsx`, sửa `SourceViewer.tsx` (dùng khối, công tắc), `source-viewer.css`, i18n `viewer.table.label`,
+- [X] T005 [US1] Hiện thực `src/renderer/features/source-viewer/SourceTable.tsx`, sửa `SourceViewer.tsx` (dùng khối, công tắc), `source-viewer.css`, i18n `viewer.table.label`,
       `viewer.view.grid`, `viewer.view.text` (+ aria) vi / en (`src/shared/i18n/domains/viewer.ts`); T004 xanh; `highlight`, `source-viewer-audio` / `-image` / `-stale` unit cũ xanh.
-- [ ] T006 [US1] E2E `tests/e2e/source-viewer-grid.spec.ts`: nạp PDF fixture có bảng (`borderlessTable`) + Ollama giả trả câu có `[1]` trỏ chunk bảng ⇒ bấm chip ⇒
+- [X] T006 [US1] E2E `tests/e2e/source-viewer-grid.spec.ts`: nạp PDF fixture có bảng (`borderlessTable`) + Ollama giả trả câu có `[1]` trỏ chunk bảng ⇒ bấm chip ⇒
       `viewer-table-*` hiển thị, `<mark>` trong ô, nhãn `[n]`; công tắc sang văn bản; ảnh chụp 900 px vi / en không tràn. ADR phần (e) (`docs/04-decisions/2026-10-09-pdf-layout-2.md`,
       thay một phần 112 #6) + INDEX bằng script. **Commit + PR1.**
 

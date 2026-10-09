@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRelink } from "../sources/useRelink";
 import { useT } from "../../shared/i18n/i18n-context";
-import { buildSegments } from "./highlight";
+import { buildViewerBlocks, type ViewerBlock } from "./highlight";
+import { SegmentText, SourceTable } from "./SourceTable";
+import { parsePdfTables, type PdfTable } from "@shared/pdf-tables";
 import type { SourceViewerState } from "./useSourceViewer";
 
 // Trình xem nguồn (prototype S4) — OVERLAY panel phủ trên Workspace (A3). Render text + highlight đoạn
@@ -35,9 +37,23 @@ export function SourceViewer({
   const citation = target?.citation ?? null;
   // 112 (FR-017): trích dẫn cũ — nguồn đã được xử lý lại (chunk của trích dẫn không còn) ⇒ KHÔNG tô sáng sai chỗ.
   const stale = citation !== null && content?.citationValid === false;
-  const segments = useMemo(() => {
+  // 147 (e): bảng của PDF ⇒ lưới (mặc định) hoặc văn bản (công tắc, nhớ trong phiên). Lỗi phân tích ⇒ văn bản như cũ.
+  const tables = useMemo<PdfTable[]>(() => {
+    if (!content || content.kind !== "pdf") return [];
+    try {
+      return parsePdfTables(content.text, content.pageBreaks);
+    } catch {
+      return [];
+    }
+  }, [content]);
+  const [view, setView] = useState<TableView>(readTableView);
+  const chooseView = (v: TableView): void => {
+    setView(v);
+    writeTableView(v);
+  };
+  const blocks = useMemo<ViewerBlock[]>(() => {
     if (!content) return [];
-    return buildSegments(
+    return buildViewerBlocks(
       content.text,
       citation && !stale
         ? {
@@ -46,10 +62,10 @@ export function SourceViewer({
           }
         : null,
       content.pageBreaks,
+      view === "grid" ? tables : [],
     );
-  }, [content, citation, stale]);
+  }, [content, citation, stale, tables, view]);
 
-  const firstHlIndex = segments.findIndex((s) => s.kind === "highlight");
   const isPdf =
     (content?.kind === "pdf" && content.pageBreaks.length > 0) || false;
   const isAudio = content?.kind === "audio"; // 049
@@ -74,7 +90,7 @@ export function SourceViewer({
     setCurrentPage(citation?.locator.page ?? 1);
     if (hlRef.current) hlRef.current.scrollIntoView({ block: "center" });
     else if (bodyRef.current) bodyRef.current.scrollTop = 0;
-  }, [segments, citation, stale]);
+  }, [blocks, citation, stale]);
 
   // 049: đổi nguồn → reset cờ lỗi audio (thử phát lại nguồn mới).
   useEffect(() => {
@@ -151,6 +167,26 @@ export function SourceViewer({
             </span>
           )}
         </div>
+        {tables.length > 0 && (
+          <div
+            className="vview"
+            role="group"
+            aria-label={t.t("viewer.view.label")}
+          >
+            {(["grid", "text"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                className="vview-btn"
+                aria-pressed={view === v}
+                onClick={() => chooseView(v)}
+                data-testid={`viewer-view-${v}`}
+              >
+                {t.t(`viewer.view.${v}`)}
+              </button>
+            ))}
+          </div>
+        )}
         {isPdf && (
           <div className="vpager" data-testid="viewer-pager">
             <button
@@ -266,38 +302,50 @@ export function SourceViewer({
         )}
         {!loading && !missing && content && (
           <div className="vtext">
-            {segments.length === 0 && (
+            {blocks.length === 0 && (
               <span className="viewer-msg">{t.t("viewer.empty")}</span>
             )}
-            {segments.map((s, i) => (
-              <span key={i}>
-                {s.pageMark !== undefined && (
-                  <span
-                    className="pagemark"
-                    ref={(el) => {
-                      if (el) pageRefs.current.set(s.pageMark!, el);
-                    }}
-                  >
-                    {t.t("viewer.pageMark", { page: s.pageMark })}
-                  </span>
-                )}
-                {s.kind === "highlight" ? (
-                  <mark
-                    className="hl"
-                    ref={i === firstHlIndex ? hlRef : undefined}
-                  >
-                    {i === firstHlIndex && citation && (
-                      <span className="hltag" data-testid="viewer-hltag">
-                        [{citation.n}]
-                      </span>
-                    )}
-                    {s.text}
-                  </mark>
-                ) : (
-                  <span>{s.text}</span>
-                )}
-              </span>
-            ))}
+            {blocks.map((b, i) => {
+              const mark = b.kind === "table" ? b.pageMark : undefined;
+              const pageMarkEl = (page: number) => (
+                <span
+                  className="pagemark"
+                  ref={(el) => {
+                    if (el) pageRefs.current.set(page, el);
+                  }}
+                >
+                  {t.t("viewer.pageMark", { page })}
+                </span>
+              );
+              if (b.kind === "table") {
+                const index = tableIndex(blocks, i);
+                return (
+                  <Fragment key={i}>
+                    {mark !== undefined && pageMarkEl(mark)}
+                    <SourceTable
+                      block={b}
+                      index={index}
+                      label={t.t("viewer.table.label", {
+                        i: index,
+                        page: pageOf(content.pageBreaks, b.table.start),
+                      })}
+                      citationN={citation?.n ?? null}
+                      firstRef={hlRef}
+                    />
+                  </Fragment>
+                );
+              }
+              return b.segments.map((s, k) => (
+                <span key={`${i}-${k}`}>
+                  {s.pageMark !== undefined && pageMarkEl(s.pageMark)}
+                  <SegmentText
+                    s={s}
+                    citationN={citation?.n ?? null}
+                    firstRef={hlRef}
+                  />
+                </span>
+              ));
+            })}
           </div>
         )}
       </div>
@@ -335,4 +383,41 @@ function RelinkPrompt({
       {message && <p className="vrelink-msg">{message}</p>}
     </div>
   );
+}
+
+// 147 (e): lựa chọn dạng xem bảng — nhớ trong phiên (sessionStorage có thể bị chặn ⇒ mặc định lưới).
+type TableView = "grid" | "text";
+const VIEW_KEY = "iv.viewer.tableView";
+
+function readTableView(): TableView {
+  try {
+    return sessionStorage.getItem(VIEW_KEY) === "text" ? "text" : "grid";
+  } catch {
+    return "grid";
+  }
+}
+
+function writeTableView(v: TableView): void {
+  try {
+    sessionStorage.setItem(VIEW_KEY, v);
+  } catch {
+    // không lưu được — chỉ áp trong lần mở này
+  }
+}
+
+/** Số thứ tự (1-based) của bảng tại khối `i`. */
+function tableIndex(blocks: ViewerBlock[], i: number): number {
+  let n = 0;
+  for (let k = 0; k <= i; k++) if (blocks[k].kind === "table") n++;
+  return n;
+}
+
+/** Trang chứa vị trí `offset` (mốc trang cuối cùng ≤ offset); không có mốc ⇒ 1. */
+function pageOf(
+  pageBreaks: readonly { page: number; offset: number }[],
+  offset: number,
+): number {
+  let page = 1;
+  for (const pb of pageBreaks) if (pb.offset <= offset) page = pb.page;
+  return page;
 }

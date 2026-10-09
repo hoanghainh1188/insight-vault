@@ -15,6 +15,13 @@ export const viewerVi = {
   loading: "Đang tải nguồn…",
   missing: "Nguồn không còn tồn tại.",
   empty: "(Nguồn trống)",
+  // 147 (e): lưới bảng
+  table: { label: "Bảng {i} — trang {page}" },
+  view: {
+    label: "Cách hiển thị bảng",
+    grid: "Dạng lưới",
+    text: "Dạng văn bản",
+  },
   audioError:
     "Không phát được file âm thanh gốc (có thể đã bị xoá hoặc di chuyển). Bản bóc băng bên dưới vẫn xem được.",
   videoError:
@@ -37,6 +44,8 @@ export const viewerEn: Widen<typeof viewerVi> = {
   loading: "Loading source…",
   missing: "This source no longer exists.",
   empty: "(Empty source)",
+  table: { label: "Table {i} — page {page}" },
+  view: { label: "Table display", grid: "Grid", text: "Text" },
   audioError:
     "Couldn't play the original audio file (it may have been deleted or moved). The transcript below is still available.",
   videoError:
