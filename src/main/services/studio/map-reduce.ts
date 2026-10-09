@@ -258,6 +258,7 @@ export async function runMapReduce({
     // Thử lại 1 lần khi lỗi tạm (Ollama vừa nạp lại…) hoặc ghi chú không có [n] hợp lệ — không mất cả lượt tạo.
     let got: string[] = [];
     for (let attempt = 0; attempt < 2 && got.length === 0; attempt += 1) {
+      assertNotAborted(signal); // 149 review N5: cả khi chat trả về bình thường sau huỷ
       try {
         got = cleanNotes(await chat(messages), batchMap);
       } catch (e) {

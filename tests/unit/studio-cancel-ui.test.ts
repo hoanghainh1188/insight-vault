@@ -218,6 +218,36 @@ describe("StudioColumn — Huỷ", () => {
     expect(document.activeElement).toBe(other);
   });
 
+  it("(review N1) bấm Huỷ có focus nhưng lượt vẫn xong ⇒ lần huỷ sau (không focus nút Huỷ) KHÔNG cướp focus", async () => {
+    await mount();
+    start();
+    const b1 = q("[data-testid=studio-cancel-summary]") as HTMLButtonElement;
+    b1.focus();
+    act(() => b1.click());
+    await act(async () =>
+      settle[0].ok({
+        id: "r",
+        notebookId: "nb1",
+        kind: "summary",
+        content: "x",
+        citations: [],
+        createdAt: 1,
+      }),
+    );
+    // lượt mới, huỷ khi focus KHÔNG ở nút Huỷ
+    act(() =>
+      (q("[data-testid=studio-regen-summary]") as HTMLButtonElement).click(),
+    );
+    (document.activeElement as HTMLElement | null)?.blur();
+    act(() =>
+      (q("[data-testid=studio-cancel-summary]") as HTMLButtonElement).click(),
+    );
+    await act(async () =>
+      settle[1].fail(new Error(encodeUserError("studioCancelled"))),
+    );
+    expect(document.activeElement).toBe(document.body);
+  });
+
   it("CSS: hàng pha + nút Huỷ co giãn, không tràn", () => {
     const css = readFileSync("src/renderer/features/studio/studio.css", "utf8");
     const head = /\.studio-progress-head\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";

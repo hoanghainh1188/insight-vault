@@ -92,3 +92,18 @@ describe("cancelLogFields (analyze A1)", () => {
     });
   });
 });
+
+describe("createGenerationRegistry — id trùng (review N4 / bảo mật 1)", () => {
+  it("register lại cùng id ⇒ lượt cũ bị huỷ 'superseded'; finish của lượt cũ KHÔNG xoá entry lượt mới", () => {
+    const r = createGenerationRegistry<Owner>();
+    const old = reg(r, "dup", "summary", "nb1");
+    const fresh = reg(r, "dup", "faq", "nb2");
+    expect(old.signal.aborted).toBe(true);
+    expect(fresh.signal.aborted).toBe(false);
+    // lượt cũ kết thúc trước: trả lý do của chính nó, lượt mới vẫn huỷ được
+    expect(r.finish("dup", old.signal)).toBe("superseded");
+    expect(r.cancel("dup", A, "user")).toBe(true);
+    expect(r.finish("dup", fresh.signal)).toBe("user");
+    expect(r.size()).toBe(0);
+  });
+});

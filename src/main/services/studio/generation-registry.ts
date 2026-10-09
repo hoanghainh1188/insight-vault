@@ -33,6 +33,9 @@ export function createGenerationRegistry<O>() {
       owner: O;
     }): { signal: AbortSignal; superseded: boolean } {
       let superseded = false;
+      // Review N4: id trùng (renderer lỗi / cố ý) ⇒ lượt cũ cùng id cũng bị thay — không để controller mồ côi.
+      const same = entries.get(input.generationId);
+      if (same) superseded = abort(same, "superseded") || superseded;
       for (const e of entries.values()) {
         if (e.notebookId === input.notebookId && e.kind === input.kind) {
           superseded = abort(e, "superseded") || superseded;
@@ -56,9 +59,15 @@ export function createGenerationRegistry<O>() {
       return abort(e, reason);
     },
 
-    /** Lượt kết thúc (luôn gọi ở finally): xoá; trả lý do nếu lượt đã bị huỷ, ngược lại null. Idempotent. */
-    finish(generationId: string): CancelReason | null {
+    /**
+     * Lượt kết thúc (luôn gọi ở finally): xoá; trả lý do nếu lượt đã bị huỷ, ngược lại null. Idempotent. Truyền `signal` của lượt
+     * để KHÔNG xoá nhầm entry của lượt khác đã đăng ký lại cùng id (review N4) — khi đó trả lý do theo signal của chính lượt.
+     */
+    finish(generationId: string, signal?: AbortSignal): CancelReason | null {
       const e = entries.get(generationId);
+      if (signal && e?.controller.signal !== signal) {
+        return signal.aborted ? "superseded" : null;
+      }
       if (!e) return null;
       entries.delete(generationId);
       return e.reason;

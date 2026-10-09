@@ -154,6 +154,8 @@ for (const lang of ["vi", "en"] as const) {
 // 146 (review): đường NHIỀU PHẦN trên UI thật — tài liệu ~40.000 ký tự > ngân sách 16.000 (Ollama giả không trả /api/show) ⇒
 // map-reduce ⇒ "Đang đọc phần i/N…" tăng dần, thanh xác định, rồi "Đang viết…" và kết quả; cửa sổ nhỏ nhất (900 px) không tràn.
 test("146 — nhiều phần: đọc i/N tăng dần rồi viết; cửa sổ nhỏ nhất không tràn", async ({}, testInfo) => {
+  // Chờ kết quả tới 60 s (poll bên dưới) ⇒ giới hạn test phải lớn hơn mặc định 30 s (máy bận khi chạy cả bộ e2e).
+  test.setTimeout(90_000);
   const dir = await mkdtemp(join(tmpdir(), "iv-146-"));
   const big = join(dir, "dai.txt");
   const para = (i: number): string =>

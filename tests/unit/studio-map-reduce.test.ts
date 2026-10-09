@@ -551,3 +551,23 @@ describe("runMapReduce — huỷ (149)", () => {
     expect(maps).toBeGreaterThan(0);
   });
 });
+
+describe("runMapReduce — kiểm huỷ ở đầu mỗi lần thử (review N5)", () => {
+  it("chat trả rỗng (không tôn trọng signal) sau khi bị huỷ ⇒ KHÔNG gọi lần thử thứ 2", async () => {
+    const ctl = new AbortController();
+    const chat = vi.fn(async () => {
+      ctl.abort();
+      return "không có trích dẫn"; // rỗng sau cleanNotes ⇒ bình thường sẽ thử lại
+    });
+    await expect(
+      runMapReduce({
+        kind: "summary",
+        groups: groups(3),
+        budget: 900,
+        chat,
+        signal: ctl.signal,
+      }),
+    ).rejects.toBeInstanceOf(ChatAbortedError);
+    expect(chat).toHaveBeenCalledTimes(1);
+  });
+});

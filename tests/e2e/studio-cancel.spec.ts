@@ -154,7 +154,9 @@ test("149 — Huỷ giữa phần 2: ngắt kết nối, không request mới, k
       .getByTestId("studio-col")
       .screenshot({ path: testInfo.outputPath("studio-cancel-vi.png") });
     const before = fake.stats.requests;
-    await cancelBtn.click();
+    // (review B1) bằng bàn phím: focus nút Huỷ + Enter ⇒ sau huỷ focus về nút loại (không có kết quả cũ).
+    await cancelBtn.focus();
+    await win.keyboard.press("Enter");
     await expect
       .poll(() => fake.stats.closed, { timeout: 2_000 })
       .toBeGreaterThanOrEqual(1);
@@ -162,6 +164,7 @@ test("149 — Huỷ giữa phần 2: ngắt kết nối, không request mới, k
     await expect(win.getByTestId("studio-progress-keyPoints")).toHaveCount(0);
     await expect(win.getByTestId("studio-error-keyPoints")).toHaveCount(0);
     await expect(btn).toHaveText("Ý chính");
+    await expect(btn).toBeFocused();
     await win.waitForTimeout(3_000);
     expect(fake.stats.requests).toBe(before); // không request mới (kể cả thử lại / bước cuối)
     expect(
@@ -184,10 +187,13 @@ test("149 — Huỷ giữa phần 2: ngắt kết nối, không request mới, k
     await expect(win.getByTestId("studio-progress-faq")).toContainText(
       "Đang đọc phần 2/",
     );
-    await win.getByTestId("studio-cancel-faq").click();
+    await win.getByTestId("studio-cancel-faq").focus();
+    await win.keyboard.press("Enter");
     await expect(win.getByTestId("studio-cancel-faq")).toHaveCount(0, {
       timeout: 2_000,
     });
+    // (review B1) có kết quả cũ ⇒ focus về "Tạo lại"
+    await expect(win.getByTestId("studio-regen-faq")).toBeFocused();
     expect(await card.innerText()).toBe(oldText);
     await expect(win.getByTestId("studio-error-faq")).toHaveCount(0);
 

@@ -404,6 +404,13 @@ export function registerIpc({
         sender.once("destroyed", () =>
           studioRuns.abortAllFor(sender, "window"),
         );
+        // Review N3: renderer crash / tải lại trang (không phải đổi hash trong trang) ⇒ không để lượt chạy ngầm.
+        sender.on("render-process-gone", () =>
+          studioRuns.abortAllFor(sender, "window"),
+        );
+        sender.on("did-navigate", () =>
+          studioRuns.abortAllFor(sender, "window"),
+        );
       }
       ({ signal } = studioRuns.register({
         generationId: id,
@@ -422,7 +429,7 @@ export function registerIpc({
       cancelled = e instanceof UserFacingError && e.code === "studioCancelled";
       return rethrowForIpc(e);
     } finally {
-      const reason = id ? studioRuns.finish(id) : null;
+      const reason = id ? studioRuns.finish(id, signal) : null;
       if (cancelled && reason) {
         logEvent(
           "studio.cancelled",

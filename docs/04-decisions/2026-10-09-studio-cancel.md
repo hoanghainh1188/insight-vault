@@ -31,6 +31,21 @@ reason}`; chỉ **chủ sở hữu** (`WebContents` đã gọi `studio:generate`
    dòng, không tràn). Sau huỷ: câu đọc màn hình "Đã huỷ tạo {loại}." / "Cancelled creating {kind}."; focus về "Tạo lại" (có card) hoặc nút loại — chỉ khi
    focus đang ở nút Huỷ.
 
+## Bổ sung sau review (code / bảo mật / glossary, 2026-10-09)
+
+- **Focus sau huỷ (review B1, blocking)**: bản đầu trả focus bằng `queueMicrotask` — trong app thật React chưa commit trạng thái nghỉ nên nút đích còn
+  `disabled` và focus rơi về `body` (unit test xanh nhờ `act()`; e2e chưa kiểm). Nay trả focus trong effect sau commit (`pendingFocus`, chờ `loading[kind]`
+  về `false`, đọc `results` hiện tại); ý định trả focus được dọn ở mọi kết cục (N1). E2E thêm kiểm `toBeFocused` cả hai nhánh (đã xác nhận e2e ĐỎ với bản cũ).
+- **`generationId` trùng (N4 / bảo mật 1)**: `register` cùng id ⇒ lượt cũ bị huỷ `superseded`; `finish(id, signal)` chỉ xoá entry của đúng lượt.
+- **Kiểm huỷ ở đầu mỗi lần thử (N5)**: cả khi `chat` trả về bình thường sau huỷ.
+- **Tải lại / renderer crash (N3)**: `render-process-gone` và `did-navigate` (điều hướng toàn trang, không phải đổi hash) ⇒ huỷ mọi lượt của cửa sổ.
+- **Supersede xuyên cửa sổ (bảo mật 2)**: chủ ý — lượt mới cùng `(notebookId, kind)` thay lượt cũ dù ở cửa sổ khác (cùng một người dùng, cùng đích lưu);
+  quyền **huỷ theo yêu cầu** vẫn chỉ của cửa sổ khởi tạo.
+- **Điều chỉnh so với clarify #1 (N6)**: `studio:cancel(generationId, reason?)` thêm `reason` (`user` | `navigate`) chỉ để log đúng lý do (#14).
+- **Đổi hành vi nhỏ (N7)**: timeout nhánh không-stream của Ollama nay bao cả lúc đọc body (trước đây gỡ sau khi có header).
+- Glossary (append): kết cục lượt tạo (`StudioGenerateOutcome` / `outcomeOf`), nút Huỷ (`StudioCancel` / `cancelling`), đích focus sau huỷ
+  (`cancelFocusTarget`), nhật ký huỷ (`studio.cancelled` / `cancelLogFields`).
+
 ## Kiểm chứng
 
 - Unit (TDD): `chat-abort`, `ollama-client` (huỷ khi chờ / khi đọc body / trước khi gọi; timeout vẫn khác), `online-http-abort` (badge về nghỉ, timeout thân

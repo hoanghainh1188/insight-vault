@@ -94,24 +94,21 @@ export function StudioColumn({
     cancel(kind);
   };
 
-  const restoreFocusAfterCancel = (kind: StudioKind): void => {
-    const was = cancelFocused.current[kind];
-    delete cancelFocused.current[kind];
-    // Nút Huỷ đã gỡ khỏi DOM ⇒ focus rơi về body; chỉ trả focus khi người dùng chưa đi nơi khác.
-    if (
-      !was ||
-      (document.activeElement &&
-        document.activeElement !== document.body &&
-        document.activeElement !== was)
-    ) {
-      return;
-    }
+  // 149 (review B1): trả focus SAU KHI React commit trạng thái nghỉ (nút đích hết disabled, nút Huỷ đã gỡ) — không dựa vào microtask.
+  const [pendingFocus, setPendingFocus] = useState<StudioKind | null>(null);
+  useEffect(() => {
+    if (!pendingFocus || loading[pendingFocus]) return;
+    const kind = pendingFocus;
+    setPendingFocus(null);
+    // Nút Huỷ đã gỡ ⇒ focus rơi về body; người dùng đã sang chỗ khác ⇒ không cướp focus.
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
     const target =
       cancelFocusTarget(results[kind] !== undefined) === "regenerate"
         ? `[data-testid=studio-regen-${kind}]`
         : `[data-testid=studio-btn-${kind}]`;
     colRef.current?.querySelector<HTMLElement>(target)?.focus();
-  };
+  }, [pendingFocus, loading, results]);
 
   // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
   // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
@@ -122,12 +119,14 @@ export function StudioColumn({
     const outcome = await generate(kind, scopeId, target);
     const now = trRef.current;
     const label = now.t(`studio.kind.${kind}`);
+    // Review N1: ý định trả focus chỉ dùng cho đúng lần huỷ này — mọi kết cục đều dọn.
+    const hadFocus = cancelFocused.current[kind] !== undefined;
+    delete cancelFocused.current[kind];
     if (outcome === "done") {
       announce(studioMessage(label, "done", now));
     } else if (outcome === "cancelled") {
       announce(studioCancelledMessage(label, now));
-      // đợi React gỡ nút Huỷ rồi mới trả focus
-      queueMicrotask(() => restoreFocusAfterCancel(kind));
+      if (hadFocus) setPendingFocus(kind);
     }
   };
 
