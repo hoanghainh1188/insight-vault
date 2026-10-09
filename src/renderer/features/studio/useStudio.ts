@@ -17,6 +17,7 @@ import { toParsedError } from "../../shared/i18n/describe-error";
 import { useLang } from "../../shared/i18n/i18n-context";
 import {
   applyStudioProgress,
+  withoutKind,
   type ActiveGenerationIds,
   type StudioProgressMap,
 } from "./studio-progress";
@@ -55,8 +56,7 @@ export function useStudio(notebookId: string) {
   const activeIds = useRef<ActiveGenerationIds>({});
 
   useEffect(() => {
-    // Mock cũ trong test có thể thiếu kênh này — không có thì chỉ là không hiện tiến độ.
-    const off = window.api.onStudioProgress?.((e) =>
+    const off = window.api.onStudioProgress((e) =>
       setProgress((p) =>
         applyStudioProgress(p, activeIds.current, notebookRef.current, e),
       ),
@@ -123,7 +123,7 @@ export function useStudio(notebookId: string) {
       // 146: mỗi lần bấm Tạo/Tạo lại/Tạo bằng AI cục bộ = một lượt mới ⇒ id mới; sự kiện của lượt trước bị bỏ.
       const generationId = crypto.randomUUID();
       activeIds.current = { ...activeIds.current, [kind]: generationId };
-      setProgress((p) => ({ ...p, [kind]: undefined }));
+      setProgress((p) => withoutKind(p, kind));
       setLoading((p) => ({ ...p, [kind]: true }));
       setErrors((p) => ({ ...p, [kind]: undefined }));
       setOnlineFailed((p) => ({ ...p, [kind]: false }));
@@ -153,8 +153,8 @@ export function useStudio(notebookId: string) {
         if (!stale()) setLoading((p) => ({ ...p, [kind]: false }));
         // 146: xong/lỗi ⇒ xoá tiến độ — chỉ khi vẫn là lượt đang chạy của loại này.
         if (activeIds.current[kind] === generationId) {
-          activeIds.current = { ...activeIds.current, [kind]: undefined };
-          setProgress((p) => ({ ...p, [kind]: undefined }));
+          activeIds.current = withoutKind(activeIds.current, kind);
+          setProgress((p) => withoutKind(p, kind));
         }
       }
     },

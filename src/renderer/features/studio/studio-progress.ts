@@ -23,6 +23,17 @@ export type StudioProgressMap = Partial<
 /** generationId của lượt đang chạy, theo loại. */
 export type ActiveGenerationIds = Partial<Record<StudioKind, string>>;
 
+/** Bản sao không có khoá `kind` (không để lại khoá mang giá trị undefined). Không mutate. */
+export function withoutKind<T>(
+  map: Partial<Record<StudioKind, T>>,
+  kind: StudioKind,
+): Partial<Record<StudioKind, T>> {
+  if (!(kind in map)) return map;
+  const next = { ...map };
+  delete next[kind];
+  return next;
+}
+
 const order = (p: StudioProgressPhase): number =>
   STUDIO_PROGRESS_PHASES.indexOf(p);
 

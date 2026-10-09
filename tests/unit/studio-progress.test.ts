@@ -221,3 +221,17 @@ describe("progressAnnouncement", () => {
     expect(count).toBeLessThanOrEqual(6);
   });
 });
+
+// 146 (review): xoá khoá thật sự (không để khoá mang undefined), không mutate.
+import { withoutKind } from "../../src/renderer/features/studio/studio-progress";
+
+describe("withoutKind", () => {
+  it("bỏ đúng khoá, giữ khoá khác, không mutate; khoá không có ⇒ trả nguyên tham chiếu", () => {
+    const m = { summary: 1, faq: 2 };
+    const out = withoutKind(m, "summary");
+    expect(out).toEqual({ faq: 2 });
+    expect("summary" in out).toBe(false);
+    expect(m).toEqual({ summary: 1, faq: 2 });
+    expect(withoutKind(out, "outline")).toBe(out);
+  });
+});

@@ -2,6 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { join } from "node:path";
 import type { AddressInfo } from "node:net";
 import { createServer, type Server } from "node:http";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { launchFresh, dismissOnboarding } from "./helper";
 
 // 146 (T020): tiến độ Studio end-to-end với "Ollama" giả (như #135) — /api/tags + /api/chat chậm ~1,5 s. Notebook nhỏ ⇒ một lượt
@@ -9,17 +11,26 @@ import { launchFresh, dismissOnboarding } from "./helper";
 
 const FIXTURE = join(process.cwd(), "tests/fixtures/sample.txt");
 
-async function fakeOllama(): Promise<{ server: Server; url: string }> {
+async function fakeOllama(
+  delayMs = 1500,
+): Promise<{ server: Server; url: string }> {
   const server = createServer((req, res) => {
     res.setHeader("content-type", "application/json");
     if (req.url === "/api/chat") {
-      setTimeout(
-        () =>
-          res.end(
-            JSON.stringify({ message: { content: "Kết luận ngắn [1]." } }),
-          ),
-        1500,
-      );
+      let body = "";
+      req.on("data", (c) => (body += c));
+      req.on("end", () => {
+        // Trả ghi chú / kết luận trích [n] ĐẦU TIÊN có trong đầu vào (hợp lệ cho cả lượt map lẫn bước cuối).
+        const msgs = (JSON.parse(body) as { messages: { content: string }[] })
+          .messages;
+        const n = /\[(\d+)\]/.exec(msgs[msgs.length - 1].content)?.[1] ?? "1";
+        const isMap = msgs[0].content.startsWith("Extract NOTES");
+        const content = isMap ? `- ý chính [${n}]` : `Kết luận ngắn [${n}].`;
+        setTimeout(
+          () => res.end(JSON.stringify({ message: { content } })),
+          delayMs,
+        );
+      });
       return;
     }
     if (req.url === "/api/show") {
@@ -34,7 +45,7 @@ async function fakeOllama(): Promise<{ server: Server; url: string }> {
   return { server, url: `http://127.0.0.1:${port}` };
 }
 
-async function openNotebook(win: Page): Promise<void> {
+async function openNotebook(win: Page, file = FIXTURE): Promise<void> {
   const nbId = await win.evaluate(async (file) => {
     await window.api.aiSetSelectedModels({
       chatModel: "fake:1b",
@@ -50,7 +61,7 @@ async function openNotebook(win: Page): Promise<void> {
       filePath: file,
     });
     return nb.id;
-  }, FIXTURE);
+  }, file);
   await expect
     .poll(
       () =>
@@ -139,3 +150,69 @@ for (const lang of ["vi", "en"] as const) {
     }
   });
 }
+
+// 146 (review): đường NHIỀU PHẦN trên UI thật — tài liệu ~40.000 ký tự > ngân sách 16.000 (Ollama giả không trả /api/show) ⇒
+// map-reduce ⇒ "Đang đọc phần i/N…" tăng dần, thanh xác định, rồi "Đang viết…" và kết quả; cửa sổ nhỏ nhất (900 px) không tràn.
+test("146 — nhiều phần: đọc i/N tăng dần rồi viết; cửa sổ nhỏ nhất không tràn", async ({}, testInfo) => {
+  const dir = await mkdtemp(join(tmpdir(), "iv-146-"));
+  const big = join(dir, "dai.txt");
+  const para = (i: number): string =>
+    `Đoạn ${i}: phở là món ăn truyền thống của Việt Nam với nước dùng hầm xương, bánh phở và thịt bò hoặc gà, được bán ở khắp các thành phố lớn.`;
+  await writeFile(
+    big,
+    Array.from({ length: 300 }, (_, i) => para(i)).join("\n\n"),
+  );
+  const { server, url } = await fakeOllama(700);
+  const app = await launchFresh({ OLLAMA_HOST: url });
+  try {
+    const win = await app.firstWindow();
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0]!.setSize(900, 700),
+    );
+    await dismissOnboarding(win);
+    await openNotebook(win, big);
+    const btn = win.getByTestId("studio-btn-keyPoints");
+    await expect(btn).toBeEnabled({ timeout: 15_000 });
+    await btn.click();
+
+    const prog = win.getByTestId("studio-progress-keyPoints");
+    await expect(prog).toContainText("Đang đọc phần 1/");
+    const bar = prog.getByRole("progressbar");
+    await expect(bar).toHaveAttribute("aria-valuenow", "1");
+    await expectNoOverflow(win);
+    await win
+      .getByTestId("studio-col")
+      .screenshot({ path: testInfo.outputPath("studio-progress-reading.png") });
+
+    // Ghi chuỗi câu tiến độ tới khi có kết quả.
+    const seen: string[] = [];
+    const card = win.getByTestId("studio-card-keyPoints");
+    await expect
+      .poll(
+        async () => {
+          if ((await prog.count()) > 0) {
+            const t = ((await prog.textContent()) ?? "").trim();
+            if (t && seen[seen.length - 1] !== t) seen.push(t);
+          }
+          return card.count();
+        },
+        { timeout: 60_000, intervals: [100] },
+      )
+      .toBe(1);
+    const reading = seen
+      .map((t) => /Đang đọc phần (\d+)\/(\d+)/.exec(t))
+      .filter((m): m is RegExpExecArray => m !== null);
+    const total = Number(reading[0][2]);
+    expect(total).toBeGreaterThan(1);
+    expect(reading.map((m) => Number(m[1]))).toEqual(
+      [...reading.map((m) => Number(m[1]))].sort((a, b) => a - b),
+    );
+    expect(seen[seen.length - 1]).toBe("Đang viết…");
+    await expect(win.getByTestId("studio-parts")).toContainText(
+      `Tổng hợp từ ${total} phần`,
+    );
+  } finally {
+    await app.close();
+    server.close();
+  }
+});

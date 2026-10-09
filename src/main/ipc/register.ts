@@ -141,6 +141,19 @@ export function registerIpc({
     // Truyền args từ renderer (bỏ event object đầu tiên). KHÔNG log args (có thể chứa nội dung).
     ipcMain.handle(channel, (_event, ...args) => fn(...args));
   };
+  /**
+   * 146: như safeHandle nhưng truyền kèm `sender` (webContents của cửa sổ đã gọi) — để đẩy sự kiện CHỈ về đúng cửa sổ đó.
+   * KHÔNG log args.
+   */
+  const safeHandleWithSender = (
+    channel: string,
+    fn: (sender: Electron.WebContents, ...a: unknown[]) => unknown,
+  ): void => {
+    if (!isWhitelisted(channel)) {
+      throw new Error(`IPC channel not whitelisted: ${channel}`);
+    }
+    ipcMain.handle(channel, (event, ...args) => fn(event.sender, ...args));
+  };
 
   // app-shell (001)
   safeHandle(CHANNELS.getDataDir, () => dataDir);
@@ -356,14 +369,13 @@ export function registerIpc({
   });
 
   // studio (021) — tổng hợp toàn notebook (đọc chunk + chat CHỈ ở main). KHÔNG log content/citations.
-  // 146: tiến độ Studio đẩy qua studio:progress (webContents.send) — chỉ khi renderer gửi generationId hợp lệ. KHÔNG log payload.
-  const emitStudioProgress = (e: StudioProgressEvent): void => {
-    for (const w of BrowserWindow.getAllWindows()) {
-      if (!w.isDestroyed()) w.webContents.send(CHANNELS.studioProgress, e);
-    }
-  };
-  safeHandle(CHANNELS.studioGenerate, async (input) => {
+  // 146: tiến độ Studio đẩy qua studio:progress CHỈ về cửa sổ đã gọi (review bảo mật) — chỉ khi renderer gửi generationId hợp
+  // lệ. KHÔNG log payload.
+  safeHandleWithSender(CHANNELS.studioGenerate, async (sender, input) => {
     const target = parseAiTarget(input);
+    const emitStudioProgress = (e: StudioProgressEvent): void => {
+      if (!sender.isDestroyed()) sender.send(CHANNELS.studioProgress, e);
+    };
     try {
       const studioInput = input as StudioGenerateInput;
       return await studioServices[target].generate(

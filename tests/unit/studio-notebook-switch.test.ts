@@ -27,6 +27,7 @@ beforeEach(() => {
     aiGetRuntimeStatus: () => Promise.resolve({ ollamaReady: true }),
     sourceListByNotebook: () => Promise.resolve([]),
     onSourceProgress: () => () => undefined,
+    onStudioProgress: () => () => undefined, // 146
     studioList: () => Promise.resolve([]),
     studioGenerate: vi.fn(() => new Promise((r) => (resolveGen = r))),
   };

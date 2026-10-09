@@ -27,6 +27,21 @@
 6. **Trình đọc màn hình** (`progressAnnouncement` thuần, polite, có tên loại): giữ câu bắt đầu / xong; thêm khi vào pha đọc, mốc giữa
    pha đọc (`total ≥ 3`, `index = ceil(total/2)`), sang rút gọn, sang viết (chỉ khi có pha trước). Một lượt 6 phần ≤ 6 câu.
 
+## Bổ sung sau review (code / bảo mật / glossary, 2026-10-09)
+
+- **Chỉ gửi về cửa sổ đã gọi** (`event.sender` qua `safeHandleWithSender` ở `register.ts`) thay vì mọi cửa sổ như contract /
+  research ghi — đúng nghĩa "tiến độ của lượt này", không rò sang cửa sổ khác nếu sau này có nhiều cửa sổ. Thay thế câu
+  "tới mọi cửa sổ" trong `specs/…/contracts/studio-progress.md`, `research.md`, `plan.md`, `tasks.md` (T010).
+- Renderer đăng ký `onStudioProgress` không còn `?.` (mock test cập nhật thay vì để nhánh chỉ phục vụ test); xoá khoá bằng
+  `withoutKind` (không để khoá mang `undefined`).
+- E2E thêm đường **nhiều phần** (tài liệu ~40.000 ký tự > ngân sách 16.000): "Đang đọc phần i/N…" tăng dần → "Đang viết…" → "Tổng
+  hợp từ N phần", ở cửa sổ nhỏ nhất (900 px) không tràn (SC-001, SC-006).
+- Glossary (append): cặp tiến độ xác định / bất định (kèm nhánh đọc thiếu số phần), `StudioProgressState` / `ActiveGenerationIds`,
+  `createStudioProgressEmitter`.
+- Không đổi: thanh pha đọc dùng `index/total` (phần đang đọc) — ở phần N/N thanh đầy rồi sang bất định khi viết; giữ như clarify #4.
+- Ngoài phạm vi (có từ trước): đổi notebook A → B → A giữa lúc tạo, kết quả lượt A cũ về muộn vẫn được ghi (kiểm `stale()` theo
+  notebookId). Tiến độ không bị ảnh hưởng (lọc theo `generationId`).
+
 ## Kiểm chứng
 
 - Unit (TDD): `studio-progress-id`, `studio-map-reduce` (onProgress), `studio-service` (tiến độ), `studio-progress-emitter`,
