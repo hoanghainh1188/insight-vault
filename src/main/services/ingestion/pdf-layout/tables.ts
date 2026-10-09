@@ -9,6 +9,7 @@ import {
   type Segment,
 } from "./types";
 import { logEvent } from "../../../logging";
+import { joinAcrossLines, type Lexicon } from "./hyphen";
 import { decimalAnchor, looksNumeric } from "./numeric";
 
 // 112 (FR-004, FR-005, research R5–R6): nhận diện bảng theo CĂN CỘT của các segment trong một vùng và xuất bảng
@@ -57,8 +58,15 @@ function startRun(line: Line): Run {
   };
 }
 
+/** Phần tiếp của ô (dòng sau): gạch nối cuối dòng theo 147 (a), còn lại dấu cách. */
+function continueCell(c: string, t: string, lexicon?: Lexicon): string {
+  if (t === "") return c;
+  if (c === "") return t;
+  return joinAcrossLines(c, t, lexicon)?.text ?? `${c} ${t}`;
+}
+
 /** Thêm dòng vào bảng đang dựng; false nếu dòng không thuộc bảng. */
-function extendRun(run: Run, line: Line): boolean {
+function extendRun(run: Run, line: Line, lexicon?: Lexicon): boolean {
   const prev = run.lines[run.lines.length - 1];
   const gap = line.y - prev.y;
   if (gap > ROW_BREAK_RATIO * prev.h) return false;
@@ -70,11 +78,7 @@ function extendRun(run: Run, line: Line): boolean {
   if (continuation) {
     const last = run.rows[run.rows.length - 1];
     run.rows[run.rows.length - 1] = last.map((c, i) =>
-      cells[i] === null
-        ? c
-        : c === ""
-          ? (cells[i] as string)
-          : `${c} ${cells[i]}`,
+      continueCell(c, cells[i] ?? "", lexicon),
     );
   } else {
     if (filled < TABLE_MIN_COLS) return false;
@@ -260,6 +264,7 @@ function sideRows(
   cols: readonly NumericColumn[],
   key: AlignKey,
   tol: number,
+  lexicon?: Lexicon,
 ): SideRow[] {
   const rows: SideRow[] = [];
   for (let k = 0; k < lines.length; k++) {
@@ -281,7 +286,7 @@ function sideRows(
     if (continuation) {
       const last = rows[rows.length - 1];
       rows[rows.length - 1] = {
-        cells: last.cells.map((c, i) => appendCell(c, cells[i])),
+        cells: last.cells.map((c, i) => continueCell(c, cells[i], lexicon)),
         hits: last.hits.map((h, i) => h + hits[i]),
         lineCount: k + 1,
       };
@@ -320,6 +325,7 @@ export function detectRightAlignedTable(
   region: readonly Line[],
   page: PageGeometry,
   start = 0,
+  lexicon?: Lexicon,
 ): RightAlignedTable | null {
   if (start >= region.length) return null;
   const cand = candidateLines(region, start);
@@ -328,7 +334,7 @@ export function detectRightAlignedTable(
   for (const key of ALIGN_KEYS) {
     const cols = numericColumns(cand, key, tol);
     if (!cols) continue;
-    const rows = sideRows(cand, cols, key, tol);
+    const rows = sideRows(cand, cols, key, tol, lexicon);
     // Hàng cuối không có số (chú thích, ghi chú dưới bảng) ⇒ văn bản.
     while (rows.length > 0 && rows[rows.length - 1].hits.every((h) => h === 0))
       rows.pop();
@@ -345,9 +351,10 @@ function trySide(
   region: readonly Line[],
   page: PageGeometry,
   start: number,
+  lexicon?: Lexicon,
 ): RightAlignedTable | null {
   try {
-    return detectRightAlignedTable(region, page, start);
+    return detectRightAlignedTable(region, page, start, lexicon);
   } catch (e) {
     // Chỉ mã lỗi, không nội dung tài liệu (constitution III).
     logEvent("pdf.layout.fallback", {
@@ -362,6 +369,7 @@ function trySide(
 export function detectTables(
   region: readonly Line[],
   page: PageGeometry,
+  lexicon?: Lexicon,
 ): RegionPart[] {
   const parts: RegionPart[] = [];
   const pushText = (ls: Line[]) => {
@@ -380,10 +388,10 @@ export function detectTables(
     }
     const run = startRun(line);
     let j = i + 1;
-    while (j < region.length && extendRun(run, region[j])) j++;
+    while (j < region.length && extendRun(run, region[j], lexicon)) j++;
     const left = isTable(run, page);
     // 147 (b): đường phụ chỉ thắng khi đường căn trái không nhận, hoặc nhận ít dòng hơn (vài hàng đầu tình cờ thẳng mép trái).
-    const side = trySide(region, page, i);
+    const side = trySide(region, page, i, lexicon);
     if (side && (!left || side.lineCount > j - i)) {
       parts.push({ kind: "table", rows: side.rows });
       i += side.lineCount;

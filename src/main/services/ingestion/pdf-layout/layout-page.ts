@@ -1,7 +1,14 @@
+import { logEvent } from "../../../logging";
 import { cleanText } from "../cleaning";
 import { orderRegions } from "./columns";
 import { buildLines } from "./lines";
-import { joinParagraphs } from "./paragraphs";
+import {
+  buildLexicon,
+  endsWithHyphenBreak,
+  mergeLexicons,
+  type Lexicon,
+} from "./hyphen";
+import { joinParagraphs, lineText } from "./paragraphs";
 import { detectTables, renderTable } from "./tables";
 import {
   MAX_LAYOUT_ITEMS_PER_PAGE,
@@ -22,6 +29,13 @@ export function legacyJoin(items: readonly LayoutItem[]): string {
   return items.map((i) => i.text).join(" ");
 }
 
+export interface LayoutOptions {
+  /** 147 (a): bằng chứng gạch nối từ phần còn lại của tài liệu (trang hiện tại tự góp thêm bằng chứng của chính nó) */
+  lexicon?: Lexicon;
+  /** 147 (a): nhận văn bản các dòng của trang (theo thứ tự dòng) — để dựng bằng chứng cả tài liệu mà không giữ item */
+  onLines?: (lines: readonly string[]) => void;
+}
+
 interface Part {
   text: string;
   table: boolean;
@@ -40,16 +54,38 @@ function assemble(parts: Part[]): { text: string; blocks: TextBlock[] } {
   return { text, blocks };
 }
 
+/** Bằng chứng cho trang: tài liệu + chính trang (chỉ dựng khi trang có ngắt dòng bằng gạch). Lỗi ⇒ chỉ dùng bằng chứng tài liệu. */
+function pageLexicon(
+  texts: readonly string[],
+  doc: Lexicon | undefined,
+): Lexicon | undefined {
+  if (!texts.some(endsWithHyphenBreak)) return doc;
+  try {
+    const own = buildLexicon(texts);
+    return doc ? mergeLexicons(doc, own) : own;
+  } catch (e) {
+    logEvent("pdf.layout.fallback", {
+      feature: "hyphen",
+      errorType: e instanceof Error ? e.constructor.name : typeof e,
+    });
+    return doc;
+  }
+}
+
 function layout(
   items: readonly LayoutItem[],
   page: PageGeometry,
+  opts: LayoutOptions,
 ): LayoutResult {
   const { lines, rotated } = buildLines(items);
+  const texts = lines.map(lineText);
+  opts.onLines?.(texts);
+  const lexicon = pageLexicon(texts, opts.lexicon);
   const parts: Part[] = orderRegions(lines, page).flatMap((region) =>
-    detectTables(region, page).map((p) =>
+    detectTables(region, page, lexicon).map((p) =>
       p.kind === "table"
         ? { text: renderTable(p.rows), table: true }
-        : { text: cleanText(joinParagraphs(p.lines)), table: false },
+        : { text: cleanText(joinParagraphs(p.lines, lexicon)), table: false },
     ),
   );
   if (rotated.length > 0) {
@@ -61,12 +97,13 @@ function layout(
 export function layoutPage(
   items: readonly LayoutItem[],
   page: PageGeometry,
+  opts: LayoutOptions = {},
 ): LayoutResult {
   if (items.length > MAX_LAYOUT_ITEMS_PER_PAGE) {
     return { text: legacyJoin(items), blocks: [], fallback: true };
   }
   try {
-    return layout(items, page);
+    return layout(items, page, opts);
   } catch {
     return { text: legacyJoin(items), blocks: [], fallback: true };
   }

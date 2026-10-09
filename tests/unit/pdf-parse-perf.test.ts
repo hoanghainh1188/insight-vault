@@ -6,6 +6,7 @@ import {
   borderlessTable,
   decimalTable,
   financialTable,
+  hyphenCompounds,
   rotatedSample,
   twoColumns,
 } from "../fixtures/pdf/samples";
@@ -40,7 +41,7 @@ async function best(fn: () => Promise<unknown>, runs = 3): Promise<number> {
 }
 
 describe("SC-006 — hiệu năng trích PDF có bố cục", () => {
-  it("50 trang (2 cột + bảng + trang xoay + bảng số) ⇒ mới ≤ 2× cũ", async () => {
+  it("50 trang (2 cột + bảng + trang xoay + bảng số + gạch nối) ⇒ mới ≤ 2× cũ", async () => {
     // 147: mẫu hỗn hợp có thêm trang /Rotate 90 (xoay qua viewport) — đo cả chi phí xoay trang.
     // 147 (b): thêm bảng số căn phải / căn thập phân — đo chi phí đường phụ nhận bảng số.
     const kinds = [
@@ -49,6 +50,9 @@ describe("SC-006 — hiệu năng trích PDF có bố cục", () => {
       () => rotatedSample(twoColumns(), 90).pages[0],
       () => financialTable().pages[0],
       () => decimalTable().pages[0],
+      // 147 (a): trang có ngắt dòng bằng gạch (tiền quét bằng chứng + dựng lại trang)
+      () => hyphenCompounds().pages[0],
+      () => hyphenCompounds().pages[1],
     ];
     const pages = Array.from({ length: 50 }, (_, i) =>
       kinds[i % kinds.length](),

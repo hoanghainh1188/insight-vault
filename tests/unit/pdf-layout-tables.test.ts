@@ -94,6 +94,30 @@ describe("detectTables", () => {
     ]);
   });
 
+  it("147 (a): phần tiếp của ô dùng cùng quyết định gạch nối (ngắt thật ⇒ liền; tiếng Việt ⇒ giữ gạch)", () => {
+    const items = [
+      ...grid([ROWS[0], ROWS[1]], XS, 100),
+      item("Banana", 50, 128),
+      item("infor-", 200, 128),
+      item("mation", 200, 139),
+      item("0.50", 350, 128),
+      item("Kiwi", 50, 153),
+      item("hợp-", 200, 153),
+      item("đồng", 200, 164),
+      item("2.00", 350, 153),
+    ];
+    expect(kinds(items)).toEqual([
+      {
+        table: [
+          ROWS[0],
+          ROWS[1],
+          ["Banana", "information", "0.50"],
+          ["Kiwi", "hợp-đồng", "2.00"],
+        ],
+      },
+    ]);
+  });
+
   it("văn bản trước/sau bảng giữ là đoạn văn, đúng thứ tự", () => {
     const items = [
       ...lines(50, 60, ["Intro paragraph."]),

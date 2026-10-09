@@ -151,3 +151,36 @@ describe("layoutPage — bảng (US2)", () => {
     expect(cleanText(r.text)).toBe(r.text);
   });
 });
+
+// 147 (a): bằng chứng gạch nối từ tài liệu đi vào layoutPage; trang tự góp bằng chứng của chính nó; onLines trả văn bản các dòng
+// (để parsePdf dựng tập bằng chứng cả tài liệu, không lưu item).
+import { buildLexicon } from "../../src/main/services/ingestion/pdf-layout/hyphen";
+
+describe("layoutPage — gạch nối (147 a)", () => {
+  it("bằng chứng cùng trang ⇒ giữ gạch", () => {
+    const items = lines(50, 100, [
+      "We prefer a long-term view. Our long-",
+      "term plan.",
+    ]);
+    expect(layoutPage(items, PAGE).text).toBe(
+      "We prefer a long-term view. Our long-term plan.",
+    );
+  });
+
+  it("bằng chứng từ tài liệu (tham số lexicon) ⇒ giữ gạch; không có ⇒ hành vi cũ", () => {
+    const items = lines(50, 100, ["a well-", "known fact"]);
+    expect(layoutPage(items, PAGE).text).toBe("a wellknown fact");
+    expect(
+      layoutPage(items, PAGE, { lexicon: buildLexicon(["The well-known"]) })
+        .text,
+    ).toBe("a well-known fact");
+  });
+
+  it("onLines nhận văn bản từng dòng (theo thứ tự dòng)", () => {
+    const seen: string[][] = [];
+    layoutPage(lines(50, 100, ["a well-", "known fact"]), PAGE, {
+      onLines: (ls) => seen.push([...ls]),
+    });
+    expect(seen).toEqual([["a well-", "known fact"]]);
+  });
+});
