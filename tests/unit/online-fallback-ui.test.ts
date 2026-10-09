@@ -37,6 +37,7 @@ beforeEach(() => {
     onRagStreamToken: vi.fn(() => () => undefined),
     onSourceProgress: vi.fn(() => () => undefined),
     onStudioProgress: vi.fn(() => () => undefined), // 146
+    studioCancel: vi.fn(() => Promise.resolve({ cancelled: true })), // 149
     ragStop: vi.fn(() => Promise.resolve({ stopped: true })),
     chatHistory: vi.fn(() => Promise.resolve([])),
     chatClear: vi.fn(() => Promise.resolve({ cleared: true })),

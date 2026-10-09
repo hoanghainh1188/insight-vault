@@ -18,6 +18,7 @@ import {
   type OnStudioProgress,
 } from "./map-reduce";
 import type { StudioRepo } from "./studio-repo";
+import { assertNotAborted, isChatAborted } from "../ai-runtime/abort";
 
 // Điều phối Studio (studio:generate / studio:list). DI: nguồn chunk + chat + repo lưu.
 // 105 (ADR studio-large-clarify): ngân sách theo CỬA SỔ NGỮ CẢNH của model (contextInfo) + num_ctx tường minh.
@@ -34,7 +35,7 @@ export interface StudioServiceDeps {
   /** Gọi LLM chat với messages[], trả nội dung (wrap LLMProvider.chat → content). numCtx: cửa sổ Ollama (105). */
   chat: (
     messages: ChatMessage[],
-    opts?: { numCtx?: number },
+    opts?: { numCtx?: number; signal?: AbortSignal },
   ) => Promise<string>;
   /**
    * 105: ngân sách ký tự cho phần đoạn nguồn + num_ctx theo model đang dùng. Thiếu ⇒ 16.000 ký tự, không ép num_ctx
@@ -48,10 +49,30 @@ function isStudioKind(k: string): k is (typeof STUDIO_KINDS)[number] {
 }
 
 export function createStudioService(deps: StudioServiceDeps) {
-  /** 146: `onProgress` (tuỳ chọn) nhận reading i/N · condensing · writing — không ảnh hưởng kết quả. */
+  /**
+   * 146: `onProgress` (tuỳ chọn) nhận reading i/N · condensing · writing — không ảnh hưởng kết quả.
+   * 149: `signal` huỷ lượt — không gọi thêm AI, KHÔNG lưu; ném UserFacingError("studioCancelled").
+   */
   async function generate(
     input: StudioGenerateInput,
-    onProgress?: OnStudioProgress,
+    opts: { onProgress?: OnStudioProgress; signal?: AbortSignal } = {},
+  ): Promise<StudioResult> {
+    try {
+      return await run(input, opts);
+    } catch (e) {
+      if (isChatAborted(e) || opts.signal?.aborted) {
+        throw new UserFacingError("studioCancelled");
+      }
+      throw e;
+    }
+  }
+
+  async function run(
+    input: StudioGenerateInput,
+    {
+      onProgress,
+      signal,
+    }: { onProgress?: OnStudioProgress; signal?: AbortSignal },
   ): Promise<StudioResult> {
     const { notebookId, kind, sourceId } = input;
     // 123 (FR-018): chỉ nhận vi/en; khác ⇒ ngôn ngữ hiệu lực của main (mặc định vi).
@@ -88,7 +109,14 @@ export function createStudioService(deps: StudioServiceDeps) {
     const ctx = deps.contextInfo
       ? await deps.contextInfo()
       : { budget: STUDIO_CONTEXT_BUDGET, numCtx: null };
-    const chatOpts = ctx.numCtx ? { numCtx: ctx.numCtx } : undefined;
+    assertNotAborted(signal); // 149: sau khi lấy ngân sách
+    const chatOpts =
+      ctx.numCtx || signal
+        ? {
+            ...(ctx.numCtx ? { numCtx: ctx.numCtx } : {}),
+            ...(signal ? { signal } : {}),
+          }
+        : undefined;
     const chat = (messages: ChatMessage[]): Promise<string> =>
       deps.chat(messages, chatOpts);
 
@@ -116,6 +144,7 @@ export function createStudioService(deps: StudioServiceDeps) {
         chat,
         outputLanguage,
         onProgress,
+        signal,
       });
       ({ raw, map, parts, truncated } = mr);
     }
@@ -128,6 +157,7 @@ export function createStudioService(deps: StudioServiceDeps) {
     const finalCitations =
       citations.length > 0 ? citations : citationsFromMap(map);
 
+    assertNotAborted(signal); // 149: ngay trước khi lưu — lượt đã huỷ KHÔNG ghi DB
     const saved = deps.studioRepo.upsert(
       notebookId,
       kind,

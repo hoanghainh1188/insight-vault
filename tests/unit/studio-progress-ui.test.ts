@@ -119,6 +119,7 @@ describe("StudioColumn — thông báo đổi pha (L3)", () => {
         return () => undefined;
       },
       studioList: () => Promise.resolve([]),
+      studioCancel: () => Promise.resolve({ cancelled: true }), // 149
       studioGenerate: (i: StudioGenerateInput) => {
         input = i;
         return new Promise(() => undefined);

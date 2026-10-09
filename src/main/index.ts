@@ -491,9 +491,14 @@ app
         listSources: (nb) => ingestion.sourceRepo.listByNotebook(nb),
         listChunks: (sid) => ingestion.sourceRepo.listChunks(sid),
         studioRepo: createStudioRepo(db),
+        // 149: signal huỷ đi xuống provider (nhánh không-stream huỷ được fetch, ném ChatAbortedError ≠ timeout).
         chat: async (messages, o) =>
-          (await pickProvider(target).chat({ messages, numCtx: o?.numCtx }))
-            .content,
+          (
+            await pickProvider(target).chat(
+              { messages, numCtx: o?.numCtx },
+              o?.signal ? { signal: o.signal } : undefined,
+            )
+          ).content,
         // 105: ngân sách + num_ctx theo cửa sổ ngữ cảnh của model đang dùng (ADR studio-large-clarify).
         contextInfo: async () => {
           const p = pickProvider(target);

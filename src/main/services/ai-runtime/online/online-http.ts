@@ -1,5 +1,6 @@
 import { withEgress } from "../../app-shell/privacy-state";
 import { errorForCause, errorForStatus } from "./online-error";
+import { ChatAbortedError, assertNotAborted, linkAbort } from "../abort";
 
 // HTTP client JSON cho provider online (031, Constitution III: chỉ main). fetch tiêm vào để test; timeout
 // mặc định 60s (quyết định #5 — chat online có thể chậm). Lỗi HTTP/mạng → OnlineProviderError thân thiện.
@@ -19,6 +20,8 @@ export interface CallJsonOptions {
   providerLabel?: string;
   /** 103: tính là egress (badge "đang gửi")? Mặc định true; Ollama (localhost) truyền false. */
   egress?: boolean;
+  /** 149: huỷ từ ngoài (người dùng) ⇒ ChatAbortedError — KHÔNG phải timeout. Phạm vi gồm cả đọc body. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -32,24 +35,38 @@ export function callJson(opts: CallJsonOptions): Promise<unknown> {
 }
 
 async function callJsonInner(opts: CallJsonOptions): Promise<unknown> {
+  assertNotAborted(opts.signal);
   const timeoutMs = opts.timeoutMs ?? DEFAULT_ONLINE_TIMEOUT_MS;
   const controller = new AbortController();
+  const unlink = linkAbort(opts.signal, controller);
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  let res: Response;
   try {
-    res = await opts.fetchFn(opts.url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...opts.headers },
-      body: JSON.stringify(opts.body),
-      signal: controller.signal,
-    });
-  } catch (cause) {
-    throw errorForCause(cause, opts.providerLabel);
+    let res: Response;
+    try {
+      res = await opts.fetchFn(opts.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...opts.headers },
+        body: JSON.stringify(opts.body),
+        signal: controller.signal,
+      });
+    } catch (cause) {
+      // 149: huỷ do người dùng phải kiểm TRƯỚC errorForCause (vốn coi mọi AbortError là timeout ⇒ bật nút 098).
+      if (opts.signal?.aborted) throw new ChatAbortedError();
+      throw errorForCause(cause, opts.providerLabel);
+    }
+    if (!res.ok) throw errorForStatus(res.status, opts.providerLabel);
+    try {
+      return await res.json();
+    } catch (cause) {
+      if (opts.signal?.aborted) throw new ChatAbortedError();
+      // Hết thời gian khi đang đọc body ⇒ cùng lỗi timeout như lúc chờ phản hồi; lỗi parse giữ nguyên như cũ.
+      if (isAbort(cause)) throw errorForCause(cause, opts.providerLabel);
+      throw cause;
+    }
   } finally {
     clearTimeout(timer);
+    unlink();
   }
-  if (!res.ok) throw errorForStatus(res.status, opts.providerLabel);
-  return res.json();
 }
 
 function isAbort(e: unknown): boolean {

@@ -8,6 +8,7 @@ import type {
 } from "@shared/ipc/types";
 import { logEvent } from "../../logging";
 import type { ChatStreamOpts } from "./provider";
+import { ChatAbortedError, assertNotAborted, linkAbort } from "./abort";
 import { streamLines } from "./online/online-http";
 import { parseOllamaContextLength } from "../studio/context-window";
 import { parseOllamaLine } from "./online/stream-parse";
@@ -171,9 +172,19 @@ export function createOllamaClient(
         );
         return { content: acc };
       }
-      const res = await call(
-        "/api/chat",
-        {
+      // 149: nhánh không-stream (Studio) tôn trọng signal ngoài — phạm vi gồm cả đọc body; huỷ ⇒ ChatAbortedError (≠ timeout).
+      const signal = opts?.signal;
+      assertNotAborted(signal);
+      const controller = new AbortController();
+      const unlink = linkAbort(signal, controller);
+      const timer = setTimeout(
+        () => controller.abort(),
+        req.numCtx
+          ? Math.max(chatTimeoutMs, LARGE_CHAT_TIMEOUT_MS)
+          : chatTimeoutMs,
+      );
+      try {
+        const res = await fetchFn(`${baseUrl}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -182,15 +193,19 @@ export function createOllamaClient(
             stream: false,
             ...ctxOptions(req),
           }),
-        },
-        req.numCtx
-          ? Math.max(chatTimeoutMs, LARGE_CHAT_TIMEOUT_MS)
-          : chatTimeoutMs,
-      );
-      if (!res.ok)
-        throw new UserFacingError("ollamaHttp", { status: res.status });
-      const data = (await res.json()) as { message?: { content?: string } };
-      return { content: data.message?.content ?? "" };
+          signal: controller.signal,
+        });
+        if (!res.ok)
+          throw new UserFacingError("ollamaHttp", { status: res.status });
+        const data = (await res.json()) as { message?: { content?: string } };
+        return { content: data.message?.content ?? "" };
+      } catch (e) {
+        if (signal?.aborted) throw new ChatAbortedError();
+        throw e;
+      } finally {
+        clearTimeout(timer);
+        unlink();
+      }
     },
 
     async contextLength(model: string): Promise<number | null> {

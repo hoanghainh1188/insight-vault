@@ -90,6 +90,8 @@ export class OpenAIProvider implements LLMProvider {
       fetchFn: this.deps.fetchFn,
       timeoutMs: this.deps.timeoutMs,
       providerLabel: LABEL,
+      // 149: huỷ (Studio) ⇒ ChatAbortedError, không phải timeout.
+      signal: opts?.signal,
     });
     return { content: parseOpenAIResponse(json) };
   }

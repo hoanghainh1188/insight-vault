@@ -213,6 +213,12 @@ const api = {
     ipcRenderer.invoke(CHANNELS.studioGenerate, input),
   studioList: (notebookId: string): Promise<StudioResult[]> =>
     ipcRenderer.invoke(CHANNELS.studioList, notebookId),
+  /** 149: huỷ lượt tạo đang chạy theo generationId; reason chỉ để main ghi nhật ký. */
+  studioCancel: (
+    generationId: string,
+    reason?: "user" | "navigate",
+  ): Promise<{ cancelled: boolean }> =>
+    ipcRenderer.invoke(CHANNELS.studioCancel, generationId, reason),
   /** 146: nhận tiến độ tạo Studio (push từ main, kênh chỉ nhận). Trả hàm huỷ đăng ký. */
   onStudioProgress: (
     cb: (e: import("@shared/ipc/types").StudioProgressEvent) => void,

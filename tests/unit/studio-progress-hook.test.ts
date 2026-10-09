@@ -40,6 +40,7 @@ beforeEach(() => {
       return () => undefined;
     },
     studioList: () => Promise.resolve([]),
+    studioCancel: () => Promise.resolve({ cancelled: true }), // 149
     studioGenerate: vi.fn(
       (input: StudioGenerateInput) =>
         new Promise((ok, fail) => {

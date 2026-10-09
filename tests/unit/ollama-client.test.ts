@@ -204,3 +204,69 @@ describe("resolveBaseUrl (Constitution I: chỉ localhost)", () => {
     expect(JSON.parse(seen[1])).toEqual({ model: "qwen", name: "qwen" });
   });
 });
+
+// 149 (research R3/R4): nhánh KHÔNG-stream tôn trọng signal ngoài — huỷ ⇒ ChatAbortedError (≠ lỗi HTTP / timeout), kể cả khi đang đọc body.
+import { ChatAbortedError } from "../../src/main/services/ai-runtime/abort";
+
+describe("ollama-client — huỷ nhánh không-stream (149)", () => {
+  const abortErr = (): Error =>
+    Object.assign(new Error("aborted"), { name: "AbortError" });
+
+  /** fetch giả: treo tới khi signal abort (hoặc trả body treo nếu `hangBody`). */
+  const hangingFetch = (hangBody = false) =>
+    vi.fn(
+      (_u: unknown, init?: RequestInit) =>
+        new Promise<Response>((resolve, reject) => {
+          const sig = init!.signal!;
+          if (!hangBody) {
+            sig.addEventListener("abort", () => reject(abortErr()));
+            return;
+          }
+          resolve({
+            ok: true,
+            status: 200,
+            json: () =>
+              new Promise((_r, rej) =>
+                sig.addEventListener("abort", () => rej(abortErr())),
+              ),
+          } as unknown as Response);
+        }),
+    );
+
+  it("abort khi đang chờ phản hồi ⇒ ChatAbortedError", async () => {
+    const c = createOllamaClient({ fetchFn: hangingFetch() });
+    const outer = new AbortController();
+    const p = c.chat({ messages: [] }, { signal: outer.signal });
+    outer.abort();
+    await expect(p).rejects.toBeInstanceOf(ChatAbortedError);
+  });
+
+  it("abort khi đang đọc body ⇒ ChatAbortedError", async () => {
+    const c = createOllamaClient({ fetchFn: hangingFetch(true) });
+    const outer = new AbortController();
+    const p = c.chat({ messages: [] }, { signal: outer.signal });
+    await new Promise((r) => setTimeout(r, 0));
+    outer.abort();
+    await expect(p).rejects.toBeInstanceOf(ChatAbortedError);
+  });
+
+  it("signal đã abort trước khi gọi ⇒ ChatAbortedError, không gọi fetch", async () => {
+    const fetchFn = hangingFetch();
+    const c = createOllamaClient({ fetchFn });
+    const outer = new AbortController();
+    outer.abort();
+    await expect(
+      c.chat({ messages: [] }, { signal: outer.signal }),
+    ).rejects.toBeInstanceOf(ChatAbortedError);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("timeout nội bộ (không huỷ) ⇒ KHÔNG phải ChatAbortedError", async () => {
+    const c = createOllamaClient({
+      fetchFn: hangingFetch(),
+      chatTimeoutMs: 10,
+    });
+    const err = await c.chat({ messages: [] }).catch((e: unknown) => e);
+    expect(err).not.toBeInstanceOf(ChatAbortedError);
+  });
+});

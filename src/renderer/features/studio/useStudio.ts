@@ -14,7 +14,14 @@ import type {
 } from "@shared/ipc/types";
 import type { ParsedIpcError } from "@shared/online-error-tag";
 import { toParsedError } from "../../shared/i18n/describe-error";
-import { useLang } from "../../shared/i18n/i18n-context";
+import { useLang, useT } from "../../shared/i18n/i18n-context";
+import { announce } from "../../shared/a11y/announcer";
+import { studioCancelledMessage } from "../../shared/a11y/messages";
+import {
+  isCurrentGeneration,
+  outcomeOf,
+  type StudioGenerateOutcome,
+} from "./studio-generation";
 import {
   applyStudioProgress,
   withoutKind,
@@ -49,8 +56,14 @@ export function useStudio(notebookId: string) {
     : null;
   const [readySources, setReadySources] = useState<Source[]>([]);
   const hasReadySources = readySources.length > 0;
-  // 091 (review S3): notebook hiện tại — kết quả của lượt tạo cũ về muộn sau khi chuyển notebook thì bỏ.
+  // 091 (review S3): notebook hiện tại (lọc sự kiện tiến độ). 149: "lượt cũ về muộn" xét theo generationId (isCurrentGeneration).
   const notebookRef = useRef(notebookId);
+  // 149: loại vừa bấm Huỷ (UI tức thì "Đang huỷ…"); nguồn sự thật là kết cục của studio:generate.
+  const [cancelling, setCancelling] = useState<StudioFlagMap>({});
+  // 149: translator HIỆN TẠI cho câu huỷ khi rời notebook (chạy trong cleanup).
+  const t = useT();
+  const trRef = useRef(t);
+  trRef.current = t;
   // 146: tiến độ theo loại + generationId của lượt đang chạy (sự kiện lượt khác / notebook khác bị bỏ).
   const [progress, setProgress] = useState<StudioProgressMap>({});
   const activeIds = useRef<ActiveGenerationIds>({});
@@ -107,26 +120,41 @@ export function useStudio(notebookId: string) {
       });
     return () => {
       cancelled = true;
+      // 149 (clarify #10): rời notebook / Workspace ⇒ TỰ HUỶ mọi lượt đang chạy (không chạy ngầm) + báo trình đọc màn hình.
+      const running = Object.entries(activeIds.current) as [
+        StudioKind,
+        string,
+      ][];
+      activeIds.current = {};
+      setCancelling({});
+      for (const [kind, id] of running) {
+        void window.api.studioCancel(id, "navigate").catch(() => undefined);
+        const tr = trRef.current;
+        announce(studioCancelledMessage(tr.t(`studio.kind.${kind}`), tr));
+      }
     };
   }, [notebookId]);
 
   const generate = useCallback(
-    // 091: trả true khi tạo xong (để tầng UI báo trình đọc màn hình); lỗi đã nằm ở errors[kind].
+    // 091 + 149: kết cục để tầng UI báo trình đọc màn hình — "done" | "failed" (lỗi ở errors[kind]) | "cancelled" | "stale".
     // 098: target "local" = tạo bằng Ollama sau lỗi online (người dùng bấm).
     async (
       kind: StudioKind,
       sourceId?: string,
       target?: AiTarget,
-    ): Promise<boolean> => {
-      const stale = (): boolean => notebookRef.current !== notebookId;
+    ): Promise<StudioGenerateOutcome> => {
       const local = target === "local";
       // 146: mỗi lần bấm Tạo/Tạo lại/Tạo bằng AI cục bộ = một lượt mới ⇒ id mới; sự kiện của lượt trước bị bỏ.
       const generationId = crypto.randomUUID();
+      // 149 (sửa race A→B→A): chỉ lượt HIỆN HÀNH của loại (theo generationId) được ghi kết quả / trạng thái.
+      const current = (): boolean =>
+        isCurrentGeneration(activeIds.current, kind, generationId);
       activeIds.current = { ...activeIds.current, [kind]: generationId };
       setProgress((p) => withoutKind(p, kind));
       setLoading((p) => ({ ...p, [kind]: true }));
       setErrors((p) => ({ ...p, [kind]: undefined }));
       setOnlineFailed((p) => ({ ...p, [kind]: false }));
+      setCancelling((p) => withoutKind(p, kind));
       try {
         const res = await window.api.studioGenerate({
           notebookId,
@@ -136,30 +164,41 @@ export function useStudio(notebookId: string) {
           generationId,
           ...(local ? { target: "local" as const } : {}),
         });
-        if (stale()) return false;
+        if (!current()) return "stale";
         setResults((p) => ({ ...p, [kind]: res }));
         setLocalKinds((p) => ({ ...p, [kind]: local }));
-        return true;
+        return "done";
       } catch (e) {
-        if (stale()) return false;
+        if (!current()) return "stale";
         const parsed = toParsedError(e);
+        // 149: huỷ KHÔNG phải lỗi — không khối lỗi, không bật "Tạo bằng AI cục bộ"; kết quả cũ (nếu có) giữ nguyên.
+        if (outcomeOf(parsed) === "cancelled") return "cancelled";
         setErrors((p) => ({ ...p, [kind]: parsed }));
         setOnlineFailed((p) => ({
           ...p,
           [kind]: parsed.onlineKind !== null && !local,
         }));
-        return false;
+        return "failed";
       } finally {
-        if (!stale()) setLoading((p) => ({ ...p, [kind]: false }));
-        // 146: xong/lỗi ⇒ xoá tiến độ — chỉ khi vẫn là lượt đang chạy của loại này.
-        if (activeIds.current[kind] === generationId) {
+        // 146 + 149: xong / lỗi / huỷ ⇒ về nghỉ — chỉ khi vẫn là lượt hiện hành của loại này.
+        if (current()) {
           activeIds.current = withoutKind(activeIds.current, kind);
+          setLoading((p) => ({ ...p, [kind]: false }));
           setProgress((p) => withoutKind(p, kind));
+          setCancelling((p) => withoutKind(p, kind));
         }
       }
     },
     [notebookId, lang],
   );
+
+  // 149: Huỷ lượt đang chạy của một loại (không hỏi xác nhận). Kết cục về qua generate (reject studioCancelled).
+  const cancel = useCallback((kind: StudioKind): void => {
+    const id = activeIds.current[kind];
+    if (!id) return;
+    setCancelling((p) => ({ ...p, [kind]: true }));
+    void window.api.studioCancel(id, "user").catch(() => undefined);
+  }, []);
 
   return {
     results,
@@ -168,7 +207,9 @@ export function useStudio(notebookId: string) {
     onlineFailed,
     localKinds,
     progress,
+    cancelling,
     generate,
+    cancel,
     ollamaReady,
     hasReadySources,
     readySources,

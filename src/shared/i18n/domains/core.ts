@@ -45,6 +45,7 @@ export const coreVi = {
     studioNoNotes:
       "Mô hình không trích được ghi chú kèm trích dẫn từ tài liệu. Vui lòng thử lại hoặc chọn mô hình khác.",
     studioSaveFailed: "Lưu kết quả Studio thất bại.",
+    studioCancelled: "Đã huỷ tạo kết quả Studio.",
     chatModelNotSelected: "Chưa chọn mô hình trả lời (chat model).",
     embeddingModelNotSelected: "Chưa chọn mô hình embedding.",
     ollamaHttp: "Ollama trả lỗi {status}.",
@@ -116,6 +117,7 @@ export const coreEn: Widen<typeof coreVi> = {
     studioNoNotes:
       "The model couldn't extract cited notes from the documents. Try again or choose another model.",
     studioSaveFailed: "Couldn't save the Studio result.",
+    studioCancelled: "Studio generation was cancelled.",
     chatModelNotSelected: "No answer model selected.",
     embeddingModelNotSelected: "No embedding model selected.",
     ollamaHttp: "Ollama returned error {status}.",

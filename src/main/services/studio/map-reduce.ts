@@ -13,6 +13,11 @@ import {
   systemPromptFor,
 } from "./prompt";
 import type { LanguageCode } from "@shared/i18n";
+import {
+  ChatAbortedError,
+  assertNotAborted,
+  isChatAborted,
+} from "../ai-runtime/abort";
 
 // 105 — map-reduce cho notebook vượt ngân sách, GIỮ chip [n] tới ĐÚNG ĐOẠN (ADR 2026-10-07-studio-large-clarify).
 // Khác phương án đã bác (2026-07-11-studio-mapreduce-citation — citation mức NGUỒN): ở đây mọi đoạn được đánh số
@@ -158,6 +163,7 @@ async function condense(
   chat: Chat,
   lang: LanguageCode,
   progress: OnStudioProgress,
+  signal?: AbortSignal,
 ): Promise<{ notes: string[]; cut: boolean }> {
   const size = (ns: string[]): number => ns.join("\n").length;
   let cur = notes;
@@ -172,6 +178,7 @@ async function condense(
       cur.map((text) => ({ text })),
       budget,
     )) {
+      assertNotAborted(signal); // 149: mỗi lô rút gọn
       const input = batch.map((b) => b.text).join("\n");
       const raw = await chat([
         { role: "system", content: condensePrompt(lang) },
@@ -197,6 +204,8 @@ export interface MapReduceInput {
   outputLanguage?: LanguageCode;
   /** 146: tiến độ — reading i/N · condensing · writing. Không ảnh hưởng kết quả. */
   onProgress?: OnStudioProgress;
+  /** 149: huỷ — kiểm ở ranh giới bước + trong vòng thử lại; huỷ ⇒ ChatAbortedError. Không ảnh hưởng kết quả khi không huỷ. */
+  signal?: AbortSignal;
 }
 
 export interface MapReduceOutput {
@@ -218,8 +227,13 @@ export async function runMapReduce({
   maxMapCalls = MAX_MAP_CALLS,
   outputLanguage = "vi",
   onProgress,
+  signal,
 }: MapReduceInput): Promise<MapReduceOutput> {
-  const progress = safeProgress(onProgress);
+  // 149: không phát tiến độ sau khi đã huỷ.
+  const report = safeProgress(onProgress);
+  const progress: OnStudioProgress = (step) => {
+    if (!signal?.aborted) report(step);
+  };
   const { blocks, map } = numberAll(groups);
   const allBatches = packBatches(blocks, budget);
   const batches = allBatches.slice(0, maxMapCalls);
@@ -227,6 +241,7 @@ export async function runMapReduce({
   let notes: string[] = [];
   let emptyBatches = 0;
   for (const [i, batch] of batches.entries()) {
+    assertNotAborted(signal); // 149: đầu mỗi phần
     // 146: một sự kiện mỗi phần, TRƯỚC lượt map đầu tiên (thử lại trong cùng phần không phát thêm).
     progress({ phase: "reading", index: i + 1, total: batches.length });
     const input = joined(batch);
@@ -243,9 +258,12 @@ export async function runMapReduce({
     // Thử lại 1 lần khi lỗi tạm (Ollama vừa nạp lại…) hoặc ghi chú không có [n] hợp lệ — không mất cả lượt tạo.
     let got: string[] = [];
     for (let attempt = 0; attempt < 2 && got.length === 0; attempt += 1) {
+      assertNotAborted(signal); // 149 review N5: cả khi chat trả về bình thường sau huỷ
       try {
         got = cleanNotes(await chat(messages), batchMap);
       } catch (e) {
+        // 149: huỷ KHÔNG phải lỗi tạm — ném ngay, không gọi lần 2.
+        if (isChatAborted(e) || signal?.aborted) throw new ChatAbortedError();
         if (attempt === 1) throw e;
       }
     }
@@ -264,10 +282,12 @@ export async function runMapReduce({
     chat,
     outputLanguage,
     progress,
+    signal,
   );
   notes = condensed.notes;
   const finalInput = notes.join("\n");
 
+  assertNotAborted(signal); // 149: trước bước viết
   progress({ phase: "writing" });
   const raw = await chat([
     {

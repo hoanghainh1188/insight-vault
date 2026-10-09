@@ -232,8 +232,9 @@ describe("146: studio-service — tiến độ", () => {
   it("một lượt ⇒ đúng một sự kiện writing, không index/total", async () => {
     const { svc } = setup({ perSource: 2, budget: 50_000 });
     const evs: unknown[] = [];
-    await svc.generate({ notebookId: "nb1", kind: "summary" }, (e) =>
-      evs.push(e),
+    await svc.generate(
+      { notebookId: "nb1", kind: "summary" },
+      { onProgress: (e) => evs.push(e) },
     );
     expect(evs).toEqual([{ phase: "writing" }]);
   });
@@ -241,8 +242,9 @@ describe("146: studio-service — tiến độ", () => {
   it("nhiều phần ⇒ reading 1/N..N/N rồi writing (N = parts)", async () => {
     const { svc } = setup({ perSource: 6, budget: 1000 });
     const evs: { phase: string; index?: number; total?: number }[] = [];
-    const r = await svc.generate({ notebookId: "nb1", kind: "faq" }, (e) =>
-      evs.push(e),
+    const r = await svc.generate(
+      { notebookId: "nb1", kind: "faq" },
+      { onProgress: (e) => evs.push(e) },
     );
     const N = r.parts!;
     expect(N).toBeGreaterThan(1);
@@ -259,9 +261,118 @@ describe("146: studio-service — tiến độ", () => {
   it("onProgress ném lỗi ở một lượt ⇒ vẫn tạo xong như khi không truyền", async () => {
     const { svc } = setup({ perSource: 2, budget: 50_000 });
     const a = await svc.generate({ notebookId: "nb1", kind: "summary" });
-    const b = await svc.generate({ notebookId: "nb1", kind: "summary" }, () => {
-      throw new Error("x");
-    });
+    const b = await svc.generate(
+      { notebookId: "nb1", kind: "summary" },
+      {
+        onProgress: () => {
+          throw new Error("x");
+        },
+      },
+    );
     expect(b.content).toBe(a.content);
+  });
+});
+
+// 149 (research R2/R4): generate(input, {onProgress, signal}) — kiểm huỷ sau contextInfo và NGAY TRƯỚC upsert; ChatAbortedError ⇒
+// UserFacingError("studioCancelled"); signal được truyền xuống deps.chat.
+import { ChatAbortedError } from "../../src/main/services/ai-runtime/abort";
+import { UserFacingError } from "@shared/codes/user-error";
+
+describe("149: studio-service — huỷ", () => {
+  function make(opts: { onChat?: (n: number) => void } = {}) {
+    let calls = 0;
+    const signals: (AbortSignal | undefined)[] = [];
+    const upsert = vi.fn((notebookId, kind, content, citations) => ({
+      id: "r1",
+      notebookId,
+      kind,
+      content,
+      citations,
+      createdAt: 1,
+    }));
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => (release = r));
+    const svc = createStudioService({
+      listSources: () => [src("A")],
+      listChunks: (id) => chunks(id, 2),
+      studioRepo: { upsert, listByNotebook: () => [] } as never,
+      chat: vi.fn(
+        async (messages: ChatMessage[], o?: { signal?: AbortSignal }) => {
+          calls += 1;
+          signals.push(o?.signal);
+          opts.onChat?.(calls);
+          const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+            Number(m[1]),
+          );
+          return `Kết quả [${ns[0]}].`;
+        },
+      ),
+      contextInfo: async () => {
+        await gate;
+        return { budget: 50_000, numCtx: null };
+      },
+    });
+    return { svc, upsert, signals, calls: () => calls, release };
+  }
+
+  const isCancelled = (e: unknown): boolean =>
+    e instanceof UserFacingError && e.code === "studioCancelled";
+
+  it("huỷ trong lúc lấy ngân sách (contextInfo) ⇒ 0 lượt chat, studioCancelled, không lưu", async () => {
+    const m = make();
+    const ctl = new AbortController();
+    const p = m.svc.generate(
+      { notebookId: "nb1", kind: "summary" },
+      { signal: ctl.signal },
+    );
+    ctl.abort();
+    m.release();
+    const err = await p.catch((e: unknown) => e);
+    expect(isCancelled(err)).toBe(true);
+    expect(m.calls()).toBe(0);
+    expect(m.upsert).not.toHaveBeenCalled();
+  });
+
+  it("chat ném ChatAbortedError ⇒ studioCancelled, không lưu", async () => {
+    const ctl = new AbortController();
+    const m = make({
+      onChat: () => {
+        ctl.abort();
+        throw new ChatAbortedError();
+      },
+    });
+    m.release();
+    const err = await m.svc
+      .generate({ notebookId: "nb1", kind: "summary" }, { signal: ctl.signal })
+      .catch((e: unknown) => e);
+    expect(isCancelled(err)).toBe(true);
+    expect(m.upsert).not.toHaveBeenCalled();
+  });
+
+  it("huỷ sau lượt chat cuối nhưng trước khi lưu ⇒ KHÔNG upsert", async () => {
+    const ctl = new AbortController();
+    const m = make({ onChat: () => ctl.abort() }); // chat trả bình thường nhưng người dùng vừa bấm Huỷ
+    m.release();
+    const err = await m.svc
+      .generate({ notebookId: "nb1", kind: "summary" }, { signal: ctl.signal })
+      .catch((e: unknown) => e);
+    expect(isCancelled(err)).toBe(true);
+    expect(m.upsert).not.toHaveBeenCalled();
+  });
+
+  it("signal được truyền xuống deps.chat; không truyền signal ⇒ như cũ (lưu bình thường)", async () => {
+    const ctl = new AbortController();
+    const m = make();
+    m.release();
+    await m.svc.generate(
+      { notebookId: "nb1", kind: "summary" },
+      { signal: ctl.signal },
+    );
+    expect(m.signals[0]).toBe(ctl.signal);
+    const m2 = make();
+    m2.release();
+    const r = await m2.svc.generate({ notebookId: "nb1", kind: "summary" });
+    expect(r.content).toContain("Kết quả");
+    expect(m2.upsert).toHaveBeenCalledTimes(1);
   });
 });

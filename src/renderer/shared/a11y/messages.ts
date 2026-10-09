@@ -98,6 +98,14 @@ export function studioMessage(
     : tr.t("a11y.studioDone", { label });
 }
 
+/** 149: lượt tạo Studio đã huỷ (người dùng bấm Huỷ hoặc rời notebook) — câu kết thúc cho "Đang tạo …". */
+export function studioCancelledMessage(
+  label: string,
+  tr: Translator = VI,
+): string {
+  return tr.t("a11y.studioCancelled", { label });
+}
+
 /** aria-valuetext cho thanh tiến độ: "Nhúng, 40%". */
 export function progressValueText(
   step: string,
