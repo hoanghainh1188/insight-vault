@@ -476,6 +476,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   padding: 9px 11px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);
@@ -499,7 +500,17 @@
   border-color: var(--accent);
   background: radial-gradient(circle, #fff 3px, var(--accent) 4px);
 }
+.model-row .nm {
+  /* 152: tên dài (vd llamacpp:<hash>) cắt bằng "…" thay vì đẩy dòng rộng hơn thẻ; tooltip = tên đầy đủ. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .model-row .sz {
+  flex: 0 0 auto;
+  white-space: nowrap;
   margin-left: auto;
   color: var(--ink-faint);
   font-size: 12px;

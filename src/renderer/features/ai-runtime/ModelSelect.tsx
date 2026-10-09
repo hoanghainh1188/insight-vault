@@ -39,7 +39,9 @@ export function ModelSelect({
               data-testid={`model-${m.name}`}
             >
               <span className="radio" />
-              <span className="nm">{m.name}</span>
+              <span className="nm" title={m.name}>
+                {m.name}
+              </span>
               {m.sizeBytes != null && (
                 <span className="sz mono">
                   {t.t("ai.modelSelect.sizeGb", {
