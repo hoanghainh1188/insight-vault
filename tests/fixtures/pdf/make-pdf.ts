@@ -25,9 +25,49 @@ export interface FixtureLine {
 export interface FixturePage {
   width: number;
   height: number;
-  rotate?: 0 | 90;
+  /** 147 (c): thuộc tính /Rotate của trang (xoay khi HIỂN THỊ, theo chiều kim đồng hồ). */
+  rotate?: 0 | 90 | 180 | 270;
+  /** 147 (c): gốc MediaBox lệch khỏi (0,0) — toạ độ chữ / đường vẫn tính trong hộp [0..width]×[0..height]. */
+  origin?: { x: number; y: number };
   texts: FixtureText[];
   lines?: FixtureLine[];
+}
+
+/**
+ * 147 (c): dựng trang `/Rotate r` mà khi HIỂN THỊ trông giống hệt `page` (trang thẳng): toạ độ hiển thị (gốc trên-trái, kích thước
+ * width×height) được đổi sang hệ chưa xoay của trang, và chữ được vẽ xoay `r` độ để sau khi xoay trang thì đứng thẳng.
+ */
+export function rotateForDisplay(
+  page: FixturePage,
+  r: 90 | 180 | 270,
+): FixturePage {
+  const W = page.width;
+  const H = page.height;
+  // Hộp trang chưa xoay: 90/270 ⇒ hoán đổi rộng/cao.
+  const [wu, hu] = r === 180 ? [W, H] : [H, W];
+  // (dx, dy) hiển thị (dy tính từ trên) ⇒ (ux, uy) người dùng (gốc dưới-trái).
+  const toUser = (dx: number, dy: number): [number, number] =>
+    r === 90 ? [dy, dx] : r === 180 ? [W - dx, dy] : [H - dy, W - dx];
+  // FixtureText/Line dùng toạ độ trên-trái của hộp CHƯA xoay: (x = ux, y = hu − uy).
+  const toFixture = (dx: number, dy: number): [number, number] => {
+    const [ux, uy] = toUser(dx, dy);
+    return [ux, hu - uy];
+  };
+  return {
+    width: wu,
+    height: hu,
+    rotate: r,
+    ...(page.origin ? { origin: page.origin } : {}),
+    texts: page.texts.map((t) => {
+      const [x, y] = toFixture(t.x, t.y);
+      return { ...t, x, y, angle: (t.angle ?? 0) + r };
+    }),
+    lines: page.lines?.map((l) => {
+      const [x1, y1] = toFixture(l.x1, l.y1);
+      const [x2, y2] = toFixture(l.x2, l.y2);
+      return { x1, y1, x2, y2 };
+    }),
+  };
 }
 
 const hex2 = (n: number): string =>
@@ -111,19 +151,25 @@ function toUnicodeCMap(enc: Map<string, number>): string {
 function contentStream(page: FixturePage, enc: Map<string, number>): string {
   const ops: string[] = [];
   for (const l of page.lines ?? []) {
+    const [ox, oy] = [page.origin?.x ?? 0, page.origin?.y ?? 0];
     ops.push(
-      `${num(l.x1)} ${num(page.height - l.y1)} m ${num(l.x2)} ${num(page.height - l.y2)} l S`,
+      `${num(ox + l.x1)} ${num(oy + page.height - l.y1)} m ${num(ox + l.x2)} ${num(oy + page.height - l.y2)} l S`,
     );
   }
   for (const t of page.texts) {
     const a = ((t.angle ?? 0) * Math.PI) / 180;
     const [c, s] = [Math.cos(a), Math.sin(a)];
     ops.push(
-      `BT /F1 ${num(t.size)} Tf ${num(c)} ${num(s)} ${num(-s)} ${num(c)} ${num(t.x)} ${num(page.height - t.y)} Tm <${encodeText(t.text, enc)}> Tj ET`,
+      `BT /F1 ${num(t.size)} Tf ${num(c)} ${num(s)} ${num(-s)} ${num(c)} ${num((page.origin?.x ?? 0) + t.x)} ${num((page.origin?.y ?? 0) + page.height - t.y)} Tm <${encodeText(t.text, enc)}> Tj ET`,
     );
   }
   return ops.join("\n");
 }
+
+const mediaBox = (p: FixturePage): string => {
+  const [ox, oy] = [p.origin?.x ?? 0, p.origin?.y ?? 0];
+  return `${num(ox)} ${num(oy)} ${num(ox + p.width)} ${num(oy + p.height)}`;
+};
 
 /** Sinh tệp PDF (byte) từ mô tả trang. */
 export function makePdf(pages: FixturePage[]): Uint8Array {
@@ -156,7 +202,7 @@ export function makePdf(pages: FixturePage[]): Uint8Array {
     const contentId = add(stream("", contentStream(p, enc)));
     pageIds.push(
       add(
-        `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${num(p.width)} ${num(p.height)}] ` +
+        `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [${mediaBox(p)}] ` +
           `${p.rotate ? `/Rotate ${p.rotate} ` : ""}/Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`,
       ),
     );

@@ -2,7 +2,11 @@ import { performance } from "node:perf_hooks";
 import { describe, expect, it } from "vitest";
 import { parsePdf } from "../../src/main/services/ingestion/parsers/pdf";
 import { makePdf } from "../fixtures/pdf/make-pdf";
-import { borderlessTable, twoColumns } from "../fixtures/pdf/samples";
+import {
+  borderlessTable,
+  rotatedSample,
+  twoColumns,
+} from "../fixtures/pdf/samples";
 
 // 112 (SC-006): thời gian trích PDF có bố cục ≤ 2 lần cách nối cũ trên cùng tệp. Local: assert; CI: chỉ log số đo
 // (máy CI dao động) trừ khi PDF_PERF_STRICT=1.
@@ -35,8 +39,14 @@ async function best(fn: () => Promise<unknown>, runs = 3): Promise<number> {
 
 describe("SC-006 — hiệu năng trích PDF có bố cục", () => {
   it("50 trang (2 cột + bảng) ⇒ mới ≤ 2× cũ", async () => {
+    // 147: mẫu hỗn hợp có thêm trang /Rotate 90 (xoay qua viewport) — đo cả chi phí xoay trang.
+    const kinds = [
+      () => twoColumns().pages[0],
+      () => borderlessTable().pages[0],
+      () => rotatedSample(twoColumns(), 90).pages[0],
+    ];
     const pages = Array.from({ length: 50 }, (_, i) =>
-      i % 2 === 0 ? twoColumns().pages[0] : borderlessTable().pages[0],
+      kinds[i % kinds.length](),
     );
     const bytes = makePdf(pages);
     await legacyParse(bytes.slice()); // làm ấm pdf.js (pdf.js chuyển quyền buffer ⇒ mỗi lần dùng bản sao)

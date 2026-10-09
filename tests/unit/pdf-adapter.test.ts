@@ -48,3 +48,57 @@ describe("toLayoutItem", () => {
     ).toBe(12);
   });
 });
+
+// 147 (c): toDisplayItem — toạ độ / hướng chữ trong hệ HIỂN THỊ (ma trận viewport của pdf.js tiêm vào).
+import { toDisplayItem } from "../../src/main/services/ingestion/parsers/pdf";
+
+describe("toDisplayItem (147)", () => {
+  const W = 600;
+  const H = 800;
+  // Ma trận viewport pdf.js (scale 1) cho trang [0 0 W H]: user (gốc dưới-trái) ⇒ hiển thị (gốc trên-trái, y xuống).
+  const VP = {
+    0: [1, 0, 0, -1, 0, H],
+    90: [0, 1, 1, 0, 0, 0],
+    180: [-1, 0, 0, 1, W, 0],
+    270: [0, -1, -1, 0, H, W],
+  } as const;
+
+  it("trang thẳng ⇒ như toLayoutItem", () => {
+    const item = it_([10, 0, 0, 10, 50, 700]);
+    expect(toDisplayItem(item, [...VP[0]])).toMatchObject({
+      x: 50,
+      y: 100,
+      rotated: false,
+    });
+  });
+
+  it("chữ vẽ xoay 90° trên trang /Rotate 90 ⇒ hiển thị thẳng (không rotated)", () => {
+    // chữ hướng +y người dùng tại (ux=100, uy=50) ⇒ hiển thị (50, 100) hướng +x
+    const li = toDisplayItem(it_([0, 10, -10, 0, 100, 50]), [...VP[90]]);
+    expect(li.rotated).toBe(false);
+    expect(li.x).toBeCloseTo(50);
+    expect(li.y).toBeCloseTo(100);
+  });
+
+  it("chữ thẳng trên trang /Rotate 90 ⇒ hiển thị dọc (rotated)", () => {
+    expect(
+      toDisplayItem(it_([10, 0, 0, 10, 100, 50]), [...VP[90]]).rotated,
+    ).toBe(true);
+  });
+
+  it("chữ lộn ngược khi hiển thị (180°) ⇒ rotated (clarify #13)", () => {
+    expect(
+      toDisplayItem(it_([10, 0, 0, 10, 100, 50]), [...VP[180]]).rotated,
+    ).toBe(true);
+    expect(
+      toDisplayItem(it_([-10, 0, 0, -10, 100, 50]), [...VP[180]]).rotated,
+    ).toBe(false);
+  });
+
+  it("chiều cao lấy theo item, thiếu ⇒ theo ma trận", () => {
+    const li = toDisplayItem({ ...it_([0, 12, -12, 0, 100, 50]), height: 0 }, [
+      ...VP[90],
+    ]);
+    expect(li.h).toBeCloseTo(12);
+  });
+});

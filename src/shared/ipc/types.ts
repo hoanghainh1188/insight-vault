@@ -265,7 +265,7 @@ export interface Source {
 }
 
 /** 112: phiên bản cách trích PDF có bố cục (dòng/cột/bảng). PDF có version thấp hơn ⇒ gợi ý "Xử lý lại". */
-export const PDF_EXTRACTION_VERSION = 2;
+export const PDF_EXTRACTION_VERSION = 3; // 147: trang xoay + bảng số căn phải + gạch nối
 
 /** Chunk (đoạn) — đơn vị embed & trích dẫn. */
 export interface Chunk {

@@ -90,7 +90,15 @@ describe("SourceItem — Xử lý lại (112)", () => {
     expect(q("source-reprocess-hint")?.textContent).toBe(
       "Xử lý lại để giữ bố cục",
     );
+    // 147: PDF đã có bố cục (v2) ⇒ câu theo phiên bản; bản hiện hành (v3) ⇒ không gợi ý
     render(pdf({ extractionVersion: 2 }));
+    expect(q("source-reprocess-hint")?.textContent).toBe(
+      "Xử lý lại để cải thiện bảng, trang xoay và gạch nối",
+    );
+    expect(q("source-reprocess")?.getAttribute("aria-label")).toContain(
+      "cải thiện bảng, trang xoay và gạch nối",
+    );
+    render(pdf({ extractionVersion: 3 }));
     expect(q("source-reprocess-hint")).toBeNull();
     render(pdf({ kind: "docx" }));
     expect(q("source-reprocess-hint")).toBeNull();

@@ -103,12 +103,12 @@ describe("pipeline + blocks (112)", () => {
 });
 
 describe("pipeline ghi extractionVersion (112, FR-010)", () => {
-  it("PDF nạp thành công ⇒ extractionVersion = PDF_EXTRACTION_VERSION (2)", async () => {
+  it("PDF nạp thành công ⇒ extractionVersion = PDF_EXTRACTION_VERSION (3 — 147)", async () => {
     const { PDF_EXTRACTION_VERSION } = await import("@shared/ipc/types");
     const r = await run({ pageCount: 1, pages: [{ page: 1, text: "Hello" }] });
-    expect(PDF_EXTRACTION_VERSION).toBe(2);
+    expect(PDF_EXTRACTION_VERSION).toBe(3);
     expect(r.source.status).toBe("ready");
-    expect(r.source.extractionVersion).toBe(2);
+    expect(r.source.extractionVersion).toBe(PDF_EXTRACTION_VERSION);
   });
 
   it("loại khác giữ 1", async () => {
