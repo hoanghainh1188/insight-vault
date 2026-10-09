@@ -226,3 +226,62 @@
   margin: 20px 0 12px;
   user-select: none;
 }
+
+/* 147 (e): lưới bảng PDF — cuộn ngang khi rộng (không thu chữ), viền mảnh, hàng tiêu đề nhấn nhẹ, ô số căn phải. */
+.vview {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  flex: 0 0 auto;
+}
+.vview-btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.vview-btn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.vview-btn:focus-visible,
+.vtable-wrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.vtable-wrap {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 8px 0 12px;
+  white-space: normal;
+}
+.vtable {
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.vtable th,
+.vtable td {
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  min-width: 4em;
+}
+.vtable th {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.vtable .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

@@ -193,9 +193,13 @@ test("146 — nhiều phần: đọc i/N tăng dần rồi viết; cửa sổ nh
       .poll(
         async () => {
           if ((await prog.count()) > 0) {
-            // 149: thẻ có thêm nút Huỷ ⇒ chỉ đọc dòng pha.
+            // 149: thẻ có thêm nút Huỷ ⇒ chỉ đọc dòng pha. Thẻ có thể biến mất giữa count() và textContent() (lượt vừa xong)
+            // ⇒ đọc với timeout ngắn, mất thì bỏ qua (không để auto-wait 30 s làm test đỏ).
             const t = (
-              (await prog.locator(".studio-progress-text").textContent()) ?? ""
+              (await prog
+                .locator(".studio-progress-text")
+                .textContent({ timeout: 200 })
+                .catch(() => null)) ?? ""
             ).trim();
             if (t && seen[seen.length - 1] !== t) seen.push(t);
           }

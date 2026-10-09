@@ -1,4 +1,5 @@
 import type { PageBreak } from "@shared/ipc/types";
+import type { PdfTable } from "@shared/pdf-tables";
 
 // Chia toàn văn thành các đoạn để render: đoạn thường / đoạn highlight, kèm mốc trang. Hàm THUẦN.
 // Render bằng React text node (không innerHTML) — chống XSS từ nội dung nguồn không tin cậy.
@@ -8,17 +9,26 @@ export interface Segment {
   kind: "plain" | "highlight";
   /** Nếu đoạn này bắt đầu một trang mới → số trang (chèn mốc "Trang N"). */
   pageMark?: number;
+  /** 147: đoạn tô sáng ĐẦU TIÊN (nhãn [n] + cuộn tới) — chỉ đặt bởi buildViewerBlocks. */
+  first?: boolean;
 }
 
-/**
- * Cắt `text` tại các mốc: `[charStart, charEnd)` (nếu có highlight hợp lệ) + offset các `pageBreaks`.
- * Highlight ngoài phạm vi / null (mở nguồn trực tiếp) → không có đoạn 'highlight' (phòng thủ, không crash).
- */
-export function buildSegments(
-  text: string,
-  highlight: { charStart: number; charEnd: number } | null,
-  pageBreaks: PageBreak[] = [],
-): Segment[] {
+/** 147 (e): khối hiển thị — văn bản thường hoặc bảng (ô = các đoạn plain / highlight theo ký tự). */
+export type ViewerBlock =
+  | { kind: "text"; segments: Segment[] }
+  | {
+      kind: "table";
+      table: PdfTable;
+      /** cells[hàng][cột] — hàng 0 = tiêu đề. */
+      cells: Segment[][][];
+      /** Bảng bắt đầu một trang mới. */
+      pageMark?: number;
+    };
+
+type Range = { charStart: number; charEnd: number };
+
+/** Vùng tô hợp lệ sau chỉnh 157/159, hoặc null. */
+function adjustHighlight(text: string, highlight: Range | null): Range | null {
   const len = text.length;
   const valid =
     highlight &&
@@ -27,21 +37,23 @@ export function buildSegments(
     highlight.charStart < highlight.charEnd
       ? highlight
       : null;
-  const hl = valid ? alignStart(text, trimRange(text, valid)) : null;
+  return valid ? alignStart(text, trimRange(text, valid)) : null;
+}
 
-  const bounds = new Set<number>([0, len]);
+/** Cắt `[from, to)` theo vùng tô + mốc trang (mốc ngoài khoảng bị bỏ qua). */
+function segmentRange(
+  text: string,
+  from: number,
+  to: number,
+  hl: Range | null,
+  pageAt: ReadonlyMap<number, number>,
+): Segment[] {
+  const bounds = new Set<number>([from, to]);
   if (hl) {
-    bounds.add(hl.charStart);
-    bounds.add(hl.charEnd);
+    if (hl.charStart > from && hl.charStart < to) bounds.add(hl.charStart);
+    if (hl.charEnd > from && hl.charEnd < to) bounds.add(hl.charEnd);
   }
-  const pageAt = new Map<number, number>();
-  for (const pb of pageBreaks) {
-    if (pb.offset >= 0 && pb.offset <= len) {
-      bounds.add(pb.offset);
-      pageAt.set(pb.offset, pb.page);
-    }
-  }
-
+  for (const off of pageAt.keys()) if (off > from && off < to) bounds.add(off);
   const sorted = [...bounds].sort((a, b) => a - b);
   const segs: Segment[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
@@ -58,6 +70,114 @@ export function buildSegments(
     segs.push(seg);
   }
   return segs;
+}
+
+function pageMap(
+  len: number,
+  pageBreaks: readonly PageBreak[],
+): Map<number, number> {
+  const pageAt = new Map<number, number>();
+  for (const pb of pageBreaks) {
+    if (pb.offset >= 0 && pb.offset <= len) pageAt.set(pb.offset, pb.page);
+  }
+  return pageAt;
+}
+
+/**
+ * 147 (e, research R2): như buildSegments nhưng tách các BẢNG (từ parsePdfTables) thành khối riêng; mỗi ô cắt theo vùng tô ⇒ tô
+ * sáng chính xác theo ký tự trong ô. Ký tự khung ("|", hàng phân cách, đệm) không hiển thị. Đánh dấu `first` cho đoạn tô đầu tiên.
+ */
+export function buildViewerBlocks(
+  text: string,
+  highlight: Range | null,
+  pageBreaks: readonly PageBreak[],
+  tables: readonly PdfTable[],
+): ViewerBlock[] {
+  const hl = adjustHighlight(text, highlight);
+  const pageAt = pageMap(text.length, pageBreaks);
+  const blocks: ViewerBlock[] = [];
+  const pushText = (from: number, to: number, beforeTable: boolean): void => {
+    if (to <= from) return;
+    // mốc trang đúng tại `from` vẫn phải hiện ⇒ segmentRange lấy mốc ở chính `from`
+    const segments = segmentRange(text, from, to, hl, pageAt);
+    blocks.push({
+      kind: "text",
+      segments: beforeTable ? untintTrailingSpace(segments) : segments,
+    });
+  };
+  let cursor = 0;
+  for (const t of [...tables].sort((a, b) => a.start - b.start)) {
+    if (t.start < cursor || t.end > text.length) continue;
+    pushText(cursor, t.start, true);
+    const rows = [t.header, ...t.rows];
+    const block: ViewerBlock = {
+      kind: "table",
+      table: t,
+      cells: rows.map((r) =>
+        r.map((c) =>
+          c.end > c.start
+            ? segmentRange(text, c.start, c.end, hl, new Map())
+            : [],
+        ),
+      ),
+    };
+    const mark = pageAt.get(t.start);
+    if (mark !== undefined) block.pageMark = mark;
+    blocks.push(block);
+    cursor = t.end;
+  }
+  pushText(cursor, text.length, false);
+  return markFirst(blocks);
+}
+
+/**
+ * Khoảng trắng cuối khối văn bản ngay trước bảng (dòng trống ngăn cách) KHÔNG tô — tránh vạch tô sáng lẻ trên dòng trống. Không mutate.
+ */
+function untintTrailingSpace(segs: Segment[]): Segment[] {
+  const last = segs[segs.length - 1];
+  if (!last || last.kind !== "highlight") return segs;
+  const body = last.text.replace(/\s+$/u, "");
+  if (body === last.text) return segs;
+  const tail: Segment = { text: last.text.slice(body.length), kind: "plain" };
+  if (body === "") {
+    if (last.pageMark !== undefined) tail.pageMark = last.pageMark;
+    return [...segs.slice(0, -1), tail];
+  }
+  return [...segs.slice(0, -1), { ...last, text: body }, tail];
+}
+
+/** Đặt `first` cho đoạn tô sáng đầu tiên theo thứ tự hiển thị (bản sao — không mutate). */
+function markFirst(blocks: ViewerBlock[]): ViewerBlock[] {
+  let done = false;
+  const mark = (segs: Segment[]): Segment[] =>
+    segs.map((s) => {
+      if (done || s.kind !== "highlight") return s;
+      done = true;
+      return { ...s, first: true };
+    });
+  return blocks.map((b) =>
+    b.kind === "text"
+      ? { ...b, segments: mark(b.segments) }
+      : { ...b, cells: b.cells.map((r) => r.map((c) => mark(c))) },
+  );
+}
+
+/**
+ * Cắt `text` tại các mốc: `[charStart, charEnd)` (nếu có highlight hợp lệ) + offset các `pageBreaks`.
+ * Highlight ngoài phạm vi / null (mở nguồn trực tiếp) → không có đoạn 'highlight' (phòng thủ, không crash).
+ */
+export function buildSegments(
+  text: string,
+  highlight: { charStart: number; charEnd: number } | null,
+  pageBreaks: PageBreak[] = [],
+): Segment[] {
+  return segmentRange(
+    text,
+    0,
+    text.length,
+    adjustHighlight(text, highlight),
+    pageMap(text.length, pageBreaks),
+  );
 }
 
 /**
