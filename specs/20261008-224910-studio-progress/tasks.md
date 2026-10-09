@@ -81,11 +81,11 @@
 
 ## Phase 5: Polish
 
-- [ ] T020 E2E `tests/e2e/studio-progress.spec.ts`: `window.api.onStudioProgress` tồn tại, không có `invoke` chung; Ollama giả HTTP (như e2e #135) trả `/api/tags` +
+- [X] T020 E2E `tests/e2e/studio-progress.spec.ts`: `window.api.onStudioProgress` tồn tại, không có `invoke` chung; Ollama giả HTTP (như e2e #135) trả `/api/tags` +
       `/api/chat` chậm ~1,5 s ⇒ notebook nhỏ: thẻ hiện "Đang viết…" (testid tiến độ) rồi kết quả; ảnh chụp cột Studio hẹp vi/en (không tràn); (analyze L1) một lần chạy với `reducedMotion: "reduce"` ⇒ thanh bất định không có animation (`getComputedStyle(...).animationName === "none"`).
-- [ ] T021 [P] ADR `docs/04-decisions/2026-10-08-studio-progress.md` (kênh, điểm phát, mốc thông báo, giới hạn đã biết: song song chậm hơn, không phục hồi khi quay lại,
+- [X] T021 [P] ADR `docs/04-decisions/2026-10-08-studio-progress.md` (kênh, điểm phát, mốc thông báo, giới hạn đã biết: song song chậm hơn, không phục hồi khi quay lại,
       không Huỷ — #149, không ETA) + append dòng `docs/04-decisions/INDEX.md` bằng script.
-- [ ] T022 Test gate: `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; chạy thủ công quickstart mục 1–2 với Ollama cục bộ nếu có.
+- [X] T022 Test gate: `npm run lint`, `npm test` (coverage ≥ 80%), `npx electron-vite build`, `npx playwright test`; chạy thủ công quickstart mục 1–2 với Ollama cục bộ nếu có.
 
 ---
 

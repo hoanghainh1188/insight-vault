@@ -1,0 +1,141 @@
+import { test, expect, type Page } from "@playwright/test";
+import { join } from "node:path";
+import type { AddressInfo } from "node:net";
+import { createServer, type Server } from "node:http";
+import { launchFresh, dismissOnboarding } from "./helper";
+
+// 146 (T020): tiến độ Studio end-to-end với "Ollama" giả (như #135) — /api/tags + /api/chat chậm ~1,5 s. Notebook nhỏ ⇒ một lượt
+// ⇒ thẻ hiện "Đang viết…" (bất định) rồi kết quả. Cột Studio hẹp không tràn (vi/en); (L1) giảm chuyển động ⇒ thanh không chạy.
+
+const FIXTURE = join(process.cwd(), "tests/fixtures/sample.txt");
+
+async function fakeOllama(): Promise<{ server: Server; url: string }> {
+  const server = createServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    if (req.url === "/api/chat") {
+      setTimeout(
+        () =>
+          res.end(
+            JSON.stringify({ message: { content: "Kết luận ngắn [1]." } }),
+          ),
+        1500,
+      );
+      return;
+    }
+    if (req.url === "/api/show") {
+      res.statusCode = 404;
+      res.end("{}");
+      return;
+    }
+    res.end(JSON.stringify({ models: [{ name: "fake:1b", size: 1 }] }));
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const { port } = server.address() as AddressInfo;
+  return { server, url: `http://127.0.0.1:${port}` };
+}
+
+async function openNotebook(win: Page): Promise<void> {
+  const nbId = await win.evaluate(async (file) => {
+    await window.api.aiSetSelectedModels({
+      chatModel: "fake:1b",
+      embeddingModel: null,
+    });
+    const nb = await window.api.notebookCreate({
+      name: "Progress",
+      color: "#1E6B57",
+    });
+    await window.api.sourceAdd({
+      notebookId: nb.id,
+      kind: "txt",
+      filePath: file,
+    });
+    return nb.id;
+  }, FIXTURE);
+  await expect
+    .poll(
+      () =>
+        win.evaluate(
+          async (id) => (await window.api.sourceListByNotebook(id))[0]?.status,
+          nbId,
+        ),
+      { timeout: 30_000 },
+    )
+    .toBe("ready");
+  await win.evaluate((id) => {
+    window.location.hash = `#/workspace/${id}`;
+  }, nbId);
+}
+
+/** Cột Studio không tràn ngang (kể cả khối tiến độ). */
+async function expectNoOverflow(win: Page): Promise<void> {
+  const overflow = await win
+    .getByTestId("studio-col")
+    .evaluate((el) => el.scrollWidth - el.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+}
+
+for (const lang of ["vi", "en"] as const) {
+  test(`146 — Studio hiện tiến độ rồi kết quả (${lang})`, async ({}, testInfo) => {
+    const { server, url } = await fakeOllama();
+    const app = await launchFresh({ OLLAMA_HOST: url, IV_UI_LANG: lang });
+    try {
+      const win = await app.firstWindow();
+      await app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()[0]!.setSize(1024, 760),
+      );
+      await dismissOnboarding(win);
+
+      // Preload: kênh chỉ nhận, không lộ invoke chung.
+      expect(
+        await win.evaluate(() => ({
+          on: typeof window.api.onStudioProgress,
+          invoke: typeof (window.api as unknown as { invoke?: unknown }).invoke,
+        })),
+      ).toEqual({ on: "function", invoke: "undefined" });
+
+      await openNotebook(win);
+      const btn = win.getByTestId("studio-btn-summary");
+      await expect(btn).toBeEnabled({ timeout: 15_000 });
+      await btn.click();
+
+      const prog = win.getByTestId("studio-progress-summary");
+      await expect(prog).toBeVisible();
+      await expect(prog).toContainText(
+        lang === "vi" ? "Đang viết…" : "Writing…",
+      );
+      const bar = prog.getByRole("progressbar");
+      await expect(bar).toHaveAttribute(
+        "aria-valuetext",
+        lang === "vi" ? "Đang viết…" : "Writing…",
+      );
+      expect(await bar.getAttribute("aria-valuenow")).toBeNull();
+      await expect(btn).toHaveText(lang === "vi" ? "Đang tạo…" : "Creating…");
+      await expectNoOverflow(win);
+      await win.getByTestId("studio-col").screenshot({
+        path: testInfo.outputPath(`studio-progress-${lang}.png`),
+      });
+
+      await expect(win.getByTestId("studio-card-summary")).toBeVisible({
+        timeout: 20_000,
+      });
+      await expect(prog).toHaveCount(0);
+
+      // (L1) giảm chuyển động ⇒ thanh bất định không có animation.
+      await win.emulateMedia({ reducedMotion: "reduce" });
+      await win.getByTestId("studio-btn-faq").click();
+      const fill = win
+        .getByTestId("studio-progress-faq")
+        .locator(".studio-progress-fill");
+      await expect(fill).toBeVisible();
+      expect(
+        await fill.evaluate((el) => getComputedStyle(el).animationName),
+      ).toBe("none");
+      await expect(win.getByTestId("studio-card-faq")).toBeVisible({
+        timeout: 20_000,
+      });
+    } finally {
+      await app.close();
+      server.close();
+    }
+  });
+}
