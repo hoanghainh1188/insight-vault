@@ -30,20 +30,20 @@
 
 **Independent Test**: unit với chat giả: thứ tự + số đếm sự kiện; kết quả giống hệt khi không có `onProgress`.
 
-- [ ] T005 [US1] Viết test TRƯỚC trong `tests/unit/studio-map-reduce.test.ts`: `onProgress` nhận `reading 1/N..N/N` đúng thứ tự (N = `parts`, kể cả khi bị cắt ở
+- [X] T005 [US1] Viết test TRƯỚC trong `tests/unit/studio-map-reduce.test.ts`: `onProgress` nhận `reading 1/N..N/N` đúng thứ tự (N = `parts`, kể cả khi bị cắt ở
       `maxMapCalls`), lần thử lại trong cùng phần KHÔNG phát thêm, `condensing` phát đúng 1 lần chỉ khi có vòng rút gọn (0 vòng ⇒ không phát), `writing` 1 lần trước
       bước cuối; `onProgress` ném lỗi ⇒ lượt tạo vẫn xong; kết quả (`raw`, `map`, `parts`, `truncated`) giống hệt khi không truyền `onProgress`. Chạy thấy FAIL.
-- [ ] T006 [US1] Sửa `src/main/services/studio/map-reduce.ts`: tham số `onProgress?` trong `MapReduceInput` + truyền xuống `condense`; phát theo contract; bọc
+- [X] T006 [US1] Sửa `src/main/services/studio/map-reduce.ts`: tham số `onProgress?` trong `MapReduceInput` + truyền xuống `condense`; phát theo contract; bọc
       try/catch nuốt lỗi callback; T005 xanh; các test map-reduce cũ giữ nguyên kỳ vọng.
-- [ ] T007 [US2] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: `generate(input, onProgress)` một lượt ⇒ đúng một sự kiện `writing` (không index/total);
+- [X] T007 [US2] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: `generate(input, onProgress)` một lượt ⇒ đúng một sự kiện `writing` (không index/total);
       nhiều phần ⇒ chuỗi sự kiện của map-reduce; không truyền `onProgress` ⇒ như cũ. Chạy thấy FAIL.
-- [ ] T008 [US2] Sửa `src/main/services/studio/studio-service.ts` (`generate(input, onProgress?)`); T007 xanh.
-- [ ] T009 [US1] (analyze M1) Viết test TRƯỚC `tests/unit/studio-progress-emitter.test.ts` cho hàm thuần `createStudioProgressEmitter(input, send)`:
+- [X] T008 [US2] Sửa `src/main/services/studio/studio-service.ts` (`generate(input, onProgress?)`); T007 xanh.
+- [X] T009 [US1] (analyze M1) Viết test TRƯỚC `tests/unit/studio-progress-emitter.test.ts` cho hàm thuần `createStudioProgressEmitter(input, send)`:
   `generationId` hợp lệ ⇒ trả `onProgress` gửi đúng `{generationId, notebookId, kind, phase, index?, total?}` (KHÔNG thêm trường nào khác — không nội dung);
   thiếu/không hợp lệ (rỗng, > 64 ký tự, ký tự lạ, không phải chuỗi) ⇒ trả `undefined` (không gửi gì); `send` ném lỗi ⇒ nuốt. Chạy thấy FAIL.
-- [ ] T010 [US1] Hiện thực `src/main/services/studio/progress-emitter.ts` (`createStudioProgressEmitter`) cho T009 xanh; sửa `src/main/ipc/register.ts` handler
+- [X] T010 [US1] Hiện thực `src/main/services/studio/progress-emitter.ts` (`createStudioProgressEmitter`) cho T009 xanh; sửa `src/main/ipc/register.ts` handler
   `studio:generate` chỉ nối dây: `generate(input, createStudioProgressEmitter(input, ev => gửi studio:progress tới mọi cửa sổ))` (theo khuôn `rag:streamToken`); không log payload.
-- [ ] T011 [P] [US1] Thêm `onStudioProgress(cb) ⇒ () => void` vào `src/preload/index.ts` (chỉ nhận).
+- [X] T011 [P] [US1] Thêm `onStudioProgress(cb) ⇒ () => void` vào `src/preload/index.ts` (chỉ nhận).
 
 ---
 

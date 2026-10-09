@@ -297,3 +297,134 @@ describe("123: ngôn ngữ đầu ra cho mọi bước map-reduce", () => {
     }
   });
 });
+
+// 146 (contract studio-progress): onProgress phát reading 1/N..N/N (trước lượt map đầu tiên của phần đó), condensing ≤ 1 lần (chỉ khi có
+// vòng rút gọn), writing 1 lần trước bước cuối. Lỗi callback bị nuốt; kết quả giống hệt khi không có onProgress.
+describe("runMapReduce — onProgress (146)", () => {
+  type Ev = { phase: string; index?: number; total?: number };
+
+  /** chat giả ghi lại thứ tự gọi xen kẽ với sự kiện tiến độ. */
+  function tracedChat(
+    log: string[],
+    opts: { condense?: boolean; failFirstMap?: boolean } = {},
+  ) {
+    let failed = false;
+    return vi.fn(async (messages: ChatMessage[]) => {
+      const sys = messages[0].content;
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      if (sys.startsWith("Condense the NOTES")) {
+        log.push("chat:condense");
+        return `- gộp [${ns[0]}]`;
+      }
+      if (sys.startsWith("Extract NOTES")) {
+        log.push("chat:map");
+        if (opts.failFirstMap && !failed) {
+          failed = true;
+          throw new Error("tạm lỗi");
+        }
+        return opts.condense
+          ? ns.map((n) => `- ${"chi tiết ".repeat(30)}[${n}]`).join("\n")
+          : `- ý [${ns[0]}]`;
+      }
+      log.push("chat:final");
+      return `Kết luận [${ns[0]}].`;
+    });
+  }
+
+  const label = (e: Ev): string =>
+    e.phase === "reading" ? `reading ${e.index}/${e.total}` : e.phase;
+
+  it("nhiều phần, không rút gọn ⇒ reading 1/N..N/N rồi writing; mỗi sự kiện ngay trước lượt gọi của nó", async () => {
+    const log: string[] = [];
+    const out = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat: tracedChat(log),
+      onProgress: (e: Ev) => log.push(label(e)),
+    });
+    const N = out.parts;
+    expect(N).toBeGreaterThan(1);
+    const expected: string[] = [];
+    for (let i = 1; i <= N; i++) expected.push(`reading ${i}/${N}`, "chat:map");
+    expected.push("writing", "chat:final");
+    expect(log).toEqual(expected);
+  });
+
+  it("bị cắt ở maxMapCalls ⇒ total = parts (số phần thực chạy)", async () => {
+    const evs: Ev[] = [];
+    const out = await runMapReduce({
+      kind: "keyPoints",
+      groups: groups(10),
+      budget: 500,
+      chat: tracedChat([]),
+      maxMapCalls: 3,
+      onProgress: (e: Ev) => evs.push(e),
+    });
+    expect(out.parts).toBe(3);
+    const reading = evs.filter((e) => e.phase === "reading");
+    expect(reading.map((e) => [e.index, e.total])).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
+  });
+
+  it("lần thử lại trong cùng phần KHÔNG phát thêm sự kiện", async () => {
+    const log: string[] = [];
+    const out = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat: tracedChat(log, { failFirstMap: true }),
+      onProgress: (e: Ev) => log.push(label(e)),
+    });
+    expect(log.filter((l) => l.startsWith("reading"))).toHaveLength(out.parts);
+    expect(log.slice(0, 3)).toEqual([
+      `reading 1/${out.parts}`,
+      "chat:map",
+      "chat:map",
+    ]);
+  });
+
+  it("có vòng rút gọn ⇒ condensing đúng 1 lần, trước lượt rút gọn đầu tiên, sau mọi reading", async () => {
+    const log: string[] = [];
+    await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat: tracedChat(log, { condense: true }),
+      onProgress: (e: Ev) => log.push(label(e)),
+    });
+    expect(log.filter((l) => l === "condensing")).toHaveLength(1);
+    const ci = log.indexOf("condensing");
+    expect(log[ci + 1]).toBe("chat:condense");
+    expect(log.slice(ci).some((l) => l.startsWith("reading"))).toBe(false);
+    expect(log.filter((l) => l === "writing")).toHaveLength(1);
+    expect(log[log.length - 2]).toBe("writing");
+  });
+
+  it("onProgress ném lỗi ⇒ lượt tạo vẫn xong; kết quả giống hệt khi không truyền onProgress", async () => {
+    const base = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat: tracedChat([]),
+    });
+    const withThrow = await runMapReduce({
+      kind: "summary",
+      groups: groups(3),
+      budget: 900,
+      chat: tracedChat([]),
+      onProgress: () => {
+        throw new Error("renderer đã đóng");
+      },
+    });
+    expect(withThrow.raw).toBe(base.raw);
+    expect(withThrow.parts).toBe(base.parts);
+    expect(withThrow.truncated).toBe(base.truncated);
+    expect([...withThrow.map.keys()]).toEqual([...base.map.keys()]);
+  });
+});

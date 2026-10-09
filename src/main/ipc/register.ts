@@ -15,6 +15,7 @@ import type {
   SetProviderKeyInput,
   SetProviderModelInput,
   StudioGenerateInput,
+  StudioProgressEvent,
   ModelRecommendation,
   OllamaHealth,
   RerankerStatus,
@@ -42,6 +43,7 @@ import type { ChatRepo } from "../services/rag/chat-repo";
 import type { StudioService } from "../services/studio/studio-service";
 import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
+import { createStudioProgressEmitter } from "../services/studio/progress-emitter";
 import {
   getSourceContent,
   type SourceContentRequest,
@@ -354,11 +356,19 @@ export function registerIpc({
   });
 
   // studio (021) — tổng hợp toàn notebook (đọc chunk + chat CHỈ ở main). KHÔNG log content/citations.
+  // 146: tiến độ Studio đẩy qua studio:progress (webContents.send) — chỉ khi renderer gửi generationId hợp lệ. KHÔNG log payload.
+  const emitStudioProgress = (e: StudioProgressEvent): void => {
+    for (const w of BrowserWindow.getAllWindows()) {
+      if (!w.isDestroyed()) w.webContents.send(CHANNELS.studioProgress, e);
+    }
+  };
   safeHandle(CHANNELS.studioGenerate, async (input) => {
     const target = parseAiTarget(input);
     try {
+      const studioInput = input as StudioGenerateInput;
       return await studioServices[target].generate(
-        input as StudioGenerateInput,
+        studioInput,
+        createStudioProgressEmitter(studioInput, emitStudioProgress),
       );
     } catch (e) {
       return rethrowForIpc(e);

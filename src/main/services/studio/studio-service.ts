@@ -12,7 +12,11 @@ import { buildBalancedContext } from "./balanced-context";
 import { postprocessCitations, citationsFromMap } from "../rag/citation";
 import { STUDIO_CONTEXT_BUDGET, STUDIO_KINDS } from "./constants";
 import { languageReminder, systemPromptFor } from "./prompt";
-import { runMapReduce } from "./map-reduce";
+import {
+  runMapReduce,
+  safeProgress,
+  type OnStudioProgress,
+} from "./map-reduce";
 import type { StudioRepo } from "./studio-repo";
 
 // Điều phối Studio (studio:generate / studio:list). DI: nguồn chunk + chat + repo lưu.
@@ -44,7 +48,11 @@ function isStudioKind(k: string): k is (typeof STUDIO_KINDS)[number] {
 }
 
 export function createStudioService(deps: StudioServiceDeps) {
-  async function generate(input: StudioGenerateInput): Promise<StudioResult> {
+  /** 146: `onProgress` (tuỳ chọn) nhận reading i/N · condensing · writing — không ảnh hưởng kết quả. */
+  async function generate(
+    input: StudioGenerateInput,
+    onProgress?: OnStudioProgress,
+  ): Promise<StudioResult> {
     const { notebookId, kind, sourceId } = input;
     // 123 (FR-018): chỉ nhận vi/en; khác ⇒ ngôn ngữ hiệu lực của main (mặc định vi).
     const outputLanguage: LanguageCode =
@@ -92,6 +100,7 @@ export function createStudioService(deps: StudioServiceDeps) {
     let parts = 1;
     let truncated = false;
     if (single.contextText.length <= ctx.budget) {
+      safeProgress(onProgress)({ phase: "writing" }); // 146: một lượt ⇒ chỉ pha viết (bất định)
       raw = await chat([
         { role: "system", content: systemPromptFor(kind, outputLanguage) },
         {
@@ -106,6 +115,7 @@ export function createStudioService(deps: StudioServiceDeps) {
         budget: ctx.budget,
         chat,
         outputLanguage,
+        onProgress,
       });
       ({ raw, map, parts, truncated } = mr);
     }
