@@ -439,7 +439,8 @@ export type StudioKind =
   | "studyGuide"
   | "briefing"
   | "timeline"
-  | "keyTerms";
+  | "keyTerms"
+  | "custom"; // 178 (PR 3): yêu cầu tuỳ chỉnh
 
 /** Kết quả tổng hợp Studio = một PHIÊN BẢN (178) — content dạng text kèm chip [n]; citations đã hậu kiểm (Constitution II). */
 export interface StudioResult {
@@ -454,6 +455,8 @@ export interface StudioResult {
   parts?: number;
   /** 178 (G4): phiên bản tạo bằng "Tạo bằng AI cục bộ" (target local, 098) — lưu DB, thiếu ở dòng cũ. */
   local?: boolean;
+  /** 178 (PR 3): yêu cầu tuỳ chỉnh đã chuẩn hoá — chỉ có ở kind "custom". Hiển thị dạng văn bản thường. */
+  customPrompt?: string;
 }
 
 /** 178: xoá một phiên bản Studio — main chỉ xoá khi `id` thuộc `notebookId`. */
@@ -467,6 +470,8 @@ export interface StudioGenerateInput {
   notebookId: string;
   kind: StudioKind;
   sourceId?: string; // 025: lọc theo 1 nguồn; bỏ trống = toàn bộ nguồn ready
+  /** 178 (PR 3): bắt buộc khi kind = "custom" (main kiểm ≤ 500 code point); loại khác ⇒ bỏ qua. */
+  customPrompt?: string;
   target?: AiTarget; // 098: "local" = tạo bằng Ollama sau lỗi online
   /** 123 (FR-018): ngôn ngữ đầu ra = ngôn ngữ giao diện lúc bấm tạo; sai/thiếu ⇒ ngôn ngữ hiệu lực của main. */
   outputLanguage?: "vi" | "en";

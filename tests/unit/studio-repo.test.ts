@@ -286,3 +286,27 @@ describe("studio-repo — giao dịch insert (178)", () => {
     expect(count(db, "nb1", "summary")).toBe(2);
   });
 });
+
+describe("studio-repo — yêu cầu tuỳ chỉnh (178, PR 3)", () => {
+  it("insert lưu và trả customPrompt; loại thường không có trường", () => {
+    const { repo } = setup();
+    const c = repo.insert({
+      notebookId: "nb1",
+      kind: "custom",
+      content: "x [1]",
+      citations: [],
+      customPrompt: "Liệt kê rủi ro",
+    });
+    expect(c.customPrompt).toBe("Liệt kê rủi ro");
+    expect(repo.listVersions("nb1", "custom")[0].customPrompt).toBe(
+      "Liệt kê rủi ro",
+    );
+    const s = repo.insert({
+      notebookId: "nb1",
+      kind: "summary",
+      content: "y",
+      citations: [],
+    });
+    expect("customPrompt" in s).toBe(false);
+  });
+});

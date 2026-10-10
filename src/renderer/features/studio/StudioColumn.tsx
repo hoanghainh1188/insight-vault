@@ -5,6 +5,7 @@ import { StudioResultCard } from "./StudioResultCard";
 import { StudioProgress } from "./StudioProgress";
 import { StudioCancel } from "./StudioCancel";
 import { StudioVersionPicker } from "./StudioVersionPicker";
+import { StudioCustomRequest } from "./StudioCustomRequest";
 import { cancelFocusTarget } from "./studio-generation";
 import { studioCancelledMessage } from "../../shared/a11y/messages";
 import {
@@ -32,6 +33,14 @@ const KINDS: readonly StudioKind[] = [
   "timeline",
   "keyTerms",
 ];
+// 178 (PR 3): loại có thẻ kết quả = 8 loại có nút + "custom" (nhập ở hàng riêng dưới lưới).
+const RESULT_KINDS: readonly StudioKind[] = [...KINDS, "custom"];
+
+/** Nút "khởi tạo" của một loại (đích focus): nút loại, hoặc nút Tạo của hàng yêu cầu tuỳ chỉnh. */
+const startSelector = (kind: StudioKind): string =>
+  kind === "custom"
+    ? "[data-testid=studio-custom-submit]"
+    : `[data-testid=studio-btn-${kind}]`;
 
 interface StudioColumnProps {
   notebookId: string;
@@ -66,7 +75,7 @@ export function StudioColumn({
   const prevProgress = useRef<StudioProgressMap>({});
   useEffect(() => {
     const tr = trRef.current;
-    for (const kind of KINDS) {
+    for (const kind of RESULT_KINDS) {
       const next = progress[kind];
       const prev = prevProgress.current[kind];
       if (next && next !== prev) {
@@ -119,14 +128,14 @@ export function StudioColumn({
     const target =
       cancelFocusTarget(results[kind] !== undefined) === "regenerate"
         ? `[data-testid=studio-regen-${kind}]`
-        : `[data-testid=studio-btn-${kind}]`;
+        : startSelector(kind);
     colRef.current?.querySelector<HTMLElement>(target)?.focus();
   }, [pendingFocus, loading, results]);
 
   // 178: xoá phiên bản cuối của loại ⇒ thẻ biến mất ⇒ focus về nút loại (đang tạo ⇒ nút bị khoá ⇒ về tiêu đề cột).
   const focusKind = (kind: StudioKind): void => {
     const btn = colRef.current?.querySelector<HTMLButtonElement>(
-      `[data-testid=studio-btn-${kind}]`,
+      startSelector(kind),
     );
     if (btn && !btn.disabled) btn.focus();
     else titleRef.current?.focus();
@@ -135,10 +144,18 @@ export function StudioColumn({
   // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
   // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
   // 149: kết cục "cancelled" ⇒ câu huỷ + trả focus; "stale" ⇒ im lặng (lượt đã bị thay / rời notebook).
-  const run = async (kind: StudioKind, target?: AiTarget): Promise<void> => {
+  // 178: yêu cầu tuỳ chỉnh vừa gửi — dùng cho "Thử lại" / "Tạo bằng AI cục bộ" trong khối lỗi của loại custom.
+  const lastCustom = useRef<string | undefined>(undefined);
+  const run = async (
+    kind: StudioKind,
+    target?: AiTarget,
+    customPrompt: string | undefined = kind === "custom"
+      ? lastCustom.current
+      : undefined,
+  ): Promise<void> => {
     const tr = trRef.current;
     announce(studioMessage(tr.t(`studio.kind.${kind}`), "start", tr));
-    const outcome = await generate(kind, scopeId, target);
+    const outcome = await generate(kind, scopeId, target, customPrompt);
     const now = trRef.current;
     const label = now.t(`studio.kind.${kind}`);
     // Review N1: ý định trả focus chỉ dùng cho đúng lần huỷ này — mọi kết cục đều dọn.
@@ -206,8 +223,17 @@ export function StudioColumn({
         ))}
       </div>
 
+      <StudioCustomRequest
+        loading={loading.custom === true}
+        disabled={disabled}
+        onSubmit={(text) => {
+          lastCustom.current = text;
+          void run("custom", undefined, text);
+        }}
+      />
+
       <div className="studio-results">
-        {KINDS.map((kind) => {
+        {RESULT_KINDS.map((kind) => {
           const label = t.t(`studio.kind.${kind}`);
           const err = errors[kind];
           const res = results[kind];
@@ -317,7 +343,10 @@ export function StudioColumn({
               <StudioResultCard
                 result={res}
                 regenerating={loading[kind] === true}
-                onRegenerate={() => void run(kind)}
+                onRegenerate={() =>
+                  // 178: custom ⇒ tạo lại với yêu cầu của PHIÊN BẢN ĐANG XEM.
+                  void run(kind, undefined, res.customPrompt)
+                }
                 onCite={onCite}
                 versionPicker={
                   <StudioVersionPicker

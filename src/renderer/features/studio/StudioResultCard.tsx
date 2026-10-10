@@ -112,6 +112,18 @@ export function StudioResultCard({
         </div>
       </header>
       {versionPicker}
+      {/* 178 (FR-024): yêu cầu tuỳ chỉnh của phiên bản — text node (React tự thoát), KHÔNG markdown / HTML. */}
+      {result.customPrompt && (
+        <p
+          className="studio-request"
+          data-testid={`studio-request-${result.kind}`}
+        >
+          <span className="studio-request-label">
+            {t.t("studio.custom.requestHeading")}:
+          </span>{" "}
+          {result.customPrompt}
+        </p>
+      )}
       {notice && (
         <p
           className="studio-notice"

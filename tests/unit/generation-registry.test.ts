@@ -64,6 +64,16 @@ describe("createGenerationRegistry", () => {
     expect(r.cancel("g4", A, "user")).toBe(true);
   });
 
+  it("178 (G1): hai yêu cầu tuỳ chỉnh cùng notebook ⇒ lượt sau thay lượt trước (khoá (notebookId, 'custom'))", () => {
+    const r = createGenerationRegistry<Owner>();
+    const first = reg(r, "c1", "custom");
+    const second = reg(r, "c2", "custom");
+    expect(first.signal.aborted).toBe(true);
+    expect(second.superseded).toBe(true);
+    expect(second.signal.aborted).toBe(false);
+    expect(r.finish("c1")).toBe("superseded");
+  });
+
   it("abortAllFor(owner) chỉ huỷ lượt của owner đó ('window'); abortAll huỷ hết", () => {
     const r = createGenerationRegistry<Owner>();
     const a = reg(r, "g1", "summary", "nb1", A);

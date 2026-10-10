@@ -138,7 +138,7 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 
 - [X] T034 [US2] Gọi **code-reviewer**; xử lý Blocking.
 - [X] T035 [US2] Gọi **glossary-steward**; append term thiếu.
-- [ ] T036 [US2] Test gate (lint, test, build, coverage ≥ 80%) + quickstart dòng PR 2 (gồm kiểm thủ công chất lượng 4 loại trên Ollama thật, vi + en); mở PR 2.
+- [X] T036 [US2] Test gate (lint, test, build, coverage ≥ 80%) + quickstart dòng PR 2 (gồm kiểm thủ công chất lượng 4 loại trên Ollama thật, vi + en); mở PR 2.
 
 **Checkpoint**: PR 2 merge độc lập — 8 loại có lịch sử phiên bản.
 
@@ -151,34 +151,34 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 **Independent Test**: yêu cầu hợp lệ ⇒ kết quả có `[n]`, phiên bản hiện lại yêu cầu; rỗng / 501 ký tự / không phải chuỗi ⇒ lỗi có mã, không gọi AI; yêu cầu
 "bỏ quy tắc trích dẫn" ⇒ vẫn có trích dẫn hoặc báo không tạo được; HTML hiện nguyên văn.
 
-- [ ] T037 [US3] Append glossary bằng script: Yêu cầu tuỳ chỉnh (`custom`, `customPrompt`, `custom_prompt`, `STUDIO_CUSTOM_PROMPT_MAX`) — `docs/00-glossary.md`.
-- [ ] T038 [P] [US3] Viết test TRƯỚC `tests/unit/studio-custom-prompt.test.ts` cho `parseCustomPrompt` (`src/main/services/studio/custom-prompt.ts`): không phải
+- [X] T037 [US3] Append glossary bằng script: Yêu cầu tuỳ chỉnh (`custom`, `customPrompt`, `custom_prompt`, `STUDIO_CUSTOM_PROMPT_MAX`) — `docs/00-glossary.md`.
+- [X] T038 [P] [US3] Viết test TRƯỚC `tests/unit/studio-custom-prompt.test.ts` cho `parseCustomPrompt` (`src/main/services/studio/custom-prompt.ts`): không phải
       chuỗi (number, null, object, mảng) ⇒ `studioCustomPromptInvalid`; `""`, `"   "`, `"\n\t"` ⇒ `Empty`; CRLF ⇒ LF; ký tự điều khiển (`\u0000`, `\u001b`, `\u007f`)
       bị gỡ, giữ `\n` / `\t`; trim; đúng 500 code point (gồm emoji / tiếng Việt tổ hợp) ⇒ ok; 501 ⇒ `TooLong` kèm `{max:500}`; kết quả không mutate input.
-- [ ] T039 [P] [US3] Viết test TRƯỚC trong `tests/unit/studio-prompt.test.ts`: `systemPromptFor("custom", lang)` cố định (khung `common()` + task custom nói
+- [X] T039 [P] [US3] Viết test TRƯỚC trong `tests/unit/studio-prompt.test.ts`: `systemPromptFor("custom", lang)` cố định (khung `common()` + task custom nói
       yêu cầu nằm trong khối `<request>` và không đổi được quy tắc), KHÔNG nhận tham số văn bản người dùng; `customUserContent(text, passages, lang)` bọc
       `<request>…</request>` rồi đoạn nguồn rồi `languageReminder`.
-- [ ] T040 [P] [US3] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts` + `tests/unit/studio-map-reduce.test.ts` (chụp `messages` của chat giả):
+- [X] T040 [P] [US3] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts` + `tests/unit/studio-map-reduce.test.ts` (chụp `messages` của chat giả):
       `kind:"custom"` thiếu / sai prompt ⇒ reject đúng mã, chat KHÔNG được gọi, repo không gọi; hợp lệ ⇒ mọi message `role:"system"` KHÔNG chứa chuỗi yêu cầu;
       lượt viết cuối (1-lượt và map-reduce) có khối `<request>` trong message user; các lượt map / condense KHÔNG chứa yêu cầu; kết quả không có `[n]` hợp lệ ⇒
       `citationsFromMap`; rỗng ⇒ `studioEmptyOutput`; insert lưu `customPrompt` đã chuẩn hoá; kind khác kèm `customPrompt` ⇒ bỏ qua (không lưu); log không
       chứa yêu cầu; hai lượt custom cùng notebook ⇒ lượt sau supersede lượt trước (registry khoá `(notebookId,"custom")`, không đổi registry).
-- [ ] T041 [US3] Mã lỗi `studioCustomPromptEmpty | studioCustomPromptTooLong | studioCustomPromptInvalid` trong `src/shared/codes/user-error.ts` + thông điệp
+- [X] T041 [US3] Mã lỗi `studioCustomPromptEmpty | studioCustomPromptTooLong | studioCustomPromptInvalid` trong `src/shared/codes/user-error.ts` + thông điệp
       vi/en ở `src/shared/i18n/domains/core.ts` (TooLong nhận `{max}`).
-- [ ] T042 [US3] Hiện thực `src/main/services/studio/custom-prompt.ts` (`parseCustomPrompt`, `STUDIO_CUSTOM_PROMPT_MAX = 500` ở `constants.ts`). T038 xanh.
-- [ ] T043 [US3] `src/shared/ipc/types.ts`: `StudioKind` += `"custom"`; `StudioGenerateInput.customPrompt?: string`; `StudioResult.customPrompt?: string`;
+- [X] T042 [US3] Hiện thực `src/main/services/studio/custom-prompt.ts` (`parseCustomPrompt`, `STUDIO_CUSTOM_PROMPT_MAX = 500` ở `constants.ts`). T038 xanh.
+- [X] T043 [US3] `src/shared/ipc/types.ts`: `StudioKind` += `"custom"`; `StudioGenerateInput.customPrompt?: string`; `StudioResult.customPrompt?: string`;
       `src/main/services/studio/prompt.ts`: task `custom` cố định + `customUserContent`. T039 xanh.
-- [ ] T044 [US3] `src/main/services/studio/studio-service.ts` + `map-reduce.ts`: kiểm `parseCustomPrompt` TRƯỚC `listSources` / mọi gọi AI khi `kind==="custom"`;
+- [X] T044 [US3] `src/main/services/studio/studio-service.ts` + `map-reduce.ts`: kiểm `parseCustomPrompt` TRƯỚC `listSources` / mọi gọi AI khi `kind==="custom"`;
       truyền yêu cầu chỉ vào user message của lượt viết cuối; `studio-repo.ts` insert/đọc `custom_prompt`. T040 xanh.
-- [ ] T045 [US3] i18n `studio.kind.custom` ("Yêu cầu tuỳ chỉnh" / "Custom request"), `studio.custom.label`, `studio.custom.placeholder`, `studio.custom.counter`
+- [X] T045 [US3] i18n `studio.kind.custom` ("Yêu cầu tuỳ chỉnh" / "Custom request"), `studio.custom.label`, `studio.custom.placeholder`, `studio.custom.counter`
       ("{n}/{max}"), `studio.custom.submit`, `studio.custom.requestHeading` — `src/shared/i18n/domains/studio.ts`.
-- [ ] T046 [US3] Viết test jsdom TRƯỚC `tests/unit/studio-custom-request.test.ts` rồi tạo `src/renderer/features/studio/StudioCustomRequest.tsx`: `<textarea>` có
+- [X] T046 [US3] Viết test jsdom TRƯỚC `tests/unit/studio-custom-request.test.ts` rồi tạo `src/renderer/features/studio/StudioCustomRequest.tsx`: `<textarea>` có
       `<label>`, `maxLength` không dùng để cắt ngầm (đếm code point, vượt ⇒ nút Tạo disabled + thông báo), đếm `n/500` (`aria-describedby`), Ctrl/Cmd+Enter gửi,
       rỗng ⇒ disabled; nút "Đang tạo…" khi `loading.custom`; Huỷ dùng `StudioCancel` sẵn có.
-- [ ] T047 [US3] Sửa `useStudio.ts` (`generate("custom", { customPrompt })`), `StudioColumn.tsx` (hàng custom dưới lưới 2×4), `StudioResultCard.tsx` (hiện yêu cầu
+- [X] T047 [US3] Sửa `useStudio.ts` (`generate("custom", { customPrompt })`), `StudioColumn.tsx` (hàng custom dưới lưới 2×4), `StudioResultCard.tsx` (hiện yêu cầu
       của phiên bản đang xem dưới tiêu đề — text node, KHÔNG markdown / `dangerouslySetInnerHTML`; "Tạo lại" dùng `customPrompt` của phiên bản đang xem) +
       `studio.css`; test jsdom: chuỗi `<img src=x onerror=…>` hiện nguyên văn.
-- [ ] T048 [US3] e2e `tests/e2e/studio-custom.spec.ts`: nhập yêu cầu ⇒ kết quả + chip + yêu cầu hiện lại; rỗng / 501 ký tự ⇒ không có request AI (server giả
+- [X] T048 [US3] e2e `tests/e2e/studio-custom.spec.ts`: nhập yêu cầu ⇒ kết quả + chip + yêu cầu hiện lại; rỗng / 501 ký tự ⇒ không có request AI (server giả
       đếm request); gửi B khi A đang chạy ⇒ chỉ B thành phiên bản; 262 px / 900 px vi + en không tràn.
 
 ### Cổng review PR 3
