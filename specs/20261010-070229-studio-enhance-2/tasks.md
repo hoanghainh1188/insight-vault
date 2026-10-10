@@ -96,7 +96,7 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 
 ### Cổng review PR 1
 
-- [ ] T021 [US1] ADR thực thi ngắn `docs/04-decisions/2026-10-10-studio-versions.md` (migration v11, trần trong giao dịch, `studio:list` trả mọi phiên bản,
+- [X] T021 [US1] ADR thực thi ngắn `docs/04-decisions/2026-10-10-studio-versions.md` (migration v11, trần trong giao dịch, `studio:list` trả mọi phiên bản,
       `deleteVersion`, `local` từ main) + append dòng `docs/04-decisions/INDEX.md` bằng script.
 - [ ] T022 [US1] Gọi subagent **code-reviewer** (đối chiếu constitution / spec / plan / tasks phase 1); xử lý mọi Blocking.
 - [ ] T023 [US1] Gọi subagent **glossary-steward**; append term mới thiếu (KHÔNG sửa term cũ).
