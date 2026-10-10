@@ -25,7 +25,8 @@
 
 .studio-btn {
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* Ngắt giữa từ CHỈ khi một từ không vừa nút — nhãn thường xuống dòng ở khoảng trắng. */
+  overflow-wrap: break-word;
   line-height: 1.25;
   padding: 7px 8px;
   font-size: 12.5px;

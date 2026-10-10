@@ -120,7 +120,7 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
       không bịa) + đúng một dòng "Task: …" theo FR-010 (study guide: khái niệm / 5–10 câu hỏi ôn tập kèm đáp án / từ khoá; briefing: bối cảnh / phát hiện / hệ
       quả chỉ khi nguồn nêu / câu hỏi mở; timeline: "mốc — sự kiện", không suy diễn ngày, nhãn "Không rõ thời điểm" / "Undated"; keyTerms: "thuật ngữ — định
       nghĩa", chữ cái, chỉ thuật ngữ được định nghĩa trong nguồn); kind lạ vẫn ném.
-- [X] T028 [P] [US2] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts` + `tests/unit/studio-map-reduce.test.ts`: mỗi loại mới chạy được đường 1-lượt
+- [X] T028 [P] [US2] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts` (phủ cả map-reduce qua service; `studio-map-reduce.test.ts` không đổi): mỗi loại mới chạy được đường 1-lượt
       và map-reduce (system của lượt cuối là prompt của loại đó), hậu kiểm `[n]`, insert đúng `kind`.
 - [X] T029 [US2] `src/shared/ipc/types.ts`: `StudioKind` += `"studyGuide" | "briefing" | "timeline" | "keyTerms"`; `src/main/services/studio/constants.ts`:
       `STUDIO_KINDS` = 8 loại theo thứ tự hiển thị (summary, keyPoints, faq, outline, studyGuide, briefing, timeline, keyTerms).
@@ -136,8 +136,8 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 
 ### Cổng review PR 2
 
-- [ ] T034 [US2] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T035 [US2] Gọi **glossary-steward**; append term thiếu.
+- [X] T034 [US2] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T035 [US2] Gọi **glossary-steward**; append term thiếu.
 - [ ] T036 [US2] Test gate (lint, test, build, coverage ≥ 80%) + quickstart dòng PR 2 (gồm kiểm thủ công chất lượng 4 loại trên Ollama thật, vi + en); mở PR 2.
 
 **Checkpoint**: PR 2 merge độc lập — 8 loại có lịch sử phiên bản.

@@ -133,7 +133,7 @@ describe("StudioColumn — 8 loại (178)", () => {
     ).toEqual(["studio-btn-timeline"]);
   });
 
-  it("CSS: lưới 2 cột; nhãn dài xuống dòng (min-width 0, overflow-wrap), không cắt chữ", () => {
+  it("CSS: lưới 2 cột; nhãn dài xuống dòng ở khoảng trắng (min-width 0, overflow-wrap: break-word), không cắt chữ", () => {
     const css = readFileSync("src/renderer/features/studio/studio.css", "utf8");
     const grid = /\.studio-actions\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
     expect(grid).toMatch(
@@ -141,7 +141,7 @@ describe("StudioColumn — 8 loại (178)", () => {
     );
     const btn = /\.studio-btn\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
     expect(btn).toMatch(/min-width:\s*0/);
-    expect(btn).toMatch(/overflow-wrap:\s*anywhere/);
+    expect(btn).toMatch(/overflow-wrap:\s*break-word/);
     expect(btn).not.toMatch(/text-overflow:\s*ellipsis/);
     expect(btn).not.toMatch(/white-space:\s*nowrap/);
   });

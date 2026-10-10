@@ -116,10 +116,19 @@ for (const lang of ["vi", "en"] as const) {
       await expect(win.getByTestId("studio-btn-keyTerms")).toHaveText(
         lang === "vi" ? "Bảng thuật ngữ" : "Glossary",
       );
+      // Cửa sổ 900 px ép cột Studio ≤ 262 px (thường hẹp hơn — trường hợp xấu nhất của FR-014).
+      expect((await col.boundingBox())!.width).toBeLessThanOrEqual(262);
       const overflow = await col.evaluate(
         (el) => el.scrollWidth - el.clientWidth,
       );
       expect(overflow).toBeLessThanOrEqual(1);
+      // Không nút nào bị cắt chữ (nhãn English dài hơn).
+      const clipped = await btns.evaluateAll((els) =>
+        els
+          .filter((e) => e.scrollWidth > e.clientWidth + 1)
+          .map((e) => e.textContent),
+      );
+      expect(clipped).toEqual([]);
       // Lưới 2 cột: 8 nút ⇒ 2 giá trị x khác nhau, 4 hàng.
       const boxes = await btns.evaluateAll((els) =>
         els.map((e) => {
