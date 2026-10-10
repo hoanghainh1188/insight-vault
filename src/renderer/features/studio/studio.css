@@ -15,16 +15,21 @@
   padding: 10px 12px;
 }
 
+/* 178 (FR-014): 8 loại = lưới 2×4; cột minmax(0,1fr) để nhãn dài (English) xuống dòng thay vì đẩy tràn cột 262 px. */
 .studio-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
   margin-top: 16px;
 }
 
 .studio-btn {
-  padding: 9px 10px;
-  font-size: 13px;
+  min-width: 0;
+  /* Ngắt giữa từ CHỈ khi một từ không vừa nút — nhãn thường xuống dòng ở khoảng trắng. */
+  overflow-wrap: break-word;
+  line-height: 1.25;
+  padding: 7px 8px;
+  font-size: 12.5px;
   font-weight: 550;
   color: var(--ink);
   background: var(--surface-2);

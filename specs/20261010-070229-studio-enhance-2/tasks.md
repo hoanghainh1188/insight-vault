@@ -101,7 +101,7 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 - [X] T022 [US1] Gọi subagent **code-reviewer** (đối chiếu constitution / spec / plan / tasks phase 1); xử lý mọi Blocking.
 - [X] T023 [US1] Gọi subagent **glossary-steward**; append term mới thiếu (KHÔNG sửa term cũ).
 - [X] T024 [US1] Gọi subagent **security-reviewer** (BẮT BUỘC — PR đụng DB: migration v11, IPC mới `deleteVersion`); xử lý mọi Blocking.
-- [ ] T025 [US1] Test gate: `npm run lint && npm run test && npm run build` xanh, coverage ≥ 80%; quickstart dòng PR 1 (gồm dữ liệu v0.2.19 + khôi phục sao
+- [X] T025 [US1] Test gate: `npm run lint && npm run test && npm run build` xanh, coverage ≥ 80%; quickstart dòng PR 1 (gồm dữ liệu v0.2.19 + khôi phục sao
       lưu cũ); mở PR 1.
 
 **Checkpoint**: PR 1 merge được độc lập — 4 loại cũ có lịch sử phiên bản.
@@ -114,30 +114,30 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 
 **Independent Test**: bấm từng loại mới ⇒ đúng định nghĩa FR-010, có chip `[n]`; tiến độ / huỷ / phiên bản như loại cũ; 8 nút không tràn ở vi + en.
 
-- [ ] T026 [US2] Append glossary bằng script: Hướng dẫn học (`studyGuide`), Bản tóm lược (`briefing`), Dòng thời gian (`timeline`), Bảng thuật ngữ (`keyTerms`
+- [X] T026 [US2] Append glossary bằng script: Hướng dẫn học (`studyGuide`), Bản tóm lược (`briefing`), Dòng thời gian (`timeline`), Bảng thuật ngữ (`keyTerms`
       — ghi rõ ≠ `docs/00-glossary.md`) — `docs/00-glossary.md`.
-- [ ] T027 [P] [US2] Viết test TRƯỚC trong `tests/unit/studio-prompt.test.ts`: `systemPromptFor` cho 4 loại mới (vi + en) chứa khung `common()` (quy tắc `[n]`,
+- [X] T027 [P] [US2] Viết test TRƯỚC trong `tests/unit/studio-prompt.test.ts`: `systemPromptFor` cho 4 loại mới (vi + en) chứa khung `common()` (quy tắc `[n]`,
       không bịa) + đúng một dòng "Task: …" theo FR-010 (study guide: khái niệm / 5–10 câu hỏi ôn tập kèm đáp án / từ khoá; briefing: bối cảnh / phát hiện / hệ
       quả chỉ khi nguồn nêu / câu hỏi mở; timeline: "mốc — sự kiện", không suy diễn ngày, nhãn "Không rõ thời điểm" / "Undated"; keyTerms: "thuật ngữ — định
       nghĩa", chữ cái, chỉ thuật ngữ được định nghĩa trong nguồn); kind lạ vẫn ném.
-- [ ] T028 [P] [US2] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts` + `tests/unit/studio-map-reduce.test.ts`: mỗi loại mới chạy được đường 1-lượt
+- [X] T028 [P] [US2] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts` (phủ cả map-reduce qua service; `studio-map-reduce.test.ts` không đổi): mỗi loại mới chạy được đường 1-lượt
       và map-reduce (system của lượt cuối là prompt của loại đó), hậu kiểm `[n]`, insert đúng `kind`.
-- [ ] T029 [US2] `src/shared/ipc/types.ts`: `StudioKind` += `"studyGuide" | "briefing" | "timeline" | "keyTerms"`; `src/main/services/studio/constants.ts`:
+- [X] T029 [US2] `src/shared/ipc/types.ts`: `StudioKind` += `"studyGuide" | "briefing" | "timeline" | "keyTerms"`; `src/main/services/studio/constants.ts`:
       `STUDIO_KINDS` = 8 loại theo thứ tự hiển thị (summary, keyPoints, faq, outline, studyGuide, briefing, timeline, keyTerms).
-- [ ] T030 [US2] `src/main/services/studio/prompt.ts`: thêm 4 chỉ dẫn vào `task()` (nhãn mục theo ngôn ngữ đầu ra như `FAQ_LABELS`); `common()` KHÔNG đổi.
+- [X] T030 [US2] `src/main/services/studio/prompt.ts`: thêm 4 chỉ dẫn vào `task()` (nhãn mục theo ngôn ngữ đầu ra như `FAQ_LABELS`); `common()` KHÔNG đổi.
       T027, T028 xanh.
-- [ ] T031 [US2] i18n `studio.kind.{studyGuide,briefing,timeline,keyTerms}` vi (Hướng dẫn học, Bản tóm lược, Dòng thời gian, Bảng thuật ngữ) + en (Study
+- [X] T031 [US2] i18n `studio.kind.{studyGuide,briefing,timeline,keyTerms}` vi (Hướng dẫn học, Bản tóm lược, Dòng thời gian, Bảng thuật ngữ) + en (Study
       guide, Briefing, Timeline, Glossary) trong `src/shared/i18n/domains/studio.ts`; catalog test xanh; kiểm `export-name` dùng nhãn mới.
-- [ ] T032 [US2] Viết test jsdom TRƯỚC `tests/unit/studio-kinds-layout.test.ts`: 8 nút theo thứ tự, mỗi nút tên đọc đúng loại, thứ tự Tab = thứ tự hiển thị,
+- [X] T032 [US2] Viết test jsdom TRƯỚC `tests/unit/studio-kinds-layout.test.ts`: 8 nút theo thứ tự, mỗi nút tên đọc đúng loại, thứ tự Tab = thứ tự hiển thị,
       trạng thái "Đang tạo…" từng nút; rồi sửa `KINDS` trong `src/renderer/features/studio/StudioColumn.tsx` + `studio.css` (lưới 2 cột 2×4, nhãn xuống dòng
       không cắt, không cuộn ngang).
-- [ ] T033 [US2] e2e `tests/e2e/studio-kinds-layout.spec.ts`: cột 262 px + cửa sổ 900 px, vi và en — không tràn (scrollWidth ≤ clientWidth); tạo 1 loại mới với
+- [X] T033 [US2] e2e `tests/e2e/studio-kinds-layout.spec.ts`: cột 262 px + cửa sổ 900 px, vi và en — không tràn (scrollWidth ≤ clientWidth); tạo 1 loại mới với
       Ollama giả ⇒ thẻ kết quả + chip.
 
 ### Cổng review PR 2
 
-- [ ] T034 [US2] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T035 [US2] Gọi **glossary-steward**; append term thiếu.
+- [X] T034 [US2] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T035 [US2] Gọi **glossary-steward**; append term thiếu.
 - [ ] T036 [US2] Test gate (lint, test, build, coverage ≥ 80%) + quickstart dòng PR 2 (gồm kiểm thủ công chất lượng 4 loại trên Ollama thật, vi + en); mở PR 2.
 
 **Checkpoint**: PR 2 merge độc lập — 8 loại có lịch sử phiên bản.

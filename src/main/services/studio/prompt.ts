@@ -16,6 +16,12 @@ const FAQ_LABELS: Record<LanguageCode, { q: string; a: string }> = {
   en: { q: "Q", a: "A" },
 };
 
+/** 178: nhãn mục cho Dòng thời gian (sự kiện không rõ ngày) theo ngôn ngữ đầu ra. */
+const UNDATED_LABEL: Record<LanguageCode, string> = {
+  vi: "Không rõ thời điểm",
+  en: "Undated",
+};
+
 export function outputLanguageLine(lang: LanguageCode): string {
   return `Write in ${OUTPUT_LANGUAGE_NAME[lang]}, clearly and concisely.`;
 }
@@ -48,6 +54,14 @@ function task(kind: StudioKind, lang: LanguageCode): string | undefined {
     faq: `Task: write frequently asked QUESTIONS AND ANSWERS from the document, each pair formatted as '${faq.q}: …' then '${faq.a}: … [n]'.`,
     outline:
       "Task: build a hierarchical OUTLINE of the document (main sections and indented subsections) reflecting its structure.",
+    // 178 (FR-010..FR-012, ADR studio-enhance-2-clarify #2): 4 loại mới — vẫn dùng khung common() (mỗi mục có [n], không bịa).
+    studyGuide:
+      "Task: write a STUDY GUIDE with three parts: key concepts (each explained in 1–2 sentences), 5–10 review questions each followed by a short answer, and a list of keywords.",
+    briefing:
+      "Task: write a one-page BRIEFING for a decision-maker: context, key findings, implications or recommendations (only if the sources state them), and open questions — action-oriented, not a source-by-source summary.",
+    timeline: `Task: build a TIMELINE of events in chronological order, one line per event formatted as 'date or period — event'; take dates only from the passages and never infer or guess dates; group events without a date under a final heading '${UNDATED_LABEL[lang]}'; if the passages contain no dates at all, say so in one sentence citing the passages you checked.`,
+    keyTerms:
+      "Task: build a GLOSSARY of key terms in alphabetical order, one line per term formatted as 'term — definition'; include only terms that the passages define or explain.",
   };
   return byKind[kind];
 }
