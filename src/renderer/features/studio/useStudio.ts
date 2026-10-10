@@ -230,24 +230,14 @@ export function useStudio(notebookId: string) {
   // Không động tới lượt đang tạo của loại (nếu có) — lượt đó xong vẫn chèn bản mới.
   const deleteVersion = useCallback(
     async (kind: StudioKind, id: string): Promise<string | undefined> => {
-      const { deleted } = await window.api.studioDeleteVersion({
-        notebookId,
-        id,
-      });
-      if (notebookRef.current !== notebookId || !deleted) {
-        return currentVersion(versionsRef.current, selectedRef.current, kind)
-          ?.id;
-      }
-      const next = afterDelete(
-        versionsRef.current,
-        selectedRef.current,
-        kind,
-        id,
-      );
-      versionsRef.current = next.versions;
-      selectedRef.current = next.selected;
-      setVersions(next.versions);
-      setSelected(next.selected);
+      // `deleted:false` = bản không còn trong DB (đã bị dọn trần / xoá nơi khác) ⇒ vẫn gỡ khỏi UI, không để "bản ma".
+      await window.api.studioDeleteVersion({ notebookId, id });
+      if (notebookRef.current !== notebookId) return undefined;
+      // Updater dạng hàm: không ghi đè bản vừa chèn bởi một lượt tạo xong xen giữa lúc chờ IPC (review #1).
+      const sel = selectedRef.current;
+      const next = afterDelete(versionsRef.current, sel, kind, id);
+      setVersions((p) => afterDelete(p, sel, kind, id).versions);
+      setSelected((p) => (p[kind] === id ? withoutKind(p, kind) : p));
       return next.nextId;
     },
     [notebookId],

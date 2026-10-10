@@ -113,6 +113,13 @@ export function StudioVersionPicker({
           className="studio-version-confirm"
           role="alertdialog"
           aria-label={t.t("studio.versions.confirmLabel", { kind: kindLabel })}
+          onKeyDown={(e) => {
+            // Esc ⇒ huỷ xác nhận (không xoá), focus về nút xoá.
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              cancelConfirm();
+            }
+          }}
           data-testid={`studio-version-confirm-${kind}`}
         >
           <p>{t.t("studio.versions.confirmBody")}</p>
@@ -130,6 +137,8 @@ export function StudioVersionPicker({
               type="button"
               className="studio-cardbtn"
               onClick={cancelConfirm}
+              // Focus mặc định vào Huỷ (an toàn): Enter lỡ tay không xoá dữ liệu.
+              autoFocus
               data-testid={`studio-version-confirm-cancel-${kind}`}
             >
               {t.t("common.cancel")}
@@ -139,7 +148,6 @@ export function StudioVersionPicker({
               className="studio-cardbtn studio-version-confirm-ok"
               onClick={() => void confirmDelete()}
               disabled={busy}
-              autoFocus
               data-testid={`studio-version-confirm-ok-${kind}`}
             >
               {t.t("common.delete")}

@@ -242,6 +242,37 @@ describe("StudioVersionPicker (178)", () => {
     expect(announced).toEqual([]);
   });
 
+  it("mở xác nhận ⇒ focus vào Huỷ (an toàn); Esc ⇒ đóng, không xoá, focus về nút xoá", () => {
+    const onDelete = vi.fn(async () => undefined);
+    act(() =>
+      root.render(
+        picker({
+          versions: [ver("b", 2), ver("a", 1)],
+          currentId: "b",
+          onDelete,
+        }),
+      ),
+    );
+    act(() =>
+      (
+        q("[data-testid=studio-version-delete-summary]") as HTMLButtonElement
+      ).click(),
+    );
+    expect(document.activeElement).toBe(
+      q("[data-testid=studio-version-confirm-cancel-summary]"),
+    );
+    act(() => {
+      q("[data-testid=studio-version-confirm-summary]")!.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    });
+    expect(q("[data-testid=studio-version-confirm-summary]")).toBeNull();
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(
+      q("[data-testid=studio-version-delete-summary]"),
+    );
+  });
+
   it("English: nhãn và câu xác nhận dịch", () => {
     act(() =>
       root.render(

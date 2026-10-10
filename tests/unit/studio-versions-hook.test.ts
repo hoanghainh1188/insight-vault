@@ -127,11 +127,42 @@ describe("useStudio — phiên bản (178)", () => {
     expect(hook.results.faq).toBeUndefined();
   });
 
-  it("IPC trả deleted:false ⇒ không đổi state", async () => {
+  it("IPC trả deleted:false (bản đã không còn trong DB) ⇒ vẫn gỡ khỏi UI, không để bản ma", async () => {
     studioDeleteVersion.mockResolvedValueOnce({ deleted: false });
     await mount();
     await act(async () => void (await hook.deleteVersion("summary", "s2")));
+    expect(hook.versions.summary?.map((v) => v.id)).toEqual(["s1"]);
+  });
+
+  it("IPC xoá lỗi ⇒ ném cho UI xử lý, state không đổi", async () => {
+    studioDeleteVersion.mockRejectedValueOnce(new Error("ipc"));
+    await mount();
+    let err: unknown;
+    await act(async () => {
+      err = await hook.deleteVersion("summary", "s2").catch((e) => e);
+    });
+    expect(err).toBeInstanceOf(Error);
     expect(hook.versions.summary?.map((v) => v.id)).toEqual(["s2", "s1"]);
+  });
+
+  it("race: lượt tạo xong TRONG LÚC chờ IPC xoá ⇒ bản mới không bị ghi đè mất", async () => {
+    let releaseDelete: (v: { deleted: boolean }) => void = () => undefined;
+    studioDeleteVersion.mockImplementationOnce(
+      () => new Promise((r) => (releaseDelete = r)),
+    );
+    await mount();
+    act(() => void hook.generate("summary"));
+    let pending: Promise<string | undefined> = Promise.resolve(undefined);
+    act(() => {
+      pending = hook.deleteVersion("summary", "s1");
+    });
+    await act(async () => settle[0].ok(ver("s3", 3)));
+    await act(async () => {
+      releaseDelete({ deleted: true });
+      await pending;
+    });
+    expect(hook.versions.summary?.map((v) => v.id)).toEqual(["s3", "s2"]);
+    expect(hook.results.summary?.id).toBe("s3");
   });
 
   it("xoá bản đang xem trong lúc 'Tạo lại' ⇒ lượt vẫn chạy, xong chèn bản mới và chọn nó", async () => {

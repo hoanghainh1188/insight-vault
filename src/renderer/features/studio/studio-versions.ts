@@ -1,13 +1,11 @@
 import type { StudioKind, StudioResult } from "@shared/ipc/types";
+import { STUDIO_MAX_VERSIONS } from "@shared/studio-versions";
 
 // 178 (research R3): phiên bản kết quả Studio ở renderer — hàm THUẦN, không mutate đầu vào (test tất định).
 // versions[kind] = danh sách phiên bản, MỚI NHẤT TRƯỚC; selected[kind] = id đang xem (thiếu ⇒ mới nhất).
 
 export type StudioVersions = Partial<Record<StudioKind, StudioResult[]>>;
 export type StudioSelection = Partial<Record<StudioKind, string>>;
-
-/** Trần phiên bản mỗi loại — khớp STUDIO_MAX_VERSIONS ở main (main là nguồn sự thật; đây chỉ cắt hiển thị). */
-export const MAX_VERSIONS = 10;
 
 /** Gom kết quả `studio:list` theo loại, mới nhất trước (sắp ổn định: createdAt trùng ⇒ giữ thứ tự main trả). */
 export function groupVersions(
@@ -41,7 +39,7 @@ export function withInserted(
   const rest = (versions[result.kind] ?? []).filter((r) => r.id !== result.id);
   return {
     ...versions,
-    [result.kind]: [result, ...rest].slice(0, MAX_VERSIONS),
+    [result.kind]: [result, ...rest].slice(0, STUDIO_MAX_VERSIONS),
   };
 }
 

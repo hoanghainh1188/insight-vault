@@ -22,5 +22,5 @@ export const STUDIO_ALL_KINDS = [
   "custom",
 ] as const;
 
-// 178 (ADR studio-enhance-2-clarify #1): giữ tối đa 10 phiên bản mỗi (notebook, kind); lưu bản thứ 11 ⇒ xoá bản cũ nhất.
-export const STUDIO_MAX_VERSIONS = 10;
+// 178: trần phiên bản dùng chung main + renderer.
+export { STUDIO_MAX_VERSIONS } from "@shared/studio-versions";

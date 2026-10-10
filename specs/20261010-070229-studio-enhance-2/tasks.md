@@ -98,9 +98,9 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 
 - [X] T021 [US1] ADR thực thi ngắn `docs/04-decisions/2026-10-10-studio-versions.md` (migration v11, trần trong giao dịch, `studio:list` trả mọi phiên bản,
       `deleteVersion`, `local` từ main) + append dòng `docs/04-decisions/INDEX.md` bằng script.
-- [ ] T022 [US1] Gọi subagent **code-reviewer** (đối chiếu constitution / spec / plan / tasks phase 1); xử lý mọi Blocking.
-- [ ] T023 [US1] Gọi subagent **glossary-steward**; append term mới thiếu (KHÔNG sửa term cũ).
-- [ ] T024 [US1] Gọi subagent **security-reviewer** (BẮT BUỘC — PR đụng DB: migration v11, IPC mới `deleteVersion`); xử lý mọi Blocking.
+- [X] T022 [US1] Gọi subagent **code-reviewer** (đối chiếu constitution / spec / plan / tasks phase 1); xử lý mọi Blocking.
+- [X] T023 [US1] Gọi subagent **glossary-steward**; append term mới thiếu (KHÔNG sửa term cũ).
+- [X] T024 [US1] Gọi subagent **security-reviewer** (BẮT BUỘC — PR đụng DB: migration v11, IPC mới `deleteVersion`); xử lý mọi Blocking.
 - [ ] T025 [US1] Test gate: `npm run lint && npm run test && npm run build` xanh, coverage ≥ 80%; quickstart dòng PR 1 (gồm dữ liệu v0.2.19 + khôi phục sao
       lưu cũ); mở PR 1.
 

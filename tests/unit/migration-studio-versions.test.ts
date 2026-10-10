@@ -5,6 +5,7 @@ import {
   getUserVersion,
   runMigrations,
 } from "../../src/main/db/migrations";
+import { STUDIO_ALL_KINDS } from "../../src/main/services/studio/constants";
 
 // 178 (research R1, data-model.md): migration #11 dựng lại studio_result — bỏ UNIQUE(notebook_id, kind), CHECK 9 kind,
 // +5 cột NULL (custom_prompt, source_ids_json, parts, truncated, local), index phiên bản. Dữ liệu v10 giữ nguyên.
@@ -157,6 +158,37 @@ describe("migration v11 — studio_result nhiều phiên bản (178)", () => {
       ]),
     );
     expect(names).not.toContain("studio_result_new");
+  });
+
+  it("nguyên tử: lỗi giữa chừng ⇒ ROLLBACK, vẫn v10, bảng cũ (còn UNIQUE) nguyên vẹn", () => {
+    const db = seedV10();
+    // Dòng vi phạm CHECK mới (kind lạ) — chỉ chèn được khi tắt CHECK ⇒ INSERT … SELECT của v11 sẽ lỗi.
+    db.exec("PRAGMA ignore_check_constraints = ON");
+    db.prepare(
+      "INSERT INTO studio_result (id, notebook_id, kind, content, citations_json, created_at, updated_at) VALUES ('bad','nb1','bogus','x','[]',1,1)",
+    ).run();
+    db.exec("PRAGMA ignore_check_constraints = OFF");
+    expect(() => runMigrations(db)).toThrow();
+    expect(getUserVersion(db)).toBe(10);
+    const n = db.prepare("SELECT COUNT(*) AS n FROM studio_result").get() as {
+      n: number;
+    };
+    expect(n.n).toBe(5);
+    expect(() =>
+      db
+        .prepare(
+          "INSERT INTO studio_result (id, notebook_id, kind, content, citations_json, created_at, updated_at) VALUES ('dup','nb1','summary','y','[]',2,2)",
+        )
+        .run(),
+    ).toThrow(); // UNIQUE(notebook_id, kind) của v10 vẫn còn
+  });
+
+  it("CHECK của v11 khớp STUDIO_ALL_KINDS", () => {
+    const db = seedV10();
+    runMigrations(db);
+    for (const k of STUDIO_ALL_KINDS) {
+      expect(() => insertVersion(db, `all-${k}`, k)).not.toThrow();
+    }
   });
 
   it("DB mới tạo từ đầu cũng ở v11 với cùng schema", () => {

@@ -36,7 +36,6 @@ export const studioVi = {
   cancelling: "Đang huỷ…",
   // 178: lịch sử phiên bản trên thẻ kết quả
   versions: {
-    label: "Phiên bản",
     labelAria: "Phiên bản {kind}",
     option: "Bản {n}/{total} · {time}",
     delete: "Xoá phiên bản",
@@ -87,7 +86,6 @@ export const studioEn: Widen<typeof studioVi> = {
   cancelAria: "Cancel creating {kind}",
   cancelling: "Cancelling…",
   versions: {
-    label: "Version",
     labelAria: "{kind} version",
     option: "Version {n}/{total} · {time}",
     delete: "Delete version",
