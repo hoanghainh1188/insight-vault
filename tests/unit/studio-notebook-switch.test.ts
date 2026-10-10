@@ -27,6 +27,7 @@ beforeEach(() => {
     aiGetRuntimeStatus: () => Promise.resolve({ ollamaReady: true }),
     sourceListByNotebook: () => Promise.resolve([]),
     onSourceProgress: () => () => undefined,
+    onStudioStreamToken: () => () => undefined, // 178 PR 4
     onStudioProgress: () => () => undefined, // 146
     studioCancel: () => Promise.resolve({ cancelled: true }), // 149
     studioList: () => Promise.resolve([]),

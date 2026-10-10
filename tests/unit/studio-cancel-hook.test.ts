@@ -49,6 +49,7 @@ beforeEach(() => {
     aiGetRuntimeStatus: () => Promise.resolve({ ollamaReady: true }),
     sourceListByNotebook: () => Promise.resolve([]),
     onSourceProgress: () => () => undefined,
+    onStudioStreamToken: () => () => undefined, // 178 PR 4
     onStudioProgress: (cb: (e: StudioProgressEvent) => void) => {
       push = cb;
       return () => undefined;
@@ -172,7 +173,7 @@ describe("useStudio — huỷ (149)", () => {
     act(() => void hook.generate("summary"));
     await act(async () => settle[0].fail(onlineErr()));
     expect(hook.onlineFailed.summary).toBe(true);
-    act(() => void hook.generate("summary", undefined, "local"));
+    act(() => void hook.generate("summary", { target: "local" }));
     act(() => hook.cancel("summary"));
     await act(async () => settle[1].fail(cancelledErr()));
     expect(hook.errors.summary).toBeUndefined();

@@ -13,6 +13,7 @@ import { postprocessCitations, citationsFromMap } from "../rag/citation";
 import { STUDIO_ALL_KINDS, STUDIO_CONTEXT_BUDGET } from "./constants";
 import { finalUserContent, systemPromptFor } from "./prompt";
 import { parseCustomPrompt } from "./custom-prompt";
+import { resolveSourceScope, STUDIO_MAX_SOURCE_IDS } from "./source-scope";
 import {
   runMapReduce,
   safeProgress,
@@ -26,6 +27,42 @@ import { assertNotAborted, isChatAborted } from "../ai-runtime/abort";
 // Vừa ngân sách ⇒ 1 lượt (chia đều theo nguồn, #65); vượt ⇒ map-reduce với [n] TOÀN CỤC (chip vẫn trỏ đúng đoạn).
 // Hậu kiểm chip (Constitution II) → lưu PHIÊN BẢN mới (178). KHÔNG log nội dung (Constitution III).
 
+/** Tuỳ chọn một lượt chat Studio. `onToken` (178 PR 4) ⇒ provider chạy nhánh STREAM (huỷ ⇒ trả phần dở, không ném). */
+export interface StudioChatOptions {
+  numCtx?: number;
+  signal?: AbortSignal;
+  onToken?: (delta: string) => void;
+}
+
+/** Tuỳ chọn một lượt generate. */
+export interface StudioGenerateOptions {
+  /** 146: tiến độ reading i/N · condensing · writing — không ảnh hưởng kết quả. */
+  onProgress?: OnStudioProgress;
+  /** 149: huỷ lượt — không gọi thêm AI, KHÔNG lưu; ném UserFacingError("studioCancelled"). */
+  signal?: AbortSignal;
+  /** 178 (PR 4, FR-040): nhận delta của CHỈ lượt viết cuối. Thiếu ⇒ không stream (hành vi cũ). */
+  onToken?: (delta: string) => void;
+}
+
+/**
+ * 178 (PR 4): bọc onToken — bỏ delta sau khi huỷ (FR-042, kể cả provider vẫn gọi) và nuốt lỗi callback (stream chỉ là phụ,
+ * không làm hỏng lượt tạo).
+ */
+function guardOnToken(
+  onToken: ((delta: string) => void) | undefined,
+  signal: AbortSignal | undefined,
+): ((delta: string) => void) | undefined {
+  if (!onToken) return undefined;
+  return (delta) => {
+    if (signal?.aborted) return;
+    try {
+      onToken(delta);
+    } catch {
+      // nuốt — cửa sổ đã đóng…
+    }
+  };
+}
+
 export interface StudioServiceDeps {
   /** 123: ngôn ngữ đầu ra mặc định (ngôn ngữ hiệu lực của main) khi input không gửi/không hợp lệ. */
   defaultOutputLanguage?: () => LanguageCode;
@@ -34,10 +71,7 @@ export interface StudioServiceDeps {
   listChunks: (sourceId: string) => Chunk[];
   studioRepo: StudioRepo;
   /** Gọi LLM chat với messages[], trả nội dung (wrap LLMProvider.chat → content). numCtx: cửa sổ Ollama (105). */
-  chat: (
-    messages: ChatMessage[],
-    opts?: { numCtx?: number; signal?: AbortSignal },
-  ) => Promise<string>;
+  chat: (messages: ChatMessage[], opts?: StudioChatOptions) => Promise<string>;
   /**
    * 105: ngân sách ký tự cho phần đoạn nguồn + num_ctx theo model đang dùng. Thiếu ⇒ 16.000 ký tự, không ép num_ctx
    * (hành vi cũ).
@@ -57,7 +91,7 @@ export function createStudioService(deps: StudioServiceDeps) {
    */
   async function generate(
     input: StudioGenerateInput,
-    opts: { onProgress?: OnStudioProgress; signal?: AbortSignal } = {},
+    opts: StudioGenerateOptions = {},
   ): Promise<StudioResult> {
     try {
       return await run(input, opts);
@@ -71,12 +105,9 @@ export function createStudioService(deps: StudioServiceDeps) {
 
   async function run(
     input: StudioGenerateInput,
-    {
-      onProgress,
-      signal,
-    }: { onProgress?: OnStudioProgress; signal?: AbortSignal },
+    { onProgress, signal, onToken }: StudioGenerateOptions,
   ): Promise<StudioResult> {
-    const { notebookId, kind, sourceId } = input;
+    const { notebookId, kind } = input;
     // 123 (FR-018): chỉ nhận vi/en; khác ⇒ ngôn ngữ hiệu lực của main (mặc định vi).
     const outputLanguage: LanguageCode =
       input.outputLanguage === "vi" || input.outputLanguage === "en"
@@ -93,14 +124,27 @@ export function createStudioService(deps: StudioServiceDeps) {
       customPrompt = parsed.text;
     }
 
+    // 178 (PR 4, FR-030..FR-033): phạm vi nguồn kiểm TƯỜNG MINH trước mọi đọc chunk / gọi AI — id không thuộc notebook /
+    // chưa ready / > 50 ⇒ từ chối cả lượt. `sourceIds` thắng `sourceId` (025); rỗng ⇒ toàn bộ nguồn ready.
+    const sources = deps.listSources(notebookId);
+    const scope = resolveSourceScope(input, sources);
+    if (!scope.ok) {
+      throw new UserFacingError(
+        scope.code,
+        scope.code === "studioSourcesInvalid"
+          ? { max: STUDIO_MAX_SOURCE_IDS }
+          : undefined,
+      );
+    }
+    const inScope = scope.ids ? new Set(scope.ids) : null;
+
     // Gom chunk theo NHÓM NGUỒN (mỗi nguồn 1 mảng, chunk theo ordinal). buildBalancedContext chia đều
     // ngân sách cho mọi nguồn (#65) → bản tóm tắt không thiên về 1 tài liệu.
-    // sourceId (025): lọc CHỈ nguồn đó (phải ready + thuộc notebook); bỏ trống → toàn bộ nguồn ready.
     const groups: ScoredChunk[][] = [];
     let totalChunks = 0;
-    for (const src of deps.listSources(notebookId)) {
+    for (const src of sources) {
       if (src.status !== "ready") continue;
-      if (sourceId && src.id !== sourceId) continue;
+      if (inScope && !inScope.has(src.id)) continue;
       const chunks = deps
         .listChunks(src.id)
         .map((chunk) => ({ chunk, sourceTitle: src.title, score: 0 }));
@@ -111,7 +155,7 @@ export function createStudioService(deps: StudioServiceDeps) {
     }
     if (totalChunks === 0) {
       throw new UserFacingError(
-        sourceId ? "studioSourceNotReady" : "studioNoReadySources",
+        scope.ids ? "studioSourceNotReady" : "studioNoReadySources",
       );
     }
 
@@ -128,6 +172,12 @@ export function createStudioService(deps: StudioServiceDeps) {
         : undefined;
     const chat = (messages: ChatMessage[]): Promise<string> =>
       deps.chat(messages, chatOpts);
+    // 178 (PR 4, FR-040): CHỈ lượt viết cuối stream (map / condense dùng `chat`). Không có onToken ⇒ y như `chat`.
+    const streamToken = guardOnToken(onToken, signal);
+    const writeChat = streamToken
+      ? (messages: ChatMessage[]): Promise<string> =>
+          deps.chat(messages, { ...chatOpts, onToken: streamToken })
+      : chat;
 
     // Vừa ngân sách (theo TỔNG độ dài thật — không theo round-robin, vốn nhận chunk đầu mọi nguồn bất chấp ngân
     // sách) ⇒ 1 lượt như cũ. Vượt ⇒ map-reduce (ném nếu runtime chưa sẵn sàng → bubble lên, không bịa).
@@ -138,7 +188,7 @@ export function createStudioService(deps: StudioServiceDeps) {
     let truncated = false;
     if (single.contextText.length <= ctx.budget) {
       safeProgress(onProgress)({ phase: "writing" }); // 146: một lượt ⇒ chỉ pha viết (bất định)
-      raw = await chat([
+      raw = await writeChat([
         { role: "system", content: systemPromptFor(kind, outputLanguage) },
         {
           role: "user",
@@ -160,9 +210,13 @@ export function createStudioService(deps: StudioServiceDeps) {
         onProgress,
         signal,
         customPrompt,
+        writeChat,
       });
       ({ raw, map, parts, truncated } = mr);
     }
+    // 178 (PR 4, FR-042): nhánh stream bị huỷ TRẢ phần dở, KHÔNG ném (đã xác minh Ollama + OpenAI + Anthropic + Gemini) ⇒
+    // chặn NGAY sau lượt viết, TRƯỚC hậu kiểm — lượt đã huỷ không bao giờ được hậu kiểm hay lưu.
+    assertNotAborted(signal);
     const { answer, citations } = postprocessCitations(raw, map);
 
     if (answer.trim() === "") {
@@ -183,6 +237,7 @@ export function createStudioService(deps: StudioServiceDeps) {
       truncated,
       local: input.target === "local",
       ...(customPrompt !== undefined ? { customPrompt } : {}),
+      ...(scope.ids ? { sourceIds: scope.ids } : {}),
     });
   }
 

@@ -36,6 +36,7 @@ beforeEach(() => {
   api = {
     onRagStreamToken: vi.fn(() => () => undefined),
     onSourceProgress: vi.fn(() => () => undefined),
+    onStudioStreamToken: vi.fn(() => () => undefined), // 178 PR 4
     onStudioProgress: vi.fn(() => () => undefined), // 146
     studioCancel: vi.fn(() => Promise.resolve({ cancelled: true })), // 149
     ragStop: vi.fn(() => Promise.resolve({ stopped: true })),
@@ -233,7 +234,7 @@ describe("useStudio — lỗi online", () => {
     expect(describeIpcError(studio.errors.summary!, trVi)).toBe(ONLINE_MSG);
     expect(studio.onlineFailed.summary).toBe(true);
     await act(
-      async () => void (await studio.generate("summary", undefined, "local")),
+      async () => void (await studio.generate("summary", { target: "local" })),
     );
     expect((api.studioGenerate.mock.calls[1] as unknown[])[0]).toMatchObject({
       kind: "summary",

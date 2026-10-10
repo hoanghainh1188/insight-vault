@@ -14,6 +14,7 @@ interface StudioRow {
   content: string;
   citations_json: string;
   custom_prompt: string | null;
+  source_ids_json: string | null;
   parts: number | null;
   truncated: number | null;
   local: number | null;
@@ -37,6 +38,8 @@ export interface StudioVersionInput {
   local?: boolean;
   /** 178 (PR 3): yêu cầu tuỳ chỉnh đã chuẩn hoá (chỉ kind "custom"). */
   customPrompt?: string;
+  /** 178 (PR 4): phạm vi nguồn đã chuẩn hoá (resolveSourceScope); thiếu ⇒ NULL (mọi nguồn ready). */
+  sourceIds?: string[];
 }
 
 export interface StudioRepo {
@@ -63,7 +66,21 @@ function parseCitations(json: string): Citation[] {
   }
 }
 
+/** source_ids_json hỏng / không phải mảng chuỗi ⇒ null (bỏ trường, phiên bản vẫn đọc được). */
+function parseSourceIds(json: string | null): string[] | null {
+  if (json === null) return null;
+  try {
+    const v = JSON.parse(json) as unknown;
+    return Array.isArray(v) && v.every((x) => typeof x === "string")
+      ? (v as string[])
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function toResult(r: StudioRow): StudioResult {
+  const sourceIds = parseSourceIds(r.source_ids_json);
   return {
     id: r.id,
     notebookId: r.notebook_id,
@@ -76,6 +93,7 @@ function toResult(r: StudioRow): StudioResult {
     ...(r.truncated !== null ? { truncated: r.truncated === 1 } : {}),
     ...(r.local !== null ? { local: r.local === 1 } : {}),
     ...(r.custom_prompt !== null ? { customPrompt: r.custom_prompt } : {}),
+    ...(sourceIds ? { sourceIds } : {}),
   };
 }
 
@@ -101,8 +119,8 @@ export function createStudioRepo(db: Db, deps: RepoDeps = {}): StudioRepo {
       try {
         db.prepare(
           `INSERT INTO studio_result
-             (id, notebook_id, kind, content, citations_json, custom_prompt, parts, truncated, local, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, notebook_id, kind, content, citations_json, custom_prompt, source_ids_json, parts, truncated, local, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).run(
           id,
           v.notebookId,
@@ -110,6 +128,7 @@ export function createStudioRepo(db: Db, deps: RepoDeps = {}): StudioRepo {
           v.content,
           JSON.stringify(v.citations),
           v.customPrompt ?? null,
+          v.sourceIds ? JSON.stringify(v.sourceIds) : null,
           v.parts ?? null,
           flag(v.truncated),
           flag(v.local),

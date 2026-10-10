@@ -205,19 +205,19 @@ huỷ giữa stream ⇒ không phiên bản, không token sau huỷ.
 
 ### US4 — Nhiều nguồn
 
-- [ ] T054 [US4] Append glossary bằng script: phạm vi nguồn (`sourceIds`, `source_ids_json`, `resolveSourceScope`), Stream bản viết cuối (`studio:streamToken`,
+- [X] T054 [US4] Append glossary bằng script: phạm vi nguồn (`sourceIds`, `source_ids_json`, `resolveSourceScope`), Stream bản viết cuối (`studio:streamToken`,
       `stripCitationMarkers`) — `docs/00-glossary.md`.
-- [ ] T055 [P] [US4] Viết test TRƯỚC `tests/unit/studio-source-scope.test.ts` cho `resolveSourceScope` (`src/main/services/studio/source-scope.ts`): thiếu cả
+- [X] T055 [P] [US4] Viết test TRƯỚC `tests/unit/studio-source-scope.test.ts` cho `resolveSourceScope` (`src/main/services/studio/source-scope.ts`): thiếu cả
       hai / mảng rỗng ⇒ `ids: null`; `sourceId` đơn hợp lệ ⇒ `[id]`; có cả hai ⇒ dùng `sourceIds`; không phải mảng / phần tử không phải chuỗi / chuỗi rỗng ⇒
       `studioSourcesInvalid`; trùng ⇒ khử trùng (giữ thứ tự); 51 id khác nhau ⇒ `studioSourcesInvalid`; id không thuộc notebook ⇒ `studioSourcesInvalid`; thuộc
       notebook nhưng không `ready` ⇒ `studioSourceNotReady`; không mutate input.
-- [ ] T056 [P] [US4] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: scope lỗi ⇒ reject đúng mã, chat + repo không gọi; scope N nguồn ⇒ chỉ chunk
+- [X] T056 [P] [US4] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: scope lỗi ⇒ reject đúng mã, chat + repo không gọi; scope N nguồn ⇒ chỉ chunk
       của N nguồn vào ngữ cảnh (chia cân bằng), insert `sourceIds` đã chuẩn hoá; `sourceId` cũ vẫn chạy; scope rỗng ⇒ `source_ids_json` NULL.
-- [ ] T057 [US4] Mã `studioSourcesInvalid` (`src/shared/codes/user-error.ts` + vi/en ở `domains/core.ts`); `StudioGenerateInput.sourceIds?`,
+- [X] T057 [US4] Mã `studioSourcesInvalid` (`src/shared/codes/user-error.ts` + vi/en ở `domains/core.ts`); `StudioGenerateInput.sourceIds?`,
       `StudioResult.sourceIds?` (`src/shared/ipc/types.ts`).
-- [ ] T058 [US4] Hiện thực `source-scope.ts` (T055 xanh); dùng trong `studio-service.ts` thay lọc `sourceId` ngầm; `studio-repo.ts` insert/đọc
+- [X] T058 [US4] Hiện thực `source-scope.ts` (T055 xanh); dùng trong `studio-service.ts` thay lọc `sourceId` ngầm; `studio-repo.ts` insert/đọc
       `source_ids_json` (JSON hỏng ⇒ bỏ trường). T056 xanh.
-- [ ] T059 [US4] Viết test jsdom TRƯỚC `tests/unit/studio-scope-picker.test.ts` rồi tạo `src/renderer/features/studio/StudioScopePicker.tsx` (thay `<select>`
+- [X] T059 [US4] Viết test jsdom TRƯỚC `tests/unit/studio-scope-picker.test.ts` rồi tạo `src/renderer/features/studio/StudioScopePicker.tsx` (thay `<select>`
       `studio-scope`): nút disclosure "Phạm vi: Tất cả nguồn / {n} nguồn" (`aria-expanded`, `aria-controls`), danh sách checkbox nguồn ready có nhãn, Esc đóng
       và trả focus; chỉ hiện khi > 1 nguồn ready; i18n `studio.scope.*` vi/en. Sửa `useStudio.ts` (`generate(kind, { sourceIds })`), `StudioColumn.tsx`,
       `StudioResultCard.tsx` (hiện "{n} nguồn" / nguồn đã xoá của phiên bản), `studio.css`. Test jsdom thêm ca: phiên bản có `sourceIds` chứa id
@@ -225,44 +225,44 @@ huỷ giữa stream ⇒ không phiên bản, không token sau huỷ.
 
 ### US5 — Stream lượt viết cuối
 
-- [ ] T060 [P] [US5] Viết test TRƯỚC `tests/unit/studio-citation-strip.test.ts` cho `stripCitationMarkers` (`src/renderer/features/studio/citation-strip.ts`):
+- [X] T060 [P] [US5] Viết test TRƯỚC `tests/unit/studio-citation-strip.test.ts` cho `stripCitationMarkers` (`src/renderer/features/studio/citation-strip.ts`):
       gỡ `[1]`, `[1, 2]`, `[1-3]`, `[12][3]`; giữ `[abc]`, `[ ]` không phải số; gỡ mẩu chưa đóng ở CUỐI (`"…câu [1"`, `"…câu ["`) nhưng không gỡ `[` giữa
       văn bản đã có `]` sau; dọn khoảng trắng thừa trước dấu câu.
-- [ ] T061 [P] [US5] Viết test TRƯỚC `tests/unit/studio-stream.test.ts` (chat giả mô phỏng HỢP ĐỒNG nhánh stream đã xác minh ở research R7: gọi `onToken`, khi
+- [X] T061 [P] [US5] Viết test TRƯỚC `tests/unit/studio-stream.test.ts` (chat giả mô phỏng HỢP ĐỒNG nhánh stream đã xác minh ở research R7: gọi `onToken`, khi
       abort trả phần đã nhận và KHÔNG ném — chạy cùng bộ ca cho 4 nhãn provider ollama / openai / anthropic / gemini): (a) 1-lượt — `onToken` chỉ truyền ở lượt
       viết cuối, delta tới callback theo thứ tự; (b) map-reduce — map / condense KHÔNG nhận `onToken`, lượt cuối nhận; (c) huỷ giữa stream ⇒ reject
       `studioCancelled`, `postprocessCitations` / repo.insert KHÔNG được gọi; (d) không gửi delta sau `signal.aborted`; (e) thiếu `generationId` ⇒ không stream
       (gọi chat không có `onToken`, hành vi không-stream 149 giữ nguyên); (f) có stream ⇒ chuỗi sự kiện tiến độ 146
       (reading i/N → condensing → writing) KHÔNG đổi so với khi không stream.
-- [ ] T062 [P] [US5] Viết test TRƯỚC (bổ sung `tests/unit/online-http-abort.test.ts` / `tests/unit/ollama-client.test.ts`): xác nhận hợp đồng thật — nhánh
+- [X] T062 [P] [US5] Viết test TRƯỚC (bổ sung `tests/unit/online-http-abort.test.ts` / `tests/unit/ollama-client.test.ts`): xác nhận hợp đồng thật — nhánh
       stream (có `onToken`) khi abort trả `{content: phần đã nhận}` và không ném, cho Ollama và `streamLines` dùng bởi 3 provider online (khoá hành vi mà R7 dựa vào). Thêm ca privacy (Constitution I, FR-051):
       stream online ⇒ egress "đang gửi" trong lúc đọc, về nghỉ khi xong VÀ khi abort; Ollama (`egress:false`) không đổi trạng thái egress.
-- [ ] T063 [US5] `src/main/services/studio/studio-service.ts` + `map-reduce.ts`: `deps.chat(messages, { numCtx, signal, onToken })`; truyền `onToken` CHỈ vào
+- [X] T063 [US5] `src/main/services/studio/studio-service.ts` + `map-reduce.ts`: `deps.chat(messages, { numCtx, signal, onToken })`; truyền `onToken` CHỈ vào
       lượt viết cuối (1-lượt và lượt `chat` cuối của `runMapReduce`); gọi `assertNotAborted(signal)` NGAY SAU lượt viết cuối (trước `postprocessCitations`);
       `generate(input, { onProgress, signal, onToken })`. T061 xanh.
-- [ ] T064 [US5] `src/main/index.ts`: `makeStudioService` chuyển `onToken` xuống `pickProvider(target).chat(req, { signal, onToken })`.
-- [ ] T065 [US5] `src/shared/ipc/channels.ts`: `studioStreamToken: "studio:streamToken"` (push, KHÔNG vào `ChannelResponse`); `types.ts`:
+- [X] T064 [US5] `src/main/index.ts`: `makeStudioService` chuyển `onToken` xuống `pickProvider(target).chat(req, { signal, onToken })`.
+- [X] T065 [US5] `src/shared/ipc/channels.ts`: `studioStreamToken: "studio:streamToken"` (push, KHÔNG vào `ChannelResponse`); `types.ts`:
       `StudioStreamTokenEvent { generationId; delta }`; `src/main/ipc/register.ts`: trong `studio:generate`, khi `generationId` hợp lệ tạo `onToken = (delta) =>
 { if (!signal.aborted && !sender.isDestroyed()) sender.send(CHANNELS.studioStreamToken, { generationId, delta }) }` — KHÔNG `getAllWindows`;
       `src/preload/index.ts`: `onStudioStreamToken(cb) → unsubscribe`. Sửa test TRƯỚC `tests/unit/studio-channels-whitelist.test.ts` (kênh mới) và thêm test
       emitter thuần nếu tách hàm (`createStudioTokenEmitter` khuôn `progress-emitter.ts`: id không hợp lệ ⇒ `undefined`; aborted / destroyed ⇒ không send).
-- [ ] T066 [US5] Viết test hook TRƯỚC ở `tests/unit/studio-stream-hook.test.ts` rồi sửa `src/renderer/features/studio/useStudio.ts`: đăng ký `onStudioStreamToken` một lần; lọc `isCurrentGeneration`;
+- [X] T066 [US5] Viết test hook TRƯỚC ở `tests/unit/studio-stream-hook.test.ts` rồi sửa `src/renderer/features/studio/useStudio.ts`: đăng ký `onStudioStreamToken` một lần; lọc `isCurrentGeneration`;
       nối `streamText[kind]`; xong / lỗi / huỷ / đổi notebook ⇒ xoá `streamText[kind]`; token của lượt bị thay bị bỏ.
-- [ ] T067 [US5] Sửa `StudioResultCard.tsx` / `StudioColumn.tsx` + `studio.css`: vùng chữ tạm hiển thị `stripCitationMarkers(streamText)` dạng văn bản thường
+- [X] T067 [US5] Sửa `StudioResultCard.tsx` / `StudioColumn.tsx` + `studio.css`: vùng chữ tạm hiển thị `stripCitationMarkers(streamText)` dạng văn bản thường
       (không markdown, không chip), KHÔNG `aria-live` / `role="status"`; khi "Tạo lại" vùng chữ tạm ở trên, phiên bản đang xem bên dưới; xong ⇒ thay bằng phiên
       bản mới; mốc đọc màn hình giữ như 146/149. Test jsdom: không có chip trong lúc stream, không có node live chứa chữ tạm.
-- [ ] T068 [US5] e2e `tests/e2e/studio-stream.spec.ts` (Ollama giả trả token chậm qua NDJSON): chữ hiện dần, không `[n]`; chữ đầu tiên hiện ≤ 2 s sau khi server giả gửi token đầu tiên của bước viết (SC-006); xong ⇒ chip; Huỷ giữa stream ⇒ chữ tạm
+- [X] T068 [US5] e2e `tests/e2e/studio-stream.spec.ts` (Ollama giả trả token chậm qua NDJSON): chữ hiện dần, không `[n]`; chữ đầu tiên hiện ≤ 2 s sau khi server giả gửi token đầu tiên của bước viết (SC-006); xong ⇒ chip; Huỷ giữa stream ⇒ chữ tạm
       biến mất, không phiên bản mới, server thấy kết nối đóng; mở 2 cửa sổ ⇒ cửa sổ thứ 2 không nhận chữ; chọn 2/4 nguồn ⇒ chip chỉ trỏ 2 nguồn.
 
 ### Cổng review PR 4
 
-- [ ] T069 [US5] ADR thực thi `docs/04-decisions/2026-10-10-studio-stream-scope.md` (kênh chỉ `sender`, `assertNotAborted` sau stream, stream mất timeout
+- [X] T069 [US5] ADR thực thi `docs/04-decisions/2026-10-10-studio-stream-scope.md` (kênh chỉ `sender`, `assertNotAborted` sau stream, stream mất timeout
       không-stream như Chat — giới hạn đã biết, gỡ `[n]` khi stream, `resolveSourceScope`) + INDEX bằng script.
-- [ ] T070 [US5] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T071 [US5] Gọi **glossary-steward**; append term thiếu.
-- [ ] T072 [US5] Gọi **security-reviewer** (BẮT BUỘC): kênh IPC mới + whitelist, phạm vi nhận token (không broadcast), kiểm `sourceIds` (sở hữu, trạng thái,
+- [X] T070 [US5] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T071 [US5] Gọi **glossary-steward**; append term thiếu.
+- [X] T072 [US5] Gọi **security-reviewer** (BẮT BUỘC): kênh IPC mới + whitelist, phạm vi nhận token (không broadcast), kiểm `sourceIds` (sở hữu, trạng thái,
       giới hạn), không lưu khi huỷ, không token sau huỷ, egress dừng khi huỷ (online). Mọi Blocking phải sửa.
-- [ ] T073 [US5] Test gate + quickstart dòng PR 4 (Ollama thật + 1 provider online: stream + huỷ; 2 cửa sổ); mở PR 4.
+- [X] T073 [US5] Test gate + quickstart dòng PR 4 (Ollama thật + 1 provider online: stream + huỷ; 2 cửa sổ); mở PR 4.
 
 **Checkpoint**: PR 4 merge — feature hoàn tất.
 

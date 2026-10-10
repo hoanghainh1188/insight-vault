@@ -310,3 +310,51 @@ describe("studio-repo — yêu cầu tuỳ chỉnh (178, PR 3)", () => {
     expect("customPrompt" in s).toBe(false);
   });
 });
+
+describe("studio-repo — phạm vi nguồn (178 PR 4)", () => {
+  it("insert lưu sourceIds vào source_ids_json và trả lại; không có ⇒ NULL, không trường", () => {
+    const { db, repo } = setup();
+    const a = repo.insert({
+      notebookId: "nb1",
+      kind: "summary",
+      content: "x [1]",
+      citations: cites,
+      sourceIds: ["s2", "s1"],
+    });
+    expect(a.sourceIds).toEqual(["s2", "s1"]);
+    expect(repo.listVersions("nb1", "summary")[0].sourceIds).toEqual([
+      "s2",
+      "s1",
+    ]);
+    const b = repo.insert({
+      notebookId: "nb1",
+      kind: "faq",
+      content: "y [1]",
+      citations: cites,
+    });
+    expect("sourceIds" in b).toBe(false);
+    const raw = db
+      .prepare("SELECT source_ids_json AS j FROM studio_result WHERE id = ?")
+      .get(b.id) as { j: string | null };
+    expect(raw.j).toBeNull();
+  });
+
+  it.each(["{hỏng", '"chuoi"', "[1,2]", '{"a":1}', '["a", 3]'])(
+    "source_ids_json hỏng / sai dạng (%s) ⇒ bỏ trường, vẫn đọc được phiên bản",
+    (bad) => {
+      const { db, repo } = setup();
+      const a = repo.insert({
+        notebookId: "nb1",
+        kind: "summary",
+        content: "x [1]",
+        citations: cites,
+      });
+      db.prepare(
+        "UPDATE studio_result SET source_ids_json = ? WHERE id = ?",
+      ).run(bad, a.id);
+      const v = repo.listVersions("nb1", "summary")[0];
+      expect(v.content).toBe("x [1]");
+      expect("sourceIds" in v).toBe(false);
+    },
+  );
+});

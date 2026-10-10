@@ -236,6 +236,18 @@ const api = {
     ipcRenderer.on(CHANNELS.studioProgress, listener);
     return () => ipcRenderer.removeListener(CHANNELS.studioProgress, listener);
   },
+  /** 178 (PR 4): nhận chữ stream của lượt viết cuối (push từ main, CHỈ cửa sổ đã gọi). Trả hàm huỷ đăng ký. */
+  onStudioStreamToken: (
+    cb: (e: import("@shared/ipc/types").StudioStreamTokenEvent) => void,
+  ): (() => void) => {
+    const listener = (
+      _e: unknown,
+      payload: import("@shared/ipc/types").StudioStreamTokenEvent,
+    ): void => cb(payload);
+    ipcRenderer.on(CHANNELS.studioStreamToken, listener);
+    return () =>
+      ipcRenderer.removeListener(CHANNELS.studioStreamToken, listener);
+  },
   studioExport: (input: StudioExportInput): Promise<StudioExportResult> =>
     ipcRenderer.invoke(CHANNELS.studioExport, input),
   // 059 — gợi ý model theo RAM + health Ollama + trạng thái tái lập chỉ mục.

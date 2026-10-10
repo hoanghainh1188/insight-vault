@@ -50,6 +50,7 @@ beforeEach(() => {
     aiGetRuntimeStatus: () => Promise.resolve({ ollamaReady: true }),
     sourceListByNotebook: () => Promise.resolve([]),
     onSourceProgress: () => () => undefined,
+    onStudioStreamToken: () => () => undefined, // 178 PR 4
     onStudioProgress: () => () => undefined,
     studioList: () => Promise.resolve(stored),
     studioCancel: () => Promise.resolve({ cancelled: true }),
@@ -97,7 +98,7 @@ describe("useStudio — phiên bản (178)", () => {
 
   it("nhãn AI cục bộ đọc từ phiên bản (local), không còn localKinds", async () => {
     await mount();
-    act(() => void hook.generate("summary", undefined, "local"));
+    act(() => void hook.generate("summary", { target: "local" }));
     await act(async () =>
       settle[0].ok(ver("s3", 3, "summary", { local: true })),
     );
@@ -183,5 +184,37 @@ describe("useStudio — phiên bản (178)", () => {
     await mount("B");
     expect(hook.versions.summary?.map((v) => v.id)).toEqual(["b1"]);
     expect(hook.selected.summary).toBeUndefined();
+  });
+});
+
+describe("useStudio — phạm vi nhiều nguồn (178 PR 4)", () => {
+  it("generate(kind, { sourceIds }) ⇒ gửi sourceIds (mảng mới), không gửi sourceId cũ", async () => {
+    await mount();
+    const ids = ["a", "b"];
+    act(() => void hook.generate("summary", { sourceIds: ids }));
+    expect(inputs[0].sourceIds).toEqual(["a", "b"]);
+    expect(inputs[0].sourceIds).not.toBe(ids);
+    expect("sourceId" in inputs[0]).toBe(false);
+  });
+
+  it("sourceIds rỗng / thiếu ⇒ không gửi trường (mọi nguồn ready)", async () => {
+    await mount();
+    act(() => void hook.generate("summary", { sourceIds: [] }));
+    act(() => void hook.generate("faq"));
+    expect("sourceIds" in inputs[0]).toBe(false);
+    expect("sourceIds" in inputs[1]).toBe(false);
+  });
+
+  it("sources = MỌI nguồn của notebook; readySources chỉ nguồn ready", async () => {
+    (
+      window as unknown as { api: { sourceListByNotebook: unknown } }
+    ).api.sourceListByNotebook = () =>
+      Promise.resolve([
+        { id: "a", status: "ready", title: "A" },
+        { id: "p", status: "processing", title: "P" },
+      ]);
+    await mount();
+    expect(hook.sources.map((s) => s.id)).toEqual(["a", "p"]);
+    expect(hook.readySources.map((s) => s.id)).toEqual(["a"]);
   });
 });

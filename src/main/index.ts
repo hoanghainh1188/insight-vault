@@ -492,11 +492,17 @@ app
         listChunks: (sid) => ingestion.sourceRepo.listChunks(sid),
         studioRepo: createStudioRepo(db),
         // 149: signal huỷ đi xuống provider (nhánh không-stream huỷ được fetch, ném ChatAbortedError ≠ timeout).
+        // 178 (PR 4): onToken (chỉ lượt viết cuối) ⇒ nhánh STREAM của provider — huỷ trả phần dở, KHÔNG ném (service tự chặn).
         chat: async (messages, o) =>
           (
             await pickProvider(target).chat(
               { messages, numCtx: o?.numCtx },
-              o?.signal ? { signal: o.signal } : undefined,
+              o?.signal || o?.onToken
+                ? {
+                    ...(o.signal ? { signal: o.signal } : {}),
+                    ...(o.onToken ? { onToken: o.onToken } : {}),
+                  }
+                : undefined,
             )
           ).content,
         // 105: ngân sách + num_ctx theo cửa sổ ngữ cảnh của model đang dùng (ADR studio-large-clarify).

@@ -457,6 +457,8 @@ export interface StudioResult {
   local?: boolean;
   /** 178 (PR 3): yêu cầu tuỳ chỉnh đã chuẩn hoá — chỉ có ở kind "custom". Hiển thị dạng văn bản thường. */
   customPrompt?: string;
+  /** 178 (PR 4): phạm vi nguồn đã chuẩn hoá của phiên bản; thiếu = mọi nguồn ready lúc tạo (hoặc dòng cũ). */
+  sourceIds?: string[];
 }
 
 /** 178: xoá một phiên bản Studio — main chỉ xoá khi `id` thuộc `notebookId`. */
@@ -470,6 +472,8 @@ export interface StudioGenerateInput {
   notebookId: string;
   kind: StudioKind;
   sourceId?: string; // 025: lọc theo 1 nguồn; bỏ trống = toàn bộ nguồn ready
+  /** 178 (PR 4): nhiều nguồn (thắng `sourceId`); main kiểm thuộc notebook + ready, ≤ 50; rỗng = mọi nguồn ready. */
+  sourceIds?: string[];
   /** 178 (PR 3): bắt buộc khi kind = "custom" (main kiểm ≤ 500 code point); loại khác ⇒ bỏ qua. */
   customPrompt?: string;
   target?: AiTarget; // 098: "local" = tạo bằng Ollama sau lỗi online
@@ -492,6 +496,15 @@ export interface StudioProgressEvent {
   index?: number;
   /** Số phần thực chạy (= `parts`). */
   total?: number;
+}
+
+/**
+ * 178 (PR 4): sự kiện push `studio:streamToken` — một mẩu chữ của LƯỢT VIẾT CUỐI, chỉ gửi về cửa sổ đã gọi studio:generate.
+ * KHÔNG mang notebookId / kind / nội dung nguồn / yêu cầu tuỳ chỉnh. Renderer lọc theo generationId hiện hành.
+ */
+export interface StudioStreamTokenEvent {
+  generationId: string;
+  delta: string;
 }
 
 /** Input xuất kết quả Studio ra tệp .md (025). */

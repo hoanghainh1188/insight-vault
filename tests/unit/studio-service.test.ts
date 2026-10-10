@@ -184,7 +184,7 @@ describe("studio-service — ngân sách theo model", () => {
         kind: "summary",
         sourceId: "khong-co",
       }),
-    ).rejects.toThrow(/studioSourceNotReady|studioNoReadySources/);
+    ).rejects.toThrow(/studioSourcesInvalid/); // 178 (PR 4): id không thuộc notebook ⇒ từ chối cả lượt
   });
 });
 
@@ -637,5 +637,119 @@ describe("178: studio-service — yêu cầu tuỳ chỉnh", () => {
     });
     expect(JSON.stringify(m.calls)).not.toContain(REQ);
     expect(m.insert.mock.calls[0][0]).not.toHaveProperty("customPrompt");
+  });
+});
+
+describe("178 (PR 4): studio-service — phạm vi nhiều nguồn", () => {
+  function make(sources: Source[] = [src("A"), src("B"), src("C")]) {
+    const calls: ChatMessage[][] = [];
+    const insert = vi.fn((v: Record<string, unknown>) => ({
+      id: "r1",
+      createdAt: 1,
+      ...v,
+    }));
+    const listChunks = vi.fn((id: string) => chunks(id, 2));
+    const chat = vi.fn(async (messages: ChatMessage[]) => {
+      calls.push(messages);
+      const ns = [...messages[1].content.matchAll(/\[(\d+)\]/g)].map((m) =>
+        Number(m[1]),
+      );
+      return `Kết quả ${ns.map((n) => `[${n}]`).join(" ")}.`;
+    });
+    const svc = createStudioService({
+      listSources: () => sources,
+      listChunks,
+      studioRepo: { insert, listByNotebook: () => [] } as never,
+      chat,
+      contextInfo: async () => ({ budget: 50_000, numCtx: null }),
+    });
+    return { svc, insert, chat, calls, listChunks };
+  }
+
+  it.each([
+    ["không phải mảng", "A", "studioSourcesInvalid"],
+    ["id lạ", ["A", "ZZ"], "studioSourcesInvalid"],
+    [
+      "51 id",
+      Array.from({ length: 51 }, (_, i) => `X${i}`),
+      "studioSourcesInvalid",
+    ],
+  ])(
+    "scope lỗi (%s) ⇒ reject đúng mã; chat + repo không gọi",
+    async (_l, sourceIds, code) => {
+      const { svc, insert, chat } = make();
+      await expect(
+        svc.generate({
+          notebookId: "nb1",
+          kind: "summary",
+          sourceIds: sourceIds as never,
+        }),
+      ).rejects.toMatchObject({ code });
+      expect(chat).not.toHaveBeenCalled();
+      expect(insert).not.toHaveBeenCalled();
+    },
+  );
+
+  it("id thuộc notebook nhưng chưa ready ⇒ studioSourceNotReady, không gọi AI", async () => {
+    const { svc, chat, insert } = make([
+      src("A"),
+      { ...src("P"), status: "processing" } as Source,
+    ]);
+    await expect(
+      svc.generate({
+        notebookId: "nb1",
+        kind: "summary",
+        sourceIds: ["A", "P"],
+      }),
+    ).rejects.toMatchObject({ code: "studioSourceNotReady" });
+    expect(chat).not.toHaveBeenCalled();
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("N nguồn ⇒ chỉ chunk của N nguồn vào ngữ cảnh; insert sourceIds đã chuẩn hoá", async () => {
+    const { svc, calls, insert, listChunks } = make();
+    const r = await svc.generate({
+      notebookId: "nb1",
+      kind: "summary",
+      sourceIds: ["C", "A", "C"],
+    });
+    const user = calls[0][1].content;
+    expect(user).toContain("Tài liệu A");
+    expect(user).toContain("Tài liệu C");
+    expect(user).not.toContain("Tài liệu B");
+    expect(listChunks.mock.calls.map((c) => c[0]).sort()).toEqual(["A", "C"]);
+    expect(insert.mock.calls[0][0]).toMatchObject({ sourceIds: ["C", "A"] });
+    expect(
+      r.citations.every(
+        (c) => c.chunkId.startsWith("A") || c.chunkId.startsWith("C"),
+      ),
+    ).toBe(true);
+  });
+
+  it("sourceIds thắng sourceId", async () => {
+    const { svc, calls } = make();
+    await svc.generate({
+      notebookId: "nb1",
+      kind: "summary",
+      sourceId: "A",
+      sourceIds: ["B"],
+    });
+    expect(calls[0][1].content).toContain("Tài liệu B");
+    expect(calls[0][1].content).not.toContain("Tài liệu A");
+  });
+
+  it("sourceId cũ vẫn chạy (lưu [id])", async () => {
+    const { svc, calls, insert } = make();
+    await svc.generate({ notebookId: "nb1", kind: "summary", sourceId: "B" });
+    expect(calls[0][1].content).toContain("Tài liệu B");
+    expect(calls[0][1].content).not.toContain("Tài liệu A");
+    expect(insert.mock.calls[0][0]).toMatchObject({ sourceIds: ["B"] });
+  });
+
+  it("scope rỗng ⇒ mọi nguồn ready; không truyền sourceIds xuống repo (NULL)", async () => {
+    const { svc, insert, calls } = make();
+    await svc.generate({ notebookId: "nb1", kind: "summary", sourceIds: [] });
+    expect(calls[0][1].content).toContain("Tài liệu B");
+    expect(insert.mock.calls[0][0]).not.toHaveProperty("sourceIds");
   });
 });

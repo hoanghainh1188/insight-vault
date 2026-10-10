@@ -35,6 +35,7 @@ beforeEach(() => {
     aiGetRuntimeStatus: () => Promise.resolve({ ollamaReady: true }),
     sourceListByNotebook: () => Promise.resolve([]),
     onSourceProgress: () => () => undefined,
+    onStudioStreamToken: () => () => undefined, // 178 PR 4
     onStudioProgress: (cb: (e: StudioProgressEvent) => void) => {
       push = cb;
       return () => undefined;
@@ -167,7 +168,7 @@ describe("useStudio — tiến độ (146)", () => {
     act(() => void hook.generate("summary"));
     const online = inputs[0].generationId!;
     await act(async () => settle[0].fail(new Error("online lỗi")));
-    act(() => void hook.generate("summary", undefined, "local"));
+    act(() => void hook.generate("summary", { target: "local" }));
     expect(inputs[1].target).toBe("local");
     const local = inputs[1].generationId!;
     expect(local).not.toBe(online);

@@ -114,6 +114,7 @@ export const CHANNELS = {
   studioGenerate: "studio:generate",
   studioList: "studio:list",
   studioProgress: "studio:progress", // 146: event push main→renderer (KHÔNG vào ChannelResponse)
+  studioStreamToken: "studio:streamToken", // 178 PR 4: push CHỈ về sender của lượt (KHÔNG vào ChannelResponse)
   studioCancel: "studio:cancel", // 149: huỷ lượt tạo theo generationId
   studioDeleteVersion: "studio:deleteVersion", // 178: xoá một phiên bản kết quả
   // studio export (025) — xuất kết quả ra tệp .md
