@@ -430,8 +430,16 @@ export interface SourceContent {
 
 // ===== studio (021) — nguồn: specs/.../studio/data-model.md =====
 
-/** 4 loại bản tổng hợp Studio (khác nhau ở system prompt). */
-export type StudioKind = "summary" | "keyPoints" | "faq" | "outline";
+/** Loại bản tổng hợp Studio (khác nhau ở system prompt). 178: + 4 loại mới (PR 2). */
+export type StudioKind =
+  | "summary"
+  | "keyPoints"
+  | "faq"
+  | "outline"
+  | "studyGuide"
+  | "briefing"
+  | "timeline"
+  | "keyTerms";
 
 /** Kết quả tổng hợp Studio = một PHIÊN BẢN (178) — content dạng text kèm chip [n]; citations đã hậu kiểm (Constitution II). */
 export interface StudioResult {

@@ -425,3 +425,68 @@ describe("178: studio-service — phiên bản", () => {
     expect(m.deleteVersion).toHaveBeenCalledTimes(1);
   });
 });
+
+// 178 (FR-013): 4 loại mới chạy qua đường 1-lượt và map-reduce như loại cũ — lượt viết dùng prompt của loại, hậu kiểm [n],
+// lưu đúng kind.
+import { systemPromptFor } from "../../src/main/services/studio/prompt";
+
+describe("178: studio-service — 4 loại mới", () => {
+  const NEW = ["studyGuide", "briefing", "timeline", "keyTerms"] as const;
+
+  function make(perSource: number, budget: number) {
+    const systems: string[] = [];
+    const insert = vi.fn((v: Record<string, unknown>) => ({
+      id: "v",
+      createdAt: 1,
+      ...v,
+    }));
+    const svc = createStudioService({
+      listSources: () => [src("A"), src("B")],
+      listChunks: (id) => chunks(id, perSource),
+      studioRepo: { insert, listByNotebook: () => [] } as never,
+      chat: async (m: ChatMessage[]) => {
+        systems.push(m[0].content);
+        const ns = [...m[1].content.matchAll(/\[(\d+)\]/g)].map((x) =>
+          Number(x[1]),
+        );
+        return m[0].content.startsWith("Extract NOTES")
+          ? `- ý [${ns[0]}]`
+          : `Mục ${ns.map((n) => `[${n}]`).join(" ")}.`;
+      },
+      contextInfo: async () => ({ budget, numCtx: null }),
+    });
+    return { svc, systems, insert };
+  }
+
+  it.each(NEW)(
+    "%s — 1 lượt: system = prompt của loại; lưu đúng kind + chip",
+    async (kind) => {
+      const m = make(2, 50_000);
+      const r = await m.svc.generate({
+        notebookId: "nb1",
+        kind,
+        outputLanguage: "en",
+      });
+      expect(m.systems).toEqual([systemPromptFor(kind, "en")]);
+      expect(m.insert.mock.calls[0][0]).toMatchObject({ kind, parts: 1 });
+      expect(r.citations.length).toBeGreaterThan(0);
+    },
+  );
+
+  it.each(NEW)(
+    "%s — map-reduce: lượt cuối dùng prompt của loại",
+    async (kind) => {
+      const m = make(6, 1000);
+      const r = await m.svc.generate({
+        notebookId: "nb1",
+        kind,
+        outputLanguage: "vi",
+      });
+      expect(m.systems.at(-1)!.startsWith(systemPromptFor(kind, "vi"))).toBe(
+        true,
+      );
+      expect(r.parts).toBeGreaterThan(1);
+      expect(m.insert.mock.calls[0][0]).toMatchObject({ kind });
+    },
+  );
+});

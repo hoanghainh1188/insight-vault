@@ -53,3 +53,61 @@ describe("123 quickstart: nhắc lại ngôn ngữ đầu ra ở CUỐI (nguồn
     expect(languageReminder("vi")).toMatch(/Vietnamese/);
   });
 });
+
+// 178 (FR-010..FR-012): 4 loại mới dùng chung khung common() (ép [n], không bịa) + đúng một dòng "Task: …" theo định nghĩa.
+describe("178: studio prompt — 4 loại mới", () => {
+  const NEW: StudioKind[] = ["studyGuide", "briefing", "timeline", "keyTerms"];
+  const taskLines = (p: string): string[] =>
+    p.split("\n").filter((l) => l.startsWith("Task:"));
+
+  it("mỗi loại mới giữ khung chung + nhắc ngôn ngữ ở cuối; đúng một dòng Task", () => {
+    for (const kind of NEW) {
+      for (const lang of ["vi", "en"] as const) {
+        const p = systemPromptFor(kind, lang);
+        expect(p).toContain("REQUIRED");
+        expect(p).toMatch(/NEVER make anything up/);
+        expect(p).toContain("ALL");
+        expect(taskLines(p)).toHaveLength(1);
+        expect(p.split("\n").at(-1)).toBe(languageReminder(lang));
+      }
+    }
+    const all = new Set(
+      [...KINDS, ...NEW].map((k) => systemPromptFor(k, "en")),
+    );
+    expect(all.size).toBe(8);
+  });
+
+  it("studyGuide: khái niệm chính, 5–10 câu hỏi ôn tập kèm đáp án, từ khoá", () => {
+    const t = taskLines(systemPromptFor("studyGuide", "en"))[0];
+    expect(t).toContain("STUDY GUIDE");
+    expect(t).toMatch(/key concepts/i);
+    expect(t).toMatch(/5.10 review questions/i);
+    expect(t).toMatch(/answer/i);
+    expect(t).toMatch(/keywords/i);
+  });
+
+  it("briefing: bối cảnh, phát hiện, hệ quả chỉ khi nguồn nêu, câu hỏi mở", () => {
+    const t = taskLines(systemPromptFor("briefing", "en"))[0];
+    expect(t).toContain("BRIEFING");
+    expect(t).toMatch(/context/i);
+    expect(t).toMatch(/key findings/i);
+    expect(t).toMatch(/only if the sources state/i);
+    expect(t).toMatch(/open questions/i);
+  });
+
+  it("timeline: mốc — sự kiện theo thời gian, không suy diễn ngày, nhãn mục không rõ ngày theo ngôn ngữ", () => {
+    const en = taskLines(systemPromptFor("timeline", "en"))[0];
+    expect(en).toContain("TIMELINE");
+    expect(en).toMatch(/chronological/i);
+    expect(en).toMatch(/never infer or guess dates/i);
+    expect(en).toContain("'Undated'");
+    expect(systemPromptFor("timeline", "vi")).toContain("'Không rõ thời điểm'");
+  });
+
+  it("keyTerms: thuật ngữ — định nghĩa, chữ cái, chỉ thuật ngữ được định nghĩa trong nguồn", () => {
+    const t = taskLines(systemPromptFor("keyTerms", "en"))[0];
+    expect(t).toContain("GLOSSARY");
+    expect(t).toMatch(/alphabetical/i);
+    expect(t).toMatch(/only terms that the passages define or explain/i);
+  });
+});

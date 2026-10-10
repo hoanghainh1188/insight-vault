@@ -17,11 +17,21 @@ import { useT } from "../../shared/i18n/i18n-context";
 import { describeIpcError } from "../../shared/i18n/describe-error";
 import "./studio.css";
 
-// Cột Studio (prototype S2, cột 3). 4 nút "Tạo nhanh" → sinh bản tổng hợp toàn notebook. Nút vô hiệu khi
+// Cột Studio (prototype S2, cột 3). Nút "Tạo nhanh" (178: 8 loại, lưới 2×4) → sinh bản tổng hợp toàn notebook. Nút vô hiệu khi
 // chưa có nguồn ready hoặc model chưa sẵn sàng (FR-010/011). Kết quả hiển thị card + chip [n] (kiểm chứng).
 
 // 123: nhãn loại lấy từ MỘT chỗ — khoá `studio.kind.<kind>` (dịch lúc render).
-const KINDS: readonly StudioKind[] = ["summary", "keyPoints", "faq", "outline"];
+// 178 (FR-014): thứ tự hiển thị = thứ tự Tab — 4 loại cũ rồi 4 loại mới.
+const KINDS: readonly StudioKind[] = [
+  "summary",
+  "keyPoints",
+  "faq",
+  "outline",
+  "studyGuide",
+  "briefing",
+  "timeline",
+  "keyTerms",
+];
 
 interface StudioColumnProps {
   notebookId: string;
