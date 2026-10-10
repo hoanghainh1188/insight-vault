@@ -209,6 +209,11 @@ export interface MapReduceInput {
   signal?: AbortSignal;
   /** 178 (PR 3): yêu cầu tuỳ chỉnh đã chuẩn hoá — CHỈ lượt viết cuối nhận (khối <request> ở tin user); map / condense trung lập. */
   customPrompt?: string;
+  /**
+   * 178 (PR 4, FR-040): chat cho LƯỢT VIẾT CUỐI (stream). Thiếu ⇒ dùng `chat`. Map / condense luôn dùng `chat` (không stream).
+   * Nhánh stream bị huỷ TRẢ phần dở, KHÔNG ném ⇒ ngay sau lượt này phải `assertNotAborted`.
+   */
+  writeChat?: Chat;
 }
 
 export interface MapReduceOutput {
@@ -232,6 +237,7 @@ export async function runMapReduce({
   onProgress,
   signal,
   customPrompt,
+  writeChat = chat,
 }: MapReduceInput): Promise<MapReduceOutput> {
   // 149: không phát tiến độ sau khi đã huỷ.
   const report = safeProgress(onProgress);
@@ -293,7 +299,7 @@ export async function runMapReduce({
 
   assertNotAborted(signal); // 149: trước bước viết
   progress({ phase: "writing" });
-  const raw = await chat([
+  const raw = await writeChat([
     {
       role: "system",
       content: `${systemPromptFor(kind, outputLanguage)}\n\n${FROM_NOTES}`,
@@ -303,6 +309,8 @@ export async function runMapReduce({
       content: finalUserContent(kind, customPrompt, finalInput, outputLanguage),
     },
   ]);
+  // 178 (PR 4): lượt viết có thể là stream — bị huỷ thì TRẢ phần dở (không ném) ⇒ chặn ngay, không trả kết quả dở.
+  assertNotAborted(signal);
 
   return {
     raw,

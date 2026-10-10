@@ -33,6 +33,11 @@ describe("studio IPC whitelist", () => {
     expect(isWhitelisted("studio:deleteVersion")).toBe(true);
   });
 
+  it("178 PR 4: studio:streamToken (push main→renderer) whitelisted", () => {
+    expect(CHANNELS.studioStreamToken).toBe("studio:streamToken");
+    expect(isWhitelisted("studio:streamToken")).toBe(true);
+  });
+
   it("kênh studio:* ngoài danh sách bị từ chối", () => {
     expect(isWhitelisted("studio:rawChunks")).toBe(false);
     expect(isWhitelisted("studio:delete")).toBe(false);

@@ -37,6 +37,7 @@ import {
   type StudioSelection,
   type StudioVersions,
 } from "./studio-versions";
+import { applyStreamToken, type StudioStreamMap } from "./studio-stream";
 
 // Hook cột Studio: nạp kết quả đã lưu khi mở notebook (studio:list) + sinh mới theo loại (studio:generate).
 // State theo TỪNG loại (versions/loading/error) để các nút độc lập (US2). Đổi notebook → nạp lại.
@@ -46,6 +47,26 @@ export type StudioResultMap = Partial<Record<StudioKind, StudioResult>>;
 export type StudioFlagMap = Partial<Record<StudioKind, boolean>>;
 // 123: lưu lỗi dạng ParsedIpcError (mã) — dịch lúc render bằng describeIpcError.
 export type StudioErrorMap = Partial<Record<StudioKind, ParsedIpcError>>;
+
+/** Tuỳ chọn một lượt tạo. */
+export interface StudioGenerateOptions {
+  /** 178 (PR 4): phạm vi nhiều nguồn; rỗng / thiếu = mọi nguồn ready (main kiểm lại). */
+  sourceIds?: readonly string[];
+  /** 098: "local" = tạo bằng Ollama sau lỗi online (người dùng bấm). */
+  target?: AiTarget;
+  /** 178 (PR 3): yêu cầu tuỳ chỉnh — chỉ gửi khi kind "custom" (main kiểm lại). */
+  customPrompt?: string;
+}
+
+/** Bản sao Set không có `kind` (không mutate). */
+function withoutFromSet(
+  set: ReadonlySet<StudioKind>,
+  kind: StudioKind,
+): Set<StudioKind> {
+  const next = new Set(set);
+  next.delete(kind);
+  return next;
+}
 
 export function useStudio(notebookId: string) {
   // 123 (FR-018): Studio tạo nội dung theo ngôn ngữ giao diện TẠI THỜI ĐIỂM bấm tạo.
@@ -77,7 +98,12 @@ export function useStudio(notebookId: string) {
   const ollamaReady: boolean | null = runtime.status
     ? runtime.status.ollamaReady
     : null;
-  const [readySources, setReadySources] = useState<Source[]>([]);
+  // 178 (PR 4): MỌI nguồn của notebook (nhận biết "nguồn đã xoá" trong phạm vi phiên bản) + nguồn ready (bộ chọn phạm vi).
+  const [sources, setSources] = useState<Source[]>([]);
+  const readySources = useMemo(
+    () => sources.filter((s) => s.status === "ready"),
+    [sources],
+  );
   const hasReadySources = readySources.length > 0;
   // 091 (review S3): notebook hiện tại (lọc sự kiện tiến độ). 149: "lượt cũ về muộn" xét theo generationId (isCurrentGeneration).
   const notebookRef = useRef(notebookId);
@@ -90,6 +116,9 @@ export function useStudio(notebookId: string) {
   // 146: tiến độ theo loại + generationId của lượt đang chạy (sự kiện lượt khác / notebook khác bị bỏ).
   const [progress, setProgress] = useState<StudioProgressMap>({});
   const activeIds = useRef<ActiveGenerationIds>({});
+  // 178 (PR 4): chữ tạm của lượt viết cuối theo loại (thô — UI gỡ [n]); loại vừa bấm Huỷ ⇒ chặn token tới muộn.
+  const [streamText, setStreamText] = useState<StudioStreamMap>({});
+  const streamBlocked = useRef<Set<StudioKind>>(new Set());
 
   useEffect(() => {
     const off = window.api.onStudioProgress((e) =>
@@ -100,13 +129,23 @@ export function useStudio(notebookId: string) {
     return off;
   }, []);
 
+  // 178 (PR 4): đăng ký MỘT lần; chỉ token của lượt hiện hành (activeIds) được nối.
+  useEffect(() => {
+    const off = window.api.onStudioStreamToken((e) => {
+      const active = activeIds.current;
+      const blocked = streamBlocked.current;
+      setStreamText((m) => applyStreamToken(m, active, e, blocked));
+    });
+    return off;
+  }, []);
+
   // Trạng thái sẵn sàng (mirror useChat): model + danh sách nguồn ready (cho dropdown lọc — US2).
   const refreshReadiness = useCallback(() => {
     runtimeStatusStore.refresh();
     window.api
       .sourceListByNotebook(notebookId)
-      .then((list) => setReadySources(list.filter((s) => s.status === "ready")))
-      .catch(() => setReadySources([]));
+      .then((list) => setSources(list))
+      .catch(() => setSources([]));
   }, [notebookId]);
 
   useEffect(() => refreshReadiness(), [refreshReadiness]);
@@ -124,7 +163,11 @@ export function useStudio(notebookId: string) {
     let cancelled = false;
     notebookRef.current = notebookId;
     activeIds.current = {};
+    streamBlocked.current = new Set();
+    // Review: không giữ nguồn của notebook cũ trong lúc chờ danh sách mới.
+    setSources([]);
     setProgress({});
+    setStreamText({});
     setVersions({});
     setSelected({});
     setErrors({});
@@ -157,13 +200,9 @@ export function useStudio(notebookId: string) {
 
   const generate = useCallback(
     // 091 + 149: kết cục để tầng UI báo trình đọc màn hình — "done" | "failed" (lỗi ở errors[kind]) | "cancelled" | "stale".
-    // 098: target "local" = tạo bằng Ollama sau lỗi online (người dùng bấm).
     async (
       kind: StudioKind,
-      sourceId?: string,
-      target?: AiTarget,
-      // 178 (PR 3): yêu cầu tuỳ chỉnh — chỉ gửi khi kind "custom" (main kiểm lại).
-      customPrompt?: string,
+      { sourceIds, target, customPrompt }: StudioGenerateOptions = {},
     ): Promise<StudioGenerateOutcome> => {
       const local = target === "local";
       // 146: mỗi lần bấm Tạo/Tạo lại/Tạo bằng AI cục bộ = một lượt mới ⇒ id mới; sự kiện của lượt trước bị bỏ.
@@ -172,7 +211,9 @@ export function useStudio(notebookId: string) {
       const current = (): boolean =>
         isCurrentGeneration(activeIds.current, kind, generationId);
       activeIds.current = { ...activeIds.current, [kind]: generationId };
+      streamBlocked.current = withoutFromSet(streamBlocked.current, kind);
       setProgress((p) => withoutKind(p, kind));
+      setStreamText((m) => withoutKind(m, kind));
       setLoading((p) => ({ ...p, [kind]: true }));
       setErrors((p) => ({ ...p, [kind]: undefined }));
       setOnlineFailed((p) => ({ ...p, [kind]: false }));
@@ -181,7 +222,9 @@ export function useStudio(notebookId: string) {
         const res = await window.api.studioGenerate({
           notebookId,
           kind,
-          sourceId,
+          ...(sourceIds && sourceIds.length > 0
+            ? { sourceIds: [...sourceIds] }
+            : {}),
           ...(kind === "custom" && customPrompt !== undefined
             ? { customPrompt }
             : {}),
@@ -209,8 +252,11 @@ export function useStudio(notebookId: string) {
         // 146 + 149: xong / lỗi / huỷ ⇒ về nghỉ — chỉ khi vẫn là lượt hiện hành của loại này.
         if (current()) {
           activeIds.current = withoutKind(activeIds.current, kind);
+          streamBlocked.current = withoutFromSet(streamBlocked.current, kind);
           setLoading((p) => ({ ...p, [kind]: false }));
           setProgress((p) => withoutKind(p, kind));
+          // 178 (PR 4): xong ⇒ phiên bản hậu kiểm thay chữ tạm; lỗi / huỷ ⇒ bỏ hết chữ tạm.
+          setStreamText((m) => withoutKind(m, kind));
           setCancelling((p) => withoutKind(p, kind));
         }
       }
@@ -223,6 +269,9 @@ export function useStudio(notebookId: string) {
     const id = activeIds.current[kind];
     if (!id) return;
     setCancelling((p) => ({ ...p, [kind]: true }));
+    // 178 (PR 4, clarify #5): huỷ ⇒ bỏ chữ tạm ngay; token tới muộn (trước khi main dừng) bị chặn.
+    streamBlocked.current = new Set(streamBlocked.current).add(kind);
+    setStreamText((m) => withoutKind(m, kind));
     void window.api.studioCancel(id, "user").catch(() => undefined);
   }, []);
 
@@ -258,12 +307,14 @@ export function useStudio(notebookId: string) {
     errors,
     onlineFailed,
     progress,
+    streamText,
     cancelling,
     generate,
     cancel,
     ollamaReady,
     hasReadySources,
     readySources,
+    sources,
   };
 }
 

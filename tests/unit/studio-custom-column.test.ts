@@ -45,6 +45,7 @@ async function mount(
         { id: "s1", notebookId: "nb1", status: "ready", title: "A" },
       ]),
     onSourceProgress: () => () => undefined,
+    onStudioStreamToken: () => () => undefined, // 178 PR 4
     onStudioProgress: () => () => undefined,
     studioList: () => Promise.resolve(existing),
     studioCancel: () => Promise.resolve({ cancelled: true }),

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { AiTarget, Citation, StudioKind } from "@shared/ipc/types";
 import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
@@ -6,6 +6,9 @@ import { StudioProgress } from "./StudioProgress";
 import { StudioCancel } from "./StudioCancel";
 import { StudioVersionPicker } from "./StudioVersionPicker";
 import { StudioCustomRequest } from "./StudioCustomRequest";
+import { StudioScopePicker } from "./StudioScopePicker";
+import { StudioStreamPreview } from "./StudioStreamPreview";
+import { pruneScope } from "./scope-prune";
 import { cancelFocusTarget } from "./studio-generation";
 import { studioCancelledMessage } from "../../shared/a11y/messages";
 import {
@@ -60,12 +63,14 @@ export function StudioColumn({
     errors,
     onlineFailed,
     progress,
+    streamText,
     cancelling,
     generate,
     cancel,
     ollamaReady,
     hasReadySources,
     readySources,
+    sources,
   } = useStudio(notebookId);
   const t = useT();
   // 123: translator HIỆN TẠI cho câu báo xong (về sau await — người dùng có thể đã đổi ngôn ngữ).
@@ -90,9 +95,20 @@ export function StudioColumn({
     }
     prevProgress.current = progress;
   }, [progress]);
-  // Phạm vi tổng hợp (US2): "" = tất cả nguồn; else sourceId.
-  const [scope, setScope] = useState("");
-  const scopeId = scope === "" ? undefined : scope;
+  // Phạm vi tổng hợp (178 PR 4): [] = tất cả nguồn; else các id được chọn. Đổi notebook ⇒ về "tất cả".
+  // Review: nguồn đã chọn hết ready ⇒ bỏ khỏi phạm vi VÀ báo trình đọc màn hình (bộ chọn hiện phạm vi mới) — không nới âm thầm.
+  const [scope, setScope] = useState<readonly string[]>([]);
+  useEffect(() => setScope([]), [notebookId]);
+  useEffect(() => {
+    const next = pruneScope(scope, readySources);
+    if (next === scope) return;
+    setScope(next);
+    announce(trRef.current.t("studio.scope.changed"));
+  }, [scope, readySources]);
+  const knownSourceIds = useMemo(
+    () => new Set(sources.map((s) => s.id)),
+    [sources],
+  );
 
   const blockReason =
     ollamaReady === false
@@ -147,20 +163,33 @@ export function StudioColumn({
   // 178 (review B1): yêu cầu của LƯỢT custom gần nhất (gửi từ ô nhập HAY "Tạo lại" một phiên bản) — "Thử lại" / "Tạo bằng AI
   // cục bộ" trong khối lỗi dùng đúng yêu cầu của lượt vừa lỗi. Xoá khi đổi notebook (không mang nội dung sang notebook khác).
   const lastCustom = useRef<string | undefined>(undefined);
+  // 178 (PR 4, review): phạm vi của LƯỢT gần nhất theo loại — "Thử lại" / "Tạo bằng AI cục bộ" dùng đúng phạm vi lượt vừa lỗi.
+  const lastScope = useRef<Partial<Record<StudioKind, readonly string[]>>>({});
   useEffect(() => {
     lastCustom.current = undefined;
+    lastScope.current = {};
   }, [notebookId]);
+  /**
+   * `sourceIds`: nút loại / ô yêu cầu ⇒ phạm vi bộ chọn; "Tạo lại" ⇒ phạm vi của phiên bản đang xem; thiếu (Thử lại / AI cục bộ)
+   * ⇒ phạm vi của lượt gần nhất của loại (chưa có ⇒ bộ chọn).
+   */
   const run = async (
     kind: StudioKind,
     target?: AiTarget,
     customPrompt: string | undefined = kind === "custom"
       ? lastCustom.current
       : undefined,
+    sourceIds: readonly string[] = lastScope.current[kind] ?? scope,
   ): Promise<void> => {
     if (kind === "custom") lastCustom.current = customPrompt;
+    lastScope.current = { ...lastScope.current, [kind]: sourceIds };
     const tr = trRef.current;
     announce(studioMessage(tr.t(`studio.kind.${kind}`), "start", tr));
-    const outcome = await generate(kind, scopeId, target, customPrompt);
+    const outcome = await generate(kind, {
+      sourceIds,
+      target,
+      customPrompt,
+    });
     const now = trRef.current;
     const label = now.t(`studio.kind.${kind}`);
     // Review N1: ý định trả focus chỉ dùng cho đúng lần huỷ này — mọi kết cục đều dọn.
@@ -192,24 +221,11 @@ export function StudioColumn({
         </p>
       )}
 
-      {hasReadySources && readySources.length > 1 && (
-        <label className="studio-scope">
-          <span className="studio-scope-label">{t.t("studio.scope")}</span>
-          <select
-            className="studio-scope-select"
-            value={scope}
-            onChange={(e) => setScope(e.target.value)}
-            data-testid="studio-scope"
-          >
-            <option value="">{t.t("studio.scopeAll")}</option>
-            {readySources.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      <StudioScopePicker
+        sources={readySources}
+        selected={scope}
+        onChange={setScope}
+      />
 
       <div className="studio-actions">
         {KINDS.map((kind) => (
@@ -217,7 +233,7 @@ export function StudioColumn({
             key={kind}
             type="button"
             className="studio-btn"
-            onClick={() => void run(kind)}
+            onClick={() => void run(kind, undefined, undefined, scope)}
             disabled={disabled || loading[kind] === true}
             data-testid={`studio-btn-${kind}`}
           >
@@ -233,7 +249,7 @@ export function StudioColumn({
         key={notebookId}
         loading={loading.custom === true}
         disabled={disabled}
-        onSubmit={(text) => void run("custom", undefined, text)}
+        onSubmit={(text) => void run("custom", undefined, text, scope)}
       />
 
       <div className="studio-results">
@@ -242,6 +258,11 @@ export function StudioColumn({
           const err = errors[kind];
           const res = results[kind];
           const prog = loading[kind] ? progress[kind] : undefined;
+          // 178 (PR 4): chữ tạm của lượt viết cuối — dưới dòng tiến độ, TRÊN phiên bản đang xem (khi Tạo lại).
+          const live = loading[kind] ? streamText[kind] : undefined;
+          const preview = live ? (
+            <StudioStreamPreview kind={kind} text={live} />
+          ) : null;
           // 146: đang tạo lần đầu và đã có tiến độ ⇒ dòng pha + thanh thay skeleton.
           // 149: nút Huỷ mỗi khi loại đang tạo — cùng hàng dòng pha / khung chờ / trên card cũ.
           const cancelBtn = loading[kind] ? (
@@ -260,12 +281,14 @@ export function StudioColumn({
           ) : null;
           if (prog && !res) {
             return (
-              <StudioProgress
-                key={kind}
-                kind={kind}
-                progress={prog}
-                action={cancelBtn}
-              />
+              <Fragment key={kind}>
+                <StudioProgress
+                  kind={kind}
+                  progress={prog}
+                  action={cancelBtn}
+                />
+                {preview}
+              </Fragment>
             );
           }
           // Skeleton khi đang tạo lần đầu (chưa có kết quả cũ, chưa có tiến độ) — US3.
@@ -344,14 +367,22 @@ export function StudioColumn({
                   </div>
                 )
               )}
+              {preview}
               <StudioResultCard
                 result={res}
                 regenerating={loading[kind] === true}
                 onRegenerate={() =>
                   // 178: custom ⇒ tạo lại với yêu cầu của PHIÊN BẢN ĐANG XEM.
-                  void run(kind, undefined, res.customPrompt)
+                  // 178 (PR 4): … và PHẠM VI của phiên bản đang xem (thiếu = mọi nguồn). Nguồn đã xoá ⇒ main từ chối rõ.
+                  void run(
+                    kind,
+                    undefined,
+                    res.customPrompt,
+                    res.sourceIds ?? [],
+                  )
                 }
                 onCite={onCite}
+                knownSourceIds={knownSourceIds}
                 versionPicker={
                   <StudioVersionPicker
                     kind={kind}

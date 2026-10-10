@@ -45,6 +45,7 @@ import type { StudioService } from "../services/studio/studio-service";
 import type { ContentSearch } from "../services/search/content-search";
 import { exportMarkdown } from "../services/studio/export";
 import { createStudioProgressEmitter } from "../services/studio/progress-emitter";
+import { createStudioTokenEmitter } from "../services/studio/token-emitter";
 import {
   cancelLogFields,
   createGenerationRegistry,
@@ -419,11 +420,18 @@ export function registerIpc({
         owner: sender,
       }));
     }
+    // 178 (PR 4, FR-041): stream lượt viết cuối CHỈ về sender của lượt (không getAllWindows như rag:streamToken); id sai ⇒
+    // không stream; sau huỷ / cửa sổ đóng ⇒ không gửi. Không log delta.
+    const onToken = createStudioTokenEmitter(studioInput.generationId, signal, {
+      send: (ev) => sender.send(CHANNELS.studioStreamToken, ev),
+      isDestroyed: () => sender.isDestroyed(),
+    });
     let cancelled = false;
     try {
       return await studioServices[target].generate(studioInput, {
         onProgress,
         signal,
+        ...(onToken ? { onToken } : {}),
       });
     } catch (e) {
       cancelled = e instanceof UserFacingError && e.code === "studioCancelled";

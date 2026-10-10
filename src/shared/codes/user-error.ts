@@ -27,6 +27,7 @@ export const USER_ERROR_CODES = [
   "studioCustomPromptEmpty", // 178: yêu cầu tuỳ chỉnh
   "studioCustomPromptTooLong",
   "studioCustomPromptInvalid",
+  "studioSourcesInvalid", // 178 (PR 4): phạm vi nhiều nguồn sai
   "chatModelNotSelected",
   "embeddingModelNotSelected",
   "ollamaHttp",

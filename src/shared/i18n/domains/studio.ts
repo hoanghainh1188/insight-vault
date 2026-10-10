@@ -7,8 +7,26 @@ export const studioVi = {
   hint: "Tạo nhanh bản tổng hợp từ nguồn của notebook.",
   blockModel: "Mô hình AI chưa sẵn sàng. Kiểm tra Cài đặt để chọn mô hình.",
   blockNoSources: "Nạp nguồn để tạo Studio.",
-  scope: "Phạm vi",
-  scopeAll: "Tất cả nguồn",
+  // 178 (PR 4): bộ chọn phạm vi nhiều nguồn (disclosure + checkbox) + phạm vi của phiên bản trên thẻ
+  scope: {
+    toggleAll: "Phạm vi: Tất cả nguồn",
+    toggleCount: {
+      one: "Phạm vi: {count} nguồn",
+      other: "Phạm vi: {count} nguồn",
+    },
+    listLabel: "Chọn nguồn để tổng hợp",
+    all: "Tất cả nguồn",
+    limit: "Tối đa {max} nguồn.",
+    changed: "Phạm vi nguồn đã đổi: có nguồn đã chọn không còn sẵn sàng.",
+    versionCount: {
+      one: "Phạm vi: {count} nguồn",
+      other: "Phạm vi: {count} nguồn",
+    },
+    deletedSource: {
+      one: "{count} nguồn đã xoá",
+      other: "{count} nguồn đã xoá",
+    },
+  },
   creating: "Đang tạo…",
   regenerate: "Tạo lại",
   kind: {
@@ -75,8 +93,25 @@ export const studioEn: Widen<typeof studioVi> = {
   hint: "Quickly create summaries from this notebook's sources.",
   blockModel: "The AI model is not ready. Check Settings to choose a model.",
   blockNoSources: "Add sources to use Studio.",
-  scope: "Scope",
-  scopeAll: "All sources",
+  scope: {
+    toggleAll: "Scope: All sources",
+    toggleCount: {
+      one: "Scope: {count} source",
+      other: "Scope: {count} sources",
+    },
+    listLabel: "Choose sources to synthesize",
+    all: "All sources",
+    limit: "Up to {max} sources.",
+    changed: "Source scope changed: a selected source is no longer ready.",
+    versionCount: {
+      one: "Scope: {count} source",
+      other: "Scope: {count} sources",
+    },
+    deletedSource: {
+      one: "{count} deleted source",
+      other: "{count} deleted sources",
+    },
+  },
   creating: "Creating…",
   regenerate: "Regenerate",
   kind: {

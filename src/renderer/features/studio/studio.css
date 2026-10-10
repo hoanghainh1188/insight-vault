@@ -224,30 +224,97 @@
 }
 
 /* Dropdown chọn phạm vi nguồn (US2) */
+/* 178 (PR 4): bộ chọn phạm vi nhiều nguồn — disclosure + checkbox trong cột 262 px. */
 .studio-scope {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin-top: 14px;
 }
-.studio-scope-label {
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-.studio-scope-select {
-  flex: 1;
-  min-width: 0;
+.studio-scope-toggle {
+  width: 100%;
   font: inherit;
   font-size: 12px;
+  text-align: left;
   padding: 5px 8px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--ink);
+  cursor: pointer;
 }
-.studio-scope-select:focus-visible {
+.studio-scope-toggle::after {
+  content: "▾";
+  float: right;
+  color: var(--ink-soft);
+}
+.studio-scope-toggle[aria-expanded="true"]::after {
+  content: "▴";
+}
+.studio-scope-toggle:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.studio-scope-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.studio-scope-list {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.studio-scope-all {
+  font: inherit;
+  font-size: 11.5px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.studio-scope-all[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.studio-scope-items {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.studio-scope-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.studio-scope-item input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+.studio-scope-title {
+  overflow-wrap: anywhere;
+}
+.studio-scope-limit {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.studio-scope-toggle:focus-visible,
+.studio-scope-all:focus-visible,
+.studio-scope-item input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+.studio-scope-note {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
 }
 
 .studio-notice {
@@ -436,4 +503,20 @@
   .studio-progress-fill {
     transition: none;
   }
+}
+
+/* 178 (PR 4): chữ tạm khi stream — văn bản thường (không markdown / chip), viền nét đứt = chưa hậu kiểm. */
+.studio-stream {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
 }

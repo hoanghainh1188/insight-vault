@@ -49,6 +49,8 @@ export const coreVi = {
     studioCustomPromptEmpty: "Hãy nhập yêu cầu trước khi tạo.",
     studioCustomPromptTooLong: "Yêu cầu quá dài (tối đa {max} ký tự).",
     studioCustomPromptInvalid: "Yêu cầu không hợp lệ.",
+    studioSourcesInvalid:
+      "Phạm vi nguồn không hợp lệ (tối đa {max} nguồn của notebook này).",
     chatModelNotSelected: "Chưa chọn mô hình trả lời (chat model).",
     embeddingModelNotSelected: "Chưa chọn mô hình embedding.",
     ollamaHttp: "Ollama trả lỗi {status}.",
@@ -125,6 +127,8 @@ export const coreEn: Widen<typeof coreVi> = {
     studioCustomPromptTooLong:
       "The request is too long (max {max} characters).",
     studioCustomPromptInvalid: "The request is not valid.",
+    studioSourcesInvalid:
+      "The source selection isn't valid (up to {max} sources from this notebook).",
     chatModelNotSelected: "No answer model selected.",
     embeddingModelNotSelected: "No embedding model selected.",
     ollamaHttp: "Ollama returned error {status}.",

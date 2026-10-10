@@ -19,6 +19,21 @@ interface StudioResultCardProps {
   onCite?: (c: Citation) => void;
   /** 178: bộ chọn / xoá phiên bản (đặt dưới tiêu đề thẻ). */
   versionPicker?: ReactNode;
+  /** 178 (PR 4): id nguồn hiện còn trong notebook — id của phiên bản không có ở đây ⇒ "nguồn đã xoá". */
+  knownSourceIds?: ReadonlySet<string>;
+}
+
+/** "Phạm vi: N nguồn" (+ " · K nguồn đã xoá" khi biết danh sách nguồn hiện có). */
+function scopeNote(
+  ids: readonly string[],
+  known: ReadonlySet<string> | undefined,
+  t: ReturnType<typeof useT>,
+): string {
+  const base = t.plural("studio.scope.versionCount", ids.length);
+  const deleted = known ? ids.filter((id) => !known.has(id)).length : 0;
+  return deleted > 0
+    ? `${base} · ${t.plural("studio.scope.deletedSource", deleted)}`
+    : base;
 }
 
 export function StudioResultCard({
@@ -27,6 +42,7 @@ export function StudioResultCard({
   onRegenerate,
   onCite,
   versionPicker,
+  knownSourceIds,
 }: StudioResultCardProps): JSX.Element {
   // 098 + 178: nhãn AI cục bộ lưu cùng phiên bản (main ghi khi target local).
   const local = result.local === true;
@@ -122,6 +138,15 @@ export function StudioResultCard({
             {t.t("studio.custom.requestHeading")}:
           </span>{" "}
           {result.customPrompt}
+        </p>
+      )}
+      {/* 178 (PR 4, FR-033): phạm vi nguồn của phiên bản — vẫn hiển thị khi nguồn đã bị xoá. */}
+      {result.sourceIds && result.sourceIds.length > 0 && (
+        <p
+          className="studio-scope-note"
+          data-testid={`studio-scope-note-${result.kind}`}
+        >
+          {scopeNote(result.sourceIds, knownSourceIds, t)}
         </p>
       )}
       {notice && (

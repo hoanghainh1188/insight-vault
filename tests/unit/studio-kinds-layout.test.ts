@@ -40,6 +40,7 @@ beforeEach(() => {
         { id: "s1", notebookId: "nb1", status: "ready", title: "A" },
       ]),
     onSourceProgress: () => () => undefined,
+    onStudioStreamToken: () => () => undefined, // 178 PR 4
     onStudioProgress: () => () => undefined,
     studioList: () => Promise.resolve([]),
     studioCancel: () => Promise.resolve({ cancelled: true }),
