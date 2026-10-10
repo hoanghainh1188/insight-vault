@@ -34,6 +34,17 @@ export const studioVi = {
   // 149: Huỷ (nhãn hiển thị dùng common.cancel)
   cancelAria: "Huỷ tạo {kind}",
   cancelling: "Đang huỷ…",
+  // 178: lịch sử phiên bản trên thẻ kết quả
+  versions: {
+    label: "Phiên bản",
+    labelAria: "Phiên bản {kind}",
+    option: "Bản {n}/{total} · {time}",
+    delete: "Xoá phiên bản",
+    deleteAria: "Xoá phiên bản đang xem của {kind}",
+    confirmLabel: "Xác nhận xoá phiên bản {kind}",
+    confirmBody: "Xoá phiên bản này? Không thể hoàn tác.",
+    deleteFailed: "Không xoá được phiên bản. Hãy thử lại.",
+  },
   // 146 (clarify #11): tiến độ khi tạo
   progress: {
     reading: "Đang đọc phần {i}/{n}…",
@@ -75,6 +86,16 @@ export const studioEn: Widen<typeof studioVi> = {
   exportName: "{kind} — {date}",
   cancelAria: "Cancel creating {kind}",
   cancelling: "Cancelling…",
+  versions: {
+    label: "Version",
+    labelAria: "{kind} version",
+    option: "Version {n}/{total} · {time}",
+    delete: "Delete version",
+    deleteAria: "Delete the shown version of {kind}",
+    confirmLabel: "Confirm deleting {kind} version",
+    confirmBody: "Delete this version? This can't be undone.",
+    deleteFailed: "Couldn't delete the version. Please try again.",
+  },
   progress: {
     reading: "Reading part {i} of {n}…",
     readingNoCount: "Reading the document…",

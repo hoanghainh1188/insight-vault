@@ -28,6 +28,11 @@ describe("studio IPC whitelist", () => {
     expect(isWhitelisted("studio:cancel")).toBe(true);
   });
 
+  it("178: studio:deleteVersion (invoke) whitelisted", () => {
+    expect(CHANNELS.studioDeleteVersion).toBe("studio:deleteVersion");
+    expect(isWhitelisted("studio:deleteVersion")).toBe(true);
+  });
+
   it("kênh studio:* ngoài danh sách bị từ chối", () => {
     expect(isWhitelisted("studio:rawChunks")).toBe(false);
     expect(isWhitelisted("studio:delete")).toBe(false);

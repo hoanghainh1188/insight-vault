@@ -40,18 +40,15 @@ function setup(opts: {
       return `Kết quả ${ns.map((n) => `[${n}]`).join(" ")}.`;
     },
   );
-  const upsert = vi.fn((notebookId, kind, content, citations) => ({
+  const insert = vi.fn((v: Record<string, unknown>) => ({
     id: "r1",
-    notebookId,
-    kind,
-    content,
-    citations,
     createdAt: 1,
+    ...v,
   }));
   const svc = createStudioService({
     listSources: () => [src("A"), src("B")],
     listChunks: (id) => chunks(id, opts.perSource),
-    studioRepo: { upsert, listByNotebook: () => [] } as never,
+    studioRepo: { insert, listByNotebook: () => [] } as never,
     chat,
     contextInfo: async () => ({
       budget: opts.budget,
@@ -103,13 +100,10 @@ describe("studio-service — ngân sách theo model", () => {
       listSources: () => sources,
       listChunks: (id) => chunks(id, 1, 600),
       studioRepo: {
-        upsert: (...a: unknown[]) => ({
+        insert: (v: Record<string, unknown>) => ({
           id: "r",
-          notebookId: a[0],
-          kind: a[1],
-          content: a[2],
-          citations: a[3],
           createdAt: 1,
+          ...v,
         }),
         listByNotebook: () => [],
       } as never,
@@ -134,13 +128,10 @@ describe("studio-service — ngân sách theo model", () => {
       listSources: () => [src("A"), src("B")],
       listChunks: (id) => chunks(id, 6),
       studioRepo: {
-        upsert: (...a: unknown[]) => ({
+        insert: (v: Record<string, unknown>) => ({
           id: "r",
-          notebookId: a[0],
-          kind: a[1],
-          content: a[2],
-          citations: a[3],
           createdAt: 1,
+          ...v,
         }),
         listByNotebook: () => [],
       } as never,
@@ -165,18 +156,10 @@ describe("studio-service — ngân sách theo model", () => {
       listSources: () => [src("A")],
       listChunks: (id) => chunks(id, 2),
       studioRepo: {
-        upsert: (
-          n: string,
-          k: string,
-          content: string,
-          citations: unknown,
-        ) => ({
+        insert: (v: Record<string, unknown>) => ({
           id: "r",
-          notebookId: n,
-          kind: k,
-          content,
-          citations,
           createdAt: 1,
+          ...v,
         }),
         listByNotebook: () => [],
       } as never,
@@ -282,20 +265,17 @@ describe("149: studio-service — huỷ", () => {
   function make(opts: { onChat?: (n: number) => void } = {}) {
     let calls = 0;
     const signals: (AbortSignal | undefined)[] = [];
-    const upsert = vi.fn((notebookId, kind, content, citations) => ({
+    const insert = vi.fn((v: Record<string, unknown>) => ({
       id: "r1",
-      notebookId,
-      kind,
-      content,
-      citations,
       createdAt: 1,
+      ...v,
     }));
     let release: () => void = () => undefined;
     const gate = new Promise<void>((r) => (release = r));
     const svc = createStudioService({
       listSources: () => [src("A")],
       listChunks: (id) => chunks(id, 2),
-      studioRepo: { upsert, listByNotebook: () => [] } as never,
+      studioRepo: { insert, listByNotebook: () => [] } as never,
       chat: vi.fn(
         async (messages: ChatMessage[], o?: { signal?: AbortSignal }) => {
           calls += 1;
@@ -312,7 +292,7 @@ describe("149: studio-service — huỷ", () => {
         return { budget: 50_000, numCtx: null };
       },
     });
-    return { svc, upsert, signals, calls: () => calls, release };
+    return { svc, insert, signals, calls: () => calls, release };
   }
 
   const isCancelled = (e: unknown): boolean =>
@@ -330,7 +310,7 @@ describe("149: studio-service — huỷ", () => {
     const err = await p.catch((e: unknown) => e);
     expect(isCancelled(err)).toBe(true);
     expect(m.calls()).toBe(0);
-    expect(m.upsert).not.toHaveBeenCalled();
+    expect(m.insert).not.toHaveBeenCalled();
   });
 
   it("chat ném ChatAbortedError ⇒ studioCancelled, không lưu", async () => {
@@ -346,10 +326,10 @@ describe("149: studio-service — huỷ", () => {
       .generate({ notebookId: "nb1", kind: "summary" }, { signal: ctl.signal })
       .catch((e: unknown) => e);
     expect(isCancelled(err)).toBe(true);
-    expect(m.upsert).not.toHaveBeenCalled();
+    expect(m.insert).not.toHaveBeenCalled();
   });
 
-  it("huỷ sau lượt chat cuối nhưng trước khi lưu ⇒ KHÔNG upsert", async () => {
+  it("huỷ sau lượt chat cuối nhưng trước khi lưu ⇒ KHÔNG insert", async () => {
     const ctl = new AbortController();
     const m = make({ onChat: () => ctl.abort() }); // chat trả bình thường nhưng người dùng vừa bấm Huỷ
     m.release();
@@ -357,7 +337,7 @@ describe("149: studio-service — huỷ", () => {
       .generate({ notebookId: "nb1", kind: "summary" }, { signal: ctl.signal })
       .catch((e: unknown) => e);
     expect(isCancelled(err)).toBe(true);
-    expect(m.upsert).not.toHaveBeenCalled();
+    expect(m.insert).not.toHaveBeenCalled();
   });
 
   it("signal được truyền xuống deps.chat; không truyền signal ⇒ như cũ (lưu bình thường)", async () => {
@@ -373,6 +353,75 @@ describe("149: studio-service — huỷ", () => {
     m2.release();
     const r = await m2.svc.generate({ notebookId: "nb1", kind: "summary" });
     expect(r.content).toContain("Kết quả");
-    expect(m2.upsert).toHaveBeenCalledTimes(1);
+    expect(m2.insert).toHaveBeenCalledTimes(1);
+  });
+});
+
+// 178 (research R2, R9): lưu = insert PHIÊN BẢN mới kèm parts / truncated / local (local ⇔ target "local", nhãn 098);
+// deleteVersion kiểm kiểu tham số rồi chuyển xuống repo.
+describe("178: studio-service — phiên bản", () => {
+  function make() {
+    const insert = vi.fn((v: Record<string, unknown>) => ({
+      id: "v1",
+      createdAt: 1,
+      ...v,
+    }));
+    const deleteVersion = vi.fn(() => true);
+    const svc = createStudioService({
+      listSources: () => [src("A")],
+      listChunks: (id) => chunks(id, 2),
+      studioRepo: { insert, deleteVersion, listByNotebook: () => [] } as never,
+      chat: async (m: ChatMessage[]) => {
+        const ns = [...m[1].content.matchAll(/\[(\d+)\]/g)].map((x) =>
+          Number(x[1]),
+        );
+        return `Kết quả [${ns[0]}].`;
+      },
+      contextInfo: async () => ({ budget: 50_000, numCtx: null }),
+    });
+    return { svc, insert, deleteVersion };
+  }
+
+  it("insert nhận parts / truncated và local=false khi không phải target local", async () => {
+    const m = make();
+    const r = await m.svc.generate({ notebookId: "nb1", kind: "summary" });
+    expect(m.insert).toHaveBeenCalledTimes(1);
+    expect(m.insert.mock.calls[0][0]).toMatchObject({
+      notebookId: "nb1",
+      kind: "summary",
+      parts: 1,
+      truncated: false,
+      local: false,
+    });
+    expect(r).toMatchObject({
+      id: "v1",
+      parts: 1,
+      truncated: false,
+      local: false,
+    });
+  });
+
+  it("target local ⇒ local=true; target active ⇒ local=false", async () => {
+    const m = make();
+    await m.svc.generate({ notebookId: "nb1", kind: "faq", target: "local" });
+    await m.svc.generate({ notebookId: "nb1", kind: "faq", target: "active" });
+    expect(m.insert.mock.calls[0][0]).toMatchObject({ local: true });
+    expect(m.insert.mock.calls[1][0]).toMatchObject({ local: false });
+  });
+
+  it("deleteVersion chuyển xuống repo; tham số sai kiểu / rỗng ⇒ {deleted:false}, repo không gọi", () => {
+    const m = make();
+    expect(m.svc.deleteVersion("nb1", "v1")).toEqual({ deleted: true });
+    expect(m.deleteVersion).toHaveBeenCalledWith("nb1", "v1");
+    for (const [nb, id] of [
+      ["", "v1"],
+      ["nb1", ""],
+      [1, "v1"],
+      ["nb1", null],
+      [undefined, undefined],
+    ] as const) {
+      expect(m.svc.deleteVersion(nb, id)).toEqual({ deleted: false });
+    }
+    expect(m.deleteVersion).toHaveBeenCalledTimes(1);
   });
 });

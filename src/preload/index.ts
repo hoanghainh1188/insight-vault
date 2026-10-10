@@ -25,6 +25,7 @@ import type {
   Source,
   SourceContent,
   SourceProgressEvent,
+  StudioDeleteVersionInput,
   StudioGenerateInput,
   StudioResult,
   StudioExportInput,
@@ -213,6 +214,11 @@ const api = {
     ipcRenderer.invoke(CHANNELS.studioGenerate, input),
   studioList: (notebookId: string): Promise<StudioResult[]> =>
     ipcRenderer.invoke(CHANNELS.studioList, notebookId),
+  // 178: xoá một phiên bản kết quả Studio.
+  studioDeleteVersion: (
+    input: StudioDeleteVersionInput,
+  ): Promise<{ deleted: boolean }> =>
+    ipcRenderer.invoke(CHANNELS.studioDeleteVersion, input),
   /** 149: huỷ lượt tạo đang chạy theo generationId; reason chỉ để main ghi nhật ký. */
   studioCancel: (
     generationId: string,

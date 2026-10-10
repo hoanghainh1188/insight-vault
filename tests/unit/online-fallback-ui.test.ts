@@ -217,7 +217,15 @@ describe("useStudio — lỗi online", () => {
     api.studioGenerate
       .mockImplementationOnce(() => Promise.reject(onlineErr()))
       .mockImplementationOnce(() =>
-        Promise.resolve({ kind: "summary", content: "x", citations: [] }),
+        // 178: main lưu `local` cùng phiên bản (target local) — mock trả như main.
+        Promise.resolve({
+          id: "v1",
+          kind: "summary",
+          content: "x",
+          citations: [],
+          createdAt: 1,
+          local: true,
+        }),
       );
     await act(async () => root.render(createElement(Harness)));
     await flush();
@@ -232,7 +240,7 @@ describe("useStudio — lỗi online", () => {
       target: "local",
     });
     expect(studio.onlineFailed.summary).toBeFalsy();
-    expect(studio.localKinds.summary).toBe(true);
+    expect(studio.results.summary?.local).toBe(true);
   });
 });
 

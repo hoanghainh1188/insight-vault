@@ -106,6 +106,14 @@ export function studioCancelledMessage(
   return tr.t("a11y.studioCancelled", { label });
 }
 
+/** 178: câu báo sau khi xoá một phiên bản Studio. */
+export function studioVersionDeletedMessage(
+  label: string,
+  tr: Translator = VI,
+): string {
+  return tr.t("a11y.studioVersionDeleted", { label });
+}
+
 /** aria-valuetext cho thanh tiến độ: "Nhúng, 40%". */
 export function progressValueText(
   step: string,

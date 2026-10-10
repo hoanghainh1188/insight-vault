@@ -29,69 +29,69 @@ còn 10; DB v10 có kết quả cũ ⇒ sau v11 hiện đủ.
 
 ### Setup
 
-- [ ] T001 [US1] Append glossary bằng script (KHÔNG prettier) TRƯỚC khi đặt tên: phiên bản kết quả Studio, trần phiên bản (`STUDIO_MAX_VERSIONS`), xoá phiên
+- [X] T001 [US1] Append glossary bằng script (KHÔNG prettier) TRƯỚC khi đặt tên: phiên bản kết quả Studio, trần phiên bản (`STUDIO_MAX_VERSIONS`), xoá phiên
       bản (`studio:deleteVersion`) — `docs/00-glossary.md` (chỉ THÊM dòng; không sửa dòng `StudioKind` / `StudioResult` cũ).
 
 ### Tests trước (FAIL rồi mới code)
 
-- [ ] T002 [US1] Viết test TRƯỚC `tests/unit/migration-studio-versions.test.ts` (khuôn `migration-source.test.ts`): DB chạy migration 1..10, chèn notebook + 4 `studio_result` (citations_json hợp lệ + 1 hỏng) ⇒ `runMigrations` lên 11 ⇒ mọi dòng giữ `id`, `notebook_id`, `kind`, `content`, `citations_json`,
+- [X] T002 [US1] Viết test TRƯỚC `tests/unit/migration-studio-versions.test.ts` (khuôn `migration-source.test.ts`): DB chạy migration 1..10, chèn notebook + 4 `studio_result` (citations_json hợp lệ + 1 hỏng) ⇒ `runMigrations` lên 11 ⇒ mọi dòng giữ `id`, `notebook_id`, `kind`, `content`, `citations_json`,
       `created_at`, `updated_at`; 5 cột mới NULL; chèn 2 dòng cùng `(notebook, kind)` được (UNIQUE đã bỏ); CHECK nhận `studyGuide|briefing|timeline|keyTerms|custom`
       và từ chối `bogus`; `truncated`/`local` ngoài {0,1} bị từ chối; xoá notebook ⇒ cascade xoá mọi phiên bản; `PRAGMA foreign_key_check` rỗng; có index
       `idx_studio_notebook` và `idx_studio_versions`; `user_version = 11`.
-- [ ] T003 [P] [US1] Viết test TRƯỚC trong `tests/unit/studio-repo.test.ts` (sửa kỳ vọng upsert cũ): `insert` tạo phiên bản mới với uuid mới mỗi lần
+- [X] T003 [P] [US1] Viết test TRƯỚC trong `tests/unit/studio-repo.test.ts` (sửa kỳ vọng upsert cũ): `insert` tạo phiên bản mới với uuid mới mỗi lần
       (`now` / `uuid` tiêm); trả `parts`, `truncated`, `local` khi có; lưu bản thứ 11 cùng `(notebook, kind)` ⇒ còn 10, bản `created_at` nhỏ nhất bị xoá (hoà
       `created_at` ⇒ theo rowid); trần tính riêng từng kind và từng notebook; `listByNotebook` trả mọi phiên bản sắp `kind`, `created_at` giảm dần;
       `listVersions(notebookId, kind)`; `deleteVersion(notebookId, id)` ⇒ `true` khi khớp, `false` khi id lạ / khác notebook / đã xoá; dòng cũ (cột NULL) ⇒
       không có `parts` / `truncated` / `local` trong kết quả.
-- [ ] T004 [P] [US1] Viết test TRƯỚC `tests/unit/studio-versions.test.ts` cho hàm thuần `src/renderer/features/studio/studio-versions.ts`:
+- [X] T004 [P] [US1] Viết test TRƯỚC `tests/unit/studio-versions.test.ts` cho hàm thuần `src/renderer/features/studio/studio-versions.ts`:
       `groupVersions(results)` ⇒ `Partial<Record<StudioKind, StudioResult[]>>` mới nhất trước; `currentVersion(versions, selected, kind)` (thiếu / id không
       còn ⇒ mới nhất; không có bản ⇒ `undefined`); `afterDelete(versions, selected, kind, id)` ⇒ state mới (không mutate) + id được chọn kế tiếp (bản mới nhất
       còn lại) hoặc `undefined`; `withInserted(versions, result)` ⇒ đặt đầu danh sách, cắt còn 10.
-- [ ] T005 [P] [US1] Sửa test TRƯỚC `tests/unit/studio-channels-whitelist.test.ts`: có `studio:deleteVersion` trong whitelist + preload, tên duy nhất.
-- [ ] T006 [P] [US1] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: `generate` gọi `studioRepo.insert` (không còn `upsert`) với `parts`, `truncated`
+- [X] T005 [P] [US1] Sửa test TRƯỚC `tests/unit/studio-channels-whitelist.test.ts`: có `studio:deleteVersion` trong whitelist + preload, tên duy nhất.
+- [X] T006 [P] [US1] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: `generate` gọi `studioRepo.insert` (không còn `upsert`) với `parts`, `truncated`
       và `local: true` chỉ khi `input.target === "local"`; huỷ (signal) ⇒ `insert` không được gọi (giữ kỳ vọng 149); `deleteVersion(notebookId, id)` chuyển xuống
       repo; kiểm kiểu tham số (không phải chuỗi / rỗng ⇒ `{deleted:false}`, repo không gọi).
-- [ ] T007 [P] [US1] Viết test TRƯỚC trong `tests/unit/vault-backup-prepare.test.ts` (cạnh ca "schema cũ hơn ⇒ được migrate lên max"): bản sao lưu ở schema v10 có
+- [X] T007 [P] [US1] Viết test TRƯỚC trong `tests/unit/vault-backup-prepare.test.ts` (cạnh ca "schema cũ hơn ⇒ được migrate lên max"): bản sao lưu ở schema v10 có
       `studio_result` ⇒ `assertSchemaMatches(v10)` qua, `runMigrations` lên v11, dữ liệu Studio giữ nguyên; `expectedSchema(11)` khớp DB mới tạo.
 
 ### Implementation
 
-- [ ] T008 [US1] Thêm migration `version: 11` vào cuối `MIGRATIONS` trong `src/main/db/migrations.ts` theo research R1: `CREATE TABLE studio_result_new`
+- [X] T008 [US1] Thêm migration `version: 11` vào cuối `MIGRATIONS` trong `src/main/db/migrations.ts` theo research R1: `CREATE TABLE studio_result_new`
       (bảng ở data-model.md, CHECK 9 kind) → `INSERT INTO studio_result_new (id, notebook_id, kind, content, citations_json, created_at, updated_at) SELECT …
 FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_result_new RENAME TO studio_result` → `CREATE INDEX idx_studio_notebook`,
       `idx_studio_versions (notebook_id, kind, created_at)`. KHÔNG đụng `PRAGMA foreign_keys` (chú thích lý do: bảng con, không bảng nào tham chiếu; PRAGMA là
       no-op trong giao dịch). T002 + T007 xanh.
-- [ ] T009 [US1] `src/main/services/studio/constants.ts`: `STUDIO_MAX_VERSIONS = 10`; `STUDIO_ALL_KINDS` (9 giá trị, khớp CHECK v11) tách khỏi `STUDIO_KINDS`
+- [X] T009 [US1] `src/main/services/studio/constants.ts`: `STUDIO_MAX_VERSIONS = 10`; `STUDIO_ALL_KINDS` (9 giá trị, khớp CHECK v11) tách khỏi `STUDIO_KINDS`
       (giữ 4 loại hiện có ở PR này).
-- [ ] T010 [US1] `src/shared/ipc/types.ts`: `StudioResult.local?: boolean` (chú thích: G4, từ DB); sửa chú thích `parts` / `truncated` (nay đọc từ DB);
+- [X] T010 [US1] `src/shared/ipc/types.ts`: `StudioResult.local?: boolean` (chú thích: G4, từ DB); sửa chú thích `parts` / `truncated` (nay đọc từ DB);
       `StudioDeleteVersionInput { notebookId: string; id: string }`.
-- [ ] T011 [US1] Viết lại `src/main/services/studio/studio-repo.ts`: `insert({notebookId, kind, content, citations, parts?, truncated?, local?})` trong
+- [X] T011 [US1] Viết lại `src/main/services/studio/studio-repo.ts`: `insert({notebookId, kind, content, citations, parts?, truncated?, local?})` trong
       `BEGIN…COMMIT` (INSERT + `DELETE … WHERE id IN (SELECT id … ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET ?)` với `STUDIO_MAX_VERSIONS`), ROLLBACK khi
       lỗi; `listByNotebook` (mọi phiên bản); `listVersions`; `deleteVersion(notebookId, id): boolean`; `toResult` đọc 3 cột mới (NULL ⇒ bỏ trường); bỏ `upsert`
       và `getByNotebookKind` nếu không còn dùng. SQL tham số hoá. T003 xanh.
-- [ ] T012 [US1] `src/main/services/studio/studio-service.ts`: thay `upsert` bằng `insert` (truyền `parts`, `truncated`, `local: input.target === "local"`),
+- [X] T012 [US1] `src/main/services/studio/studio-service.ts`: thay `upsert` bằng `insert` (truyền `parts`, `truncated`, `local: input.target === "local"`),
       giữ `assertNotAborted` ngay trước insert; thêm `deleteVersion(notebookId: unknown, id: unknown): { deleted: boolean }` (kiểm chuỗi không rỗng). T006 xanh.
-- [ ] T013 [US1] `src/shared/ipc/channels.ts`: `studioDeleteVersion: "studio:deleteVersion"` + `ChannelResponse` `{ deleted: boolean }`;
+- [X] T013 [US1] `src/shared/ipc/channels.ts`: `studioDeleteVersion: "studio:deleteVersion"` + `ChannelResponse` `{ deleted: boolean }`;
       `src/main/ipc/register.ts`: `safeHandle(studioDeleteVersion)` gọi `studioServices.active.deleteVersion`; `src/preload/index.ts`: `studioDeleteVersion(input)`.
       T005 xanh.
-- [ ] T014 [US1] Thêm khoá i18n vi + en: `studio.versions.label` ("Phiên bản" / "Version"), `studio.versions.option` ("Bản {n}/{total} · {time}"),
+- [X] T014 [US1] Thêm khoá i18n vi + en: `studio.versions.label` ("Phiên bản" / "Version"), `studio.versions.option` ("Bản {n}/{total} · {time}"),
       `studio.versions.delete`, `studio.versions.deleteAria` (có tên loại), `studio.versions.confirmDelete`, `a11y.studioVersionDeleted` — trong
       `src/shared/i18n/domains/studio.ts`, `src/shared/i18n/domains/a11y.ts`; catalog test vi↔en xanh.
-- [ ] T015 [US1] Hiện thực `src/renderer/features/studio/studio-versions.ts` (T004 xanh).
-- [ ] T016 [US1] Viết test TRƯỚC rồi sửa `src/renderer/features/studio/useStudio.ts` (test hook TRƯỚC ở `tests/unit/studio-versions-hook.test.ts`, khuôn `studio-cancel-hook.test.ts`):
+- [X] T015 [US1] Hiện thực `src/renderer/features/studio/studio-versions.ts` (T004 xanh).
+- [X] T016 [US1] Viết test TRƯỚC rồi sửa `src/renderer/features/studio/useStudio.ts` (test hook TRƯỚC ở `tests/unit/studio-versions-hook.test.ts`, khuôn `studio-cancel-hook.test.ts`):
       `versions` + `selected` thay `results`; nạp `studioList` ⇒ `groupVersions`; generate xong ⇒ `withInserted` + chọn bản mới; `select(kind, id)`;
       `deleteVersion(kind, id)` gọi IPC rồi `afterDelete`; bỏ `localKinds` (dùng `version.local`); giữ nguyên A→B→A / huỷ / tự huỷ khi đổi notebook (149);
       xoá phiên bản đang xem trong lúc loại đó đang "Tạo lại" ⇒ lượt tạo vẫn chạy, xong vẫn chèn bản mới và chọn nó.
-- [ ] T017 [US1] Tạo `src/renderer/features/studio/StudioVersionPicker.tsx`: `<select>` có `<label>` (chỉ hiện khi ≥ 2 bản) + nút xoá (`aria-label` có tên loại) + xác nhận xoá dùng lại mẫu `src/renderer/features/notebooks/DeleteConfirm.tsx` / xác nhận trong `src/renderer/features/sources/SourceItem.tsx`
+- [X] T017 [US1] Tạo `src/renderer/features/studio/StudioVersionPicker.tsx`: `<select>` có `<label>` (chỉ hiện khi ≥ 2 bản) + nút xoá (`aria-label` có tên loại) + xác nhận xoá dùng lại mẫu `src/renderer/features/notebooks/DeleteConfirm.tsx` / xác nhận trong `src/renderer/features/sources/SourceItem.tsx`
       (KHÔNG `window.confirm`); sau xoá: focus về select (còn bản) hoặc nút loại (hết bản),
       `announce(a11y.studioVersionDeleted)`. Test jsdom TRƯỚC `tests/unit/studio-version-picker.test.ts` (nhãn vi/en, ẩn khi 1 bản, xác nhận huỷ ⇒ không xoá,
       focus, announce).
-- [ ] T018 [US1] Sửa `src/renderer/features/studio/StudioResultCard.tsx` + `StudioColumn.tsx`: card hiển thị `currentVersion`; Copy / Export / chip `[n]` dùng
+- [X] T018 [US1] Sửa `src/renderer/features/studio/StudioResultCard.tsx` + `StudioColumn.tsx`: card hiển thị `currentVersion`; Copy / Export / chip `[n]` dùng
       phiên bản đang xem; badge AI cục bộ từ `version.local`; ghi chú N phần / đã cắt từ phiên bản; đặt `StudioVersionPicker`; "Tạo lại" thêm bản mới. Cập nhật
       `tests/unit/studio-parts-ui.test.ts` và test UI liên quan.
-- [ ] T019 [US1] `src/renderer/features/studio/studio.css`: hàng bộ chọn phiên bản + nút xoá không tràn 262 px (token sẵn có, focus-visible, không animate thuộc
+- [X] T019 [US1] `src/renderer/features/studio/studio.css`: hàng bộ chọn phiên bản + nút xoá không tràn 262 px (token sẵn có, focus-visible, không animate thuộc
       tính layout, tôn trọng `prefers-reduced-motion`).
-- [ ] T020 [US1] e2e `tests/e2e/studio-versions.spec.ts` (Ollama giả, khuôn `studio-cancel.spec.ts`): 3 lần tạo ⇒ 3 phiên bản; chọn bản 1 + Copy; xoá bản đang
+- [X] T020 [US1] e2e `tests/e2e/studio-versions.spec.ts` (Ollama giả, khuôn `studio-cancel.spec.ts`): 3 lần tạo ⇒ 3 phiên bản; chọn bản 1 + Copy; xoá bản đang
       xem (xác nhận); Tạo lại + Huỷ ⇒ không thêm bản; cửa sổ 900 px không tràn.
 
 ### Cổng review PR 1

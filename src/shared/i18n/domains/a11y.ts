@@ -30,6 +30,7 @@ export const a11yVi = {
   studioProgressCondensing: "{label}: đang rút gọn ghi chú.",
   studioProgressWriting: "{label}: đang viết.",
   studioCancelled: "Đã huỷ tạo {label}.", // 149
+  studioVersionDeleted: "Đã xoá một phiên bản {label}.", // 178
   progressValue: "{step}, {pct}%",
 } as const;
 
@@ -61,5 +62,6 @@ export const a11yEn: Widen<typeof a11yVi> = {
   studioProgressCondensing: "{label}: condensing notes.",
   studioProgressWriting: "{label}: writing.",
   studioCancelled: "Cancelled creating {label}.",
+  studioVersionDeleted: "Deleted a {label} version.",
   progressValue: "{step}, {pct}%",
 };

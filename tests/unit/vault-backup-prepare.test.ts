@@ -89,6 +89,40 @@ describe("vault-backup prepareStaged", () => {
     db.close();
   });
 
+  it("178: bản sao lưu schema v10 có studio_result ⇒ migrate lên v11, dữ liệu Studio giữ nguyên", async () => {
+    makeDb(10);
+    const pre = openDatabase(join(dir, "insightvault.db"));
+    pre
+      .prepare(
+        "INSERT INTO studio_result (id, notebook_id, kind, content, citations_json, created_at, updated_at) VALUES ('r1','a','summary','Tóm tắt [1].','[]',7,9)",
+      )
+      .run();
+    pre.close();
+    await prepareStaged(dir, manifest({ schemaVersion: 10 }), {
+      currentEmbeddingModelVersion: undefined,
+      encrypted: false,
+    });
+    const db = openDatabase(join(dir, "insightvault.db"));
+    expect(getUserVersion(db)).toBe(maxSchema);
+    expect(
+      db
+        .prepare(
+          "SELECT id, kind, content, created_at, updated_at, local FROM studio_result",
+        )
+        .all(),
+    ).toEqual([
+      {
+        id: "r1",
+        kind: "summary",
+        content: "Tóm tắt [1].",
+        created_at: 7,
+        updated_at: 9,
+        local: null,
+      },
+    ]);
+    db.close();
+  });
+
   it("schema mới hơn app (manifest hoặc DB) ⇒ newerSchema", async () => {
     makeDb(maxSchema);
     expect(

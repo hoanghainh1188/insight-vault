@@ -455,6 +455,14 @@ export function registerIpc({
   safeHandle(CHANNELS.studioList, (id) =>
     studioServices.active.list(id as string),
   );
+  // 178: xoá một phiên bản — service kiểm kiểu tham số; repo chỉ xoá khi id thuộc notebook. Không log id.
+  safeHandle(CHANNELS.studioDeleteVersion, (input) => {
+    const { notebookId, id } = (input ?? {}) as {
+      notebookId?: unknown;
+      id?: unknown;
+    };
+    return studioServices.active.deleteVersion(notebookId, id);
+  });
   // studio export (025) — ghi .md qua save dialog (main). KHÔNG log content.
   safeHandle(CHANNELS.studioExport, (input) => {
     const { content, suggestedName } = input as {
