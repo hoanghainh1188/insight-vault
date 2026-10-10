@@ -10,8 +10,9 @@ import type {
 import type { ScoredChunk } from "../rag/rag-types";
 import { buildBalancedContext } from "./balanced-context";
 import { postprocessCitations, citationsFromMap } from "../rag/citation";
-import { STUDIO_CONTEXT_BUDGET, STUDIO_KINDS } from "./constants";
-import { languageReminder, systemPromptFor } from "./prompt";
+import { STUDIO_ALL_KINDS, STUDIO_CONTEXT_BUDGET } from "./constants";
+import { finalUserContent, systemPromptFor } from "./prompt";
+import { parseCustomPrompt } from "./custom-prompt";
 import {
   runMapReduce,
   safeProgress,
@@ -44,8 +45,9 @@ export interface StudioServiceDeps {
   contextInfo?: () => Promise<{ budget: number; numCtx: number | null }>;
 }
 
-function isStudioKind(k: string): k is (typeof STUDIO_KINDS)[number] {
-  return (STUDIO_KINDS as readonly string[]).includes(k);
+// 178: mọi loại sinh được = 8 loại có nút + "custom" (khớp CHECK DB).
+function isStudioKind(k: string): k is (typeof STUDIO_ALL_KINDS)[number] {
+  return (STUDIO_ALL_KINDS as readonly string[]).includes(k);
 }
 
 export function createStudioService(deps: StudioServiceDeps) {
@@ -82,6 +84,13 @@ export function createStudioService(deps: StudioServiceDeps) {
         : (deps.defaultOutputLanguage?.() ?? "vi");
     if (!notebookId || !isStudioKind(kind)) {
       throw new Error("Invalid Studio request.");
+    }
+    // 178 (FR-021): yêu cầu tuỳ chỉnh kiểm TRƯỚC mọi đọc nguồn / gọi AI; loại khác ⇒ bỏ qua customPrompt. Không log văn bản.
+    let customPrompt: string | undefined;
+    if (kind === "custom") {
+      const parsed = parseCustomPrompt(input.customPrompt);
+      if (!parsed.ok) throw new UserFacingError(parsed.code, parsed.params);
+      customPrompt = parsed.text;
     }
 
     // Gom chunk theo NHÓM NGUỒN (mỗi nguồn 1 mảng, chunk theo ordinal). buildBalancedContext chia đều
@@ -133,7 +142,12 @@ export function createStudioService(deps: StudioServiceDeps) {
         { role: "system", content: systemPromptFor(kind, outputLanguage) },
         {
           role: "user",
-          content: `${single.contextText}\n\n${languageReminder(outputLanguage)}`,
+          content: finalUserContent(
+            kind,
+            customPrompt,
+            single.contextText,
+            outputLanguage,
+          ),
         },
       ]);
     } else {
@@ -145,6 +159,7 @@ export function createStudioService(deps: StudioServiceDeps) {
         outputLanguage,
         onProgress,
         signal,
+        customPrompt,
       });
       ({ raw, map, parts, truncated } = mr);
     }
@@ -167,6 +182,7 @@ export function createStudioService(deps: StudioServiceDeps) {
       parts,
       truncated,
       local: input.target === "local",
+      ...(customPrompt !== undefined ? { customPrompt } : {}),
     });
   }
 

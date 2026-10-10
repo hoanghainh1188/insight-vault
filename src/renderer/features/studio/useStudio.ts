@@ -162,6 +162,8 @@ export function useStudio(notebookId: string) {
       kind: StudioKind,
       sourceId?: string,
       target?: AiTarget,
+      // 178 (PR 3): yêu cầu tuỳ chỉnh — chỉ gửi khi kind "custom" (main kiểm lại).
+      customPrompt?: string,
     ): Promise<StudioGenerateOutcome> => {
       const local = target === "local";
       // 146: mỗi lần bấm Tạo/Tạo lại/Tạo bằng AI cục bộ = một lượt mới ⇒ id mới; sự kiện của lượt trước bị bỏ.
@@ -180,6 +182,9 @@ export function useStudio(notebookId: string) {
           notebookId,
           kind,
           sourceId,
+          ...(kind === "custom" && customPrompt !== undefined
+            ? { customPrompt }
+            : {}),
           outputLanguage: lang,
           generationId,
           ...(local ? { target: "local" as const } : {}),

@@ -50,6 +50,73 @@
   opacity: 0.7;
 }
 
+/* 178 (PR 3): hàng "Yêu cầu tuỳ chỉnh" dưới lưới nút — textarea co theo cột, đếm + nút Tạo cùng hàng (xuống dòng khi chật). */
+.studio-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+.studio-custom-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.studio-custom-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.studio-custom-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.studio-custom-input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.studio-custom-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.studio-custom-counter {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.studio-custom-counter.over,
+.studio-custom-error {
+  color: var(--danger);
+}
+.studio-custom-error {
+  margin: 0;
+  font-size: 11px;
+}
+
+/* 178: yêu cầu tuỳ chỉnh của phiên bản trên thẻ — văn bản thường, giữ xuống dòng, ngắt từ dài. */
+.studio-request {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.studio-request-label {
+  font-weight: 600;
+}
+
 .studio-results {
   display: flex;
   flex-direction: column;

@@ -8,6 +8,7 @@ import type { RetrievedChunk, ScoredChunk } from "../rag/rag-types";
 import { citationBlock } from "../rag/context-builder";
 import { postprocessCitations } from "../rag/citation";
 import {
+  finalUserContent,
   languageReminder,
   outputLanguageLine,
   systemPromptFor,
@@ -206,6 +207,8 @@ export interface MapReduceInput {
   onProgress?: OnStudioProgress;
   /** 149: huỷ — kiểm ở ranh giới bước + trong vòng thử lại; huỷ ⇒ ChatAbortedError. Không ảnh hưởng kết quả khi không huỷ. */
   signal?: AbortSignal;
+  /** 178 (PR 3): yêu cầu tuỳ chỉnh đã chuẩn hoá — CHỈ lượt viết cuối nhận (khối <request> ở tin user); map / condense trung lập. */
+  customPrompt?: string;
 }
 
 export interface MapReduceOutput {
@@ -228,6 +231,7 @@ export async function runMapReduce({
   outputLanguage = "vi",
   onProgress,
   signal,
+  customPrompt,
 }: MapReduceInput): Promise<MapReduceOutput> {
   // 149: không phát tiến độ sau khi đã huỷ.
   const report = safeProgress(onProgress);
@@ -296,7 +300,7 @@ export async function runMapReduce({
     },
     {
       role: "user",
-      content: `${finalInput}\n\n${languageReminder(outputLanguage)}`,
+      content: finalUserContent(kind, customPrompt, finalInput, outputLanguage),
     },
   ]);
 

@@ -24,6 +24,9 @@ export const USER_ERROR_CODES = [
   "studioNoNotes",
   "studioSaveFailed",
   "studioCancelled", // 149: kết cục huỷ — renderer KHÔNG hiện như lỗi
+  "studioCustomPromptEmpty", // 178: yêu cầu tuỳ chỉnh
+  "studioCustomPromptTooLong",
+  "studioCustomPromptInvalid",
   "chatModelNotSelected",
   "embeddingModelNotSelected",
   "ollamaHttp",

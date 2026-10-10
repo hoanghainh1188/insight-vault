@@ -13,6 +13,7 @@ interface StudioRow {
   kind: StudioKind;
   content: string;
   citations_json: string;
+  custom_prompt: string | null;
   parts: number | null;
   truncated: number | null;
   local: number | null;
@@ -34,6 +35,8 @@ export interface StudioVersionInput {
   parts?: number;
   truncated?: boolean;
   local?: boolean;
+  /** 178 (PR 3): yêu cầu tuỳ chỉnh đã chuẩn hoá (chỉ kind "custom"). */
+  customPrompt?: string;
 }
 
 export interface StudioRepo {
@@ -72,6 +75,7 @@ function toResult(r: StudioRow): StudioResult {
     ...(r.parts !== null ? { parts: r.parts } : {}),
     ...(r.truncated !== null ? { truncated: r.truncated === 1 } : {}),
     ...(r.local !== null ? { local: r.local === 1 } : {}),
+    ...(r.custom_prompt !== null ? { customPrompt: r.custom_prompt } : {}),
   };
 }
 
@@ -97,14 +101,15 @@ export function createStudioRepo(db: Db, deps: RepoDeps = {}): StudioRepo {
       try {
         db.prepare(
           `INSERT INTO studio_result
-             (id, notebook_id, kind, content, citations_json, parts, truncated, local, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, notebook_id, kind, content, citations_json, custom_prompt, parts, truncated, local, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).run(
           id,
           v.notebookId,
           v.kind,
           v.content,
           JSON.stringify(v.citations),
+          v.customPrompt ?? null,
           v.parts ?? null,
           flag(v.truncated),
           flag(v.local),
