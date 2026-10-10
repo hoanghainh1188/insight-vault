@@ -94,6 +94,63 @@
   outline-offset: 2px;
 }
 
+/* 178: bộ chọn / xoá phiên bản dưới tiêu đề thẻ — select co giãn, nút xoá xuống dòng khi chật (cột 262 px, English). */
+.studio-versions {
+  margin-bottom: 8px;
+}
+.studio-versions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.studio-version-select {
+  flex: 1 1 140px;
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+}
+.studio-version-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.studio-version-delete:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.studio-version-confirm {
+  margin-top: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.studio-version-confirm p {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.studio-version-error {
+  color: var(--danger);
+}
+.studio-version-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.studio-version-confirm-ok:hover {
+  border-color: var(--danger);
+}
+
 /* Dropdown chọn phạm vi nguồn (US2) */
 .studio-scope {
   display: flex;

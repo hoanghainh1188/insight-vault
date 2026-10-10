@@ -433,7 +433,7 @@ export interface SourceContent {
 /** 4 loại bản tổng hợp Studio (khác nhau ở system prompt). */
 export type StudioKind = "summary" | "keyPoints" | "faq" | "outline";
 
-/** Kết quả tổng hợp Studio — content dạng text kèm chip [n]; citations đã hậu kiểm (Constitution II). */
+/** Kết quả tổng hợp Studio = một PHIÊN BẢN (178) — content dạng text kèm chip [n]; citations đã hậu kiểm (Constitution II). */
 export interface StudioResult {
   id: string;
   notebookId: string;
@@ -442,8 +442,16 @@ export interface StudioResult {
   citations: Citation[]; // đã hậu kiểm; rỗng chỉ khi content rỗng (không lưu bản rỗng)
   createdAt: number;
   truncated?: boolean; // true khi còn phần tài liệu KHÔNG được tổng hợp (vượt số phần tối đa)
-  /** 105: số phần đã tổng hợp (>1 ⇒ map-reduce; chip [n] vẫn trỏ đúng đoạn). Chỉ có ở kết quả vừa tạo. */
+  /** 105: số phần đã tổng hợp (>1 ⇒ map-reduce; chip [n] vẫn trỏ đúng đoạn). 178: lưu cùng phiên bản (thiếu ở dòng cũ). */
   parts?: number;
+  /** 178 (G4): phiên bản tạo bằng "Tạo bằng AI cục bộ" (target local, 098) — lưu DB, thiếu ở dòng cũ. */
+  local?: boolean;
+}
+
+/** 178: xoá một phiên bản Studio — main chỉ xoá khi `id` thuộc `notebookId`. */
+export interface StudioDeleteVersionInput {
+  notebookId: string;
+  id: string;
 }
 
 /** Input sinh 1 bản tổng hợp cho notebook theo loại. */

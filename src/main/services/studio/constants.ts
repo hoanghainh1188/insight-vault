@@ -7,3 +7,20 @@ export const STUDIO_CONTEXT_BUDGET = 16000;
 
 // 4 loại tổng hợp (khác nhau ở system prompt, chung kiến trúc).
 export const STUDIO_KINDS = ["summary", "keyPoints", "faq", "outline"] as const;
+
+// 178: mọi giá trị `kind` DB chấp nhận (khớp CHECK của migration v11) — mở sẵn cho 4 loại mới + yêu cầu tuỳ chỉnh để
+// không cần migration thứ hai; loại hiển thị/sinh được vẫn là STUDIO_KINDS.
+export const STUDIO_ALL_KINDS = [
+  "summary",
+  "keyPoints",
+  "faq",
+  "outline",
+  "studyGuide",
+  "briefing",
+  "timeline",
+  "keyTerms",
+  "custom",
+] as const;
+
+// 178: trần phiên bản dùng chung main + renderer.
+export { STUDIO_MAX_VERSIONS } from "@shared/studio-versions";

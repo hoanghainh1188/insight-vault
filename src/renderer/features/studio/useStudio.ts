@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -28,9 +29,18 @@ import {
   type ActiveGenerationIds,
   type StudioProgressMap,
 } from "./studio-progress";
+import {
+  afterDelete,
+  currentVersion,
+  groupVersions,
+  withInserted,
+  type StudioSelection,
+  type StudioVersions,
+} from "./studio-versions";
 
 // Hook cột Studio: nạp kết quả đã lưu khi mở notebook (studio:list) + sinh mới theo loại (studio:generate).
-// State theo TỪNG loại (results/loading/error) để 4 nút độc lập (US2). Đổi notebook → nạp lại.
+// State theo TỪNG loại (versions/loading/error) để các nút độc lập (US2). Đổi notebook → nạp lại.
+// 178: mỗi loại có nhiều PHIÊN BẢN (versions, mới nhất trước) + phiên bản đang xem (selected); `results` = bản đang xem.
 
 export type StudioResultMap = Partial<Record<StudioKind, StudioResult>>;
 export type StudioFlagMap = Partial<Record<StudioKind, boolean>>;
@@ -40,12 +50,25 @@ export type StudioErrorMap = Partial<Record<StudioKind, ParsedIpcError>>;
 export function useStudio(notebookId: string) {
   // 123 (FR-018): Studio tạo nội dung theo ngôn ngữ giao diện TẠI THỜI ĐIỂM bấm tạo.
   const lang = useLang();
-  const [results, setResults] = useState<StudioResultMap>({});
+  const [versions, setVersions] = useState<StudioVersions>({});
+  const [selected, setSelected] = useState<StudioSelection>({});
+  // 178: ref cho thao tác xoá (tính phiên bản kế tiếp trên state mới nhất, không closure cũ).
+  const versionsRef = useRef(versions);
+  versionsRef.current = versions;
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+  const results = useMemo<StudioResultMap>(() => {
+    const out: StudioResultMap = {};
+    for (const k of Object.keys(versions) as StudioKind[]) {
+      const v = currentVersion(versions, selected, k);
+      if (v) out[k] = v;
+    }
+    return out;
+  }, [versions, selected]);
   const [loading, setLoading] = useState<StudioFlagMap>({});
   const [errors, setErrors] = useState<StudioErrorMap>({});
-  // 098: loại nào vừa lỗi do provider online (hiện nút "Tạo bằng AI cục bộ") / kết quả nào tạo bằng AI cục bộ (nhãn).
+  // 098: loại nào vừa lỗi do provider online (hiện nút "Tạo bằng AI cục bộ"). 178: nhãn AI cục bộ đọc từ phiên bản (`local`).
   const [onlineFailed, setOnlineFailed] = useState<StudioFlagMap>({});
-  const [localKinds, setLocalKinds] = useState<StudioFlagMap>({});
   // #135: trạng thái runtime dùng chung (tự kiểm tra lại khi chưa sẵn sàng; "Kiểm tra lại" ở banner cập nhật cả đây).
   const runtime = useSyncExternalStore(
     runtimeStatusStore.subscribe,
@@ -102,21 +125,18 @@ export function useStudio(notebookId: string) {
     notebookRef.current = notebookId;
     activeIds.current = {};
     setProgress({});
-    setResults({});
+    setVersions({});
+    setSelected({});
     setErrors({});
     setLoading({});
     setOnlineFailed({});
-    setLocalKinds({});
     window.api
       .studioList(notebookId)
       .then((list) => {
-        if (cancelled) return;
-        const map: StudioResultMap = {};
-        for (const r of list) map[r.kind] = r;
-        setResults(map);
+        if (!cancelled) setVersions(groupVersions(list));
       })
       .catch(() => {
-        if (!cancelled) setResults({});
+        if (!cancelled) setVersions({});
       });
     return () => {
       cancelled = true;
@@ -165,8 +185,9 @@ export function useStudio(notebookId: string) {
           ...(local ? { target: "local" as const } : {}),
         });
         if (!current()) return "stale";
-        setResults((p) => ({ ...p, [kind]: res }));
-        setLocalKinds((p) => ({ ...p, [kind]: local }));
+        // 178: phiên bản mới đứng đầu và được xem ngay (bỏ lựa chọn cũ của loại).
+        setVersions((p) => withInserted(p, res));
+        setSelected((p) => withoutKind(p, kind));
         return "done";
       } catch (e) {
         if (!current()) return "stale";
@@ -200,12 +221,37 @@ export function useStudio(notebookId: string) {
     void window.api.studioCancel(id, "user").catch(() => undefined);
   }, []);
 
+  // 178: chọn phiên bản để xem.
+  const select = useCallback((kind: StudioKind, id: string): void => {
+    setSelected((p) => ({ ...p, [kind]: id }));
+  }, []);
+
+  // 178: xoá một phiên bản (sau khi người dùng xác nhận ở UI). Trả id phiên bản hiển thị tiếp theo (undefined ⇒ hết bản).
+  // Không động tới lượt đang tạo của loại (nếu có) — lượt đó xong vẫn chèn bản mới.
+  const deleteVersion = useCallback(
+    async (kind: StudioKind, id: string): Promise<string | undefined> => {
+      // `deleted:false` = bản không còn trong DB (đã bị dọn trần / xoá nơi khác) ⇒ vẫn gỡ khỏi UI, không để "bản ma".
+      await window.api.studioDeleteVersion({ notebookId, id });
+      if (notebookRef.current !== notebookId) return undefined;
+      // Updater dạng hàm: không ghi đè bản vừa chèn bởi một lượt tạo xong xen giữa lúc chờ IPC (review #1).
+      const sel = selectedRef.current;
+      const next = afterDelete(versionsRef.current, sel, kind, id);
+      setVersions((p) => afterDelete(p, sel, kind, id).versions);
+      setSelected((p) => (p[kind] === id ? withoutKind(p, kind) : p));
+      return next.nextId;
+    },
+    [notebookId],
+  );
+
   return {
     results,
+    versions,
+    selected,
+    select,
+    deleteVersion,
     loading,
     errors,
     onlineFailed,
-    localKinds,
     progress,
     cancelling,
     generate,

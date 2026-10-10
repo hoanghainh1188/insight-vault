@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { Citation, StudioResult } from "@shared/ipc/types";
 import { isoDate } from "@shared/i18n";
 import { formatCitationLabel } from "../rag-qa/citation-format";
@@ -7,6 +7,7 @@ import { useT } from "../../shared/i18n/i18n-context";
 
 // Card kết quả Studio. Render MARKDOWN an toàn + chip [n] (029, React node — KHÔNG innerHTML). Bấm chip →
 // onCite (mở Source Viewer 019). Ghi chú khi truncated. 123: nhãn loại = khoá `studio.kind.<kind>`.
+// 178: `result` là PHIÊN BẢN đang xem — Copy / Export / chip / ghi chú / nhãn AI cục bộ đều theo phiên bản này.
 
 // 123: thông báo chớp lưu KHOÁ (không lưu chuỗi đã dịch).
 type NoticeKey = "copyFailed" | "exported" | "exportFailed";
@@ -16,8 +17,8 @@ interface StudioResultCardProps {
   regenerating: boolean;
   onRegenerate: () => void;
   onCite?: (c: Citation) => void;
-  /** 098: kết quả tạo bằng AI cục bộ sau lỗi online (người dùng chọn) ⇒ nhãn minh bạch. */
-  local?: boolean;
+  /** 178: bộ chọn / xoá phiên bản (đặt dưới tiêu đề thẻ). */
+  versionPicker?: ReactNode;
 }
 
 export function StudioResultCard({
@@ -25,8 +26,10 @@ export function StudioResultCard({
   regenerating,
   onRegenerate,
   onCite,
-  local,
+  versionPicker,
 }: StudioResultCardProps): JSX.Element {
+  // 098 + 178: nhãn AI cục bộ lưu cùng phiên bản (main ghi khi target local).
+  const local = result.local === true;
   const t = useT();
   const kindLabel = t.t(`studio.kind.${result.kind}`);
   const citeByN = new Map(result.citations.map((c) => [c.n, c]));
@@ -108,6 +111,7 @@ export function StudioResultCard({
           </button>
         </div>
       </header>
+      {versionPicker}
       {notice && (
         <p
           className="studio-notice"

@@ -4,6 +4,7 @@ import { useStudio } from "./useStudio";
 import { StudioResultCard } from "./StudioResultCard";
 import { StudioProgress } from "./StudioProgress";
 import { StudioCancel } from "./StudioCancel";
+import { StudioVersionPicker } from "./StudioVersionPicker";
 import { cancelFocusTarget } from "./studio-generation";
 import { studioCancelledMessage } from "../../shared/a11y/messages";
 import {
@@ -33,10 +34,12 @@ export function StudioColumn({
 }: StudioColumnProps): JSX.Element {
   const {
     results,
+    versions,
+    select,
+    deleteVersion,
     loading,
     errors,
     onlineFailed,
-    localKinds,
     progress,
     cancelling,
     generate,
@@ -109,6 +112,15 @@ export function StudioColumn({
         : `[data-testid=studio-btn-${kind}]`;
     colRef.current?.querySelector<HTMLElement>(target)?.focus();
   }, [pendingFocus, loading, results]);
+
+  // 178: xoá phiên bản cuối của loại ⇒ thẻ biến mất ⇒ focus về nút loại (đang tạo ⇒ nút bị khoá ⇒ về tiêu đề cột).
+  const focusKind = (kind: StudioKind): void => {
+    const btn = colRef.current?.querySelector<HTMLButtonElement>(
+      `[data-testid=studio-btn-${kind}]`,
+    );
+    if (btn && !btn.disabled) btn.focus();
+    else titleRef.current?.focus();
+  };
 
   // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
   // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
@@ -297,7 +309,16 @@ export function StudioColumn({
                 regenerating={loading[kind] === true}
                 onRegenerate={() => void run(kind)}
                 onCite={onCite}
-                local={localKinds[kind] === true}
+                versionPicker={
+                  <StudioVersionPicker
+                    kind={kind}
+                    versions={versions[kind] ?? [res]}
+                    currentId={res.id}
+                    onSelect={(id) => select(kind, id)}
+                    onDelete={(id) => deleteVersion(kind, id)}
+                    onEmptied={() => focusKind(kind)}
+                  />
+                }
               />
             </Fragment>
           );

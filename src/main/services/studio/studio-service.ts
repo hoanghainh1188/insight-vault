@@ -23,7 +23,7 @@ import { assertNotAborted, isChatAborted } from "../ai-runtime/abort";
 // Điều phối Studio (studio:generate / studio:list). DI: nguồn chunk + chat + repo lưu.
 // 105 (ADR studio-large-clarify): ngân sách theo CỬA SỔ NGỮ CẢNH của model (contextInfo) + num_ctx tường minh.
 // Vừa ngân sách ⇒ 1 lượt (chia đều theo nguồn, #65); vượt ⇒ map-reduce với [n] TOÀN CỤC (chip vẫn trỏ đúng đoạn).
-// Hậu kiểm chip (Constitution II) → upsert. KHÔNG log nội dung (Constitution III).
+// Hậu kiểm chip (Constitution II) → lưu PHIÊN BẢN mới (178). KHÔNG log nội dung (Constitution III).
 
 export interface StudioServiceDeps {
   /** 123: ngôn ngữ đầu ra mặc định (ngôn ngữ hiệu lực của main) khi input không gửi/không hợp lệ. */
@@ -158,20 +158,39 @@ export function createStudioService(deps: StudioServiceDeps) {
       citations.length > 0 ? citations : citationsFromMap(map);
 
     assertNotAborted(signal); // 149: ngay trước khi lưu — lượt đã huỷ KHÔNG ghi DB
-    const saved = deps.studioRepo.upsert(
+    // 178: mỗi lượt thành công = 1 phiên bản; parts / truncated / local (nhãn 098) lưu cùng phiên bản (G4).
+    return deps.studioRepo.insert({
       notebookId,
       kind,
-      answer,
-      finalCitations,
-    );
-    return { ...saved, truncated, parts };
+      content: answer,
+      citations: finalCitations,
+      parts,
+      truncated,
+      local: input.target === "local",
+    });
   }
 
   function list(notebookId: string): StudioResult[] {
     return deps.studioRepo.listByNotebook(notebookId);
   }
 
-  return { generate, list };
+  /** 178: xoá một phiên bản — tham số từ renderer (không tin) ⇒ kiểm chuỗi không rỗng; repo chỉ xoá khi khớp notebook. */
+  function deleteVersion(
+    notebookId: unknown,
+    id: unknown,
+  ): { deleted: boolean } {
+    if (
+      typeof notebookId !== "string" ||
+      notebookId === "" ||
+      typeof id !== "string" ||
+      id === ""
+    ) {
+      return { deleted: false };
+    }
+    return { deleted: deps.studioRepo.deleteVersion(notebookId, id) };
+  }
+
+  return { generate, list, deleteVersion };
 }
 
 export type StudioService = ReturnType<typeof createStudioService>;

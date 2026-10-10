@@ -19,6 +19,16 @@ export function formatDateTime(ms: number, lang: LanguageCode): string {
   }).format(ms);
 }
 
+/** 178: ngày + giờ RÚT GỌN cho nhãn hẹp (bộ chọn phiên bản Studio, cột 262 px): "10/10 07:46" / "10/10, 07:46 AM". */
+export function formatShortDateTime(ms: number, lang: LanguageCode): string {
+  return new Intl.DateTimeFormat(intlLocaleOf(lang), {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(ms);
+}
+
 export function formatNumber(
   n: number,
   lang: LanguageCode,

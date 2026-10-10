@@ -4,6 +4,7 @@ import {
   formatDateTime,
   formatNumber,
   formatRelativeTime,
+  formatShortDateTime,
   isoDate,
 } from "../../src/shared/i18n/format";
 import { createTranslator } from "../../src/shared/i18n/translate";
@@ -25,6 +26,20 @@ describe("formatDateTime", () => {
       }).format(at),
     );
     expect(formatDateTime(at, "en")).toBe("Oct 8, 2026, 2:05 PM");
+  });
+});
+
+describe("formatShortDateTime (178)", () => {
+  it("ngày/tháng + giờ:phút, không năm — vừa nhãn hẹp", () => {
+    const at = new Date(2026, 9, 8, 14, 5).getTime();
+    const vi = formatShortDateTime(at, "vi");
+    const en = formatShortDateTime(at, "en");
+    for (const s of [vi, en]) {
+      expect(s).toContain("08");
+      expect(s).toContain("05");
+      expect(s).not.toContain("2026");
+    }
+    expect(en).toBe("10/08, 02:05 PM");
   });
 });
 
