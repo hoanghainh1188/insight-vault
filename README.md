@@ -31,8 +31,11 @@ highlighted.
   ~120 MB; Q&A works as before until it's ready).
 - **Source viewer** — opens the cited passage highlighted; audio/video jump to the cited timestamp; images
   show the recognised text region.
-- **Studio** — summary, key points, FAQ and outline across a whole notebook (large notebooks are processed
-  in parts while keeping citations exact). Copy or export to Markdown.
+- **Studio** — 8 notebook-wide outputs: summary, key points, FAQ, outline, study guide, briefing, timeline and
+  glossary — plus a **custom request** box (your own instruction, up to 500 characters). Pick **a few sources** as
+  the scope, watch the text appear as the AI writes (cancel any time), and keep the **last 10 versions** of each
+  output to revisit or delete. Large notebooks are processed in parts while keeping citations exact. Copy or export
+  to Markdown.
 - **Optional online AI** — use Claude, Gemini or OpenAI with **your own API key** (stored in the OS
   keychain). A privacy badge shows whenever anything is sent off the machine; one click falls back to the
   local model.

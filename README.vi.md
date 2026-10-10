@@ -28,8 +28,10 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
   hỏi mà nguồn không có được báo "Không tìm thấy trong nguồn" ngay thay vì đoán (tải một lần ~120 MB; trong lúc chưa sẵn
   sàng hỏi đáp vẫn chạy như trước).
 - **Trình xem nguồn** — mở đoạn được trích có tô sáng; audio/video tua tới mốc được trích; ảnh hiện vùng chữ.
-- **Studio** — tóm tắt, ý chính, FAQ, dàn ý cho cả notebook (notebook lớn được xử lý theo phần mà vẫn giữ trích
-  dẫn chính xác). Sao chép hoặc xuất Markdown.
+- **Studio** — 8 loại tổng hợp cho cả notebook: tóm tắt, ý chính, FAQ, dàn ý, hướng dẫn học, bản tóm lược, dòng thời
+  gian, bảng thuật ngữ — cùng ô **yêu cầu tuỳ chỉnh** (tự gõ yêu cầu, tối đa 500 ký tự). Chọn **một vài nguồn** làm
+  phạm vi, xem chữ hiện dần khi AI đang viết (huỷ được bất cứ lúc nào), mỗi loại giữ **10 phiên bản** gần nhất để xem
+  lại hoặc xoá. Notebook lớn được xử lý theo phần mà vẫn giữ trích dẫn chính xác. Sao chép hoặc xuất Markdown.
 - **AI online tuỳ chọn** — dùng Claude, Gemini hoặc OpenAI bằng **API key của chính bạn** (lưu trong keychain hệ
   điều hành). Huy hiệu riêng tư hiện mỗi khi có dữ liệu gửi ra ngoài; một chạm để quay về mô hình cục bộ.
 - **Sao lưu & khôi phục** — **Cài đặt → Lưu trữ cục bộ** xuất toàn bộ vault ra 1 file `.ivbackup`, tuỳ chọn mã
