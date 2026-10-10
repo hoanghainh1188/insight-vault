@@ -274,7 +274,7 @@ kiểm; huỷ giữa chừng ⇒ chữ tạm biến mất, không có phiên b�
 - **SC-004**: Bộ yêu cầu tuỳ chỉnh gây hại mẫu (rỗng, quá dài, cố vô hiệu quy tắc trích dẫn, chứa HTML) — 100% bị từ chối trước khi gọi AI hoặc cho kết quả vẫn có
   trích dẫn kiểm chứng, hiển thị an toàn.
 - **SC-005**: 100% yêu cầu chứa nguồn không thuộc notebook hoặc chưa sẵn sàng bị từ chối, không có lần gọi AI nào.
-- **SC-006**: Với bước viết cuối dài, chữ đầu tiên xuất hiện trong vòng vài giây sau khi bước viết bắt đầu (thay vì chờ trọn bước viết).
+- **SC-006**: Với bước viết cuối dài, chữ đầu tiên xuất hiện ≤ 2 giây sau khi AI trả mẩu chữ đầu tiên của bước viết (thay vì chờ trọn bước viết).
 - **SC-007**: Huỷ giữa stream: 0 phiên bản mới, 0 mẩu chữ tới giao diện sau khi huỷ, dữ liệu đã lưu không đổi — với AI cục bộ và cả 3 nhà cung cấp online (kiểm bằng
   AI giả).
 - **SC-008**: Khu nút, bộ chọn phiên bản, ô yêu cầu tuỳ chỉnh và bộ chọn nguồn không tràn/không cuộn ngang ở cột 262 px và cửa sổ 900 px, cả vi và en.

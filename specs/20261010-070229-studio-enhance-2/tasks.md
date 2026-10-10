@@ -1,16 +1,21 @@
 # Tasks: Studio đợt 2 — phiên bản, 4 loại mới, yêu cầu tuỳ chỉnh, nhiều nguồn + stream (178)
 
+> **Sửa sau analyze (2026-10-10):** I1 security-reviewer bắt buộc PR 1 · I2 PR 1 dùng branch `178-studio-enhance-2` · U1 T007 file cụ thể · U2 T017
+> dùng lại `DeleteConfirm` · C1 test privacy egress khi stream (T062) · A1 SC-006 ≤ 2 s (T068) · C2 tiến độ khi stream (T061) · C3 nguồn đã xoá (T059) · C4 xoá
+> khi đang Tạo lại (T016) · U3 tên file test hook · F1 quy ước motion.
+
 **Input**: `specs/20261010-070229-studio-enhance-2/` (plan, spec, research R1–R10, data-model, contracts/studio-ipc.md, quickstart); quyết định
 `docs/04-decisions/2026-10-10-studio-enhance-2-clarify.md`.
 
 **Tests**: BẮT BUỘC (Constitution IV — TDD): mọi hàm / module thuần viết test TRƯỚC, chạy thấy FAIL rồi mới code. Ngưỡng ≥ 80% logic nghiệp vụ.
 
-**Tổ chức**: 4 phase = **4 PR tuần tự**, mỗi PR ship độc lập, cùng branch gốc `178-studio-enhance-2` (mỗi PR một branch con
-`178-studio-enhance-2-prN` cắt từ `main` sau khi PR trước merge). Mỗi phase kết thúc bằng **cổng review**: code-reviewer → glossary-steward →
-(security-reviewer — BẮT BUỘC PR 3, PR 4) → test gate (`npm run lint && npm run test && npm run build`, coverage ≥ 80%).
+**Tổ chức**: 4 phase = **4 PR tuần tự**, mỗi PR ship độc lập. **PR 1 dùng chính branch `178-studio-enhance-2`** (mang
+theo intake / spec / plan / tasks / ADR — rule 3); PR 2–4 mỗi PR một branch `178-studio-enhance-2-prN` cắt từ `main` sau khi PR trước merge. Mỗi phase kết thúc bằng **cổng review**: code-reviewer → glossary-steward →
+(security-reviewer — BẮT BUỘC mọi PR đụng DB / IPC: PR 1, PR 3, PR 4; agent tự in `SKIPPED` nếu không liên quan) → test gate (`npm run lint && npm run test && npm run build`, coverage ≥ 80%).
 
 **Quy ước**: không chạy prettier lên `docs/00-glossary.md`, `docs/04-decisions/INDEX.md` (sửa bằng script). `[P]` = khác tệp, không phụ thuộc task chưa xong.
 Log không chứa nội dung / yêu cầu tuỳ chỉnh / id. Mọi chuỗi UI qua i18n (vi nguồn `as const`, en `Widen`).
+Mọi UI mới (T017, T032, T046, T059, T067): chỉ animate `transform` / `opacity`, tôn trọng `prefers-reduced-motion`, focus-visible rõ.
 
 ---
 
@@ -46,7 +51,7 @@ còn 10; DB v10 có kết quả cũ ⇒ sau v11 hiện đủ.
 - [ ] T006 [P] [US1] Viết test TRƯỚC trong `tests/unit/studio-service.test.ts`: `generate` gọi `studioRepo.insert` (không còn `upsert`) với `parts`, `truncated`
       và `local: true` chỉ khi `input.target === "local"`; huỷ (signal) ⇒ `insert` không được gọi (giữ kỳ vọng 149); `deleteVersion(notebookId, id)` chuyển xuống
       repo; kiểm kiểu tham số (không phải chuỗi / rỗng ⇒ `{deleted:false}`, repo không gọi).
-- [ ] T007 [P] [US1] Viết test TRƯỚC (vault-backup) trong `tests/unit/` tệp vault-backup sẵn có liên quan schema guard: bản sao lưu ở schema v10 có
+- [ ] T007 [P] [US1] Viết test TRƯỚC trong `tests/unit/vault-backup-prepare.test.ts` (cạnh ca "schema cũ hơn ⇒ được migrate lên max"): bản sao lưu ở schema v10 có
       `studio_result` ⇒ `assertSchemaMatches(v10)` qua, `runMigrations` lên v11, dữ liệu Studio giữ nguyên; `expectedSchema(11)` khớp DB mới tạo.
 
 ### Implementation
@@ -73,10 +78,12 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
       `studio.versions.delete`, `studio.versions.deleteAria` (có tên loại), `studio.versions.confirmDelete`, `a11y.studioVersionDeleted` — trong
       `src/shared/i18n/domains/studio.ts`, `src/shared/i18n/domains/a11y.ts`; catalog test vi↔en xanh.
 - [ ] T015 [US1] Hiện thực `src/renderer/features/studio/studio-versions.ts` (T004 xanh).
-- [ ] T016 [US1] Viết test TRƯỚC rồi sửa `src/renderer/features/studio/useStudio.ts` (test hook trong `tests/unit/` khuôn `studio-cancel-hook.test.ts`):
+- [ ] T016 [US1] Viết test TRƯỚC rồi sửa `src/renderer/features/studio/useStudio.ts` (test hook TRƯỚC ở `tests/unit/studio-versions-hook.test.ts`, khuôn `studio-cancel-hook.test.ts`):
       `versions` + `selected` thay `results`; nạp `studioList` ⇒ `groupVersions`; generate xong ⇒ `withInserted` + chọn bản mới; `select(kind, id)`;
-      `deleteVersion(kind, id)` gọi IPC rồi `afterDelete`; bỏ `localKinds` (dùng `version.local`); giữ nguyên A→B→A / huỷ / tự huỷ khi đổi notebook (149).
-- [ ] T017 [US1] Tạo `src/renderer/features/studio/StudioVersionPicker.tsx`: `<select>` có `<label>` (chỉ hiện khi ≥ 2 bản) + nút xoá (`aria-label` có tên loại) + hộp xác nhận (dialog sẵn có của dự án nếu có, ngược lại `confirm` qua dialogs domain); sau xoá: focus về select (còn bản) hoặc nút loại (hết bản),
+      `deleteVersion(kind, id)` gọi IPC rồi `afterDelete`; bỏ `localKinds` (dùng `version.local`); giữ nguyên A→B→A / huỷ / tự huỷ khi đổi notebook (149);
+      xoá phiên bản đang xem trong lúc loại đó đang "Tạo lại" ⇒ lượt tạo vẫn chạy, xong vẫn chèn bản mới và chọn nó.
+- [ ] T017 [US1] Tạo `src/renderer/features/studio/StudioVersionPicker.tsx`: `<select>` có `<label>` (chỉ hiện khi ≥ 2 bản) + nút xoá (`aria-label` có tên loại) + xác nhận xoá dùng lại mẫu `src/renderer/features/notebooks/DeleteConfirm.tsx` / xác nhận trong `src/renderer/features/sources/SourceItem.tsx`
+      (KHÔNG `window.confirm`); sau xoá: focus về select (còn bản) hoặc nút loại (hết bản),
       `announce(a11y.studioVersionDeleted)`. Test jsdom TRƯỚC `tests/unit/studio-version-picker.test.ts` (nhãn vi/en, ẩn khi 1 bản, xác nhận huỷ ⇒ không xoá,
       focus, announce).
 - [ ] T018 [US1] Sửa `src/renderer/features/studio/StudioResultCard.tsx` + `StudioColumn.tsx`: card hiển thị `currentVersion`; Copy / Export / chip `[n]` dùng
@@ -93,7 +100,7 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
       `deleteVersion`, `local` từ main) + append dòng `docs/04-decisions/INDEX.md` bằng script.
 - [ ] T022 [US1] Gọi subagent **code-reviewer** (đối chiếu constitution / spec / plan / tasks phase 1); xử lý mọi Blocking.
 - [ ] T023 [US1] Gọi subagent **glossary-steward**; append term mới thiếu (KHÔNG sửa term cũ).
-- [ ] T024 [US1] Gọi subagent **security-reviewer** (khuyến nghị — PR đụng DB / IPC mới `deleteVersion`); xử lý Blocking.
+- [ ] T024 [US1] Gọi subagent **security-reviewer** (BẮT BUỘC — PR đụng DB: migration v11, IPC mới `deleteVersion`); xử lý mọi Blocking.
 - [ ] T025 [US1] Test gate: `npm run lint && npm run test && npm run build` xanh, coverage ≥ 80%; quickstart dòng PR 1 (gồm dữ liệu v0.2.19 + khôi phục sao
       lưu cũ); mở PR 1.
 
@@ -213,7 +220,8 @@ huỷ giữa stream ⇒ không phiên bản, không token sau huỷ.
 - [ ] T059 [US4] Viết test jsdom TRƯỚC `tests/unit/studio-scope-picker.test.ts` rồi tạo `src/renderer/features/studio/StudioScopePicker.tsx` (thay `<select>`
       `studio-scope`): nút disclosure "Phạm vi: Tất cả nguồn / {n} nguồn" (`aria-expanded`, `aria-controls`), danh sách checkbox nguồn ready có nhãn, Esc đóng
       và trả focus; chỉ hiện khi > 1 nguồn ready; i18n `studio.scope.*` vi/en. Sửa `useStudio.ts` (`generate(kind, { sourceIds })`), `StudioColumn.tsx`,
-      `StudioResultCard.tsx` (hiện "{n} nguồn" / nguồn đã xoá của phiên bản), `studio.css`.
+      `StudioResultCard.tsx` (hiện "{n} nguồn" / nguồn đã xoá của phiên bản), `studio.css`. Test jsdom thêm ca: phiên bản có `sourceIds` chứa id
+      không còn trong notebook ⇒ vẫn hiển thị, ghi "nguồn đã xoá" (i18n `studio.scope.deletedSource`).
 
 ### US5 — Stream lượt viết cuối
 
@@ -224,9 +232,11 @@ huỷ giữa stream ⇒ không phiên bản, không token sau huỷ.
       abort trả phần đã nhận và KHÔNG ném — chạy cùng bộ ca cho 4 nhãn provider ollama / openai / anthropic / gemini): (a) 1-lượt — `onToken` chỉ truyền ở lượt
       viết cuối, delta tới callback theo thứ tự; (b) map-reduce — map / condense KHÔNG nhận `onToken`, lượt cuối nhận; (c) huỷ giữa stream ⇒ reject
       `studioCancelled`, `postprocessCitations` / repo.insert KHÔNG được gọi; (d) không gửi delta sau `signal.aborted`; (e) thiếu `generationId` ⇒ không stream
-      (gọi chat không có `onToken`, hành vi không-stream 149 giữ nguyên).
+      (gọi chat không có `onToken`, hành vi không-stream 149 giữ nguyên); (f) có stream ⇒ chuỗi sự kiện tiến độ 146
+      (reading i/N → condensing → writing) KHÔNG đổi so với khi không stream.
 - [ ] T062 [P] [US5] Viết test TRƯỚC (bổ sung `tests/unit/online-http-abort.test.ts` / `tests/unit/ollama-client.test.ts`): xác nhận hợp đồng thật — nhánh
-      stream (có `onToken`) khi abort trả `{content: phần đã nhận}` và không ném, cho Ollama và `streamLines` dùng bởi 3 provider online (khoá hành vi mà R7 dựa vào).
+      stream (có `onToken`) khi abort trả `{content: phần đã nhận}` và không ném, cho Ollama và `streamLines` dùng bởi 3 provider online (khoá hành vi mà R7 dựa vào). Thêm ca privacy (Constitution I, FR-051):
+      stream online ⇒ egress "đang gửi" trong lúc đọc, về nghỉ khi xong VÀ khi abort; Ollama (`egress:false`) không đổi trạng thái egress.
 - [ ] T063 [US5] `src/main/services/studio/studio-service.ts` + `map-reduce.ts`: `deps.chat(messages, { numCtx, signal, onToken })`; truyền `onToken` CHỈ vào
       lượt viết cuối (1-lượt và lượt `chat` cuối của `runMapReduce`); gọi `assertNotAborted(signal)` NGAY SAU lượt viết cuối (trước `postprocessCitations`);
       `generate(input, { onProgress, signal, onToken })`. T061 xanh.
@@ -236,12 +246,12 @@ huỷ giữa stream ⇒ không phiên bản, không token sau huỷ.
 { if (!signal.aborted && !sender.isDestroyed()) sender.send(CHANNELS.studioStreamToken, { generationId, delta }) }` — KHÔNG `getAllWindows`;
       `src/preload/index.ts`: `onStudioStreamToken(cb) → unsubscribe`. Sửa test TRƯỚC `tests/unit/studio-channels-whitelist.test.ts` (kênh mới) và thêm test
       emitter thuần nếu tách hàm (`createStudioTokenEmitter` khuôn `progress-emitter.ts`: id không hợp lệ ⇒ `undefined`; aborted / destroyed ⇒ không send).
-- [ ] T066 [US5] Viết test hook TRƯỚC rồi sửa `src/renderer/features/studio/useStudio.ts`: đăng ký `onStudioStreamToken` một lần; lọc `isCurrentGeneration`;
+- [ ] T066 [US5] Viết test hook TRƯỚC ở `tests/unit/studio-stream-hook.test.ts` rồi sửa `src/renderer/features/studio/useStudio.ts`: đăng ký `onStudioStreamToken` một lần; lọc `isCurrentGeneration`;
       nối `streamText[kind]`; xong / lỗi / huỷ / đổi notebook ⇒ xoá `streamText[kind]`; token của lượt bị thay bị bỏ.
 - [ ] T067 [US5] Sửa `StudioResultCard.tsx` / `StudioColumn.tsx` + `studio.css`: vùng chữ tạm hiển thị `stripCitationMarkers(streamText)` dạng văn bản thường
       (không markdown, không chip), KHÔNG `aria-live` / `role="status"`; khi "Tạo lại" vùng chữ tạm ở trên, phiên bản đang xem bên dưới; xong ⇒ thay bằng phiên
       bản mới; mốc đọc màn hình giữ như 146/149. Test jsdom: không có chip trong lúc stream, không có node live chứa chữ tạm.
-- [ ] T068 [US5] e2e `tests/e2e/studio-stream.spec.ts` (Ollama giả trả token chậm qua NDJSON): chữ hiện dần, không `[n]`; xong ⇒ chip; Huỷ giữa stream ⇒ chữ tạm
+- [ ] T068 [US5] e2e `tests/e2e/studio-stream.spec.ts` (Ollama giả trả token chậm qua NDJSON): chữ hiện dần, không `[n]`; chữ đầu tiên hiện ≤ 2 s sau khi server giả gửi token đầu tiên của bước viết (SC-006); xong ⇒ chip; Huỷ giữa stream ⇒ chữ tạm
       biến mất, không phiên bản mới, server thấy kết nối đóng; mở 2 cửa sổ ⇒ cửa sổ thứ 2 không nhận chữ; chọn 2/4 nguồn ⇒ chip chỉ trỏ 2 nguồn.
 
 ### Cổng review PR 4
@@ -287,5 +297,5 @@ Ví dụ PR 4: chạy cùng lúc "test resolveSourceScope" (T055), "test stripCi
 ## Implementation Strategy
 
 - **MVP = PR 1 (US1)**: bỏ "Tạo lại phá huỷ" là rủi ro lớn nhất; ship độc lập với 4 loại cũ.
-- Mỗi PR: TDD → cổng review → test gate → merge → cắt branch PR kế từ `main` mới (rule 6: sync main, chạy lại `/speckit-analyze` nếu constitution / glossary đổi).
+- Mỗi PR: TDD → cổng review → test gate → merge → cắt branch PR kế (`178-studio-enhance-2-prN`) từ `main` mới (rule 6: sync main, chạy lại `/speckit-analyze` nếu constitution / glossary đổi).
 - Phát hành MỘT lần sau PR 4 (T076).
