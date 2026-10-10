@@ -270,7 +270,7 @@ huỷ giữa stream ⇒ không phiên bản, không token sau huỷ.
 
 ## Phase 5: Polish & phát hành (sau khi PR 4 merge)
 
-- [ ] T074 [P] PR glossary RIÊNG (steward duyệt, rule 5): sửa dòng `StudioKind` (9 giá trị) và `StudioResult` (nhiều phiên bản, bỏ UNIQUE) trong
+- [X] T074 [P] PR glossary RIÊNG (steward duyệt, rule 5): sửa dòng `StudioKind` (9 giá trị) và `StudioResult` (nhiều phiên bản, bỏ UNIQUE) trong
       `docs/00-glossary.md`.
 - [X] T075 [P] Cập nhật README (EN) + `README.vi.md` mục Studio (phiên bản, 8 loại, yêu cầu tuỳ chỉnh, nhiều nguồn, stream).
 - [ ] T076 Bump version + release notes song ngữ (một lần cho cả 4 PR); cập nhật memory `studio-enhance-2-plan` / `post-021-roadmap`.
