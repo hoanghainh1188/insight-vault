@@ -22,20 +22,38 @@ export type CustomPromptResult =
       params?: { max: number };
     };
 
-// C0 trừ \t (09) và \n (0A); DEL. (\r đã được đổi thành \n trước bước này.)
-const CONTROL_CHARS = /[\u0000-\u0008\u000B-\u001F\u007F]/g;
-// <request>, </request>, < REQUEST >… — đổi ngoặc nhọn để không đóng / mở khối giả trong tin nhắn user.
-const REQUEST_TAG = /<\s*(\/?)\s*request\s*>/gi;
+// C0 trừ \t (09) và \n (0A); DEL; C1; ký tự định hướng hai chiều (đảo chiều hiển thị) + zero-width / BOM.
+// (\r đã được đổi thành \n trước bước này.)
+const CONTROL_CHARS =
+  /[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g;
+// Chặn chuỗi thô quá lớn TRƯỚC regex (renderer bị chiếm quyền) — trần rộng hơn mọi chuỗi hợp lệ có thể có.
+const RAW_MAX = STUDIO_CUSTOM_PROMPT_MAX * 8 + 256;
+
+/**
+ * Thẻ <request> / </request> / <request foo="…"> / <request/> (hoa thường, khoảng trắng) ⇒ `[request]` / `[/request]` — văn
+ * bản (người dùng hoặc đoạn nguồn) không đóng / mở được khối giả trong tin nhắn user.
+ */
+export function neutralizeRequestTags(text: string): string {
+  return text.replace(
+    /<\s*(\/?)\s*request\b[^>]*>/gi,
+    (_m, slash: string) => `[${slash}request]`,
+  );
+}
 
 export function parseCustomPrompt(raw: unknown): CustomPromptResult {
   if (typeof raw !== "string") {
     return { ok: false, code: "studioCustomPromptInvalid" };
   }
-  const text = raw
-    .replace(/\r\n?/g, "\n")
-    .replace(CONTROL_CHARS, "")
-    .replace(REQUEST_TAG, (_m, slash: string) => `[${slash}request]`)
-    .trim();
+  if (raw.length > RAW_MAX) {
+    return {
+      ok: false,
+      code: "studioCustomPromptTooLong",
+      params: { max: STUDIO_CUSTOM_PROMPT_MAX },
+    };
+  }
+  const text = neutralizeRequestTags(
+    raw.replace(/\r\n?/g, "\n").replace(CONTROL_CHARS, ""),
+  ).trim();
   if (text === "") return { ok: false, code: "studioCustomPromptEmpty" };
   if (codePointLength(text) > STUDIO_CUSTOM_PROMPT_MAX) {
     return {

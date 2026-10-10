@@ -144,8 +144,12 @@ export function StudioColumn({
   // 091: báo trình đọc màn hình lúc bắt đầu/xong (Studio chờ trọn kết quả — có thể mất vài chục giây).
   // 098: target "local" = tạo lại bằng AI cục bộ sau lỗi online (nút trong khối lỗi).
   // 149: kết cục "cancelled" ⇒ câu huỷ + trả focus; "stale" ⇒ im lặng (lượt đã bị thay / rời notebook).
-  // 178: yêu cầu tuỳ chỉnh vừa gửi — dùng cho "Thử lại" / "Tạo bằng AI cục bộ" trong khối lỗi của loại custom.
+  // 178 (review B1): yêu cầu của LƯỢT custom gần nhất (gửi từ ô nhập HAY "Tạo lại" một phiên bản) — "Thử lại" / "Tạo bằng AI
+  // cục bộ" trong khối lỗi dùng đúng yêu cầu của lượt vừa lỗi. Xoá khi đổi notebook (không mang nội dung sang notebook khác).
   const lastCustom = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    lastCustom.current = undefined;
+  }, [notebookId]);
   const run = async (
     kind: StudioKind,
     target?: AiTarget,
@@ -153,6 +157,7 @@ export function StudioColumn({
       ? lastCustom.current
       : undefined,
   ): Promise<void> => {
+    if (kind === "custom") lastCustom.current = customPrompt;
     const tr = trRef.current;
     announce(studioMessage(tr.t(`studio.kind.${kind}`), "start", tr));
     const outcome = await generate(kind, scopeId, target, customPrompt);
@@ -224,12 +229,11 @@ export function StudioColumn({
       </div>
 
       <StudioCustomRequest
+        // 178 (review N1): nháp gắn với notebook — đổi notebook ⇒ ô trống.
+        key={notebookId}
         loading={loading.custom === true}
         disabled={disabled}
-        onSubmit={(text) => {
-          lastCustom.current = text;
-          void run("custom", undefined, text);
-        }}
+        onSubmit={(text) => void run("custom", undefined, text)}
       />
 
       <div className="studio-results">

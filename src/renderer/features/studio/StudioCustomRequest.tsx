@@ -51,7 +51,12 @@ export function StudioCustomRequest({
         aria-describedby={tooLong ? `${counterId} ${errorId}` : counterId}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          // Bỏ qua khi đang gõ bộ gõ (IME) — Enter xác nhận chữ, không gửi.
+          if (
+            e.key === "Enter" &&
+            (e.ctrlKey || e.metaKey) &&
+            !e.nativeEvent.isComposing
+          ) {
             e.preventDefault();
             submit();
           }

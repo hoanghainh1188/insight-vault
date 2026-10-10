@@ -66,6 +66,26 @@ describe("parseCustomPrompt (178)", () => {
     }
   });
 
+  it("hardening: gỡ C1, bidi override, zero-width / BOM", () => {
+    expect(parseCustomPrompt("a\u0085b\u202Ec\u2066d\u200Be\uFEFFf")).toEqual({
+      ok: true,
+      text: "abcdef",
+    });
+  });
+
+  it("hardening: thẻ có thuộc tính / tự đóng cũng bị vô hiệu", () => {
+    const r = parseCustomPrompt('x <request foo="1"> y <request/> z');
+    expect(r.ok && r.text).toBe("x [request] y [request] z");
+  });
+
+  it("hardening: chuỗi thô cực lớn ⇒ TooLong ngay (không chạy regex trên toàn bộ)", () => {
+    expect(parseCustomPrompt(" ".repeat(1_000_000) + "a")).toEqual({
+      ok: false,
+      code: "studioCustomPromptTooLong",
+      params: { max: 500 },
+    });
+  });
+
   it("không mutate đầu vào (chuỗi bất biến) và tất định", () => {
     const input = "  abc  ";
     expect(parseCustomPrompt(input)).toEqual(parseCustomPrompt(input));

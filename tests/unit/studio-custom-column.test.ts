@@ -17,6 +17,7 @@ let container: HTMLDivElement;
 let root: Root;
 let inputs: StudioGenerateInput[];
 let settle: Array<(v: unknown) => void>;
+let fail: Array<(e: unknown) => void>;
 
 const XSS = '<img src=x onerror="window.__pwned=1">';
 const ver = (
@@ -33,7 +34,10 @@ const ver = (
   customPrompt,
 });
 
-async function mount(existing: StudioResult[] = []): Promise<void> {
+async function mount(
+  existing: StudioResult[] = [],
+  notebookId = "nb1",
+): Promise<void> {
   (window as unknown as { api: unknown }).api = {
     aiGetRuntimeStatus: () => Promise.resolve({ ollamaReady: true }),
     sourceListByNotebook: () =>
@@ -46,13 +50,14 @@ async function mount(existing: StudioResult[] = []): Promise<void> {
     studioCancel: () => Promise.resolve({ cancelled: true }),
     studioDeleteVersion: () => Promise.resolve({ deleted: true }),
     studioGenerate: (i: StudioGenerateInput) =>
-      new Promise((ok) => {
+      new Promise((ok, ko) => {
         inputs.push(i);
         settle.push(ok);
+        fail.push(ko);
       }),
   };
   await act(async () =>
-    root.render(createElement(StudioColumn, { notebookId: "nb1" })),
+    root.render(createElement(StudioColumn, { notebookId })),
   );
   await act(async () => {});
 }
@@ -63,6 +68,7 @@ const q = <T extends HTMLElement>(sel: string) =>
 beforeEach(() => {
   inputs = [];
   settle = [];
+  fail = [];
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
@@ -127,5 +133,62 @@ describe("StudioColumn — yêu cầu tuỳ chỉnh (178)", () => {
       kind: "custom",
       customPrompt: "Yêu cầu cũ",
     });
+  });
+
+  const onlineErr = (): Error =>
+    new Error("OpenAI: timeout [[online:timeout]]");
+  const typeAndSubmit = async (text: string): Promise<void> => {
+    act(() => {
+      const ta = q<HTMLTextAreaElement>("[data-testid=studio-custom-input]")!;
+      Object.getOwnPropertyDescriptor(
+        HTMLTextAreaElement.prototype,
+        "value",
+      )!.set!.call(ta, text);
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () =>
+      q<HTMLButtonElement>("[data-testid=studio-custom-submit]")!.click(),
+    );
+  };
+
+  it("B1: Tạo lại phiên bản cũ bị lỗi online ⇒ 'Tạo bằng AI cục bộ' / 'Thử lại' dùng ĐÚNG yêu cầu của lượt lỗi", async () => {
+    await mount([ver("c2", 2, "Yêu cầu mới"), ver("c1", 1, "Yêu cầu cũ")]);
+    await typeAndSubmit("Nháp khác");
+    await act(async () => settle[0](ver("c3", 3, "Nháp khác")));
+    const sel = q<HTMLSelectElement>(
+      "[data-testid=studio-version-select-custom]",
+    )!;
+    act(() => {
+      sel.value = "c1";
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () =>
+      q<HTMLButtonElement>("[data-testid=studio-regen-custom]")!.click(),
+    );
+    await act(async () => fail[1](onlineErr()));
+    await act(async () =>
+      q<HTMLButtonElement>("[data-testid=studio-local-retry-custom]")!.click(),
+    );
+    expect(inputs[2]).toMatchObject({
+      kind: "custom",
+      customPrompt: "Yêu cầu cũ",
+      target: "local",
+    });
+    await act(async () => fail[2](new Error("x")));
+    await act(async () =>
+      q<HTMLButtonElement>("[data-testid=studio-retry-custom]")?.click(),
+    );
+  });
+
+  it("B1 + N1: đổi notebook ⇒ không mang yêu cầu / nháp của notebook cũ", async () => {
+    await mount([], "nb1");
+    await typeAndSubmit("Bí mật của nb1");
+    await act(async () => fail[0](onlineErr()));
+    await mount([], "nb2");
+    expect(
+      q<HTMLTextAreaElement>("[data-testid=studio-custom-input]")!.value,
+    ).toBe("");
+    expect(q("[data-testid=studio-local-retry-custom]")).toBeNull();
+    expect(JSON.stringify(inputs.slice(1))).not.toContain("Bí mật của nb1");
   });
 });

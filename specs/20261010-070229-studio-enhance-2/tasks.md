@@ -185,11 +185,11 @@ FROM studio_result` → `DROP TABLE studio_result` → `ALTER TABLE studio_resul
 
 - [X] T049 [US3] ADR thực thi `docs/04-decisions/2026-10-10-studio-custom.md` (khối `<request>`, map trung lập, chuẩn hoá ký tự điều khiển, đếm code point) +
       INDEX bằng script.
-- [ ] T050 [US3] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T051 [US3] Gọi **glossary-steward**; append term thiếu.
-- [ ] T052 [US3] Gọi **security-reviewer** (BẮT BUỘC): prompt injection (system không chứa input), validate ở main, XSS khi hiển thị lại, log, DoS độ dài,
+- [X] T050 [US3] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T051 [US3] Gọi **glossary-steward**; append term thiếu.
+- [X] T052 [US3] Gọi **security-reviewer** (BẮT BUỘC): prompt injection (system không chứa input), validate ở main, XSS khi hiển thị lại, log, DoS độ dài,
       export name không chứa yêu cầu. Mọi Blocking phải sửa trước test gate.
-- [ ] T053 [US3] Test gate + quickstart dòng PR 3 (bộ yêu cầu độc hại thủ công trên Ollama thật); mở PR 3.
+- [X] T053 [US3] Test gate + quickstart dòng PR 3 (bộ yêu cầu độc hại thủ công trên Ollama thật); mở PR 3.
 
 **Checkpoint**: PR 3 merge độc lập.
 

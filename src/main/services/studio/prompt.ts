@@ -1,5 +1,6 @@
 import type { StudioKind } from "@shared/ipc/types";
 import type { LanguageCode } from "@shared/i18n";
+import { neutralizeRequestTags } from "./custom-prompt";
 
 // System prompt cho Studio (ADR 2026-07-11-studio-context-strategy). Hàm THUẦN — test tất định.
 // Khung chung ép: chỉ dùng đoạn ĐÁNH SỐ, chèn [n], KHÔNG bịa (Constitution II — kiểm chứng được; nội dung luôn truy
@@ -91,8 +92,9 @@ export function finalUserContent(
   body: string,
   lang: LanguageCode,
 ): string {
-  const tail = `${body}\n\n${languageReminder(lang)}`;
-  return kind === "custom" && request
-    ? `<request>\n${request}\n</request>\n\n${tail}`
-    : tail;
+  if (kind !== "custom" || !request) {
+    return `${body}\n\n${languageReminder(lang)}`;
+  }
+  // Đoạn nguồn (có thể từ tài liệu độc hại) cũng không được giả thẻ <request> (indirect injection).
+  return `<request>\n${request}\n</request>\n\n${neutralizeRequestTags(body)}\n\n${languageReminder(lang)}`;
 }
