@@ -12,7 +12,7 @@ Bật bằng `EVAL_DETAILS=1` (cùng cờ của 177). Không đổi số liệu 
 ```text
 ## Chẩn đoán bộ chấm (cấu hình đã ghi — chỉ khi EVAL_DETAILS=1)
 | Câu | Loại | Tập | Nguyên nhân | Điểm cao nhất | Điểm đoạn đúng | Hạng RRF đoạn đúng | Đáp án trong cửa sổ token |
-Tổng theo nguyên nhân: cutOff n · lowScoreInWindow n · nearTopicHighScore n · notRetrieved n
+Tổng theo nguyên nhân: cutOff n · lowScoreInWindow n · rankedOut n · nearTopicHighScore n · notRetrieved n
 ```
 
 Quy tắc: không in nội dung đoạn (chỉ id, nguồn, điểm). Câu không có trong danh sách quan tâm và `cause = ok` không in.

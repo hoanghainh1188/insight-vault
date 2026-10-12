@@ -27,10 +27,11 @@ Mở rộng mô hình 108 / 109 / 177. Chỉ liệt kê phần đổi / mới.
 | `answerScore` | number \| null | điểm cao nhất của đoạn đúng |
 | `answerRrfRank` | number \| null | hạng RRF (1-based) của đoạn đúng đầu tiên |
 | `quoteInWindow` | boolean \| null | của đoạn đúng tốt nhất |
-| `cause` | `cutOff` \| `lowScoreInWindow` \| `nearTopicHighScore` \| `notRetrieved` \| `ok` | phân loại |
+| `cause` | `cutOff` \| `lowScoreInWindow` \| `rankedOut` \| `nearTopicHighScore` \| `notRetrieved` \| `ok` | phân loại |
 
 Phân loại: câu có đáp án bị từ chối / tụt: `quoteInWindow === false` ⇒ `cutOff`; trong cửa sổ nhưng `answerScore < minScore` ⇒
-`lowScoreInWindow`; không có đoạn đúng trong ứng viên ⇒ `notRetrieved`. Câu không đáp án không bị từ chối ⇒ `nearTopicHighScore`. Còn
+`lowScoreInWindow`; đủ điểm, trong cửa sổ mà vẫn lỡ (rơi khỏi top 6 / bị bước khác loại) ⇒ `rankedOut` (bổ sung sau review PR 1);
+không có đoạn đúng trong ứng viên ⇒ `notRetrieved`. Câu không đáp án không bị từ chối ⇒ `nearTopicHighScore`. Còn
 lại ⇒ `ok`.
 
 ## EvalReport (mở rộng)
