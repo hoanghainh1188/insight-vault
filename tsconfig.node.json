@@ -25,6 +25,7 @@
     "src/renderer/worker-url.d.ts",
     "tests/unit/**/*.ts",
     "tests/eval/**/*.ts",
+    "tests/spike/**/*.ts",
     "electron.vite.config.ts",
     "vitest.config.ts",
     "vitest.eval.config.ts"
