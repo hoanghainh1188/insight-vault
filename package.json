@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "eval:retrieval": "vitest run -c vitest.eval.config.ts",
+    "spike:asr": "vitest run -c vitest.spike.config.ts",
     "pack": "electron-vite build && electron-builder --dir",
     "dist": "electron-vite build && electron-builder --publish never",
     "dist:mac": "electron-vite build && electron-builder --mac dmg --publish never",
