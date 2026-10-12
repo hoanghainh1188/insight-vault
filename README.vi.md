@@ -20,13 +20,17 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
 ## Tính năng
 
 - **Nguồn:** PDF (giữ thứ tự đọc, bảng biểu, trang nhiều cột), `.docx`, `.txt`, `.md`, trang web (URL),
-  **audio** (`.wav` `.mp3` `.flac` `.ogg` `.m4a` `.aac` — bóc băng cục bộ bằng Whisper),
+  **audio** (`.wav` `.mp3` `.flac` `.ogg` `.m4a` `.aac` — bóc băng cục bộ bằng Whisper, tự nhận tiếng Việt hoặc
+  tiếng Anh),
   **video** (`.mp4` `.mov` `.webm` `.mkv`), **ảnh** (`.png` `.jpg` `.webp` `.bmp` `.tiff` — OCR cục bộ, Việt + Anh).
 - **Hỏi đáp có trích dẫn** — trả lời dạng stream, truy xuất lai (vector + toàn văn), chế độ "theo nguồn" từ chối
   trả lời ngoài tài liệu, hoặc chế độ "mở rộng" có gắn nhãn rõ.
 - **Bộ chấm độ liên quan** — một mô hình nhỏ chạy cục bộ kiểm tra đoạn tìm được có thật sự trả lời câu hỏi không, nên câu
   hỏi mà nguồn không có được báo "Không tìm thấy trong nguồn" ngay thay vì đoán (tải một lần ~120 MB; trong lúc chưa sẵn
   sàng hỏi đáp vẫn chạy như trước).
+- **Ghi cuộc họp** *(thử nghiệm)* — ghi âm từ micro thẳng vào notebook (tạm dừng, tiếp tục, kết thúc); khi kết thúc,
+  bản ghi được bóc băng ngay trên máy và thành một nguồn để tìm kiếm, hỏi đáp, dùng trong Studio, với trích dẫn tua đúng
+  thời điểm trong audio. Chưa có transcript hiện dần trong lúc ghi, và bản Windows chưa được thử với micro thật.
 - **Trình xem nguồn** — mở đoạn được trích có tô sáng; audio/video tua tới mốc được trích; ảnh hiện vùng chữ.
 - **Studio** — 8 loại tổng hợp cho cả notebook: tóm tắt, ý chính, FAQ, dàn ý, hướng dẫn học, bản tóm lược, dòng thời
   gian, bảng thuật ngữ — cùng ô **yêu cầu tuỳ chỉnh** (tự gõ yêu cầu, tối đa 500 ký tự). Chọn **một vài nguồn** làm
