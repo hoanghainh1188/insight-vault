@@ -134,7 +134,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       `computeStorageInfo`, online, mở cổng), `start`, `acceptAudio`, `pause`, `resume`, `stop`, `status`, `rename`, `finalize` (R8 — ngôn ngữ bản chốt PR A: `vi`/`en` ⇒ khoá, `auto`/`multi` ⇒ `null`), `recoverOnStartup` (PR A: tự hoàn
       tất), `onSourceRemoved`, `isRecordingNotebook`, `onRendererGone` + giám sát "không lô > 5 s" (PR A: tự kết thúc + hoàn tất); push `meeting:state` mỗi 1 s và khi đổi phase chỉ tới `ownerWebContentsId`; tiến độ hoàn tất qua `source:progress`.
       T022 xanh.
-- [ ] T043 [US1] `src/main/services/source-viewer/media-serve.ts`: chấp nhận `kind="meeting"`, đường dẫn từ `meetingFiles.resolvePlayback` (không từ `origin`), Range/206
+- [X] T043 [US1] `src/main/services/source-viewer/media-serve.ts`: chấp nhận `kind="meeting"`, đường dẫn từ `meetingFiles.resolvePlayback` (không từ `origin`), Range/206
       giữ nguyên; path không ra renderer.
 - [X] T044 [US1] `src/main/services/vault-backup/snapshot.ts` + `restore-swap.ts`: sao chép `meetings/`, `VAULT_ITEMS` thêm `meetings`, schema guard v12; hộp sao lưu hiện
       dòng "Ghi âm cuộc họp: N MB" (`dirSize`) — chuỗi i18n domain `backup`. T020 xanh.

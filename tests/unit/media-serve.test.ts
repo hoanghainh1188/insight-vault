@@ -135,3 +135,49 @@ describe("createMediaHandler (049)", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("createMediaHandler — nguồn cuộc họp (186)", () => {
+  const wavPath = (): string => join(dir, "meeting.wav");
+  const calls: [string, number | undefined][] = [];
+  function meetingRepo(): SourceRepo {
+    return {
+      getById: (id: string) => (id === "m1" ? { ...audioSource(id), kind: "meeting" } : null),
+      getOrigin: () => "meeting:sess-1",
+    } as unknown as SourceRepo;
+  }
+  const resolve = (id: string, seg: number | undefined): string | null => {
+    calls.push([id, seg]);
+    return id === "m1" && (seg === undefined || seg === 0) ? wavPath() : null;
+  };
+
+  beforeAll(() => writeFileSync(join(dir, "meeting.wav"), BODY));
+
+  it("phục vụ tệp do resolver trả (không dùng origin), MIME audio/wav, Range 206", async () => {
+    const h = createMediaHandler(meetingRepo(), resolve);
+    const full = await h(new Request("iv-media://source/m1"));
+    expect(full.status).toBe(200);
+    expect(full.headers.get("Content-Type")).toBe("audio/wav");
+    const part = await h(new Request("iv-media://source/m1", { headers: { Range: "bytes=0-4" } }));
+    expect(part.status).toBe(206);
+    expect(Buffer.from(await part.arrayBuffer()).toString()).toBe("01234");
+  });
+
+  it("?seg=n chuyển cho resolver; seg lạ ⇒ 404 không gọi resolver", async () => {
+    const h = createMediaHandler(meetingRepo(), resolve);
+    calls.length = 0;
+    expect((await h(new Request("iv-media://source/m1?seg=0"))).status).toBe(200);
+    expect((await h(new Request("iv-media://source/m1?seg=3"))).status).toBe(404);
+    expect(calls).toEqual([
+      ["m1", 0],
+      ["m1", 3],
+    ]);
+    expect((await h(new Request("iv-media://source/m1?seg=../x"))).status).toBe(404);
+    expect((await h(new Request("iv-media://source/m1?seg=-1"))).status).toBe(404);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("không có resolver ⇒ 404 cho meeting", async () => {
+    const h = createMediaHandler(meetingRepo());
+    expect((await h(new Request("iv-media://source/m1"))).status).toBe(404);
+  });
+});
