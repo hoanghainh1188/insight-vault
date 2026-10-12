@@ -34,6 +34,13 @@ export const USER_ERROR_CODES = [
   "apiKeyMissing",
   "modelNotSelected",
   "apiKeyInvalidInput",
+  // 186 — Ghi cuộc họp
+  "meetingRecording",
+  "meetingAlreadyRecording",
+  "meetingDiskLow",
+  "meetingNotSupported",
+  "meetingNotFound",
+  "meetingInvalidInput",
 ] as const;
 
 export type UserErrorCode = (typeof USER_ERROR_CODES)[number];

@@ -24,7 +24,7 @@ import { SizeLimitError, assertWithinLimit } from "./size-limits";
 import { hashBytes, urlContentHash } from "./dedup";
 import { createSerialQueue } from "./queue";
 import { REPROCESS_ERRORS } from "./reprocess-guard";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 // Điều phối pipeline nạp nguồn (FR-004..010). TUẦN TỰ 1 nguồn/lần (queue). Toàn bộ DI → unit-test
 // không cần Electron/LanceDB thật. KHÔNG log nội dung tài liệu (Constitution III).
@@ -70,6 +70,15 @@ export interface PipelineDeps {
   newChunkId?: () => string;
   /** 112: ghi sự kiện chẩn đoán (KHÔNG nội dung tài liệu). */
   logEvent?: (event: string) => void;
+  /** 186: xoá nguồn cuộc họp ⇒ huỷ phiên/hoàn tất + xoá thư mục audio do app sở hữu (gọi TRƯỚC khi xoá hàng). */
+  onRemoveMeeting?: (sourceId: string) => Promise<void>;
+}
+
+/** 186: kết quả parse đã có sẵn (transcript cuộc họp) — vào thẳng bước làm sạch/chunk/embed. */
+export interface ParsedInput {
+  pages: PageText[];
+  pageCount: number | null;
+  timeMap?: ParseResult["timeMap"];
 }
 
 export interface IngestionPipeline {
@@ -86,8 +95,15 @@ export interface IngestionPipeline {
   isReprocessing(): boolean;
   remove(id: string): Promise<{ deleted: true }>;
   resumeAwaiting(): Promise<void>;
-  /** Đánh dấu nguồn kẹt queued/processing sau restart → error (retry được). Gọi lúc khởi động. */
+  /** Đánh dấu nguồn kẹt queued/processing sau restart → error (retry được). Gọi lúc khởi động. Bỏ qua kind=meeting. */
   resumeInterrupted(): void;
+  /** 186: tạo hàng nguồn cuộc họp (status processing) — gọi SAU khi micro đã mở được (FR-005). */
+  createMeetingSource(input: { notebookId: string; title: string; sessionId: string }): Source;
+  /**
+   * 186: lập chỉ mục transcript cuộc họp đã chốt qua hàng đợi chung (chỉ bước chunk/embed/store — ASR chốt chạy ngoài).
+   * Trả true khi nguồn `ready`; false khi dừng ở awaiting_embedding / lỗi / bị huỷ.
+   */
+  ingestParsed(sourceId: string, parsed: ParsedInput): Promise<boolean>;
   whenIdle(): Promise<void>;
 }
 
@@ -114,6 +130,9 @@ function cleanPage(p: PageText): PageText {
 export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
   const { sourceRepo, vectorStore, emit } = deps;
   const queue = createSerialQueue();
+
+  // 186: ingestParsed đang chờ trong hàng đợi — task bị bỏ trước khi chạy (xoá nguồn) không có callback ⇒ resolve(false) tay.
+  const pendingIngest = new Map<string, (ok: boolean) => void>();
 
   // 112: id đang "Xử lý lại" (nguồn ready) ⇒ mọi sự kiện của nó gắn cờ reprocess.
   const reprocessing = new Set<string>();
@@ -385,6 +404,68 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     if (s) send(s, "done", 1);
   };
 
+  // Bước chung sau parse: chunk (+ gắn tStart/tEnd từ timeMap, bbox từ boxMap) → ghi chunk → embed → ready. Ném StepError.
+  // Trả true khi nguồn đã `ready`. Dùng cho processFull và 186 ingestParsed (transcript cuộc họp đã chốt).
+  const indexParsed = async (
+    id: string,
+    parsed: {
+      pages: PageText[];
+      pageCount: number | null;
+      timeMap?: ParseResult["timeMap"];
+      boxMap?: ParseResult["boxMap"];
+    },
+    signal: { cancelled: boolean },
+  ): Promise<boolean> => {
+    const { pages, pageCount, timeMap, boxMap } = parsed;
+    const src = reload(id);
+    if (!src) return false;
+    if (pageCount != null) sourceRepo.setPageCount(id, pageCount);
+    send(reload(id)!, "clean", 0.3);
+    const drafts = chunkPages(pages);
+    // Audio (045) / cuộc họp (186): gắn tStart/tEnd cho mỗi chunk từ timeMap (theo char-range của chunk).
+    const withTime = timeMap
+      ? drafts.map((d) => {
+          const t = timeForCharRange(
+            timeMap,
+            d.locator.charStart,
+            d.locator.charEnd,
+          );
+          return t
+            ? {
+                ...d,
+                locator: { ...d.locator, tStart: t.tStart, tEnd: t.tEnd },
+              }
+            : d;
+        })
+      : drafts;
+    // Ảnh (053): gắn bbox (vùng chữ) cho mỗi chunk từ boxMap (theo char-range của chunk).
+    const located = boxMap
+      ? withTime.map((d) => {
+          const bb = bboxForCharRange(
+            boxMap,
+            d.locator.charStart,
+            d.locator.charEnd,
+          );
+          return bb ? { ...d, locator: { ...d.locator, bbox: bb } } : d;
+        })
+      : withTime;
+    sourceRepo.deleteChunks(id); // sạch trước khi ghi (retry an toàn)
+    sourceRepo.insertChunks(id, located);
+    // 112: chunk PDF vừa tạo bằng cách trích có bố cục ⇒ ghi phiên bản (gợi ý "Xử lý lại" biến mất).
+    if (src.kind === "pdf") {
+      sourceRepo.setExtractionVersion(id, PDF_EXTRACTION_VERSION);
+    }
+    send(reload(id)!, "chunk", 0.4);
+    if (signal.cancelled) return false;
+    const embedded = await embedAndStore(reload(id)!, signal);
+    // Nguồn có thể đã bị xoá trong lúc embed → không finishReady (tránh ghi trạng thái cho id đã xoá).
+    if (embedded && !signal.cancelled && reload(id)) {
+      finishReady(reload(id)!);
+      return true;
+    }
+    return false;
+  };
+
   // Xử lý một nguồn từ đầu (parse→chunk→embed→store). Dùng cho add + retry.
   const processFull = async (
     id: string,
@@ -399,50 +480,10 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       const { pages, pageCount, title, timeMap, boxMap } =
         await parseAndClean(src);
       if (signal.cancelled) return;
-      if (pageCount != null) sourceRepo.setPageCount(id, pageCount);
       if (title && src.kind === "url") {
         sourceRepo.setTitle(id, title); // tiêu đề trang cho nguồn URL
       }
-      send(reload(id)!, "clean", 0.3);
-      const drafts = chunkPages(pages);
-      // Audio (045): gắn tStart/tEnd cho mỗi chunk từ timeMap (theo char-range của chunk).
-      const withTime = timeMap
-        ? drafts.map((d) => {
-            const t = timeForCharRange(
-              timeMap,
-              d.locator.charStart,
-              d.locator.charEnd,
-            );
-            return t
-              ? {
-                  ...d,
-                  locator: { ...d.locator, tStart: t.tStart, tEnd: t.tEnd },
-                }
-              : d;
-          })
-        : drafts;
-      // Ảnh (053): gắn bbox (vùng chữ) cho mỗi chunk từ boxMap (theo char-range của chunk).
-      const located = boxMap
-        ? withTime.map((d) => {
-            const bb = bboxForCharRange(
-              boxMap,
-              d.locator.charStart,
-              d.locator.charEnd,
-            );
-            return bb ? { ...d, locator: { ...d.locator, bbox: bb } } : d;
-          })
-        : withTime;
-      sourceRepo.deleteChunks(id); // sạch trước khi ghi (retry an toàn)
-      sourceRepo.insertChunks(id, located);
-      // 112: chunk PDF vừa tạo bằng cách trích có bố cục ⇒ ghi phiên bản (gợi ý "Xử lý lại" biến mất).
-      if (src.kind === "pdf") {
-        sourceRepo.setExtractionVersion(id, PDF_EXTRACTION_VERSION);
-      }
-      send(reload(id)!, "chunk", 0.4);
-      if (signal.cancelled) return;
-      const embedded = await embedAndStore(reload(id)!, signal);
-      // Nguồn có thể đã bị xoá trong lúc embed → không finishReady (tránh ghi trạng thái cho id đã xoá).
-      if (embedded && !signal.cancelled && reload(id)) finishReady(reload(id)!);
+      await indexParsed(id, { pages, pageCount, timeMap, boxMap }, signal);
     } catch (e) {
       if (signal.cancelled) return;
       const step = e instanceof StepError ? e.step : "parse";
@@ -534,6 +575,7 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     async retry(id) {
       const src = sourceRepo.getById(id);
       if (!src) throw new UserFacingError("sourceNotFound");
+      if (src.kind === "meeting") throw new UserFacingError("meetingNotSupported");
       if (src.status !== "error")
         throw new UserFacingError("sourceRetryNotError");
       await vectorStore.deleteBySource(id);
@@ -579,7 +621,9 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     isReprocessing: () => reprocessing.size > 0,
 
     async remove(id) {
-      queue.cancel(id);
+      if (queue.cancel(id) === "dropped") pendingIngest.get(id)?.(false);
+      // 186: audio cuộc họp do app sở hữu ⇒ huỷ phiên/hoàn tất + xoá thư mục trước khi xoá hàng (FR-015).
+      if (sourceRepo.getById(id)?.kind === "meeting") await deps.onRemoveMeeting?.(id);
       reprocessing.delete(id); // 112: nguồn bị xoá ⇒ không còn lần xử lý lại nào
       await vectorStore.deleteBySource(id);
       return sourceRepo.delete(id); // cascade chunk
@@ -616,11 +660,79 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
       // SerialQueue RAM đã mất → đánh dấu 'error' (retry được) để người dùng bấm "Thử lại" (B3, FR-013).
       for (const status of ["queued", "processing"] as const) {
         for (const src of sourceRepo.listByStatus(status)) {
+          // 186: nguồn cuộc họp có luồng phục hồi riêng (meeting-service.recoverOnStartup) — không đánh lỗi.
+          if (src.kind === "meeting") continue;
           sourceRepo.updateStatus(src.id, "error", "interrupted");
           const s = reload(src.id);
           if (s) send(s, "parse", 0, "interrupted");
         }
       }
+    },
+
+    createMeetingSource({ notebookId, title, sessionId }) {
+      const clean = typeof title === "string" ? title.trim() : "";
+      if (
+        typeof notebookId !== "string" ||
+        notebookId === "" ||
+        clean === "" ||
+        typeof sessionId !== "string" ||
+        sessionId === ""
+      ) {
+        throw new UserFacingError("meetingInvalidInput");
+      }
+      const origin = `meeting:${sessionId}`;
+      const source = sourceRepo.create({
+        notebookId,
+        kind: "meeting",
+        title: clean,
+        origin,
+        contentHash: createHash("sha256").update(origin).digest("hex"),
+        pageCount: null,
+      });
+      sourceRepo.updateStatus(source.id, "processing");
+      const s = reload(source.id)!;
+      send(s, "parse", 0);
+      return s;
+    },
+
+    ingestParsed(sourceId, parsed) {
+      const src = sourceRepo.getById(sourceId);
+      if (!src) return Promise.reject(new UserFacingError("sourceNotFound"));
+      if (src.kind !== "meeting") {
+        return Promise.reject(new UserFacingError("meetingNotSupported"));
+      }
+      const pages = parsed.pages
+        .map((p) => cleanPage(p))
+        .filter((p) => p.text.length > 0);
+      return new Promise<boolean>((resolveRaw) => {
+        const resolve = (ok: boolean): void => {
+          pendingIngest.delete(sourceId);
+          resolveRaw(ok);
+        };
+        pendingIngest.set(sourceId, resolve);
+        queue.enqueue(sourceId, async (signal) => {
+          try {
+            if (signal.cancelled || !reload(sourceId)) return resolve(false);
+            sourceRepo.updateStatus(sourceId, "processing");
+            resolve(
+              await indexParsed(
+                sourceId,
+                { pages, pageCount: parsed.pageCount, timeMap: parsed.timeMap },
+                signal,
+              ),
+            );
+          } catch (e) {
+            if (!signal.cancelled && reload(sourceId)) {
+              const label =
+                e instanceof StepError ? e.code : errorCodeForStep("embed");
+              sourceRepo.updateStatus(sourceId, "error", label);
+              const s = reload(sourceId);
+              if (s) send(s, e instanceof StepError ? e.step : "embed", 0, label);
+            }
+            resolve(false);
+          }
+        });
+      });
     },
 
     whenIdle: () => queue.whenIdle(),

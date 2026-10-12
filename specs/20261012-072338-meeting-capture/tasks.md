@@ -83,7 +83,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       tên duy nhất, `meeting:audio` là send, `meeting:state` là push (không trong `ChannelResponse`).
 - [X] T018 [P] [US1] Test TRƯỚC `tests/unit/meeting-repo.test.ts` (DB tạm v12): tạo/đọc/cập nhật `meeting_session` (phase, segments_json, pause_gaps_json, duration,
       quality, final_progress); `replaceSpans` xoá-rồi-chèn trong giao dịch; `listByPhase`; JSON hỏng ⇒ mảng rỗng + không ném.
-- [ ] T019 [P] [US1] Test TRƯỚC `tests/unit/pipeline-meeting.test.ts`: `createMeetingSource` tạo `kind="meeting"`, `status="processing"`, `origin="meeting:<id>"`;
+- [X] T019 [P] [US1] Test TRƯỚC `tests/unit/pipeline-meeting.test.ts`: `createMeetingSource` tạo `kind="meeting"`, `status="processing"`, `origin="meeting:<id>"`;
       `ingestParsed` chunk/embed/store với `tStart/tEnd` từ timeMap ⇒ `ready`; `resumeInterrupted` bỏ qua `meeting`; `retry`/`relink` meeting ⇒ `notSupported`;
       `remove` meeting gọi hook xoá thư mục; `listByNotebook` trả `meetingPhase`/`transcriptQuality`; `detectKindFromPath` không bao giờ trả `meeting`; **SC-012**: một PDF enqueue trong lúc cuộc họp đang chốt ASR chạy xong trước khi bước chốt kết thúc (chỉ
       `ingestParsed` vào hàng đợi chung).
@@ -117,7 +117,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [X] T034 [P] [US1] `src/main/services/meeting-capture/asr-protocol.ts`. T014 xanh.
 - [X] T035 [P] [US1] `src/main/services/meeting-capture/fake-asr.ts`. T015 xanh.
 - [X] T036 [US1] `src/main/services/meeting-capture/meeting-repo.ts` (SQL tham số hoá; sau T023). T018 xanh.
-- [ ] T037 [US1] `src/main/services/ingestion/pipeline.ts`: tách `indexParsed` khỏi `processFull`; thêm `createMeetingSource`, `ingestParsed`; `resumeInterrupted` bỏ
+- [X] T037 [US1] `src/main/services/ingestion/pipeline.ts`: tách `indexParsed` khỏi `processFull`; thêm `createMeetingSource`, `ingestParsed`; `resumeInterrupted` bỏ
       `kind="meeting"`; `retry`/`relink` meeting ⇒ `UserFacingError("notSupported")`; `remove` gọi `onRemoveMeeting(sourceId)` (tiêm); `src/main/services/ingestion/source-repo.ts`
       `listByNotebook` LEFT JOIN `meeting_session`; `src/main/services/ingestion/parsers/index.ts` `SIZE_LIMITS.meeting`. T019 xanh.
 - [ ] T038 [US1] `src/main/services/meeting-capture/capture-writer.ts` (I/O): mở `seg-NNNN.wav` với header 0, append Int16, `fsync` mỗi `FSYNC_SEC`, đóng ⇒ ghi header

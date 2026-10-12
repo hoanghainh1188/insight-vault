@@ -66,7 +66,10 @@ export function createRelink(
   return async (sourceId) => {
     if (typeof sourceId !== "string") return { status: "notApplicable" };
     const info = deps.repo.getRelinkInfo(sourceId);
-    if (!info || info.kind === "url") return { status: "notApplicable" };
+    // 186: nguồn cuộc họp không có tệp gốc của người dùng (audio do app sở hữu) — không chọn lại tệp.
+    if (!info || info.kind === "url" || info.kind === "meeting") {
+      return { status: "notApplicable" };
+    }
     // Đang xếp hàng/xử lý ⇒ pipeline sắp đọc tệp — không đổi đường dẫn giữa chừng.
     if (info.status === "queued" || info.status === "processing") {
       return { status: "busy" };

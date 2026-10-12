@@ -67,14 +67,8 @@ export const meetingVi = {
     incomplete: "Chưa hoàn thiện",
     done: "Sẵn sàng",
   },
-  error: {
-    meetingRecording:
-      "Notebook này đang ghi cuộc họp — hãy kết thúc ghi trước.",
-    meetingAlreadyRecording:
-      "Đang có một cuộc họp được ghi. Hãy kết thúc ghi trước khi bắt đầu cuộc họp mới.",
-    meetingDiskLow: "Ổ đĩa không đủ dung lượng để ghi.",
-    notSupported: "Thao tác này không áp dụng cho nguồn cuộc họp.",
-    captureFailed: "Không ghi được âm thanh. Dữ liệu đã ghi vẫn được giữ.",
+  capture: {
+    failed: "Không ghi được âm thanh. Dữ liệu đã ghi vẫn được giữ.",
   },
 } as const;
 
@@ -144,14 +138,8 @@ export const meetingEn: Widen<typeof meetingVi> = {
     incomplete: "Incomplete",
     done: "Ready",
   },
-  error: {
-    meetingRecording:
-      "This notebook is recording a meeting — end the recording first.",
-    meetingAlreadyRecording:
-      "A meeting is already being recorded. End that recording before starting a new one.",
-    meetingDiskLow: "Not enough disk space to record.",
-    notSupported: "This action does not apply to meeting sources.",
-    captureFailed:
+  capture: {
+    failed:
       "Audio could not be recorded. The audio recorded so far is kept.",
   },
 };
