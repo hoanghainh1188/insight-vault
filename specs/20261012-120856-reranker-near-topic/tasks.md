@@ -50,13 +50,14 @@ dự án duyệt v5. **PR 2** = Phase 3–5 + Phase 6 phần PR 2. US1 / US2 dù
 ### Bộ câu hỏi v5 (FR-013)
 
 - [ ] T010 [P] Viết test TRƯỚC bổ sung `tests/unit/eval-pdf-corpus.test.ts` (hoặc file mới `tests/unit/eval-dataset-v5.test.ts`): `datasetVersion`
-      "5"; mỗi tài liệu thật (không nhiễu) có ≥ 2 câu `unanswerable` gắn với nó (trường mới tuỳ chọn `topicDocId` HOẶC `topic: "pdf"` cho PDF —
-      chọn một cách, ghi vào data-model); có ≥ 2 câu có đáp án mà trích dẫn bắt đầu bằng `|` (dòng bảng) ngoài q-162 / q-170 / q-171 nếu corpus có
+      "5"; mỗi tài liệu thật (không nhiễu) có ≥ 2 câu `unanswerable` gắn với nó (trường mới tuỳ chọn `topicDocId` = id tài liệu thật, chỉ ở câu
+      `unanswerable`; câu về PDF giữ thêm `topic: "pdf"` — data-model); có ≥ 2 câu có đáp án mà trích dẫn bắt đầu bằng `|` (dòng bảng) ngoài q-162 / q-170 / q-171 nếu corpus có
       bảng; câu mới đều tiếng Việt; tỉ lệ dev / hold-out mỗi loại trong [60%, 80%]. Chạy ⇒ FAIL.
 - [ ] T011 Soạn ~20 câu không đáp án sát chủ đề (≈ 2 / tài liệu thật, 10 tài liệu) + 2–3 câu đáp án-trong-bảng trong `tests/eval/questions.json`;
       với mỗi câu không đáp án: grep từ khoá + đồng nghĩa trên văn bản khi nạp (dump `parsePdf` cho PDF + `.md`) để CHẮC không có đáp án; trích dẫn
       bảng chép từ văn bản `parsePdf`; `datasetVersion` "5", `reviewed: null`; KHÔNG đổi câu hiện có. T010 + `eval-pdf-corpus` + `eval-dataset` xanh.
-      (Nếu chọn `topicDocId`: thêm validate trong `tests/eval/lib/dataset.ts` + test trước.)
+      `topicDocId` phải được validate trong `tests/eval/lib/dataset.ts` (chỉ ở `unanswerable`, id tồn tại, không phải tài liệu nhiễu) — test
+      trước trong `tests/unit/eval-dataset.test.ts`.
 - [ ] T012 Đo v5 với cấu hình HIỆN HÀNH (lệnh T002); cập nhật CHỈ số liệu + `datasetVersion` "5" + `calibratedAt` trong
       `src/main/services/rag/relevance-calibration.ts` (cấu hình không đổi; kiểm diff); `tests/unit/relevance-calibration.test.ts` xanh. Ghi số liệu
       v5 hiện hành (mốc "trước" cho PR 2) + chẩn đoán v5.
@@ -78,8 +79,9 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
 
 - [ ] T015 [P] [US1] Viết test TRƯỚC trong `tests/unit/eval-rerank-grid.test.ts`: `buildRerankGrid({ maxCandidates: [8,12,16], maxTokens:
     [256,384,512], minScores, deltas })` sinh đủ tổ hợp, tất định, cấu hình hợp lệ (`validateRerankConfig`); `eligibleRerankConfigs(results,
-    { tableGuardIds, enFloor: {recallAt6: 0.727, correctRejection: 0.833}, latency })` loại cấu hình: làm một câu bộ kiểm bảng bị từ chối, tiếng Anh
-      dưới sàn, p50 > 400 / p95 > 800 ms. Chạy ⇒ FAIL.
+    { tableGuardIds, enFloor }, latency })` loại cấu hình: làm một câu bộ kiểm bảng bị từ chối HOẶC có `hitRank > 6`
+      (FR-004 — trong top 6), tiếng Anh dưới sàn (`enFloor` = số liệu tiếng Anh
+      đo ở T012 — cấu hình hiện hành trên v5; nếu khác 72,7% / 83,3% thì báo lại), p50 > 400 / p95 > 800 ms. Chạy ⇒ FAIL.
 - [ ] T016 [US1] Hiện thực trong `tests/eval/lib/rerank-grid.ts` (lưới mở rộng + `eligibleRerankConfigs`); giữ `buildRerankGrid()` cũ tương
       thích. T015 xanh.
 - [ ] T017 [US1] Sửa `tests/eval/lib/rerank-run.ts` + `tests/eval/retrieval.eval.ts`: quét theo `maxTokens` (mỗi giá trị một scorer / một lượt
@@ -100,7 +102,7 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
       tiên dòng trùng từ với câu hỏi (NFC, bỏ dấu câu), rồi các dòng còn lại theo thứ tự, ≤ `budgetChars`; tất định; không mutate. Chạy ⇒ FAIL.
 - [ ] T020 [US2] Hiện thực `src/main/services/rag/rerank-input.ts`; `src/main/services/rag/retrieval.ts` dùng `rerankInput` cho `passages[].text`
       gửi `deps.rerank` (chunk / locator / `ScoredChunk` không đổi); test `tests/unit/retrieval-rerank.test.ts` thêm ca: chuỗi gửi bộ chấm là bản
-      trình bày, kết quả trả về vẫn là chunk gốc; fail-open giữ nguyên.
+      trình bày, kết quả trả về vẫn là chunk gốc; fail-open giữ nguyên. Thêm `src/main/services/rag/rerank-input.ts` vào `coverage.include` của `vitest.config.ts`.
 - [ ] T021 [US2] Quét lại (T018) với `rerankInput`; so bộ kiểm bảng + câu v5.
 
 ---
@@ -128,6 +130,8 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
 - [ ] T029 Test gate PR 2 + eval xác nhận (quickstart PR 2); mở PR 2 (Closes #187 nếu đạt, Part of #187 nếu không).
 
 ---
+
+> T005, T006, T008 là I/O (scorer / harness / eval runner) — ngoài coverage như 108 / 177; phần thuần (T003–T004, T007) có test trước.
 
 ## Dependencies & Execution Order
 

@@ -116,7 +116,7 @@ giữ bản ghi hiệu chuẩn xanh.
 - **FR-010**: MUST không đổi nhãn, tập (`split`), trích dẫn của câu hiện có, không hạ `TARGET_*` / ngưỡng Wilson, không đổi định nghĩa "từ
   chối đúng".
 - **FR-011**: Giao theo 2 PR: **PR 1** (bộ câu hỏi v5 + công cụ chẩn đoán ghi điểm bộ chấm từng câu khi `EVAL_DETAILS=1` + báo cáo chẩn
-  đoán; không đổi mã chạy app); **PR 2** (sau khi v5 được duyệt: thay đổi cấu hình / model / cách đưa bảng). Khi đổi cấu hình / model, bản
+  đoán; không đổi mã chạy app — trừ số liệu + `datasetVersion` của bản ghi hiệu chuẩn, như #177); **PR 2** (sau khi v5 được duyệt: thay đổi cấu hình / model / cách đưa bảng). Khi đổi cấu hình / model, bản
   ghi hiệu chuẩn MUST được đo lại và cập nhật (cấu hình, số liệu, phiên bản model nếu đổi) để test
   canh giữ đúng; ADR mới + dòng mục lục quyết định; không sửa ADR cũ.
 - **FR-012**: Mã thuần mới MUST có unit test viết trước, coverage ≥ 80% phần logic.

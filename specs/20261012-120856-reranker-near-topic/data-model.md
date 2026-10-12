@@ -39,6 +39,9 @@ lại ⇒ `ok`.
 
 ## questions.json v5
 
+- `EvalQuestion.topicDocId?: string` (MỚI) — chỉ ở câu `unanswerable` sát chủ đề: id tài liệu thật mà câu "giả vờ" hỏi (validate: tồn tại,
+  không nhiễu). Câu về PDF giữ thêm `topic: "pdf"` (177) để vào nhóm PDF.
+
 - `datasetVersion` "5", `reviewed: null`; +~20 câu `unanswerable` sát chủ đề (tiếng Việt, `topic: "pdf"` nếu về PDF) + 2–3 câu `answerable` có
   đáp án trong bảng. Không đổi câu hiện có.
 
