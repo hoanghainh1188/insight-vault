@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { createServer, type Server } from "node:http";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { launchFresh, dismissOnboarding } from "./helper";
+import { launchFresh, dismissOnboarding, sizedWindow } from "./helper";
 
 // 178 (T033, FR-014, SC-008): 8 nút loại (lưới 2×4) ở cửa sổ 900 px — vi và en — không tràn / cuộn ngang; tạo một loại mới
 // với "Ollama" giả ⇒ thẻ kết quả có chip [n].
@@ -100,10 +100,7 @@ for (const lang of ["vi", "en"] as const) {
     const fake = await fakeOllama();
     const app = await launchFresh({ OLLAMA_HOST: fake.url, IV_UI_LANG: lang });
     try {
-      const win = await app.firstWindow();
-      await app.evaluate(({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows()[0]!.setSize(900, 760),
-      );
+      const win = await sizedWindow(app, 900, 760);
       await dismissOnboarding(win);
       await openNotebook(win, await smallDoc());
 
