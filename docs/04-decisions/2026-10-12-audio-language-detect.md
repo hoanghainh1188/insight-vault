@@ -2,7 +2,7 @@
 
 - Ngày: 2026-10-12
 - Feature: `194-audio-language-detect` (issue #194, bug). Liên quan: 045 (nạp audio), spike S2 của #186
-  (`2026-10-12-meeting-asr-spike.md` trên nhánh `186-pr-b`, mục Quyết định 1, 2, 6), `meeting-capture/language-detect.ts` (#192).
+  (`2026-10-12-meeting-asr-spike.md`, PR #198, mục Quyết định 1, 2, 6), `meeting-capture/language-detect.ts` (#192).
 
 ## Vấn đề
 
