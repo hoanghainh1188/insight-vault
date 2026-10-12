@@ -1,11 +1,13 @@
 import { Tensor } from "@huggingface/transformers";
 import {
+  pickLanguage,
+  type DetectedLanguage,
+} from "../../meeting-capture/language-detect";
+import {
   WHISPER_TOKENS,
   detectionWindow,
-  pickLanguage,
-  probVietnamese,
+  lastStepLanguageLogits,
   requireTokenId,
-  type AsrLanguage,
 } from "./whisper-language";
 
 // Phát hiện ngôn ngữ một bước decoder {vi, en} (194). Nhận processor/tokenizer/model ĐÃ NẠP — nạp audio truyền
@@ -22,15 +24,10 @@ export interface WhisperParts {
   }) => Promise<{ logits: { dims: readonly number[]; data: unknown } }>;
 }
 
-export interface LanguageDetection {
-  lang: AsrLanguage;
-  /** P(vi) trên 2 token {vi, en} — để log/ngưỡng tin cậy, KHÔNG phải nội dung. */
-  pVi: number;
-}
-
+/** `{ language, confidence }` — để log/ngưỡng tin cậy, KHÔNG phải nội dung. */
 export type LanguageDetector = (
   pcm16k: Float32Array,
-) => Promise<LanguageDetection>;
+) => Promise<DetectedLanguage>;
 
 export function createLanguageDetector(parts: WhisperParts): LanguageDetector {
   const id = (token: string): number =>
@@ -46,11 +43,14 @@ export function createLanguageDetector(parts: WhisperParts): LanguageDetector {
       [1, 1],
     );
     const { logits } = await parts.model({ input_features, decoder_input_ids });
-    const pVi = probVietnamese(
-      logits.data as ArrayLike<number>,
-      logits.dims,
-      ids,
+    const picked = pickLanguage(
+      ...lastStepLanguageLogits(
+        logits.data as ArrayLike<number>,
+        logits.dims,
+        ids,
+      ),
     );
-    return { lang: pickLanguage(pVi), pVi };
+    if (!picked) throw new Error("language logits are not finite");
+    return picked;
   };
 }

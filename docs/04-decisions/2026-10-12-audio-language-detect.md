@@ -2,7 +2,7 @@
 
 - Ngày: 2026-10-12
 - Feature: `194-audio-language-detect` (issue #194, bug). Liên quan: 045 (nạp audio), spike S2 của #186
-  (`2026-10-12-meeting-asr-spike.md` trên nhánh `186-pr-b`, mục Quyết định 1, 2, 6).
+  (`2026-10-12-meeting-asr-spike.md` trên nhánh `186-pr-b`, mục Quyết định 1, 2, 6), `meeting-capture/language-detect.ts` (#192).
 
 ## Vấn đề
 
@@ -21,14 +21,18 @@ tiếng Việt): "Hello everyone, today we are going to talk about the most popu
    pipeline tự chọn.
 3. **Dùng lại processor / tokenizer / model của chính pipeline ASR** (chúng chính là `AutoProcessor` + `AutoTokenizer` +
    `WhisperForConditionalGeneration` của cùng model) ⇒ không tải, không giữ weight hai lần.
-4. **Helper dùng chung** (Meeting Capture #186 chưa lên `main` nên tách sẵn ở đây để PR của #186 tái dùng):
-   - `audio/whisper-language.ts` — phần THUẦN: `probVietnamese` (đọc logits vị trí cuối, softmax 2 token ổn định số học),
-     `pickLanguage`, `requireTokenId`, `detectionWindow` (30 s đầu), `asrLanguageOptions`.
+4. **Dùng lại logic của Meeting Capture** (#186 PR A đã lên `main` trong lúc làm — #192): phần chọn ngôn ngữ (softmax trên
+   2 token + độ tin cậy) là `pickLanguage(logitVi, logitEn)` của `meeting-capture/language-detect.ts`, không viết bản thứ hai.
+   Phần thêm cho nạp audio, tách thành helper dùng chung:
+   - `audio/whisper-language.ts` — phần THUẦN: `lastStepLanguageLogits` (đọc logits `<|vi|>`/`<|en|>` vị trí cuối, kiểm
+     dạng `[1, steps, vocab]` + id trong vocab), `requireTokenId`, `detectionWindow` (30 s đầu), `asrLanguageOptions`.
    - `audio/language-detector.ts` — `createLanguageDetector({ processor, tokenizer, model })`; nhận các phần ĐÃ NẠP nên unit test
-     chạy bằng phần giả, không cần model thật. Meeting Capture truyền phần của pipeline hoặc tự `from_pretrained`.
-5. **Bước phát hiện lỗi (bất thường: thiếu token, logits không hữu hạn) ⇒ dùng tiếng Việt** (ngôn ngữ nguồn của sản phẩm) và
+     chạy bằng phần giả, không cần model thật.
+   - `asr-worker.ts` của Meeting Capture vẫn giữ hàm `languageLogits` riêng (cùng phương pháp); gộp worker sang
+     `createLanguageDetector` để PR sau của #186, không đụng vùng feature khác trong bug fix này.
+5. **Bước phát hiện lỗi (bất thường: thiếu token, logits không hữu hạn ⇒ `pickLanguage` trả `null`) ⇒ dùng tiếng Việt** (ngôn ngữ nguồn của sản phẩm) và
    `logError("audio.whisper.language_failed")`; không làm hỏng cả lượt nạp, và không rơi lại mặc định tiếng Anh (chính là bug).
-6. **Log:** chỉ `audio.whisper.language` với `lang`, `pVi`, `ms` — KHÔNG log nội dung transcript.
+6. **Log:** chỉ `audio.whisper.language` với `lang`, `confidence`, `ms` — KHÔNG log nội dung transcript.
 
 ## Kiểm chứng
 

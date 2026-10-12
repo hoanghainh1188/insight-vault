@@ -6,7 +6,8 @@ import {
   type LanguageDetector,
   type WhisperParts,
 } from "./language-detector";
-import { asrLanguageOptions, type AsrLanguage } from "./whisper-language";
+import type { DetectedLanguageCode } from "../../meeting-capture/language-detect";
+import { asrLanguageOptions } from "./whisper-language";
 
 // Bóc băng audio bằng transformers.js Whisper (045, Constitution III: inference CHỈ main). Model tải lần
 // đầu về cacheDir (data dir) → sau chạy offline. I/O/wiring — loại khỏi coverage (phần thuần ở
@@ -15,7 +16,7 @@ import { asrLanguageOptions, type AsrLanguage } from "./whisper-language";
 export const DEFAULT_WHISPER_MODEL = "Xenova/whisper-base";
 /** 194: bước phát hiện lỗi (bất thường) ⇒ dùng tiếng Việt — ngôn ngữ nguồn của sản phẩm; KHÔNG để pipeline tự
  * mặc định tiếng Anh (chính là bug). */
-const FALLBACK_LANGUAGE: AsrLanguage = "vi";
+const FALLBACK_LANGUAGE: DetectedLanguageCode = "vi";
 
 export interface Transcriber {
   /** onProgress(0..1): 0→~0.5 tải model (lần đầu), ~0.5→1 bóc băng. */
@@ -47,18 +48,18 @@ export function createTranscriber(opts: {
   async function detectLanguage(
     pipe: WhisperParts,
     pcm16k: Float32Array,
-  ): Promise<AsrLanguage> {
+  ): Promise<DetectedLanguageCode> {
     const t0 = performance.now();
     try {
       detector ??= createLanguageDetector(pipe);
-      const { lang, pVi } = await detector(pcm16k);
+      const { language, confidence } = await detector(pcm16k);
       // Chỉ log ngôn ngữ + xác suất + thời gian — KHÔNG log nội dung transcript.
       logEvent("audio.whisper.language", {
-        lang,
-        pVi: Number(pVi.toFixed(3)),
+        lang: language,
+        confidence: Number(confidence.toFixed(3)),
         ms: Math.round(performance.now() - t0),
       });
-      return lang;
+      return language;
     } catch (e) {
       logError("audio.whisper.language_failed", {
         message: e instanceof Error ? e.message : String(e),

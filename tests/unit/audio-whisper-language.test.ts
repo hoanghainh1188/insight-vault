@@ -3,12 +3,12 @@ import {
   LANG_DETECT_WINDOW_SEC,
   asrLanguageOptions,
   detectionWindow,
-  pickLanguage,
-  probVietnamese,
+  lastStepLanguageLogits,
   requireTokenId,
 } from "../../src/main/services/ingestion/audio/whisper-language";
 
-// 194 — phần THUẦN của phát hiện ngôn ngữ một bước decoder {vi, en} (spike S2 #186).
+// 194 — phần THUẦN của phát hiện ngôn ngữ một bước decoder {vi, en} (spike S2 #186). Softmax/chọn ngôn ngữ dùng lại
+// `pickLanguage` của Meeting Capture — đã test ở meeting-language-detect.test.ts.
 
 const VOCAB = 6;
 const IDS = { vi: 2, en: 4 };
@@ -21,63 +21,47 @@ function logits(steps: number, last: Record<number, number>): Float32Array {
   return data;
 }
 
-describe("probVietnamese (194)", () => {
-  it("logit <|vi|> lớn hơn ⇒ P(vi) > 0,5", () => {
-    const p = probVietnamese(logits(1, { 2: 5, 4: 1 }), [1, 1, VOCAB], IDS);
-    expect(p).toBeCloseTo(1 / (1 + Math.exp(-4)), 6);
-  });
-
-  it("logit <|en|> lớn hơn ⇒ P(vi) < 0,5", () => {
-    const p = probVietnamese(logits(1, { 2: -3, 4: 2 }), [1, 1, VOCAB], IDS);
-    expect(p).toBeCloseTo(1 / (1 + Math.exp(5)), 6);
-  });
-
-  it("bằng nhau ⇒ 0,5", () => {
-    expect(probVietnamese(logits(1, { 2: 7, 4: 7 }), [1, 1, VOCAB], IDS)).toBe(
-      0.5,
-    );
+describe("lastStepLanguageLogits (194)", () => {
+  it("trả [logit vi, logit en] ở vị trí cuối", () => {
+    expect(
+      lastStepLanguageLogits(logits(1, { 2: 5, 4: 1 }), [1, 1, VOCAB], IDS),
+    ).toEqual([5, 1]);
   });
 
   it("chỉ đọc vị trí CUỐI khi có nhiều bước", () => {
-    const data = logits(3, { 2: 0, 4: 9 });
-    data[0 * VOCAB + 2] = 100; // bước đầu nghiêng vi — phải bị bỏ qua
-    expect(probVietnamese(data, [1, 3, VOCAB], IDS)).toBeLessThan(0.01);
+    const data = logits(3, { 2: -2, 4: 9 });
+    data[0 * VOCAB + 2] = 100; // bước đầu — phải bị bỏ qua
+    expect(lastStepLanguageLogits(data, [1, 3, VOCAB], IDS)).toEqual([-2, 9]);
   });
 
-  it("chênh lệch rất lớn không tràn số (ổn định số học)", () => {
+  it("giữ nguyên NaN để pickLanguage trả null (không đoán bừa)", () => {
+    const [lv] = lastStepLanguageLogits(
+      logits(1, { 2: Number.NaN }),
+      [1, 1, VOCAB],
+      IDS,
+    );
+    expect(lv).toBeNaN();
+  });
+
+  it("dữ liệu ngắn hơn dims ⇒ NaN thay vì undefined", () => {
     expect(
-      probVietnamese(logits(1, { 2: 1e4, 4: -1e4 }), [1, 1, VOCAB], IDS),
-    ).toBe(1);
-    expect(
-      probVietnamese(logits(1, { 2: -1e4, 4: 1e4 }), [1, 1, VOCAB], IDS),
-    ).toBe(0);
+      lastStepLanguageLogits(new Float32Array(2), [1, 1, VOCAB], IDS),
+    ).toEqual([Number.NaN, Number.NaN]);
   });
 
   it("dims sai hình dạng ⇒ lỗi rõ ràng", () => {
-    expect(() => probVietnamese(new Float32Array(6), [6], IDS)).toThrow(
+    expect(() => lastStepLanguageLogits(new Float32Array(6), [6], IDS)).toThrow(
       /logits/,
     );
   });
 
   it("id token ngoài vocab ⇒ lỗi", () => {
     expect(() =>
-      probVietnamese(logits(1, {}), [1, 1, VOCAB], { vi: 2, en: VOCAB }),
+      lastStepLanguageLogits(logits(1, {}), [1, 1, VOCAB], {
+        vi: 2,
+        en: VOCAB,
+      }),
     ).toThrow(/vocab/);
-  });
-
-  it("logit không hữu hạn (NaN) ⇒ lỗi, không đoán bừa", () => {
-    expect(() =>
-      probVietnamese(logits(1, { 2: Number.NaN, 4: 1 }), [1, 1, VOCAB], IDS),
-    ).toThrow(/finite/);
-  });
-});
-
-describe("pickLanguage (194)", () => {
-  it("P(vi) ≥ 0,5 ⇒ vi, ngược lại en", () => {
-    expect(pickLanguage(0.5)).toBe("vi");
-    expect(pickLanguage(0.97)).toBe("vi");
-    expect(pickLanguage(0.49)).toBe("en");
-    expect(pickLanguage(0)).toBe("en");
   });
 });
 
