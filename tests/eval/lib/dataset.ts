@@ -46,6 +46,8 @@ export interface EvalQuestion {
   docIds: string[];
   /** 177: câu KHÔNG đáp án sát chủ đề PDF ⇒ xếp vào nhóm PDF khi báo cáo */
   topic?: "pdf";
+  /** 187: câu KHÔNG đáp án sát chủ đề ⇒ id tài liệu thật (không nhiễu) mà câu "giả vờ" hỏi */
+  topicDocId?: string;
 }
 
 export interface QuestionsFile {
@@ -178,6 +180,15 @@ function validateOne(
     (q.topic !== "pdf" || q.type !== "unanswerable")
   ) {
     errs.push(`${at}: topic sai`);
+  }
+  if (q.topicDocId !== undefined) {
+    if (q.type !== "unanswerable") {
+      errs.push(`${at}: topicDocId chỉ dùng cho câu unanswerable`);
+    } else if (!docIds.has(q.topicDocId)) {
+      errs.push(`${at}: topicDocId lạ "${q.topicDocId}"`);
+    } else if (noiseIds.has(q.topicDocId)) {
+      errs.push(`${at}: topicDocId trỏ tài liệu nhiễu "${q.topicDocId}"`);
+    }
   }
   if (!q.text?.trim()) errs.push(`${at}: câu hỏi rỗng`);
   else if (q.text.length > MAX_QUESTION_LEN) {

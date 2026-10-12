@@ -1,9 +1,6 @@
 {
-  "datasetVersion": "4",
-  "reviewed": {
-    "by": "Hải",
-    "date": "2026-10-12"
-  },
+  "datasetVersion": "5",
+  "reviewed": null,
   "questions": [
     {
       "id": "q-001",
@@ -2185,6 +2182,249 @@
       "quotes": [],
       "docIds": [],
       "topic": "pdf"
+    },
+    {
+      "id": "q-184",
+      "text": "Theo bảng phí thuê kho, diện tích kho dùng trong quý 1 là bao nhiêu mét vuông?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "| Quý 1 | 1.150 | 80,5 |"
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-185",
+      "text": "Tuyến 2A dùng hệ thống điện khí hóa nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "| Điện khí | Ray thứ ba 750V DC |"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-186",
+      "text": "Vận tốc tối đa của tàu Tuyến 2A là bao nhiêu km/h?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "| Tốc độ | Vận tốc tối đa: 80 km/h (50 mph) |"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-187",
+      "text": "Phí đậu tàu du lịch qua đêm trên vịnh Hạ Long là bao nhiêu tiền mỗi đêm?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "vinh-ha-long"
+    },
+    {
+      "id": "q-188",
+      "text": "Bãi tắm trên đảo Ti Tốp dài bao nhiêu mét?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "vinh-ha-long"
+    },
+    {
+      "id": "q-189",
+      "text": "Nước dùng phở bò phải ninh xương trong bao nhiêu giờ?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "pho"
+    },
+    {
+      "id": "q-190",
+      "text": "Một bát phở bò cung cấp khoảng bao nhiêu calo?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "pho"
+    },
+    {
+      "id": "q-191",
+      "text": "May đo một bộ áo dài truyền thống thường mất bao nhiêu ngày?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "ao-dai"
+    },
+    {
+      "id": "q-192",
+      "text": "May một chiếc áo dài nữ hiện đại cần bao nhiêu mét vải?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "ao-dai"
+    },
+    {
+      "id": "q-193",
+      "text": "Giá vé vào tham quan đền Ngọc Sơn là bao nhiêu?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "ho-hoan-kiem"
+    },
+    {
+      "id": "q-194",
+      "text": "Lần nạo vét bùn gần nhất ở hồ Hoàn Kiếm diễn ra vào năm nào?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "ho-hoan-kiem"
+    },
+    {
+      "id": "q-195",
+      "text": "Cầu Mỹ Thuận bắc qua sông Tiền dài bao nhiêu mét?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "song-me-kong"
+    },
+    {
+      "id": "q-196",
+      "text": "Mỗi năm sông Mê Kông đưa về đồng bằng sông Cửu Long bao nhiêu tấn phù sa?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "song-me-kong"
+    },
+    {
+      "id": "q-197",
+      "text": "Năm 2023 có bao nhiêu người được cho nhập quốc tịch Việt Nam?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "luat-quoc-tich-2008"
+    },
+    {
+      "id": "q-198",
+      "text": "Mẫu tờ khai xin nhập quốc tịch Việt Nam được ban hành kèm thông tư nào?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "luat-quoc-tich-2008"
+    },
+    {
+      "id": "q-199",
+      "text": "Xe chữa cháy phải có mặt tại hiện trường trong bao nhiêu phút sau khi nhận tin báo cháy?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "luat-pccc-2001"
+    },
+    {
+      "id": "q-200",
+      "text": "Đội viên đội dân phòng được hưởng phụ cấp bao nhiêu tiền mỗi tháng?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "luat-pccc-2001"
+    },
+    {
+      "id": "q-201",
+      "text": "Theo Luật Bảo vệ môi trường 1993, tiếng ồn ban đêm ở khu dân cư không được vượt quá bao nhiêu dB?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "luat-bvmt-1993"
+    },
+    {
+      "id": "q-202",
+      "text": "Quỹ Bảo vệ môi trường Việt Nam có vốn điều lệ bao nhiêu tỷ đồng?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topicDocId": "luat-bvmt-1993"
+    },
+    {
+      "id": "q-203",
+      "text": "Kho số 3 có hệ thống phun nước chữa cháy tự động không?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf",
+      "topicDocId": "hop-dong-thue-kho"
+    },
+    {
+      "id": "q-204",
+      "text": "Bên thuê có được cho bên khác thuê lại kho số 3 không?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf",
+      "topicDocId": "hop-dong-thue-kho"
+    },
+    {
+      "id": "q-205",
+      "text": "Tuyến 2A tiêu thụ bao nhiêu kWh điện mỗi năm?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf",
+      "topicDocId": "tuyen-2a-ha-noi"
+    },
+    {
+      "id": "q-206",
+      "text": "Ga Hà Đông của Tuyến 2A có bao nhiêu lối lên xuống?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf",
+      "topicDocId": "tuyen-2a-ha-noi"
     }
   ]
 }

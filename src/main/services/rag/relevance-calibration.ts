@@ -54,7 +54,9 @@ export interface RerankCalibration {
 // cấu hình hiện hành (vector ≤ 0.5, không chặn BM25). 109 (2026-10-08): số liệu của cấu hình này đo lại trên bộ đo v3 (thêm câu
 // không có đáp án) + bộ chấm độ liên quan a1 (ADR docs/04-decisions/2026-10-08-unanswerable-detection.md). 177 (2026-10-12): đo lại
 // trên bộ đo v4 (thêm 2 PDF + câu PDF; cấu hình KHÔNG đổi) — ADR docs/04-decisions/2026-10-12-eval-pdf.md. Lưu ý: từ chối đúng dev
-// của bộ chấm 85,7% < 90% (2 câu không đáp án sát chủ đề PDF lọt) — theo dõi #187; cổng gateVerdict vẫn ĐẠT.
+// của bộ chấm 85,7% < 90% (2 câu không đáp án sát chủ đề PDF lọt) — theo dõi #187; cổng gateVerdict vẫn ĐẠT. 187 PR 1 (2026-10-12):
+// đo lại trên bộ đo v5 (+20 câu không đáp án sát chủ đề, +3 câu đáp án trong bảng; cấu hình KHÔNG đổi) — từ chối đúng hold-out
+// 84,2% < 90% ⇒ trên v5 cấu hình này KHÔNG ĐẠT cổng; là mốc "trước" cho PR 2 (ADR docs/04-decisions/2026-10-12-reranker-diagnosis.md).
 export const RELEVANCE_CALIBRATION: RelevanceCalibration = {
   embeddingModelVersion: EMBEDDING_MODEL_VERSION,
   config: {
@@ -65,35 +67,35 @@ export const RELEVANCE_CALIBRATION: RelevanceCalibration = {
     bm25MaxScore: null,
   },
   calibratedAt: "2026-10-12",
-  datasetVersion: "4",
+  datasetVersion: "5",
   // Cấu hình vector/BM25 ở trên, KHÔNG bộ chấm (mốc + kiểm hồi quy `EVAL_MODE=current`).
   metrics: {
     dev: {
-      nAnswerable: 76,
-      nUnanswerable: 28,
-      recallAt1: 0.7632,
-      recallAt3: 0.9342,
-      recallAt6: 0.9737,
-      mrr: 0.8469,
+      nAnswerable: 78,
+      nUnanswerable: 41,
+      recallAt1: 0.7692,
+      recallAt3: 0.9359,
+      recallAt6: 0.9744,
+      mrr: 0.8509,
       correctRejection: 0,
       falseRejection: 0,
       ci95: {
-        recallAt6: [0.909, 0.9928],
-        correctRejection: [0, 0.1206],
+        recallAt6: [0.9112, 0.9929],
+        correctRejection: [0, 0.0857],
       },
     },
     holdout: {
-      nAnswerable: 33,
-      nUnanswerable: 12,
-      recallAt1: 0.8485,
-      recallAt3: 0.9697,
-      recallAt6: 0.9697,
-      mrr: 0.8939,
+      nAnswerable: 34,
+      nUnanswerable: 19,
+      recallAt1: 0.8235,
+      recallAt3: 0.9706,
+      recallAt6: 0.9706,
+      mrr: 0.8775,
       correctRejection: 0,
       falseRejection: 0,
       ci95: {
-        recallAt6: [0.8468, 0.9946],
-        correctRejection: [0, 0.2425],
+        recallAt6: [0.8508, 0.9948],
+        correctRejection: [0, 0.1682],
       },
     },
   },
@@ -111,31 +113,31 @@ export const RELEVANCE_CALIBRATION: RelevanceCalibration = {
     },
     metrics: {
       dev: {
-        nAnswerable: 76,
-        nUnanswerable: 28,
-        recallAt1: 0.7763,
-        recallAt3: 0.9342,
-        recallAt6: 0.9342,
-        mrr: 0.8443,
-        correctRejection: 0.8571,
-        falseRejection: 0.0658,
+        nAnswerable: 78,
+        nUnanswerable: 41,
+        recallAt1: 0.7821,
+        recallAt3: 0.9359,
+        recallAt6: 0.9359,
+        mrr: 0.8483,
+        correctRejection: 0.878,
+        falseRejection: 0.0641,
         ci95: {
-          recallAt6: [0.8551, 0.9716],
-          correctRejection: [0.6851, 0.943],
+          recallAt6: [0.8586, 0.9723],
+          correctRejection: [0.7446, 0.9468],
         },
       },
       holdout: {
-        nAnswerable: 33,
-        nUnanswerable: 12,
-        recallAt1: 0.8788,
-        recallAt3: 0.9394,
-        recallAt6: 0.9394,
-        mrr: 0.9091,
-        correctRejection: 1,
-        falseRejection: 0.0303,
+        nAnswerable: 34,
+        nUnanswerable: 19,
+        recallAt1: 0.8529,
+        recallAt3: 0.9118,
+        recallAt6: 0.9118,
+        mrr: 0.8824,
+        correctRejection: 0.8421,
+        falseRejection: 0.0588,
         ci95: {
-          recallAt6: [0.8039, 0.9832],
-          correctRejection: [0.7575, 1],
+          recallAt6: [0.7704, 0.9695],
+          correctRejection: [0.6243, 0.9448],
         },
       },
       en: {
