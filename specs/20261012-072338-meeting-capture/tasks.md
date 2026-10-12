@@ -91,7 +91,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       `expectedSchema(12)` khớp DB mới; ước lượng dung lượng ghi âm cho hộp sao lưu.
 - [X] T021 [P] [US2] Test TRƯỚC (viết vào `tests/unit/source-viewer-audio.test.ts` — sửa kỳ vọng 049 cũ "tự phát" thay vì tạo tệp trùng) (jsdom): mở citation có `tStart` cho nguồn audio, video, meeting ⇒ `currentTime = tStart`,
       `play` KHÔNG được gọi; đổi citation khi đang phát ⇒ tua + `pause`.
-- [ ] T022 [P] [US1] Test TRƯỚC `tests/unit/meeting-service.test.ts` với fake writer/files/asr-client/repo/pipeline: start (sau prepare, cổng quyền, một phiên duy nhất,
+- [X] T022 [P] [US1] Test TRƯỚC `tests/unit/meeting-service.test.ts` với fake writer/files/asr-client/repo/pipeline: start (sau prepare, cổng quyền, một phiên duy nhất,
       chặn khi đĩa < 10 phút) ⇒ tạo nguồn; audio batch ⇒ writer; pause/resume ⇒ đóng/mở phân đoạn + gap; stop ⇒ finalizing ⇒ ASR chốt từng phân đoạn với chồng lấn ⇒
       `replaceSpans` + `ingestParsed` ⇒ `done`; checkpoint `final/seg-*.json` bỏ qua phân đoạn đã xong; ASR lỗi không nháp ⇒ `incomplete` + `ready` 0 chunk;
       `recoverOnStartup` sửa header + tự hoàn tất mọi phiên dang dở; **worker treo/chết giữa phiên (SC-002)** ⇒ writer vẫn nhận đủ mẫu, thời lượng đúng, worker được
