@@ -61,6 +61,9 @@ export default defineConfig({
         "src/renderer/shared/shortcuts.ts",
         "src/main/services/ingestion/audio/resample.ts",
         "src/main/services/ingestion/audio/audio-transcript.ts",
+        // 194: phát hiện ngôn ngữ Whisper — phần thuần + bộ phát hiện chạy trên phần giả.
+        "src/main/services/ingestion/audio/whisper-language.ts",
+        "src/main/services/ingestion/audio/language-detector.ts",
         "src/main/services/source-viewer/media-range.ts",
         "src/main/services/ingestion/video/ffmpeg-path.ts",
         "src/main/services/ingestion/parsers/video.ts",
