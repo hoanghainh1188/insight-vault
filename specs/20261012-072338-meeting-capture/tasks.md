@@ -410,18 +410,21 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 
 ### Tests trước (FAIL rồi mới code)
 
-- [ ] T132 [P] [US7] Test TRƯỚC `tests/unit/meeting-span-at-time.test.ts` cho `spanAtTime(spans, t)` (tìm nhị phân, giữa hai span, trước span đầu, sau span cuối).
-- [ ] T133 [P] [US7] Test TRƯỚC `tests/unit/meeting-transcript-search.test.ts` cho `searchTranscript(text, query)` (fold dấu như FTS 073 — dùng lại hàm fold sẵn có;
+> Ghi chú 2026-10-12: hàm thuần T132–T134 → T136–T137 làm trước trên branch `186-pr-c2` (xếp chồng trên `186-pr-c1`); i18n
+> `meeting.marker.*`, `meeting.export.*` đã thêm (vi + en).
+
+- [x] T132 [P] [US7] Test TRƯỚC `tests/unit/meeting-span-at-time.test.ts` cho `spanAtTime(spans, t)` (tìm nhị phân, giữa hai span, trước span đầu, sau span cuối).
+- [x] T133 [P] [US7] Test TRƯỚC `tests/unit/meeting-transcript-search.test.ts` cho `searchTranscript(text, query)` (fold dấu như FTS 073 — dùng lại hàm fold sẵn có;
       nhiều kết quả, query rỗng, ký tự đặc biệt).
-- [ ] T134 [P] [US7] Test TRƯỚC `tests/unit/meeting-markdown.test.ts` cho `buildMeetingMarkdown(meta, text, spans, markers, gaps, tr)` + `markerExcerpt`: tiêu đề, ngày,
+- [x] T134 [P] [US7] Test TRƯỚC `tests/unit/meeting-markdown.test.ts` cho `buildMeetingMarkdown(meta, text, spans, markers, gaps, tr)` + `markerExcerpt`: tiêu đề, ngày,
       thời lượng, ngôn ngữ, danh sách đánh dấu, `[hh:mm:ss]` mỗi đoạn, dòng tạm dừng, escape Markdown trong tiêu đề, vi + en.
 - [ ] T135 [P] [US7] Test TRƯỚC `tests/unit/meeting-service-viewer.test.ts`: `getTranscript` (chỉ `kind="meeting"`), `updateMarker`/`deleteMarker` (markerId thuộc meeting),
       `exportMarkdown` dựng nội dung ở main; mở rộng `meeting-channels-whitelist.test.ts`.
 
 ### Implementation
 
-- [ ] T136 [P] [US7] `src/renderer/features/meeting-capture/viewer/span-at-time.ts` + `transcript-search.ts`. T132, T133 xanh.
-- [ ] T137 [P] [US7] `src/main/services/meeting-capture/meeting-markdown.ts`. T134 xanh.
+- [x] T136 [P] [US7] `src/shared/meeting/span-at-time.ts` (chuyển sang shared: main dùng cho `markerExcerpt`) + `viewer/transcript-search.ts` (fold chuyển sang `src/shared/text/fold.ts`, `fts-fold.ts` re-export). T132, T133 xanh.
+- [x] T137 [P] [US7] `src/main/services/meeting-capture/meeting-markdown.ts`. T134 xanh.
 - [ ] T138 [US7] `meeting-service.ts` + `meeting-repo.ts`: `getTranscript`, `updateMarker`, `deleteMarker`, `exportMarkdown` (tái dùng `exportMarkdown` của
       `src/main/services/studio/export.ts` + `sanitizeName` của `studio/export-name.ts`). T135 xanh.
 - [ ] T139 [US7] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:getTranscript`, `meeting:updateMarker`, `meeting:deleteMarker`, `meeting:exportMarkdown`.

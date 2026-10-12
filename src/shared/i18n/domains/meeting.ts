@@ -183,6 +183,24 @@ export const meetingVi = {
     lagging: "Transcript nháp đang chậm — audio vẫn được lưu.",
     marked: "Đã đánh dấu {kind}.",
   },
+  marker: {
+    decision: "Quyết định",
+    actionItem: "Việc cần làm",
+    question: "Câu hỏi",
+  },
+  export: {
+    date: "Ngày",
+    duration: "Thời lượng",
+    language: "Ngôn ngữ",
+    markers: "Đánh dấu",
+    transcript: "Transcript",
+    noTranscript: "Chưa có transcript.",
+    gap: {
+      user: "Tạm dừng {duration}",
+      deviceLost: "Mất microphone {duration}",
+      interrupted: "Gián đoạn {duration}",
+    },
+  },
   ended: {
     diskFull:
       "Ổ đĩa sắp đầy — đã tự kết thúc ghi. Audio đã ghi được giữ nguyên.",
@@ -375,6 +393,24 @@ export const meetingEn: Widen<typeof meetingVi> = {
     languageSuggest: "The meeting seems to be in {language}.",
     lagging: "The draft transcript is behind — the audio is still saved.",
     marked: "Marked {kind}.",
+  },
+  marker: {
+    decision: "Decision",
+    actionItem: "Action item",
+    question: "Question",
+  },
+  export: {
+    date: "Date",
+    duration: "Duration",
+    language: "Language",
+    markers: "Markers",
+    transcript: "Transcript",
+    noTranscript: "No transcript yet.",
+    gap: {
+      user: "Paused {duration}",
+      deviceLost: "Microphone lost {duration}",
+      interrupted: "Interrupted {duration}",
+    },
   },
   ended: {
     diskFull:

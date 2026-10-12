@@ -2,15 +2,10 @@
 // thanh (NFD combining marks) NHƯNG KHÔNG xử lý "đ"→"d" (đ là ký tự Latin riêng). Fold ở JS để khớp
 // có/không dấu KỂ CẢ đ. Lưu bản fold vào chunk_fts; query cũng fold.
 
-/** NFD + bỏ dấu (combining 0300–036F, gồm horn ơ/ư) + đ→d + Đ→D + lowercase. */
-export function foldVietnamese(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase();
-}
+import { foldVietnamese } from "@shared/text/fold";
+
+// Hàm fold chuyển sang @shared/text/fold (186 — renderer tìm trong transcript dùng chung); giữ export ở đây cho nơi gọi cũ.
+export { foldVietnamese };
 
 /**
  * Chuỗi MATCH FTS5 an toàn từ câu truy vấn: fold → tách token (chữ+số Unicode) → mỗi token bọc trong nháy
