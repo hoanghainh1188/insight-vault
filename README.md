@@ -21,7 +21,8 @@ highlighted.
 ## Features
 
 - **Sources:** PDF (reading order and tables preserved, multi-column layouts), `.docx`, `.txt`, `.md`,
-  web pages (URL), **audio** (`.wav` `.mp3` `.flac` `.ogg` `.m4a` `.aac` — transcribed locally with Whisper),
+  web pages (URL), **audio** (`.wav` `.mp3` `.flac` `.ogg` `.m4a` `.aac` — transcribed locally with Whisper,
+  Vietnamese or English detected automatically),
   **video** (`.mp4` `.mov` `.webm` `.mkv`), **images** (`.png` `.jpg` `.webp` `.bmp` `.tiff` — local OCR,
   Vietnamese + English).
 - **Chat with citations** — streamed answers, hybrid retrieval (vector + full-text), "grounded" mode that
@@ -29,6 +30,10 @@ highlighted.
 - **Relevance checker** — a small local model checks whether the retrieved passages actually answer the question, so
   questions your sources don't cover get "Not found in the sources" right away instead of a guess (downloaded once,
   ~120 MB; Q&A works as before until it's ready).
+- **Record meeting** *(experimental)* — record from your microphone straight into a notebook (pause, resume,
+  end); when you finish, the recording is transcribed locally and becomes a source you can search, ask about and use in
+  Studio, with citations that jump to the exact moment in the audio. The live transcript while recording is not there
+  yet, and the Windows build has not been tested with a real microphone.
 - **Source viewer** — opens the cited passage highlighted; audio/video jump to the cited timestamp; images
   show the recognised text region.
 - **Studio** — 8 notebook-wide outputs: summary, key points, FAQ, outline, study guide, briefing, timeline and
