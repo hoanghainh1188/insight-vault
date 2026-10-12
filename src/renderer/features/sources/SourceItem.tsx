@@ -9,6 +9,7 @@ import { useRelink } from "./useRelink";
 import { useReprocess } from "./useReprocess";
 import type { SourceProgress } from "./useSources";
 import { IconLink, IconRefresh, IconTrash } from "../../shared/icons";
+import { hideSourceProgress } from "../meeting-capture/meeting-ui";
 
 const KIND_ICON: Record<Source["kind"], string> = {
   pdf: "PDF",
@@ -27,6 +28,7 @@ function subLabel(s: Source, tr: Translator): string {
   if (s.kind === "audio") return tr.t("sources.kind.audio");
   if (s.kind === "video") return tr.t("sources.kind.video");
   if (s.kind === "image") return tr.t("sources.kind.image");
+  if (s.kind === "meeting") return tr.t("sources.kind.meeting");
   if (s.kind === "pdf" && s.pageCount)
     return tr.plural("sources.kind.pdfPages", s.pageCount);
   return KIND_ICON[s.kind];
@@ -52,8 +54,12 @@ export function SourceItem({
     onOpen &&
     (source.status === "ready" || source.status === "awaiting_embedding");
   // Chỉ hiện thanh tiến độ khi đang xử lý (không phải trạng thái cuối).
+  // 186: nguồn cuộc họp đang ghi/tạm dừng chỉ hiện nhãn giai đoạn (chưa có bước xử lý).
   const showProgress =
-    progress != null && source.status !== "ready" && source.status !== "error";
+    progress != null &&
+    source.status !== "ready" &&
+    source.status !== "error" &&
+    !hideSourceProgress(source);
   const pct = showProgress ? Math.round((progress?.progress ?? 0) * 100) : 0;
   // 101: nguồn TỆP lỗi (thường do tệp gốc bị di chuyển) ⇒ chọn lại tệp rồi tự thử lại.
   const {

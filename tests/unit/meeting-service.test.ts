@@ -53,7 +53,11 @@ interface Harness {
 }
 
 function harness(
-  opts: { segmentSeconds?: number; micStatus?: "granted" | "denied" } = {},
+  opts: {
+    segmentSeconds?: number;
+    micStatus?: "granted" | "denied";
+    testFakeMic?: boolean;
+  } = {},
 ): Harness {
   const db = openDatabase(":memory:");
   runMigrations(db);
@@ -193,6 +197,7 @@ function harness(
     },
     segmentSeconds: opts.segmentSeconds ?? 300,
     sampleRate: RATE,
+    ...(opts.testFakeMic ? { testFakeMic: true } : {}),
   };
   const svc = createMeetingService(deps);
   return {
@@ -263,6 +268,19 @@ describe("prepare / start", () => {
       onlineActive: false,
     });
     expect(r.minutesRemaining).toBeGreaterThan(10);
+  });
+
+  it("e2e testFakeMic ⇒ coi như có quyền, báo renderer dùng tín hiệu thử", async () => {
+    const f = harness({ micStatus: "denied", testFakeMic: true });
+    const r = await f.svc.prepare(OWNER, { notebookId: "nb1" });
+    expect(r).toMatchObject({
+      micStatus: "granted",
+      canStart: true,
+      testFakeMic: true,
+    });
+    expect(
+      (await h.svc.prepare(OWNER, { notebookId: "nb1" })).testFakeMic,
+    ).toBeUndefined();
   });
 
   it("micro bị từ chối ⇒ canStart=false, micStatus=denied", async () => {

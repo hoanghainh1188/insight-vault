@@ -1,7 +1,12 @@
 // 186 — hằng số Ghi cuộc họp, MỘT chỗ để chỉnh (research R3, R13; quyết định A1, A7, D15).
 
-/** Tần số mẫu lưu trữ & nhận dạng (WAV PCM16 mono). */
-export const SAMPLE_RATE = 16000;
+import {
+  END_CONFIRM_MIN_SEC as SHARED_END_CONFIRM_MIN_SEC,
+  MEETING_SAMPLE_RATE,
+} from "@shared/meeting/constants";
+
+/** Tần số mẫu lưu trữ & nhận dạng (WAV PCM16 mono) — dùng chung với renderer. */
+export const SAMPLE_RATE = MEETING_SAMPLE_RATE;
 /** Byte mỗi giây audio (PCM16 mono). */
 export const BYTES_PER_SEC = SAMPLE_RATE * 2;
 /** Byte mỗi phút ghi — dùng cho ước lượng phút ghi còn lại (A7). */
@@ -25,8 +30,8 @@ export const NO_AUDIO_TIMEOUT_MS = 5000;
 
 /** Cổng quyền micro mở sau hành động người dùng (R11). */
 export const ARM_WINDOW_MS = 15_000;
-/** Kết thúc ghi hỏi xác nhận khi phiên ≥ N giây (D15). */
-export const END_CONFIRM_MIN_SEC = 300;
+/** Kết thúc ghi hỏi xác nhận khi phiên ≥ N giây (D15) — dùng chung với renderer. */
+export const END_CONFIRM_MIN_SEC = SHARED_END_CONFIRM_MIN_SEC;
 
 /** Bản chốt: chồng lấn với phân đoạn trước (D5). */
 export const FINAL_OVERLAP_SEC = 5;

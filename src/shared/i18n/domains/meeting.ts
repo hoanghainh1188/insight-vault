@@ -23,6 +23,8 @@ export const meetingVi = {
     diskLow:
       "Ổ đĩa chỉ đủ ghi khoảng {minutes} phút — hãy giải phóng dung lượng trước khi ghi.",
     begin: "Bắt đầu ghi",
+    defaultMic: "Microphone mặc định",
+    starting: "Đang mở microphone…",
   },
   language: {
     auto: "Tự động",
@@ -49,6 +51,10 @@ export const meetingVi = {
     endConfirmOk: "Kết thúc",
     transcriptAfterEnd: "Transcript sẽ có sau khi kết thúc ghi.",
     backToRecording: "Quay lại",
+    statusBar: "Đang ghi {duration}",
+    statusBarPaused: "Đã tạm dừng {duration}",
+    durationLabel: "Thời lượng đã ghi",
+    controls: "Điều khiển ghi",
   },
   finalize: {
     status: "Đang chốt transcript và lập chỉ mục",
@@ -57,6 +63,8 @@ export const meetingVi = {
     openWhenDone: "Mở khi hoàn tất",
     readyToast: "Cuộc họp “{title}” đã sẵn sàng.",
     open: "Mở",
+    ready: "Đã sẵn sàng",
+    titleLabel: "Tiêu đề cuộc họp",
   },
   phase: {
     recording: "Đang ghi",
@@ -69,6 +77,14 @@ export const meetingVi = {
   },
   capture: {
     failed: "Không ghi được âm thanh. Dữ liệu đã ghi vẫn được giữ.",
+  },
+  a11y: {
+    started: "Đã bắt đầu ghi cuộc họp.",
+    paused: "Đã tạm dừng ghi — không thu âm.",
+    resumed: "Đã tiếp tục ghi.",
+    ended: "Đã kết thúc ghi. Đang chốt transcript và lập chỉ mục.",
+    ready: "Cuộc họp “{title}” đã sẵn sàng.",
+    deviceLost: "Mất microphone — đã tạm dừng ghi.",
   },
 } as const;
 
@@ -93,6 +109,8 @@ export const meetingEn: Widen<typeof meetingVi> = {
     diskLow:
       "The disk only has room for about {minutes} minutes of recording — free up space before recording.",
     begin: "Start recording",
+    defaultMic: "Default microphone",
+    starting: "Opening the microphone…",
   },
   language: {
     auto: "Automatic",
@@ -120,6 +138,10 @@ export const meetingEn: Widen<typeof meetingVi> = {
     transcriptAfterEnd:
       "The transcript will be available after the recording ends.",
     backToRecording: "Back",
+    statusBar: "Recording {duration}",
+    statusBarPaused: "Paused {duration}",
+    durationLabel: "Recorded duration",
+    controls: "Recording controls",
   },
   finalize: {
     status: "Finalizing transcript and indexing",
@@ -128,6 +150,8 @@ export const meetingEn: Widen<typeof meetingVi> = {
     openWhenDone: "Open when done",
     readyToast: "Meeting “{title}” is ready.",
     open: "Open",
+    ready: "Ready",
+    titleLabel: "Meeting title",
   },
   phase: {
     recording: "Recording",
@@ -140,5 +164,13 @@ export const meetingEn: Widen<typeof meetingVi> = {
   },
   capture: {
     failed: "Audio could not be recorded. The audio recorded so far is kept.",
+  },
+  a11y: {
+    started: "Meeting recording started.",
+    paused: "Recording paused — not recording audio.",
+    resumed: "Recording resumed.",
+    ended: "Recording ended. Finalizing the transcript and indexing.",
+    ready: "Meeting “{title}” is ready.",
+    deviceLost: "Microphone lost — recording paused.",
   },
 };

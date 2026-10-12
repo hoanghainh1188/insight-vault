@@ -130,6 +130,8 @@ export interface MeetingServiceDeps {
   clearInterval(handle: ReturnType<typeof setInterval>): void;
   segmentSeconds: number;
   sampleRate: number;
+  /** e2e (bản chưa đóng gói, IV_E2E_FAKE_MIC): renderer dùng tín hiệu thử thay micro ⇒ coi như đã có quyền. */
+  testFakeMic?: boolean;
 }
 
 export interface MeetingService {
@@ -461,7 +463,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     async prepare(_senderId, input) {
       if (!isObj(input) || !str(input["notebookId"]))
         throw new UserFacingError("meetingInvalidInput");
-      let micStatus = deps.mediaAccess.status();
+      let micStatus = deps.testFakeMic ? "granted" : deps.mediaAccess.status();
       if (micStatus === "notDetermined")
         micStatus = (await deps.mediaAccess.ask()) ? "granted" : "denied";
       deps.micGate.arm();
@@ -487,6 +489,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
         ...(typeof lastDevice === "string"
           ? { lastDeviceLabel: lastDevice }
           : {}),
+        ...(deps.testFakeMic ? { testFakeMic: true as const } : {}),
         ...(LANGUAGE_MODES.includes(lastLanguage as LanguageMode)
           ? { lastLanguageMode: lastLanguage as LanguageMode }
           : {}),

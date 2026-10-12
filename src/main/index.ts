@@ -498,9 +498,13 @@ app
       micGate,
       mediaAccess: {
         status: () =>
-          process.platform === "darwin" || process.platform === "win32"
-            ? toMicStatus(systemPreferences.getMediaAccessStatus("microphone"))
-            : "unknown",
+          process.env["IV_E2E_MIC_DENIED"] === "1" && !app.isPackaged
+            ? "denied"
+            : process.platform === "darwin" || process.platform === "win32"
+              ? toMicStatus(
+                  systemPreferences.getMediaAccessStatus("microphone"),
+                )
+              : "unknown",
         ask: () =>
           process.platform === "darwin"
             ? systemPreferences.askForMediaAccess("microphone")
@@ -542,6 +546,8 @@ app
       clearInterval: (h) => clearInterval(h),
       segmentSeconds: segmentSeconds(app.isPackaged, process.env),
       sampleRate: SAMPLE_RATE,
+      // e2e (R15, spike S1): tín hiệu thử thay micro / giả lập bị từ chối — CHỈ bản chưa đóng gói.
+      testFakeMic: process.env["IV_E2E_FAKE_MIC"] === "1" && !app.isPackaged,
     });
     const meeting = meetingService;
     app.on("will-quit", () => {

@@ -648,6 +648,8 @@ export interface MeetingPrepareResult {
   recordingActive: boolean;
   lastDeviceLabel?: string;
   lastLanguageMode?: LanguageMode;
+  /** 186: CHỈ bản chưa đóng gói chạy e2e (IV_E2E_FAKE_MIC) — renderer thay micro bằng tín hiệu thử. */
+  testFakeMic?: true;
 }
 
 export interface MeetingStartInput {

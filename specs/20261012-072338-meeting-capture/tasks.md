@@ -152,31 +152,31 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 ### Implementation — renderer
 
 - [X] T050 [P] [US1] `src/renderer/features/meeting-capture/default-title.ts` + `src/shared/meeting/format-duration.ts` (dùng chung main/renderer — bản xuất Markdown C2 cũng cần). T016 xanh.
-- [ ] T051 [US1] `src/renderer/features/meeting-capture/capture/pcm-worklet.ts` (AudioWorkletProcessor: Float32 → Int16, gom 16 000 mẫu, `postMessage` transfer, **lệnh `flush`
+- [X] T051 [US1] `src/renderer/features/meeting-capture/capture/pcm-worklet.ts` (AudioWorkletProcessor: Float32 → Int16, gom 16 000 mẫu, `postMessage` transfer, **lệnh `flush`
       xả lô lẻ** khi tạm dừng/kết thúc — S1) và `capture/mic-capture.ts` (I/O: `getUserMedia({audio:{deviceId}})`, AudioContext 16 kHz, `addModule` qua
       `import url from "./pcm-worklet.ts?worker&url"` — S1; seam `IV_E2E_FAKE_MIC` (unpackaged) thay `getUserMedia` bằng `AudioBufferSourceNode` phát lặp fixture; gửi lô qua `window.api.meetingSendAudio` với
       `seq`, đệm ≤ 30 s, tràn ⇒ báo lỗi; `stop()` dừng track thật; ánh xạ `NotAllowedError`/`NotFoundError`).
-- [ ] T052 [US1] `src/renderer/features/meeting-capture/RecordingProvider.tsx` (**cấp app, từ PR A** — đặt trong `src/renderer/main.tsx` quanh `RouterProvider`;
+- [X] T052 [US1] `src/renderer/features/meeting-capture/RecordingProvider.tsx` (**cấp app, từ PR A** — đặt trong `src/renderer/main.tsx` quanh `RouterProvider`;
       giữ `mic-capture` + state phiên) + hook `useMeetingRecording.ts` (prepare → getUserMedia → start; pause/resume/stop; `onMeetingState`; `meetingStatus` khi mount
       để gắn lại) + `RecordingStatusBar.tsx` trong header `src/renderer/app/App.tsx` ("● Đang ghi 00:12:03 — Quay lại") ⇒ đổi notebook/route KHÔNG dừng mic (FR-041,
       FR-048).
-- [ ] T053 [US1] `src/renderer/features/meeting-capture/StartRecordingDialog.tsx`: tên mặc định, notebook đích, chọn micro khi > 1 (`enumerateDevices`), ngôn ngữ (4 lựa
+- [X] T053 [US1] `src/renderer/features/meeting-capture/StartRecordingDialog.tsx`: tên mặc định, notebook đích, chọn micro khi > 1 (`enumerateDevices`), ngôn ngữ (4 lựa
       chọn; PR A chỉ lưu, chưa phát hiện), thông điệp riêng tư + phụ chú online / thiếu model (C6), `canStart=false` ⇒ giải thích, quyền bị từ chối ⇒ hướng dẫn theo
       hệ điều hành (không tạo nguồn); nhớ micro + ngôn ngữ lần trước qua **electron-store ở main** (`lastDeviceLabel`/`lastLanguageMode` của `meeting:prepare`, lưu khi `meeting:start` — D15);
       không có thiết bị thu (`enumerateDevices` rỗng) ⇒ nút Bắt đầu vô hiệu + giải thích (Edge Case).
-- [ ] T054 [US1] `src/renderer/features/meeting-capture/RecordingView.tsx` (đọc state từ `RecordingProvider`): thanh đầu `● Đang ghi · hh:mm:ss · Lưu trên máy` (chữ + chấm, đồng hồ nổi bật,
+- [X] T054 [US1] `src/renderer/features/meeting-capture/RecordingView.tsx` (đọc state từ `RecordingProvider`): thanh đầu `● Đang ghi · hh:mm:ss · Lưu trên máy` (chữ + chấm, đồng hồ nổi bật,
       `aria-live` không đọc mỗi giây), vùng nội dung (PR A: placeholder "Transcript sẽ có sau khi kết thúc"), thanh dưới: Tạm dừng↔Tiếp tục ("Đã tạm dừng — không thu
       âm"), Kết thúc ghi tách biệt + hộp xác nhận khi ≥ `END_CONFIRM_MIN_SEC` (dùng lại component xác nhận sẵn có).
-- [ ] T055 [US1] `src/renderer/features/meeting-capture/FinalizeView.tsx`: tiêu đề sửa được (`meetingRename`), tổng thời lượng, "Đang chốt transcript và lập chỉ mục" +
+- [X] T055 [US1] `src/renderer/features/meeting-capture/FinalizeView.tsx`: tiêu đề sửa được (`meetingRename`), tổng thời lượng, "Đang chốt transcript và lập chỉ mục" +
       tiến độ từ `onSourceProgress`, nút Về notebook, Mở khi hoàn tất (còn ở màn ⇒ tự mở viewer; đã rời ⇒ toast "Cuộc họp … đã sẵn sàng — Mở").
-- [ ] T056 [US1] `src/renderer/features/sources/SourceList.tsx`: nút icon 🎙 cạnh `+` (`data-testid="record-meeting-btn"`, tooltip + `aria-label`), nhãn theo
+- [X] T056 [US1] `src/renderer/features/sources/SourceList.tsx`: nút icon 🎙 cạnh `+` (`data-testid="record-meeting-btn"`, tooltip + `aria-label`), nhãn theo
       `meetingPhase` ("Đang ghi", "Đã tạm dừng", "Đang hoàn tất", "Chưa hoàn thiện"); `src/renderer/features/sources/Workspace.tsx`: chế độ tập trung hiển thị
       `RecordingView`/`FinalizeView` thay cột giữa khi có phiên của notebook.
 - [X] T057 [US2] `src/renderer/features/source-viewer/SourceViewer.tsx`: bỏ `play()` ở effect citation (`:105-106`), khi đổi citation thì `pause()` + tua; `kind="meeting"`
       ⇒ player audio như `audio`. T021 xanh.
-- [ ] T058 [US1] Điền chuỗi vi + en cho mọi UI PR A vào `src/shared/i18n/domains/meeting.ts` (+ mã lỗi `meetingRecording`, `meetingAlreadyRecording`, `meetingDiskLow`,
+- [X] T058 [US1] Điền chuỗi vi + en cho mọi UI PR A vào `src/shared/i18n/domains/meeting.ts` (+ mã lỗi `meetingRecording`, `meetingAlreadyRecording`, `meetingDiskLow`,
       `notSupported` vào domain tương ứng); `tests/unit/i18n-catalog.test.ts` xanh.
-- [ ] T059 [US1] Thông báo live region (`announce`, `src/renderer/shared/a11y/messages.ts`): bắt đầu ghi, tạm dừng, tiếp tục, kết thúc, cuộc họp sẵn sàng — không đọc đồng hồ.
+- [X] T059 [US1] Thông báo live region (`announce`, `src/renderer/shared/a11y/messages.ts`): bắt đầu ghi, tạm dừng, tiếp tục, kết thúc, cuộc họp sẵn sàng — không đọc đồng hồ.
 
 ### E2E
 

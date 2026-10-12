@@ -6,6 +6,9 @@ import { SourceItem } from "./SourceItem";
 import { AddSourceModal } from "./AddSourceModal";
 import { ContentSearchBox } from "../search/ContentSearchBox";
 import { useT } from "../../shared/i18n/i18n-context";
+import { IconMic } from "../../shared/icons";
+import { StartRecordingDialog } from "../meeting-capture/StartRecordingDialog";
+import { useRecording } from "../meeting-capture/RecordingProvider";
 
 // Cột "Nguồn" của Workspace (prototype S2): header tổng hợp + nút thêm + tìm toàn văn (073) + danh sách nguồn + modal.
 export function SourceList({
@@ -21,6 +24,9 @@ export function SourceList({
   const { sources, loading, progress, add, remove, retry } =
     useSources(notebookId);
   const [showAdd, setShowAdd] = useState(false);
+  // 186: Ghi cuộc họp — nút icon cạnh Thêm nguồn (C5); vô hiệu khi đã có phiên ghi (một phiên tại một thời điểm).
+  const [showRecord, setShowRecord] = useState(false);
+  const rec = useRecording();
 
   return (
     <section className="src-col" aria-label={t.t("sources.list.label")}>
@@ -31,14 +37,27 @@ export function SourceList({
             {aggregateLabel(sources, t)}
           </span>
         </div>
-        <button
-          type="button"
-          className="btn-outline-sm"
-          onClick={() => setShowAdd(true)}
-          data-testid="add-source-btn"
-        >
-          {t.t("sources.list.add")}
-        </button>
+        <div className="src-head-actions">
+          <button
+            type="button"
+            className="btn-icon-sm"
+            onClick={() => setShowRecord(true)}
+            disabled={rec.state !== null}
+            title={t.t("meeting.entry.record")}
+            aria-label={t.t("meeting.entry.record")}
+            data-testid="record-meeting-btn"
+          >
+            <IconMic size={16} />
+          </button>
+          <button
+            type="button"
+            className="btn-outline-sm"
+            onClick={() => setShowAdd(true)}
+            data-testid="add-source-btn"
+          >
+            {t.t("sources.list.add")}
+          </button>
+        </div>
       </header>
 
       {onOpenHit && (
@@ -80,6 +99,12 @@ export function SourceList({
         </ul>
       )}
 
+      {showRecord && (
+        <StartRecordingDialog
+          notebookId={notebookId}
+          onClose={() => setShowRecord(false)}
+        />
+      )}
       {showAdd && (
         <AddSourceModal
           notebookId={notebookId}
