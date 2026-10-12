@@ -44,9 +44,9 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### Setup
 
-- [ ] T003 [US1] Thu fixture `tests/fixtures/meeting/speech-16k.wav` (≈ 60 s tiếng Việt + 30 s English + 10 s im lặng, 16 kHz mono, tự thu) + `tests/fixtures/meeting/README.md`
+- [X] T003 [US1] Thu fixture `tests/fixtures/meeting/speech-16k.wav` (≈ 60 s tiếng Việt + 30 s English + 10 s im lặng, 16 kHz mono, tự thu) + `tests/fixtures/meeting/README.md`
       ghi nguồn và giấy phép.
-- [ ] T004 [US1] Tạo domain i18n `src/shared/i18n/domains/meeting.ts` (`meetingVi` as const, `meetingEn: Widen<typeof meetingVi>`), đăng ký namespace `meeting` trong
+- [X] T004 [US1] Tạo domain i18n `src/shared/i18n/domains/meeting.ts` (`meetingVi` as const, `meetingEn: Widen<typeof meetingVi>`), đăng ký namespace `meeting` trong
       `src/shared/i18n/vi.ts` và `src/shared/i18n/en.ts` (khoá được bổ sung dần ở các task UI).
 
 ### Tests trước (FAIL rồi mới code)
