@@ -195,16 +195,16 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 - [ ] T065 [US1] Hoàn thiện ADR thực thi `docs/04-decisions/2026-10-12-meeting-capture.md` (research R16 mục 1: thay 049 #3, ngoại lệ 049 #2, diễn giải Constitution III (không phải ngoại lệ),
       chính sách quyền, utilityProcess ASR, kết quả S1) + thêm dòng `docs/04-decisions/INDEX.md` bằng script.
-- [X] T066 [US1] Append thuật ngữ mới phát sinh khi code (nếu có, vd `meeting:audio`, cổng quyền `armedUntil`) vào `docs/00-glossary.md` bằng script — chỉ THÊM dòng.
+- [x] T066 [US1] Append thuật ngữ mới phát sinh khi code (nếu có, vd `meeting:audio`, cổng quyền `armedUntil`) vào `docs/00-glossary.md` bằng script — chỉ THÊM dòng.
 
 ### Cổng review PR A
 
-- [X] T067 [US1] Gọi **code-reviewer** đối chiếu constitution + spec + plan + tasks; xử lý mọi Blocking.
-- [X] T068 [US1] Gọi **glossary-steward**; append term thiếu.
-- [X] T069 [US1] Gọi **security-reviewer** (BẮT BUỘC): `installSecurity`/quyền OS, kênh nhị phân `meeting:audio` (sender, kích thước, tần suất), kênh mới whitelist,
+- [x] T067 [US1] Gọi **code-reviewer** đối chiếu constitution + spec + plan + tasks; xử lý mọi Blocking.
+- [x] T068 [US1] Gọi **glossary-steward**; append term thiếu.
+- [x] T069 [US1] Gọi **security-reviewer** (BẮT BUỘC): `installSecurity`/quyền OS, kênh nhị phân `meeting:audio` (sender, kích thước, tần suất), kênh mới whitelist,
       FS `meetings/` (prefix, xoá), worker (đường dẫn, tin nhắn), không log nội dung, CSP. Mọi Blocking phải sửa.
-- [X] T070 [US1] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-record.spec.ts tests/e2e/meeting-permission.spec.ts
-    tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
+- [x] T070 [US1] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-record.spec.ts tests/e2e/meeting-permission.spec.ts
+  tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
       mac; mở PR A — mô tả PR ghi chú lệch tạm D8 (bảo trì vector bị chặn khi đang ghi cho tới PR C1, T116).
 
 **Checkpoint**: PR A merge — ghi cuộc họp thành nguồn dùng được, citation chỉ tua.
@@ -220,6 +220,11 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 
 ### Spike S2 — CỔNG (chặn T073 trở đi)
 
+> Ghi chú 2026-10-12: hàm thuần không phụ thuộc model nháp (T073–T079, T083–T086, T092) làm trước khi chốt S2 — người dùng đồng ý nới
+> cổng cho nhóm này. Tin `detect`/`language` (một phần T082/T087) đã vào PR A (phát hiện ngôn ngữ bản chốt, ADR thực thi mục 8).
+> Theo spike S2, `multi` KHÔNG truyền `language: null` (mặc định tiếng Anh) mà phát hiện theo từng cửa sổ — `windowLanguage()` trả
+> `"perWindow"`.
+
 - [ ] T071 [US3] Spike S2: tạo `vitest.spike.config.ts`, `tests/spike/asr-rtf.spike.ts`, script `"spike:asr"` trong `package.json` (dev-only, không vào `test`/CI); đo
       RTF `Xenova/whisper-tiny` và `Xenova/whisper-base` (q8, fp32) cửa sổ 10 s và phân đoạn 5 phút trên Mac Apple Silicon + một máy Windows x64 chỉ CPU; thử phát hiện
       ngôn ngữ một bước decoder giới hạn {vi, en} (R2) trên 10 mẫu 30 s; nếu không khả thi thử phương án dự phòng.
@@ -228,20 +233,20 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 
 ### Tests trước (FAIL rồi mới code)
 
-- [ ] T073 [P] [US3] Test TRƯỚC `tests/unit/meeting-vad.test.ts` cho `isSpeechWindow(pcm, thresholdDbfs=-45, minSpeechRatio=0.1)`: im lặng, nhiễu nền thấp, lời nói,
+- [x] T073 [P] [US3] Test TRƯỚC `tests/unit/meeting-vad.test.ts` cho `isSpeechWindow(pcm, thresholdDbfs=-45, minSpeechRatio=0.1)`: im lặng, nhiễu nền thấp, lời nói,
       tiếng ồn lớn ngắn.
-- [ ] T074 [P] [US3] Test TRƯỚC `tests/unit/meeting-hallucination.test.ts` cho `dedupeHallucination(segments)`: bỏ rỗng/chỉ dấu câu, gộp cụm lặp ≥ 3 lần liên tiếp,
+- [x] T074 [P] [US3] Test TRƯỚC `tests/unit/meeting-hallucination.test.ts` cho `dedupeHallucination(segments)`: bỏ rỗng/chỉ dấu câu, gộp cụm lặp ≥ 3 lần liên tiếp,
       giữ lặp hợp lệ 2 lần.
-- [ ] T075 [P] [US3] Test TRƯỚC `tests/unit/meeting-draft-queue.test.ts` cho `planDraftQueue(pending, nowSec)`: tồn > 3 ⇒ bỏ cũ nhất, bật `lagging`; ≤ 1 ⇒ tắt; thứ tự ưu
+- [x] T075 [P] [US3] Test TRƯỚC `tests/unit/meeting-draft-queue.test.ts` cho `planDraftQueue(pending, wasLagging)` (đổi tham số: cần trạng thái lagging trước để trễ tắt cờ; lượt 5 s lỗi thời bị bỏ): tồn > 3 ⇒ bỏ cũ nhất, bật `lagging`; ≤ 1 ⇒ tắt; thứ tự ưu
       tiên detectLanguage > draft > final.
-- [ ] T076 [P] [US4] Test TRƯỚC `tests/unit/meeting-language-policy.test.ts` cho `languagePolicy(state, event)` theo R7: khoá sau 30 s lời nói, đánh giá mỗi 120 s, gợi ý sau 2
+- [x] T076 [P] [US4] Test TRƯỚC `tests/unit/meeting-language-policy.test.ts` cho `languagePolicy(state, event)` theo R7: khoá sau 30 s lời nói, đánh giá mỗi 120 s, gợi ý sau 2
       lần liên tiếp confidence ≥ 0,7, chấp nhận ⇒ `languageChanges` thêm `{atSec}`, từ chối ⇒ không gợi ý lại, khoá tay ⇒ dừng phát hiện, `multi` ⇒ `language: null`;
       `languageForSegment(changes, segStart, segEnd)` (phần lớn).
-- [ ] T077 [P] [US3] Test TRƯỚC `tests/unit/meeting-draft-merge.test.ts` cho `mergeDraft(prev, incoming)` (renderer): thay theo id, giữ thứ tự theo `tStart`, không mutate,
+- [x] T077 [P] [US3] Test TRƯỚC `tests/unit/meeting-draft-merge.test.ts` cho `mergeDraft(prev, incoming)` (renderer): thay theo id, giữ thứ tự theo `tStart`, không mutate,
       cửa sổ mới append.
-- [ ] T078 [P] [US3] Test TRƯỚC `tests/unit/meeting-auto-scroll.test.ts` cho `shouldAutoScroll({scrollTop, scrollHeight, clientHeight, threshold})` và trạng thái nút
+- [x] T078 [P] [US3] Test TRƯỚC `tests/unit/meeting-auto-scroll.test.ts` cho `shouldAutoScroll({scrollTop, scrollHeight, clientHeight, threshold})` và trạng thái nút
       "Quay về hiện tại".
-- [ ] T079 [P] [US3] Test TRƯỚC `tests/unit/meeting-level.test.ts` cho `levelState({rmsDbfs, peakDbfs})`: < −50 ⇒ `weak`, peak > −1 ⇒ `clipping`, còn lại `ok`; trễ chuyển
+- [x] T079 [P] [US3] Test TRƯỚC `tests/unit/meeting-level.test.ts` cho `levelState({rmsDbfs, peakDbfs})`: < −50 ⇒ `weak`, peak > −1 ⇒ `clipping`, còn lại `ok`; trễ chuyển
       trạng thái để không nhấp nháy.
 - [ ] T080 [P] [US3] Test TRƯỚC `tests/unit/meeting-service-draft.test.ts`: lịch cửa sổ 10 s (+ lượt 5 s pending nếu bật), VAD bỏ im lặng, push `meeting:draft` chỉ tới
       owner, append `draft.jsonl`, `transcriptLagging`, thiếu model ⇒ ghi tiếp + `modelReady=false`; hoàn tất lỗi/thiếu model chốt mà có nháp ⇒ `done` +
@@ -253,10 +258,10 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 
 ### Implementation
 
-- [ ] T083 [P] [US3] `src/main/services/meeting-capture/vad.ts`. T073 xanh.
-- [ ] T084 [P] [US3] `src/main/services/meeting-capture/hallucination.ts`. T074 xanh.
-- [ ] T085 [P] [US3] `src/main/services/meeting-capture/draft-queue.ts`. T075 xanh.
-- [ ] T086 [P] [US4] `src/main/services/meeting-capture/language-policy.ts`. T076 xanh.
+- [x] T083 [P] [US3] `src/main/services/meeting-capture/vad.ts`. T073 xanh.
+- [x] T084 [P] [US3] `src/main/services/meeting-capture/hallucination.ts`. T074 xanh.
+- [x] T085 [P] [US3] `src/main/services/meeting-capture/draft-queue.ts`. T075 xanh.
+- [x] T086 [P] [US4] `src/main/services/meeting-capture/language-policy.ts`. T076 xanh.
 - [ ] T087 [US3] `asr-protocol.ts` + `asr-worker.ts`: tin `draft` (PCM cửa sổ qua message, model nháp), `detectLanguage` (phương pháp ADR spike), hàng ưu tiên; VAD + khử ảo
       giác áp ở worker cho cả nháp và chốt. T082 xanh.
 - [ ] T088 [US3] `meeting-service.ts`: bộ đệm cửa sổ 10 s từ lô audio, lập lịch qua `planDraftQueue`, push `meeting:draft`, append `draft.jsonl`, cờ lagging trong
@@ -267,7 +272,7 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
       `meeting:downloadModel`.
 - [ ] T091 [US3] `media-serve.ts`: `iv-media://source/<id>?seg=n` cho meeting chưa ghép — phân đoạn mở dựng header theo kích thước hiện tại (`buildWavHeader`) và phục vụ
       header + dữ liệu đã fsync; `seg` ngoài phạm vi ⇒ 404.
-- [ ] T092 [P] [US3] `src/renderer/features/meeting-capture/draft-merge.ts`, `auto-scroll.ts`, `level.ts`. T077, T078, T079 xanh.
+- [x] T092 [P] [US3] `src/renderer/features/meeting-capture/draft-merge.ts`, `auto-scroll.ts`, `level.ts`. T077, T078, T079 xanh.
 - [ ] T093 [US3] `capture/pcm-worklet.ts` gửi RMS/peak mỗi 100 ms qua `port`; `LevelMeter.tsx` 3 trạng thái có nhãn chữ + `aria-label`.
 - [ ] T094 [US3] `DraftTranscript.tsx` trong `RecordingView`: dòng có timestamp lề trái (`formatDuration`), nhãn "Đang nhận dạng" cho `pending`, key = id (cập nhật tại
       chỗ), tự cuộn theo `shouldAutoScroll` + nút "Quay về hiện tại", bấm timestamp ⇒ `<audio>` phụ phát `?seg=n` tại `offsetSec` (`locateInSegments` phía renderer trên
@@ -312,7 +317,7 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
       thiếu Shift, phím lặp (`repeat`), ô nhập văn bản không chặn tổ hợp Mod+Shift.
 - [ ] T107 [P] [US5] Test TRƯỚC `tests/unit/meeting-service-durability.test.ts`: checkpoint mỗi 30 s + khi đóng phân đoạn; `rendererGone` / không lô > 5 s ⇒ `interrupted`;
       `stopForQuit` ⇒ `stopping` + `endedByUser`; `recover(finalize|keepIncomplete|discard)`; `finalizeAgain` cho `incomplete` và `quality=draft`; `pause({reason:
-    "deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
+  "deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
 - [ ] T108 [P] [US6] Test TRƯỚC `tests/unit/vault-lock-meeting.test.ts`: bảo trì vector KHÔNG bị chặn bởi phiên `recording|paused`, VẪN bị chặn bởi `finalizing`; sao
       lưu/khôi phục bị chặn khi đang ghi.
 - [ ] T109 [P] [US5] Mở rộng `tests/unit/meeting-channels-whitelist.test.ts` cho kênh PR C1.

@@ -614,6 +614,15 @@ export type LanguageMode = "auto" | "vi" | "en" | "multi";
 
 export type TranscriptQuality = "final" | "draft";
 
+/** 186 PR B — một dòng nháp (cửa sổ 10 s, id ổn định `w<index>`); `pending` = lượt 5 s chưa đủ cửa sổ ("Đang nhận dạng"). */
+export interface MeetingDraftLine {
+  id: string;
+  tStart: number;
+  tEnd: number;
+  text: string;
+  pending: boolean;
+}
+
 export type MeetingMarkerKind = "decision" | "actionItem" | "question";
 
 export interface MeetingMarker {
