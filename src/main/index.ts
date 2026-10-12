@@ -1,3 +1,9 @@
+import {
+  createMicGate,
+  decideMediaPermission,
+  decidePermissionCheck,
+} from "./services/app-shell/permissions";
+import { ARM_WINDOW_MS } from "./services/meeting-capture/meeting-constants";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { realpath } from "node:fs/promises";
@@ -102,12 +108,38 @@ protocol.registerSchemesAsPrivileged([
   { scheme: "iv-media", privileges: { stream: true, supportFetchAPI: true } },
 ]);
 
-// Hardening cấp session (Constitution I & III): từ chối mọi permission request (app-shell không cần
-// camera/mic/geo/…); chặn mở device (USB/HID/serial). Local-first: không có bề mặt xin quyền nào.
+// Hardening cấp session (Constitution I & III): mặc định TỪ CHỐI mọi permission; chặn mở device (USB/HID/serial).
+// 186: ngoại lệ DUY NHẤT — micro (media, audio-only) cho cửa sổ chính của app, chỉ trong cổng ngắn sau khi người dùng
+// bấm Bắt đầu ghi/Tiếp tục (micGate). Chính sách là hàm thuần ở services/app-shell/permissions.ts (có test).
+const micGate = createMicGate(Date.now, ARM_WINDOW_MS);
+let mainWebContentsId: number | null = null;
+
 function installSecurity(): void {
   const ses = session.defaultSession;
-  ses.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
-  ses.setPermissionCheckHandler(() => false);
+  const devUrl = process.env["ELECTRON_RENDERER_URL"];
+  ses.setPermissionRequestHandler((wc, permission, cb, details) => {
+    cb(
+      decideMediaPermission({
+        permission,
+        mediaTypes: (details as { mediaTypes?: string[] }).mediaTypes,
+        requestingUrl: details.requestingUrl,
+        isMainFrame: details.isMainFrame,
+        isMainWindow: wc.id === mainWebContentsId,
+        armedUntil: micGate.armedUntil(),
+        now: Date.now(),
+        devUrl,
+      }),
+    );
+  });
+  ses.setPermissionCheckHandler((wc, permission, requestingOrigin, details) =>
+    decidePermissionCheck({
+      permission,
+      mediaType: (details as { mediaType?: string }).mediaType,
+      requestingUrl: details.requestingUrl ?? requestingOrigin,
+      isMainWindow: wc !== null && wc.id === mainWebContentsId,
+      devUrl,
+    }),
+  );
   ses.setDevicePermissionHandler(() => false);
 }
 
@@ -145,6 +177,7 @@ function createWindow(): void {
     },
   });
 
+  mainWebContentsId = win.webContents.id; // 186: chỉ cửa sổ chính được xin micro
   win.once("ready-to-show", () => win.show());
 
   // Local-first: chặn mọi điều hướng ra ngoài + cửa sổ popup ngoài (Constitution I).

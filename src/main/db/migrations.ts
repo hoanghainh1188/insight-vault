@@ -286,6 +286,62 @@ export const MIGRATIONS: Migration[] = [
       );
     },
   },
+  // 186-meeting-capture: nguồn cuộc họp (kind="meeting" — cột kind không còn CHECK từ v5, KHÔNG rebuild source). Ba bảng
+  // con 1-n/1-1 của source, đều ON DELETE CASCADE: phiên ghi (metadata + phân đoạn/khoảng ngừng dạng JSON), đánh dấu
+  // (neo thời gian audio), map char↔thời gian mức segment Whisper của transcript chốt (D3). Trạng thái nguồn giữ 5 giá trị
+  // (A9) — nhãn UI lấy từ meeting_session.phase.
+  {
+    version: 12,
+    up(db) {
+      db.exec(`
+        CREATE TABLE meeting_session (
+          source_id             TEXT PRIMARY KEY REFERENCES source(id) ON DELETE CASCADE,
+          session_id            TEXT NOT NULL UNIQUE,
+          phase                 TEXT NOT NULL CHECK (phase IN ('recording','paused','stopping','finalizing','interrupted','incomplete','done')),
+          ended_by_user         INTEGER NOT NULL DEFAULT 0 CHECK (ended_by_user IN (0,1)),
+          language_mode         TEXT NOT NULL CHECK (language_mode IN ('auto','vi','en','multi')),
+          language              TEXT CHECK (language IN ('vi','en')),
+          language_changes_json TEXT NOT NULL DEFAULT '[]',
+          device_label          TEXT,
+          started_at            INTEGER NOT NULL,
+          ended_at              INTEGER,
+          duration_ms           INTEGER NOT NULL DEFAULT 0,
+          segments_json         TEXT NOT NULL DEFAULT '[]',
+          pause_gaps_json       TEXT NOT NULL DEFAULT '[]',
+          transcript_quality    TEXT CHECK (transcript_quality IN ('final','draft')),
+          final_progress        INTEGER NOT NULL DEFAULT 0,
+          updated_at            INTEGER NOT NULL
+        )
+      `);
+      db.exec(
+        "CREATE INDEX IF NOT EXISTS idx_meeting_session_phase ON meeting_session(phase)",
+      );
+      db.exec(`
+        CREATE TABLE meeting_marker (
+          id         TEXT PRIMARY KEY,
+          source_id  TEXT NOT NULL REFERENCES source(id) ON DELETE CASCADE,
+          kind       TEXT NOT NULL CHECK (kind IN ('decision','actionItem','question')),
+          t_start    REAL NOT NULL CHECK (t_start >= 0),
+          t_end      REAL NOT NULL CHECK (t_end >= t_start),
+          created_at INTEGER NOT NULL
+        )
+      `);
+      db.exec(
+        "CREATE INDEX IF NOT EXISTS idx_meeting_marker_source ON meeting_marker(source_id, t_start)",
+      );
+      db.exec(`
+        CREATE TABLE transcript_span (
+          source_id  TEXT NOT NULL REFERENCES source(id) ON DELETE CASCADE,
+          idx        INTEGER NOT NULL,
+          char_start INTEGER NOT NULL,
+          char_end   INTEGER NOT NULL CHECK (char_end > char_start),
+          t_start    REAL NOT NULL,
+          t_end      REAL NOT NULL CHECK (t_end >= t_start),
+          PRIMARY KEY (source_id, idx)
+        )
+      `);
+    },
+  },
 ];
 
 export function getUserVersion(db: Db): number {

@@ -51,10 +51,10 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### Tests trước (FAIL rồi mới code)
 
-- [ ] T005 [P] [US1] Test TRƯỚC `tests/unit/permissions.test.ts` cho `decideMediaPermission` / `decidePermissionCheck` (`src/main/services/app-shell/permissions.ts`):
+- [X] T005 [P] [US1] Test TRƯỚC `tests/unit/permissions.test.ts` cho `decideMediaPermission` / `decidePermissionCheck` (`src/main/services/app-shell/permissions.ts`):
       chỉ `true` khi `permission="media"`, `mediaTypes` = `["audio"]`, origin renderer app (file:// hoặc URL dev), cửa sổ chính, `now < armedUntil`; từ chối khi có
       `video`, `mediaTypes` rỗng, origin lạ, hết cổng, mọi permission khác (`geolocation`, `notifications`, `clipboard-read`, `camera`…).
-- [ ] T006 [P] [US1] Test TRƯỚC `tests/unit/migration-meeting.test.ts` (khuôn `migration-source.test.ts`): chạy 1..11 + dữ liệu mẫu ⇒ `runMigrations` lên 12; 3 bảng +
+- [X] T006 [P] [US1] Test TRƯỚC `tests/unit/migration-meeting.test.ts` (khuôn `migration-source.test.ts`): chạy 1..11 + dữ liệu mẫu ⇒ `runMigrations` lên 12; 3 bảng +
       index theo data-model §2; CHECK `phase`, `language_mode`, `transcript_quality`, `marker.kind` từ chối giá trị lạ; cascade khi xoá `source`; dữ liệu cũ giữ nguyên;
       `PRAGMA foreign_key_check` rỗng; `user_version = 12`.
 - [X] T007 [P] [US1] Test TRƯỚC `tests/unit/meeting-session-state.test.ts` cho `sessionTransition(state, event)` (`session-state.ts`): mọi chuyển ở data-model §5
@@ -81,7 +81,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       `formatDuration(sec)` (`00:00:07`, `01:42:18`, > 10 giờ).
 - [ ] T017 [P] [US1] Test TRƯỚC `tests/unit/meeting-channels-whitelist.test.ts` (khuôn `chat-channels-whitelist.test.ts`): kênh PR A trong `CHANNELS` + whitelist + preload,
       tên duy nhất, `meeting:audio` là send, `meeting:state` là push (không trong `ChannelResponse`).
-- [ ] T018 [P] [US1] Test TRƯỚC `tests/unit/meeting-repo.test.ts` (DB tạm v12): tạo/đọc/cập nhật `meeting_session` (phase, segments_json, pause_gaps_json, duration,
+- [X] T018 [P] [US1] Test TRƯỚC `tests/unit/meeting-repo.test.ts` (DB tạm v12): tạo/đọc/cập nhật `meeting_session` (phase, segments_json, pause_gaps_json, duration,
       quality, final_progress); `replaceSpans` xoá-rồi-chèn trong giao dịch; `listByPhase`; JSON hỏng ⇒ mảng rỗng + không ném.
 - [ ] T019 [P] [US1] Test TRƯỚC `tests/unit/pipeline-meeting.test.ts`: `createMeetingSource` tạo `kind="meeting"`, `status="processing"`, `origin="meeting:<id>"`;
       `ingestParsed` chunk/embed/store với `tStart/tEnd` từ timeMap ⇒ `ready`; `resumeInterrupted` bỏ qua `meeting`; `retry`/`relink` meeting ⇒ `notSupported`;
@@ -99,13 +99,13 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### Implementation — main
 
-- [ ] T023 [US1] Append migration `version: 12` vào cuối `MIGRATIONS` trong `src/main/db/migrations.ts` theo data-model §2 (3 bảng + 2 index). T006 xanh.
+- [X] T023 [US1] Append migration `version: 12` vào cuối `MIGRATIONS` trong `src/main/db/migrations.ts` theo data-model §2 (3 bảng + 2 index). T006 xanh.
 - [X] T024 [US1] `src/shared/ipc/types.ts`: `SourceKind` thêm `"meeting"`; `SourceSummary.meetingPhase?`, `transcriptQuality?`; kiểu `MeetingPhase`, `MeetingState`,
       `MeetingPrepareResult`, `MeetingStartInput`, `MeetingMarker`, `LanguageMode` theo contracts/meeting-ipc.md.
 - [X] T025 [US1] `src/main/services/meeting-capture/meeting-constants.ts`: hằng số R3/R13 (`SAMPLE_RATE`, `SEGMENT_SEC` có override `IV_MEETING_SEGMENT_SEC` khi chưa
       đóng gói, `FSYNC_SEC`, `CHECKPOINT_SEC`, `BATCH_MAX_BYTES`, `RENDERER_BUFFER_SEC`, `BYTES_PER_MIN`, `ARM_WINDOW_MS=15000`, `END_CONFIRM_MIN_SEC=300`,
       `FINAL_OVERLAP_SEC=5`, `FINAL_MODEL`).
-- [ ] T026 [P] [US1] `src/main/services/app-shell/permissions.ts`; trong `src/main/index.ts` `installSecurity` dùng `decideMediaPermission`/`decidePermissionCheck` với
+- [X] T026 [P] [US1] `src/main/services/app-shell/permissions.ts`; trong `src/main/index.ts` `installSecurity` dùng `decideMediaPermission`/`decidePermissionCheck` với
       `armedUntil` lấy từ meeting-service, giữ `setDevicePermissionHandler(() => false)`, sửa comment ("chỉ mic audio khi người dùng bắt đầu ghi — 186"). T005 xanh.
 - [X] T027 [P] [US1] `src/main/services/meeting-capture/session-state.ts`. T007 xanh.
 - [X] T028 [P] [US1] `src/main/services/meeting-capture/wav.ts`. T008 xanh.
@@ -116,7 +116,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [X] T033 [P] [US1] `src/main/services/meeting-capture/disk-guard.ts`. T013 xanh.
 - [X] T034 [P] [US1] `src/main/services/meeting-capture/asr-protocol.ts`. T014 xanh.
 - [X] T035 [P] [US1] `src/main/services/meeting-capture/fake-asr.ts`. T015 xanh.
-- [ ] T036 [US1] `src/main/services/meeting-capture/meeting-repo.ts` (SQL tham số hoá; sau T023). T018 xanh.
+- [X] T036 [US1] `src/main/services/meeting-capture/meeting-repo.ts` (SQL tham số hoá; sau T023). T018 xanh.
 - [ ] T037 [US1] `src/main/services/ingestion/pipeline.ts`: tách `indexParsed` khỏi `processFull`; thêm `createMeetingSource`, `ingestParsed`; `resumeInterrupted` bỏ
       `kind="meeting"`; `retry`/`relink` meeting ⇒ `UserFacingError("notSupported")`; `remove` gọi `onRemoveMeeting(sourceId)` (tiêm); `src/main/services/ingestion/source-repo.ts`
       `listByNotebook` LEFT JOIN `meeting_session`; `src/main/services/ingestion/parsers/index.ts` `SIZE_LIMITS.meeting`. T019 xanh.
