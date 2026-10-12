@@ -13,7 +13,7 @@ Giao **4 PR theo thứ tự, mỗi PR ship độc lập**, một spec (D1):
 1. **PR A — Ghi âm thành nguồn** (US1, US2). **Spike S1** là task đầu (PCM 16 kHz qua AudioWorklet trong bản đóng gói `file://` + CSP). Migration **v12 (duy nhất
    của feature)**: `meeting_session`, `meeting_marker`, `transcript_span`; `SourceKind "meeting"`. Quyền micro audio-only có cổng 15 s (`installSecurity` tách
    `permissions.ts`), `NSMicrophoneUsageDescription` + entitlements. Renderer: nút 🎙 cạnh `+`, hộp bắt đầu, màn đang ghi (đồng hồ, tạm dừng/tiếp tục, kết thúc có xác
-   nhận ≥ 5 phút), màn hoàn tất. Main: `meeting-service`, writer WAV phân đoạn 5 phút (fsync 5 s, sửa header khi khôi phục), `asr-worker` (`utilityProcess`) chạy **ASR
+   nhận ≥ 5 phút), màn hoàn tất; **`RecordingProvider` cấp app + thanh "Đang ghi" toàn cục** (đổi notebook không dừng mic — analyze P1). Main: `meeting-service`, writer WAV phân đoạn 5 phút (fsync 5 s, sửa header khi khôi phục), `asr-worker` (`utilityProcess`) chạy **ASR
    chốt** từng phân đoạn có chồng lấn 5 s + checkpoint; `pipeline.createMeetingSource` / `ingestParsed` (chunk/embed/store qua hàng đợi chung); `iv-media` phục vụ
    meeting; citation **chỉ tua** cho mọi audio/video (thay 049 #3); xoá nguồn xoá thư mục; sao lưu gồm `meetings/`; khởi động tự hoàn tất phiên dang dở. ADR thực thi.
    **security-reviewer bắt buộc.**
@@ -21,8 +21,7 @@ Giao **4 PR theo thứ tự, mỗi PR ship độc lập**, một spec (D1):
    cửa sổ 10 s (lượt 5 s pending), chính sách bỏ tồn đọng, VAD năng lượng + khử ảo giác, `meeting:draft` push, cập nhật tại chỗ, tự cuộn + "Quay về hiện tại", bấm
    timestamp phát `?seg=n`, meter 3 mức, chính sách ngôn ngữ (auto/khoá/gợi ý/multi), đánh dấu (nút, bôi chọn), tải model trước. **security-reviewer bắt buộc.**
 3. **PR C1 — Độ bền** (US5, US6). `session.json` checkpoint, thẻ phục hồi (3 hành động) + huy hiệu Notebooks, phân loại khởi động, `before-quit`/đóng cửa sổ xác nhận,
-   `render-process-gone`/mất lô 5 s ⇒ `interrupted`, `powerSaveBlocker`, mất thiết bị ⇒ tự tạm dừng + đổi thiết bị cùng phiên, cảnh báo đĩa theo phút còn lại, thanh
-   "Đang ghi" toàn cục + provider cấp app, chặn thao tác xung đột, phím tắt cố định `Mod+Shift+P/M/E`, "Chốt lại"/"Hoàn tất transcript", soak test. **security-reviewer
+   `render-process-gone`/mất lô 5 s ⇒ `interrupted` (thay hành vi tự hoàn tất của PR A), `powerSaveBlocker`, mất thiết bị ⇒ tự tạm dừng + đổi thiết bị cùng phiên, cảnh báo đĩa theo phút còn lại, chặn thao tác xung đột, phím tắt cố định `Mod+Shift+P/M/E`, "Chốt lại"/"Hoàn tất transcript", soak test. **security-reviewer
    bắt buộc.**
 4. **PR C2 — Trình xem cuộc họp** (US7). `MeetingViewer`: player cố định, tô câu đang phát, bấm câu tua, tìm trong transcript, danh sách đánh dấu (tua/đổi nhãn/xoá),
    sao chép, xuất Markdown (tái dùng `exportMarkdown`). security-review theo quy trình chung (kênh mới `meeting:exportMarkdown`/sửa đánh dấu — mức thường).
@@ -65,13 +64,13 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 |---|---|---|
 | I. Local-first | ASR nháp + chốt chạy cục bộ trong `asr-worker`; không kết nối mới; tải model lần đầu ⇒ worker báo `modelDownload` ⇒ main `setEgressActive(…, "model")` (103); hộp bắt đầu nói đúng phạm vi + phụ chú khi AI online bật (C6); mic tắt thật khi tạm dừng (D11), trạng thái mic luôn hiện bằng chữ (FR-048). | ✅ |
 | II. Verifiable Citations | Locator `tStart/tEnd` tính từ transcript **chốt** bằng `timeForCharRange` ngay lúc chunk (không ước lượng sau); `transcript_span` lưu bền mức câu; nháp không bao giờ được trích dẫn (nguồn chưa `ready`); khoảng ngừng là metadata, không vào văn bản; đánh dấu neo thời gian; `[n]` tua đúng mốc, không tự phát. | ✅ |
-| III. Desktop Security Boundary | **Ngoại lệ có chủ đích**: PCM mic đi renderer→main (`meeting:audio`) vì chỉ renderer có `getUserMedia` — main kiểm sender/session/seq/kích thước/tần suất, không log, không quay lại renderer (ghi ADR, R16). FS/DB/model chỉ ở main/worker; kênh mới whitelist + preload từng hàm; quyền OS chỉ `media`/audio, cửa sổ chính, cổng 15 s; worker chỉ nhận đường dẫn trong `meetings/`. **security-reviewer PR A, B, C1.** | ✅ contract |
+| III. Desktop Security Boundary | **Không vi phạm, không cần ngoại lệ**: câu MUST "tài liệu & vector thô không đi qua renderer" (constitution.md:70) cấm tài liệu/vector **đã lưu** đi main→renderer. PCM micro là **đầu vào người dùng sinh tại renderer** (chỉ renderer có `getUserMedia`), đi renderer→main qua `meeting:audio` — đúng hướng của ranh giới. Biện pháp kiểm soát: main kiểm sender/session/seq/kích thước/tần suất, không log, audio không bao giờ gửi ngược ra renderer (phát lại qua `iv-media`). Diễn giải ghi ADR (R16). FS/DB/model chỉ ở main/worker; kênh mới whitelist + preload từng hàm; quyền OS chỉ `media`/audio, cửa sổ chính, cổng 15 s; worker chỉ nhận đường dẫn trong `meetings/`. **security-reviewer PR A, B, C1.** | ✅ contract |
 | IV. Test-First & Coverage | TDD cho mọi hàm thuần (bảng dưới); I/O loại khỏi coverage như 045; e2e fake mic + fake ASR; soak; checklist tay. Ngưỡng 80% giữ nguyên. | ✅ |
 | V. Phased Delivery | Pha 1 lõi đã ổn; tính năng mở rộng Pha 2 audio (045/049) đã ship. 4 PR tuần tự, mỗi PR ship được và an toàn dữ liệu (PR A đã có tự hoàn tất sau sự cố). | ✅ |
 | Terminology | Đã append 17 thuật ngữ (tag 186) trên branch; tên code bám glossary (`CaptureSegment`, `MeetingSession`, …). Thêm thuật ngữ mới phát sinh khi code ⇒ append trong PR tương ứng. | ✅ |
 | Source-of-truth | Mâu thuẫn design ↔ 049/085/code đã qua clarify (C1–C6) và ghi ADR; prototype không sửa. | ✅ |
 
-**Complexity Tracking**: không có vi phạm cần biện minh ngoài ngoại lệ III đã nêu (ghi ADR).
+**Complexity Tracking**: không có vi phạm. Diễn giải nguyên tắc III cho luồng audio micro ghi ở ADR thực thi; nếu muốn ghi thẳng vào constitution ⇒ PR riêng qua steward (rule 5), ngoài #186.
 
 ## Project Structure
 
@@ -120,8 +119,9 @@ src/main/services/ingestion/parsers/index.ts                # SỬA — SIZE_LIM
 src/main/services/source-viewer/media-serve.ts              # SỬA — kind meeting (+ ?seg=n)
 src/main/services/vault-backup/{snapshot,restore-swap}.ts   # SỬA — meetings/; dòng dung lượng
 src/main/services/notebooks/*                               # SỬA — notebook:delete chặn khi đang ghi (meetingRecording)
+src/renderer/main.tsx · src/renderer/app/App.tsx                  # SỬA — RecordingProvider cấp app + RecordingStatusBar (từ PR A — analyze P1)
 src/renderer/features/meeting-capture/
-  StartRecordingDialog.tsx · RecordingView.tsx · FinalizeView.tsx · useMeetingRecording.ts
+  RecordingProvider.tsx · RecordingStatusBar.tsx · StartRecordingDialog.tsx · RecordingView.tsx · FinalizeView.tsx · useMeetingRecording.ts
   capture/mic-capture.ts (I/O) · capture/pcm-worklet.ts (worklet, bundle)
   default-title.ts (thuần) · format-duration.ts (thuần)
 src/renderer/features/sources/SourceList.tsx                # SỬA — nút 🎙 cạnh +, nhãn meetingPhase
@@ -147,8 +147,7 @@ docs/04-decisions/2026-10-xx-meeting-asr-spike.md (+INDEX)
 src/main/services/meeting-capture/{checkpoint.ts (thuần), recovery.ts (thuần classifyOnStartup), session-store.ts (I/O)}
 src/main/index.ts                                          # SỬA — before-quit, close, render-process-gone, powerSaveBlocker
 src/main/services/vault-backup/vault-lock wiring           # SỬA — bảo trì vector không tính phiên recording/paused (D8)
-src/renderer/app/App.tsx · main.tsx                        # SỬA — RecordingProvider cấp app, RecordingStatusBar ở header
-src/renderer/features/meeting-capture/{RecordingProvider.tsx, RecordingStatusBar.tsx, RecoveryCard.tsx, DeviceLostBanner.tsx, DiskWarning.tsx,
+src/renderer/features/meeting-capture/{RecordingProvider.tsx, RecordingStatusBar.tsx (nâng cấp), RecoveryCard.tsx, DeviceLostBanner.tsx, DiskWarning.tsx,
                                        useMeetingShortcuts.ts, shortcuts.ts (thuần)}
 src/renderer/features/notebooks/*                          # SỬA — huy hiệu phiên dang dở
 tests/e2e/{meeting-recovery,meeting-quit,meeting-soak}.spec.ts

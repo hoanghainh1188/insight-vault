@@ -75,7 +75,7 @@ hoàn tất với tiêu đề sửa được, tổng thời lượng và "Đang 
 
 **Why this priority**: Đây là giá trị lõi — có một bản ghi cục bộ đáng tin cậy biến thành nguồn tri thức. Không có transcript thời gian thực vẫn đủ hữu ích.
 
-**Independent Test**: Ghi 3 phút (có 1 lần tạm dừng) → kết thúc → nguồn cuộc họp chuyển `Sẵn sàng`; nghe lại được; transcript có khoảng ngừng; hỏi một câu về nội dung
+**Independent Test**: Ghi 3 phút (có 1 lần tạm dừng) → kết thúc → nguồn cuộc họp chuyển `Sẵn sàng`; nghe lại được; khoảng ngừng được lưu cùng phiên (thời điểm + độ dài); hỏi một câu về nội dung
 cuộc họp ⇒ câu trả lời có `[n]`, bấm `[n]` mở nguồn tại đúng mốc audio (chỉ tua, không tự phát).
 
 **Acceptance Scenarios**:
@@ -87,7 +87,8 @@ cuộc họp ⇒ câu trả lời có `[n]`, bấm `[n]` mở nguồn tại đú
    hành và **không tạo nguồn**.
 4. **Given** đang ghi, **When** nhìn thanh đầu, **Then** thấy tên cuộc họp, trạng thái ghi bằng chữ kèm chấm đỏ, đồng hồ thời lượng nổi bật nhất, và "Lưu trên máy".
 5. **Given** đang ghi, **When** bấm Tạm dừng, **Then** microphone tắt thật, trạng thái ghi "Đã tạm dừng — không thu âm", đồng hồ đứng; **When** bấm Tiếp tục, **Then** ghi
-   tiếp cùng phiên và transcript có dòng phân cách "Tạm dừng N phút".
+   tiếp cùng phiên và khoảng ngừng được lưu (thời điểm audio + độ dài thực). Dòng phân cách "Tạm dừng N phút" hiển thị từ PR B (transcript nháp, US3) và PR C2 (trình
+   xem cuộc họp, US7).
 6. **Given** phiên ≥ 5 phút, **When** bấm Kết thúc ghi, **Then** có hộp xác nhận; phiên < 5 phút thì kết thúc ngay.
 7. **Given** đã kết thúc, **When** màn hoàn tất hiện, **Then** có tiêu đề sửa được, tổng thời lượng, trạng thái "Đang chốt transcript và lập chỉ mục", nút Về notebook và
    Mở khi hoàn tất; nguồn trong danh sách mang nhãn "Đang hoàn tất" (không phải lỗi).
@@ -283,7 +284,8 @@ Markdown ⇒ tệp có tiêu đề, metadata, đánh dấu, transcript có times
 - **FR-007**: Việc ghi MUST không bị chậm, dừng hay mất mẫu khi nhận dạng tiếng nói chậm, treo hoặc lỗi.
 - **FR-008**: Thanh đầu MUST hiện tên cuộc họp, trạng thái ghi bằng chữ (không chỉ màu), thời lượng audio đã ghi (thông tin nổi bật nhất) và "Lưu trên máy".
 - **FR-009**: Tạm dừng MUST tắt hẳn microphone và hiện "Đã tạm dừng — không thu âm"; tiếp tục MUST mở lại cùng thiết bị trong cùng phiên. Thời lượng và mọi mốc thời gian
-  MUST là thời gian audio (không tính khoảng tạm dừng); khoảng ngừng MUST được lưu và hiện thành dòng phân cách "Tạm dừng N phút", không vào văn bản lập chỉ mục.
+  MUST là thời gian audio (không tính khoảng tạm dừng); khoảng ngừng MUST được lưu (PR A) và
+  hiện thành dòng phân cách "Tạm dừng N phút" trong transcript nháp (PR B) và trình xem cuộc họp (PR C2), không vào văn bản lập chỉ mục.
 - **FR-010**: Kết thúc ghi MUST đặt tách biệt với các điều khiển khác và MUST hỏi xác nhận khi phiên ≥ 5 phút.
 - **FR-011**: Màn hoàn tất MUST hiện tiêu đề sửa được (sửa = đổi tên nguồn), tổng thời lượng, "Đang chốt transcript và lập chỉ mục", nút Về notebook (việc hoàn tất chạy
   nền) và Mở khi hoàn tất (hành vi theo Clarifications/D15).
@@ -338,8 +340,8 @@ Markdown ⇒ tệp có tiêu đề, metadata, đánh dấu, transcript có times
 - **FR-039**: Mất thiết bị hoặc quyền giữa phiên MUST tự tạm dừng, giữ dữ liệu, hướng dẫn chọn thiết bị khác (ghi tiếp cùng phiên, phần gián đoạn là khoảng ngừng) hoặc kết thúc.
 - **FR-040**: Cảnh báo đĩa MUST dựa trên thời gian ghi còn lại (đã trừ dự phòng cho bước hoàn tất), kiểm tối thiểu mỗi 30 giây: < 30 phút cảnh báo, < 5 phút khẩn, < 1 phút tự
   kết thúc ghi an toàn; < 10 phút thì không cho bắt đầu.
-- **FR-041**: Việc ghi MUST tiếp tục khi người dùng điều hướng trong app; đầu app MUST có thanh trạng thái ghi để quay lại màn ghi. Renderer gặp sự cố ⇒ phiên MUST được
-  đóng an toàn và đưa vào luồng phục hồi.
+- **FR-041**: **(từ PR A)** Việc ghi MUST tiếp tục khi người dùng điều hướng trong app; đầu app MUST có thanh trạng thái ghi để quay lại màn ghi. Renderer gặp
+  sự cố hoặc main không nhận lô audio > 5 s khi đang ghi ⇒ phiên MUST được đóng an toàn: PR A tự kết thúc và hoàn tất; từ PR C1 đưa vào luồng phục hồi.
 - **FR-042**: Trong lúc ghi MUST chặn: phiên ghi thứ hai, khôi phục và sao lưu vault, xoá notebook đích, xoá nguồn đang ghi.
 - **FR-043**: Phím tắt cố định khi app focus: `Cmd/Ctrl+Shift+P` tạm dừng/tiếp tục, `Cmd/Ctrl+Shift+M` đánh dấu, `Cmd/Ctrl+Shift+E` mở xác nhận kết thúc; MUST hiện trong
   tooltip và khai báo cho trình đọc màn hình.
@@ -397,7 +399,7 @@ Markdown ⇒ tệp có tiêu đề, metadata, đánh dấu, transcript có times
   thái (103), i18n (123), live region (091), migration append-only.
 - Ràng buộc kỹ thuật đã chốt, áp vào plan (chi tiết ở `docs/04-decisions/2026-10-12-meeting-capture-clarify.md`): audio WAV PCM16 16 kHz mono, phân đoạn 5 phút, ghép thành
   một tệp khi hoàn tất (A1); nhận dạng nháp + chốt trong tiến trình riêng tách khỏi việc ghi tệp (A3); audio đi từ renderer sang main theo lô có số thứ tự, main kiểm
-  định dạng/kích thước/tần suất — ngoại lệ có chủ đích của Constitution III (A4); quyền micro chỉ audio, có thời điểm cụ thể, khai báo cho macOS (A5); loại nguồn mới
+  định dạng/kích thước/tần suất — nằm ngoài câu MUST "tài liệu & vector thô" của Constitution III vì là đầu vào sinh tại renderer — diễn giải ghi ADR (A4); quyền micro chỉ audio, có thời điểm cụ thể, khai báo cho macOS (A5); loại nguồn mới
   `meeting` + migration v12 với bảng phiên ghi, đánh dấu và đoạn thời gian transcript (A8, D3); không đổi tập trạng thái nguồn, nhãn lấy theo giai đoạn phiên ghi (A9);
   audio cuộc họp ở thư mục dữ liệu app, không đi qua giới hạn kích thước nạp tệp (C2, C3).
 - **Spike là cổng**: PR A đo tần số mẫu 16 kHz trên Electron hiện dùng; trước PR B đo tốc độ nhận dạng của model nhỏ trên Mac Apple Silicon và một máy Windows chỉ CPU, và

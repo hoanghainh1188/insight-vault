@@ -85,6 +85,7 @@ Sao lưu (085): thư mục `meetings/` được đưa vào snapshot + `VAULT_ITE
 
 - **ActiveRecording** (một bản duy nhất): `{ sessionId, sourceId, ownerWebContentsId, phase, expectedSeq, segmentWriter, samplesInSegment, durationSamples,
   armedUntil, lastBatchAt, diskLevel, draftQueue, languageState }`.
+- **MeetingState** (push `meeting:state`, contract): gồm `segments: {index, durationSec, closed}[]` để renderer tính `?seg=n` bằng `locateInSegments`.
 - **DraftWindow**: `{ id: "w<index>", tStart, tEnd, text, pending: boolean }` — push qua `meeting:draft`.
 
 ## 5. Máy trạng thái phiên (thuần `session-state.ts`)

@@ -37,7 +37,7 @@ npx playwright test tests/e2e/meeting-*.spec.ts
 | B | `meeting-draft.spec.ts` | Nháp xuất hiện có timestamp; nhãn "Đang nhận dạng" chỉ ở cửa sổ mới nhất; cuộn lên ⇒ "Quay về hiện tại"; đánh dấu bằng nút/bôi chọn; ngôn ngữ "Tiếng Việt · Tự động"; meter có nhãn chữ |
 | C1 | `meeting-recovery.spec.ts` | Ghi 20 s → `electronApp.process().kill("SIGKILL")` → mở lại ⇒ thẻ phục hồi; 3 hành động đúng; audio thiếu ≤ 5 s |
 | C1 | `meeting-quit.spec.ts` | Đang ghi, `app.quit()` ⇒ hộp xác nhận (seam `IV_E2E_DIALOG_PATH`/dialog stub); đồng ý ⇒ lần mở sau tự hoàn tất |
-| C1 | `meeting-soak.spec.ts` | `IV_MEETING_SEGMENT_SEC=5` + `IV_E2E_AUDIO_PUMP` bơm 120 phân đoạn ⇒ đủ 120 phân đoạn, thời lượng khớp ±1 s, hoàn tất thành công |
+| C1 | `meeting-soak.spec.ts` | `IV_E2E_AUDIO_PUMP` bơm **180 phút** (36 phân đoạn 300 s) ⇒ thời lượng ±1 s, hoàn tất thành công; `IV_MEETING_SEGMENT_SEC=5` × 120 phân đoạn ⇒ xoay tệp đúng; kill `asr-worker` giữa phiên ⇒ không mất mẫu |
 | C2 | `meeting-viewer.spec.ts` | Phát ⇒ câu đang phát có `aria-current`; bấm câu ⇒ tua; tìm từ ⇒ đếm + trước/sau; danh sách đánh dấu; xuất Markdown (dialog stub) có tiêu đề, đánh dấu, `[hh:mm:ss]`, dòng tạm dừng |
 
 Mỗi spec chạy ở `IV_UI_LANG=vi` và một lượt `en` cho chuỗi mới (hoặc unit test catalog i18n vi↔en).

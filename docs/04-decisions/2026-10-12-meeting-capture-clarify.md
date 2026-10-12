@@ -61,3 +61,16 @@
 ## Thuật ngữ
 
 Nhận danh sách 15 thuật ngữ ở mục "Thuật ngữ mới" của intake. Định danh code cho "phân đoạn ghi âm" là `CaptureSegment`. Append vào `docs/00-glossary.md` ngay trong branch 186 (rule 5).
+
+## Bổ sung sau `/speckit-analyze` (2026-10-12)
+
+Không đổi lựa chọn nào ở trên; chỉ làm rõ cách diễn đạt và vị trí pha:
+
+1. **A4 / Constitution III — diễn giải, không phải ngoại lệ.** Câu MUST "Tài liệu & vector thô MUST NOT đi qua renderer" cấm tài liệu/vector **đã lưu** đi
+   main→renderer. PCM micro là đầu vào người dùng sinh tại renderer nên đi renderer→main là đúng hướng của ranh giới; biện pháp kiểm soát giữ nguyên (kiểm ở main,
+   không log, không gửi audio về renderer). Các chỗ ở trên ghi "ngoại lệ Constitution III" được hiểu theo diễn giải này. Muốn ghi thẳng vào constitution ⇒ PR riêng
+   qua steward (rule 5).
+2. **D1 / D7 — đổi pha.** `RecordingProvider` cấp app, thanh "Đang ghi" toàn cục, và giám sát `render-process-gone` / không lô > 5 s chuyển từ PR C1 sang **PR A**
+   (PR A: tự kết thúc + hoàn tất; PR C1: chuyển sang `interrupted` + thẻ phục hồi). Lý do: nếu không, PR A rời notebook sẽ dừng mic âm thầm.
+3. **D15 — nơi lưu lựa chọn lần trước**: electron-store ở main, trả qua `meeting:prepare`, lưu khi `meeting:start`.
+

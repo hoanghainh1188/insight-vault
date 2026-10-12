@@ -41,7 +41,7 @@ hiện có (khảo sát 2026-10-12) và các điểm còn phải đo bằng spik
 - **Hằng số** (một chỗ, `meeting-constants.ts`): `SAMPLE_RATE=16000`, `SEGMENT_SEC=300` (override `IV_MEETING_SEGMENT_SEC` chỉ khi `!app.isPackaged` — R15),
   `FSYNC_SEC=5`, `CHECKPOINT_SEC=30`, `BATCH_MAX_BYTES=65536`, `RENDERER_BUFFER_SEC=30`, `BYTES_PER_MIN=1_920_000`.
 
-## R4 — Đường audio renderer → main (A4, Constitution III ngoại lệ)
+## R4 — Đường audio renderer → main (A4, diễn giải Constitution III)
 
 - **Decision**: kênh **send** `meeting:audio` (renderer→main, không phản hồi) payload `{ sessionId: string, seq: number, pcm: ArrayBuffer }` qua preload
   `meetingSendAudio(...)`. Main (`audio-ingress.ts`, hàm thuần `validateAudioBatch(state, msg)`) kiểm: `sessionId` = phiên đang hoạt động; đúng `sender` đã start;
@@ -50,7 +50,7 @@ hiện có (khảo sát 2026-10-12) và các điểm còn phải đo bằng spik
 - Renderer đệm tối đa 30 s khi IPC trả chậm (không có backpressure thật với `send` — đệm nằm ở `mic-capture.ts` giữa worklet và preload, chỉ cần khi renderer bận);
   tràn ⇒ dừng ghi + trạng thái lỗi ghi (không rớt âm thầm).
 - Meter âm lượng tính trong worklet (RMS + peak mỗi 100 ms) gửi qua `port` về UI; không qua IPC.
-- **ADR**: ghi ngoại lệ Constitution III: audio mic **sinh ở renderer** nên buộc đi renderer→main; nội dung không quay lại renderer ngoài transcript hiển thị.
+- **ADR**: ghi **diễn giải** Constitution III (không phải ngoại lệ): câu MUST cấm tài liệu/vector **đã lưu** đi main→renderer; audio micro là đầu vào sinh ở renderer nên đi renderer→main là đúng hướng của ranh giới, kèm các biện pháp kiểm soát trên; audio không bao giờ gửi ngược ra renderer (phát lại qua `iv-media`).
 
 ## R5 — Tiến trình ASR riêng (A3, C4, D8)
 
@@ -145,7 +145,8 @@ hiện có (khảo sát 2026-10-12) và các điểm còn phải đo bằng spik
 ## R12 — Vòng đời, khôi phục, thoát app (A10, D7, D9, FR-032–FR-042)
 
 - **PR A (tối thiểu an toàn)**: lúc khởi động, `recoverOnStartup()` sửa header phân đoạn mở, rồi **tự hoàn tất** mọi phiên `recording|paused|stopping|finalizing`
-  (không có thẻ). Như vậy PR A không bao giờ để nguồn kẹt.
+  (không có thẻ). Trong lúc chạy, `render-process-gone` hoặc không nhận lô > 5 s khi `recording` ⇒ đóng phân đoạn, tự kết thúc + hoàn tất. Phần thu âm sống trong
+  `RecordingProvider` cấp app (phía trên router) ngay từ PR A nên điều hướng không dừng mic. Như vậy PR A không bao giờ để nguồn kẹt.
 - **PR C1 (đầy đủ)**:
   - `session.json` checkpoint (thuần `serializeCheckpoint`/`parseCheckpoint` có kiểm; I/O ghi tmp→rename mỗi 30 s + khi đóng phân đoạn): phân đoạn, khoảng ngừng,
     trạng thái ngôn ngữ, đánh dấu, `draft.jsonl` offset. DB vẫn là nguồn sự thật cho metadata đã đóng; checkpoint phủ phần trong phân đoạn đang mở.
@@ -196,7 +197,7 @@ Viết trong **PR A** (+ dòng INDEX):
    - **Thay 049 #3**: bấm `[n]` của mọi nguồn audio/video/meeting chỉ tua, không `play()` (`SourceViewer.tsx:105-106`).
    - **Ngoại lệ 049 #2 ("tham chiếu file gốc, không copy")**: audio cuộc họp do app sở hữu trong `<userData>/meetings/<sessionId>/`, xoá cùng nguồn, có trong sao lưu, không
      relink.
-   - **Ngoại lệ Constitution III**: luồng PCM renderer→main qua `meeting:audio` (kiểm ở main, không log, không quay về renderer).
+   - **Diễn giải Constitution III** (không phải ngoại lệ): luồng PCM micro renderer→main qua `meeting:audio` nằm ngoài câu MUST về tài liệu/vector thô đã lưu; biện pháp: kiểm ở main, không log, không gửi audio về renderer.
    - **Chính sách quyền**: `installSecurity` chỉ cấp `media` audio-only, cửa sổ chính, trong cổng 15 s sau hành động người dùng.
    - **utilityProcess ASR** cho meeting (nạp file 045 không đổi).
 2. `docs/04-decisions/2026-10-xx-meeting-asr-spike.md` (sau spike S2, trước PR B): số đo RTF, model nháp, phương pháp phát hiện ngôn ngữ.
