@@ -4,6 +4,14 @@
   display: flex;
   gap: 6px;
   align-items: center;
+  flex-shrink: 0;
+}
+/* Cụm nút giữ nguyên một dòng; phần tiêu đề + dòng tổng hợp co lại (cột Nguồn hẹp tới 262 px, nhãn English dài hơn). */
+.src-head-actions .btn-outline-sm {
+  white-space: nowrap;
+}
+.src-head > div:first-child {
+  min-width: 0;
 }
 .btn-icon-sm {
   display: inline-grid;
@@ -32,10 +40,34 @@
 
 /* Hộp bắt đầu */
 .modal.meeting-start {
+  position: relative;
   width: min(460px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.modal.meeting-start h3 {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+/* Nút chính trong .modal-actions: .modal-actions button đặt nền trắng ⇒ khôi phục màu nhấn. */
+.modal.meeting-start .modal-actions .btn-primary-sm {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.modal.meeting-start .modal-actions .btn-primary-sm:hover:not(:disabled) {
+  background: var(--accent-ink);
+}
+.modal.meeting-start .modal-actions .btn-primary-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .ms-field {
   display: flex;

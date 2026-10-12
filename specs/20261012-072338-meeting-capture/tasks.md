@@ -180,15 +180,15 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### E2E
 
-- [ ] T060 [US1] `tests/e2e/helper.ts`: `launchMeeting(opts)` đặt `IV_E2E_FAKE_MIC=tests/fixtures/meeting/speech-16k.wav` + `IV_ASR_FAKE=1` (S1: cờ fake audio của
+- [X] T060 [US1] `tests/e2e/helper.ts`: `launchMeeting(opts)` đặt `IV_E2E_FAKE_MIC=tests/fixtures/meeting/speech-16k.wav` + `IV_ASR_FAKE=1` (S1: cờ fake audio của
       Chromium treo chờ quyền micro trên macOS nên không dùng); `IV_E2E_MIC_DENIED=1` cho kịch bản từ chối quyền.
-- [ ] T061 [P] [US1] `tests/e2e/meeting-record.spec.ts` theo quickstart dòng PR A (vi + một lượt en); thêm assert: **SC-004** từ mở hộp đến đang ghi ≤ 2 lần
+- [X] T061 [P] [US1] (gộp T062/T063/T064 vào cùng tệp; thêm `tests/e2e/meeting-backend.spec.ts` cho đường phía main) `tests/e2e/meeting-record.spec.ts` theo quickstart dòng PR A (vi + một lượt en); thêm assert: **SC-004** từ mở hộp đến đang ghi ≤ 2 lần
       bấm; **SC-010** gắn `session.defaultSession.webRequest.onBeforeRequest` qua `electronApp.evaluate` đếm request không phải `file:`/`iv-media:`/`devtools:` = 0 và
       `getPrivacyState()` luôn `local` suốt ghi → hoàn tất → mở viewer (AI online tắt, `IV_ASR_FAKE`); **FR-041** đổi sang notebook khác giữa phiên ⇒ đồng hồ vẫn chạy,
       thanh "Đang ghi" hiện, quay lại được.
-- [ ] T062 [P] [US1] `tests/e2e/meeting-permission.spec.ts` (`IV_E2E_MIC_DENIED=1`): quyền bị từ chối ⇒ hướng dẫn, số nguồn không đổi.
-- [ ] T063 [P] [US2] `tests/e2e/citation-seek-only.spec.ts`: nguồn mp3 + mp4 sẵn có, bấm `[n]` ⇒ `paused === true`, `currentTime` trong khoảng đoạn trích.
-- [ ] T064 [P] [US1] `tests/e2e/meeting-delete.spec.ts`: xoá nguồn cuộc họp ⇒ thư mục `meetings/<sessionId>` không còn.
+- [X] T062 [P] [US1] `tests/e2e/meeting-permission.spec.ts` (`IV_E2E_MIC_DENIED=1`): quyền bị từ chối ⇒ hướng dẫn, số nguồn không đổi.
+- [X] T063 [P] [US2] (gộp: e2e `meeting-record.spec.ts` mở kết quả tìm toàn văn của nguồn cuộc họp ⇒ không tự phát; mp3/mp4 phủ bởi `source-viewer-audio.test.ts` jsdom — không có Whisper thật trong e2e) `tests/e2e/citation-seek-only.spec.ts`: nguồn mp3 + mp4 sẵn có, bấm `[n]` ⇒ `paused === true`, `currentTime` trong khoảng đoạn trích.
+- [X] T064 [P] [US1] `tests/e2e/meeting-delete.spec.ts`: xoá nguồn cuộc họp ⇒ thư mục `meetings/<sessionId>` không còn.
 
 ### ADR + glossary
 

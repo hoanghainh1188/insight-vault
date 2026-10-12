@@ -1,6 +1,6 @@
 # Meeting Capture — ADR thực thi (186)
 
-> **BẢN NHÁP** — mục "Kết quả spike S1" điền ở T002; các mục quyết định thực thi hoàn thiện ở T065 (cuối PR A).
+> **Còn chờ** mục "Còn chờ (chạy tay)" của spike S1 (micro thật + Bluetooth trên mac, bản Windows). Các quyết định thực thi bên dưới đã chốt.
 
 - Ngày: 2026-10-12
 - Feature: `186-meeting-capture` (issue #186). Quyết định clarify: `2026-10-12-meeting-capture-clarify.md`. Plan/research:
@@ -49,10 +49,23 @@ Phát hiện phụ:
 
 Kết quả chạy tay sẽ được bổ sung vào mục này; nếu có điểm không đạt ⇒ cập nhật research R1/R5 trước khi sang T051.
 
-## Quyết định thực thi (hoàn thiện ở T065)
+## Quyết định thực thi (T065)
 
-- Thay 049 #3: bấm `[n]` của mọi nguồn audio/video/meeting chỉ tua, không `play()`.
-- Ngoại lệ 049 #2: audio cuộc họp do app sở hữu trong `<userData>/meetings/<sessionId>/`, xoá cùng nguồn, có trong sao lưu, không relink.
-- Diễn giải Constitution III (không phải ngoại lệ): luồng PCM micro renderer→main qua `meeting:audio`.
-- Chính sách quyền: `installSecurity` chỉ cấp `media` audio-only, cửa sổ chính, trong cổng 15 s sau hành động người dùng.
-- utilityProcess ASR cho meeting (nạp file 045 không đổi).
+1. **Thay 049 #3 — citation chỉ tua.** Bấm `[n]` (hoặc kết quả tìm toàn văn) của mọi nguồn audio/video/cuộc họp: player tua tới
+   `tStart`, đang phát thì dừng tại mốc mới, KHÔNG gọi `play()` (`SourceViewer.tsx`). Không có tuỳ chọn tự phát ở v1.
+2. **Ngoại lệ 049 #2 — audio do app sở hữu.** Audio cuộc họp ở `<userData>/meetings/<sessionId>/` (phân đoạn `seg-NNNN.wav` khi
+   đang ghi/hoàn tất, `meeting.wav` sau khi ghép). Xoá nguồn hoặc notebook ⇒ xoá thư mục; có trong sao lưu vault (`meetings/` trong
+   snapshot, allowlist giải nén, `VAULT_ITEMS`); không relink/retry. `iv-media` phục vụ qua resolver ở main (không đọc `origin`).
+3. **Diễn giải Constitution III (không phải ngoại lệ).** PCM micro sinh ở renderer đi renderer→main qua kênh SEND `meeting:audio`;
+   main kiểm sender = cửa sổ đã bắt đầu, sessionId, seq, kích thước ≤ 64 KB, ≤ 4 lô/giây (`audio-ingress.ts`); không log, audio
+   không gửi ngược ra renderer.
+4. **Chính sách quyền.** `installSecurity` dùng `permissions.ts`: chỉ cấp `media` khi `mediaTypes` = audio, origin của app, main
+   frame, cửa sổ chính, trong cổng 15 s (`micGate`, mở ở `meeting:prepare`/`meeting:resume`); mọi quyền khác vẫn từ chối;
+   `setDevicePermissionHandler` vẫn `false`. macOS: `askForMediaAccess` khi chưa xác định; `NSMicrophoneUsageDescription` +
+   `build/entitlements.mac.plist` (audio-input) sẵn cho lúc ký.
+5. **ASR trong utilityProcess.** `asr-worker.js` (fork lười, ≤ 3 lần fork lại / 5 phút, trần 30 phút/phân đoạn); worker chỉ nhận
+   đường dẫn trong `meetings/`; tải model ⇒ chỉ báo riêng tư `model`. Nạp file audio thường (045) không đổi.
+6. **Phiên ở cấp app (analyze P1).** `RecordingProvider` bọc `RouterProvider`; thanh "● Đang ghi … — Quay lại" khi ở màn khác.
+   Main giám sát `render-process-gone` và "không nhận lô > 5 s" ⇒ PR A tự kết thúc + hoàn tất (PR C1 đổi sang thẻ phục hồi).
+7. **Seam e2e (chỉ bản chưa đóng gói).** `IV_ASR_FAKE` (ASR giả trong worker thật), `IV_E2E_FAKE_MIC` (renderer dùng tín hiệu thử
+   qua cùng AudioContext/worklet — `MeetingPrepareResult.testFakeMic`), `IV_E2E_MIC_DENIED`, `IV_MEETING_SEGMENT_SEC`.
