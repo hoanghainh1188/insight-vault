@@ -233,7 +233,8 @@ describe("S2 — phát hiện ngôn ngữ một bước decoder {vi, en}", () =>
           lang: "en",
           pcm: fit(speech.subarray(Math.round(32.8 * SR)), 30),
         },
-        ...LANG_SAMPLES.map((s) => ({
+        // Mẫu đọc bằng `say` chỉ sinh được trên macOS; Windows chỉ đo 2 mẫu của fixture (đủ để đo thời gian).
+        ...(platform() === "darwin" ? LANG_SAMPLES : []).map((s) => ({
           id: s.id,
           lang: s.lang,
           pcm: fit(readWav(makeLangSample(s.id, s.voice, s.text)), 30),
