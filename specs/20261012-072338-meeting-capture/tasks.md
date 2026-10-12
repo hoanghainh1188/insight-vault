@@ -89,7 +89,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       `ingestParsed` vào hàng đợi chung).
 - [ ] T020 [P] [US1] Test TRƯỚC `tests/unit/vault-backup-meeting.test.ts`: snapshot có `meetings/`; `VAULT_ITEMS` có `meetings`; bản sao lưu schema v11 ⇒ migrate lên v12;
       `expectedSchema(12)` khớp DB mới; ước lượng dung lượng ghi âm cho hộp sao lưu.
-- [ ] T021 [P] [US2] Test TRƯỚC `tests/unit/source-viewer-seek-only.test.ts` (jsdom): mở citation có `tStart` cho nguồn audio, video, meeting ⇒ `currentTime = tStart`,
+- [X] T021 [P] [US2] Test TRƯỚC (viết vào `tests/unit/source-viewer-audio.test.ts` — sửa kỳ vọng 049 cũ "tự phát" thay vì tạo tệp trùng) (jsdom): mở citation có `tStart` cho nguồn audio, video, meeting ⇒ `currentTime = tStart`,
       `play` KHÔNG được gọi; đổi citation khi đang phát ⇒ tua + `pause`.
 - [ ] T022 [P] [US1] Test TRƯỚC `tests/unit/meeting-service.test.ts` với fake writer/files/asr-client/repo/pipeline: start (sau prepare, cổng quyền, một phiên duy nhất,
       chặn khi đĩa < 10 phút) ⇒ tạo nguồn; audio batch ⇒ writer; pause/resume ⇒ đóng/mở phân đoạn + gap; stop ⇒ finalizing ⇒ ASR chốt từng phân đoạn với chồng lấn ⇒
@@ -172,7 +172,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [ ] T056 [US1] `src/renderer/features/sources/SourceList.tsx`: nút icon 🎙 cạnh `+` (`data-testid="record-meeting-btn"`, tooltip + `aria-label`), nhãn theo
       `meetingPhase` ("Đang ghi", "Đã tạm dừng", "Đang hoàn tất", "Chưa hoàn thiện"); `src/renderer/features/sources/Workspace.tsx`: chế độ tập trung hiển thị
       `RecordingView`/`FinalizeView` thay cột giữa khi có phiên của notebook.
-- [ ] T057 [US2] `src/renderer/features/source-viewer/SourceViewer.tsx`: bỏ `play()` ở effect citation (`:105-106`), khi đổi citation thì `pause()` + tua; `kind="meeting"`
+- [X] T057 [US2] `src/renderer/features/source-viewer/SourceViewer.tsx`: bỏ `play()` ở effect citation (`:105-106`), khi đổi citation thì `pause()` + tua; `kind="meeting"`
       ⇒ player audio như `audio`. T021 xanh.
 - [ ] T058 [US1] Điền chuỗi vi + en cho mọi UI PR A vào `src/shared/i18n/domains/meeting.ts` (+ mã lỗi `meetingRecording`, `meetingAlreadyRecording`, `meetingDiskLow`,
       `notSupported` vào domain tương ứng); `tests/unit/i18n-catalog.test.ts` xanh.

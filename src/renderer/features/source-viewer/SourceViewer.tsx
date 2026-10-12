@@ -68,7 +68,8 @@ export function SourceViewer({
 
   const isPdf =
     (content?.kind === "pdf" && content.pageBreaks.length > 0) || false;
-  const isAudio = content?.kind === "audio"; // 049
+  // 049; 186: nguồn cuộc họp phát như audio (iv-media phục vụ meeting.wav / phân đoạn).
+  const isAudio = content?.kind === "audio" || content?.kind === "meeting";
   const isVideo = content?.kind === "video"; // 051
   const isMedia = isAudio || isVideo; // player audio/video dùng chung iv-media:// + effect seek/onError
   const isImage = content?.kind === "image"; // 053
@@ -97,13 +98,14 @@ export function SourceViewer({
     setAudioError(false);
   }, [target?.sourceId]);
 
-  // 049: seek player tới tStart của trích dẫn + tự phát. Chờ loadedmetadata nếu chưa sẵn (đổi src/nguồn).
+  // 049 + 186 (quyết định C1, thay 049 #3): mở trích dẫn CHỈ TUA player tới tStart — KHÔNG tự phát (mọi audio/video/
+  // cuộc họp). Đang phát thì dừng tại mốc mới. Chờ loadedmetadata nếu chưa sẵn (đổi src/nguồn).
   useEffect(() => {
     const a = audioRef.current;
     if (!a || tStart == null) return;
     const seek = (): void => {
+      a.pause();
       a.currentTime = tStart;
-      void a.play().catch(() => {}); // autoplay có thể bị chặn — bỏ qua, người dùng tự bấm.
     };
     if (a.readyState >= 1)
       seek(); // HAVE_METADATA

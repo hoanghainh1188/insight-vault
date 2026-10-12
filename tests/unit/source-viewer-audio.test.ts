@@ -7,8 +7,9 @@ import { SourceViewer } from "../../src/renderer/features/source-viewer/SourceVi
 import type { SourceViewerState } from "../../src/renderer/features/source-viewer/useSourceViewer";
 import type { Citation, SourceContent } from "../../src/shared/ipc/types";
 
-// 049 component test — render player khi kind=audio + seek effect (chờ loadedmetadata → currentTime=tStart
-// + play) + onError khi file gốc mất. jsdom không thực thi media thật nên ta override currentTime/play trên
+// 049 component test — render player khi kind=audio + seek effect (chờ loadedmetadata → currentTime=tStart)
+// + onError khi file gốc mất. 186 (quyết định C1, thay 049 #3): mở trích dẫn CHỈ TUA, không tự phát — cho mọi
+// audio/video/cuộc họp. jsdom không thực thi media thật nên ta override currentTime/play trên
 // element để bắt side-effect tất định.
 
 (
@@ -78,7 +79,7 @@ describe("SourceViewer audio player (049)", () => {
     expect(audio?.getAttribute("src")).toBe("iv-media://source/aud%201");
   });
 
-  it("seek tới tStart + play sau khi loadedmetadata (readyState=0 lúc mount)", () => {
+  it("186/C1: seek tới tStart sau loadedmetadata, KHÔNG tự phát (readyState=0 lúc mount)", () => {
     render(viewerState({}));
     const audio = container.querySelector("audio") as HTMLAudioElement;
     let seeked = -1;
@@ -96,7 +97,52 @@ describe("SourceViewer audio player (049)", () => {
       audio.dispatchEvent(new Event("loadedmetadata"));
     });
     expect(seeked).toBe(12.5);
-    expect(play).toHaveBeenCalledTimes(1);
+    expect(play).not.toHaveBeenCalled();
+  });
+
+  it("186/C1: đổi sang trích dẫn khác khi đang phát ⇒ tua tới mốc mới + dừng phát", () => {
+    render(viewerState({}));
+    const audio = container.querySelector("audio") as HTMLAudioElement;
+    let seeked = -1;
+    Object.defineProperty(audio, "currentTime", {
+      get: () => seeked,
+      set: (v: number) => {
+        seeked = v;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(audio, "readyState", { get: () => 1, configurable: true });
+    const play = vi.fn().mockResolvedValue(undefined);
+    const pause = vi.fn();
+    audio.play = play as unknown as HTMLAudioElement["play"];
+    audio.pause = pause;
+    render(viewerState({ target: { sourceId: "aud 1", citation: citation(40) } }));
+    expect(seeked).toBe(40);
+    expect(pause).toHaveBeenCalled();
+    expect(play).not.toHaveBeenCalled();
+  });
+
+  it("186: kind=meeting ⇒ player audio iv-media:// + chỉ tua", () => {
+    const meeting: SourceContent = { ...audioContent, kind: "meeting", title: "Cuộc họp 12/10, 14:30" };
+    render(viewerState({ content: meeting, target: { sourceId: "m 1", citation: { ...citation(605), sourceId: "m 1" } } }));
+    const audio = container.querySelector("audio") as HTMLAudioElement | null;
+    expect(audio).not.toBeNull();
+    expect(audio?.getAttribute("src")).toBe("iv-media://source/m%201");
+    let seeked = -1;
+    Object.defineProperty(audio as HTMLAudioElement, "currentTime", {
+      get: () => seeked,
+      set: (v: number) => {
+        seeked = v;
+      },
+      configurable: true,
+    });
+    const play = vi.fn().mockResolvedValue(undefined);
+    (audio as HTMLAudioElement).play = play as unknown as HTMLAudioElement["play"];
+    act(() => {
+      (audio as HTMLAudioElement).dispatchEvent(new Event("loadedmetadata"));
+    });
+    expect(seeked).toBe(605);
+    expect(play).not.toHaveBeenCalled();
   });
 
   it("onError (file gốc 404) → hiện thông báo, không ném lỗi", () => {
@@ -132,7 +178,7 @@ describe("SourceViewer audio player (049)", () => {
     ).toBeNull();
   });
 
-  it("051: kind=video → render <video> (không <audio>) + seek tới tStart", () => {
+  it("051: kind=video → render <video> (không <audio>) + seek tới tStart, không tự phát (186/C1)", () => {
     const video: SourceContent = {
       kind: "video",
       title: "Phỏng vấn.mp4",
@@ -162,12 +208,12 @@ describe("SourceViewer audio player (049)", () => {
       },
       configurable: true,
     });
-    (el as HTMLVideoElement).play = vi
-      .fn()
-      .mockResolvedValue(undefined) as unknown as HTMLVideoElement["play"];
+    const vplay = vi.fn().mockResolvedValue(undefined);
+    (el as HTMLVideoElement).play = vplay as unknown as HTMLVideoElement["play"];
     act(() => {
       (el as HTMLVideoElement).dispatchEvent(new Event("loadedmetadata"));
     });
     expect(seeked).toBe(8);
+    expect(vplay).not.toHaveBeenCalled();
   });
 });
