@@ -26,7 +26,11 @@ import {
   confirmOnHoldout,
   groupOutcomes,
   histogram,
+  pdfWarnings,
+  type QuestionOutcome,
 } from "./lib/metrics";
+import { PDF_EXTRACTION_VERSION } from "../../src/shared/ipc/types";
+import { docFormat } from "./lib/dataset";
 import { runRerankModel } from "./lib/rerank-run";
 import { loadScorer } from "./lib/rerank";
 import {
@@ -75,7 +79,7 @@ function configsToRun(bm25Scores: readonly number[]): {
 describe("eval:retrieval", () => {
   it("đo truy xuất trên bộ đánh giá và ghi báo cáo", async () => {
     // 1. Kiểm dữ liệu — lỗi ⇒ fail kèm danh sách (contract bước 1).
-    const ds = loadDataset(EVAL_DIR);
+    const ds = await loadDataset(EVAL_DIR); // 177: bất đồng bộ (PDF qua parsePdf)
     const docIds = new Set(ds.documents.map((d) => d.id));
     const noiseIds = new Set(
       ds.documents.filter((d) => d.noise).map((d) => d.id),
@@ -83,7 +87,13 @@ describe("eval:retrieval", () => {
     const errors = [
       ...ds.loadErrors,
       ...validateManifest(ds.documents),
-      ...validateQuestions(ds.questions, ds.texts, docIds, noiseIds),
+      ...validateQuestions(
+        ds.questions,
+        ds.texts,
+        docIds,
+        noiseIds,
+        ds.documents,
+      ),
     ];
     expect(errors, `Lỗi bộ dữ liệu:\n${errors.join("\n")}`).toEqual([]);
 
@@ -112,12 +122,20 @@ describe("eval:retrieval", () => {
       // 3. Đo từng cấu hình.
       const { mode, configs } = configsToRun(index.bm25Scores);
       const results: ConfigResult[] = [];
+      // 177 (điều tra T022): kết quả từng câu của cấu hình 108 hiện hành (chế độ current) — chỉ ghi report.json.
+      let relevanceDetails: QuestionOutcome[] | undefined;
       for (const cfg of configs) {
         const { outcomes, avgRetrieveMs } = await evaluateConfig(
           index,
           questions,
           cfg,
         );
+        if (
+          mode === "current" &&
+          key(cfg) === key(RELEVANCE_CALIBRATION.config)
+        ) {
+          relevanceDetails = outcomes;
+        }
         const g = groupOutcomes(outcomes);
         results.push({
           config: cfg,
@@ -282,6 +300,61 @@ describe("eval:retrieval", () => {
         );
       }
 
+      // 177: nhóm md / pdf (THAM KHẢO) đo trên cấu hình như app đang chạy — cấu hình 108 được chọn / hiện hành + bộ chấm 109 đã
+      // ghi (nếu có). Chỉ khi corpus có PDF. Cảnh báo (cận trên Wilson PDF < md) không đổi mã thoát.
+      let pdfPart: Pick<
+        EvalReport,
+        "pdfExtractionVersion" | "byFormat" | "pdfWarnings"
+      > = {};
+      let productionDetails: QuestionOutcome[] | undefined;
+      if (ds.documents.some((d) => docFormat(d) === "pdf")) {
+        // Review #177: chưa có cache mô hình bộ chấm (máy offline lần đầu) ⇒ đo nhóm PDF KHÔNG bộ chấm + cảnh báo, không fail lượt.
+        const scorer = RELEVANCE_CALIBRATION.rerank
+          ? await loadScorer(
+              RELEVANCE_CALIBRATION.rerank.model,
+              CACHE_DIR,
+              process.env.EVAL_RERANK_FILE,
+              RELEVANCE_CALIBRATION.rerank.maxTokens,
+            ).catch((e: unknown) => {
+              warnings.push(
+                `Nhóm PDF đo KHÔNG bộ chấm 109 (không nạp được mô hình: ${e instanceof Error ? e.name : typeof e}) — số liệu khác đường app thật`,
+              );
+              return undefined;
+            })
+          : undefined;
+        try {
+          const { outcomes } = await evaluateConfig(
+            index,
+            questions,
+            candidateCfg ?? RELEVANCE_CALIBRATION.config,
+            scorer && RELEVANCE_CALIBRATION.rerank
+              ? {
+                  score: scorer.score,
+                  cfg: RELEVANCE_CALIBRATION.rerank.config,
+                }
+              : undefined,
+          );
+          productionDetails = outcomes;
+          const fg = groupOutcomes(outcomes).byFormat;
+          pdfPart = {
+            pdfExtractionVersion: PDF_EXTRACTION_VERSION,
+            byFormat: {
+              md: {
+                dev: computeMetrics(fg.md.dev),
+                holdout: computeMetrics(fg.md.holdout),
+              },
+              pdf: {
+                dev: computeMetrics(fg.pdf.dev),
+                holdout: computeMetrics(fg.pdf.holdout),
+              },
+            },
+            pdfWarnings: pdfWarnings(fg),
+          };
+        } finally {
+          scorer?.dispose();
+        }
+      }
+
       const report: EvalReport = {
         runAt: new Date().toISOString(),
         mode,
@@ -300,6 +373,17 @@ describe("eval:retrieval", () => {
         coldRetrieveMs: index.coldRetrieveMs,
         ...(llm ? { llm } : {}),
         ...(rerank.length > 0 ? { rerank } : {}),
+        ...pdfPart,
+        // Review #177: kết quả từng câu chỉ ghi khi EVAL_DETAILS=1 (điều tra hồi quy) — report.json mặc định gọn.
+        ...(process.env.EVAL_DETAILS === "1" &&
+        (relevanceDetails || productionDetails)
+          ? {
+              details: {
+                ...(relevanceDetails ? { relevance: relevanceDetails } : {}),
+                ...(productionDetails ? { production: productionDetails } : {}),
+              },
+            }
+          : {}),
         warnings,
       };
 

@@ -11,6 +11,7 @@ import { createLanceVectorStore } from "../../../src/main/services/ingestion/vec
 import { createIngestionPipeline } from "../../../src/main/services/ingestion/pipeline";
 import { createKeywordStore } from "../../../src/main/services/ingestion/keyword-store";
 import { parseText } from "../../../src/main/services/ingestion/parsers/text";
+import { parsePdf } from "../../../src/main/services/ingestion/parsers/pdf";
 import { createEmbedder } from "../../../src/main/services/embedding/embed-model";
 import { createOllamaClient } from "../../../src/main/services/ai-runtime/ollama-client";
 import {
@@ -23,10 +24,13 @@ import type { RerankConfig } from "../../../src/main/services/rag/rerank-filter"
 import { DEFAULT_COLOR } from "../../../src/shared/notebook-palette";
 import {
   chunkContainsAnyQuote,
+  docFile,
+  docFormat,
   type Dataset,
+  type EvalFormat,
   type EvalQuestion,
 } from "./dataset";
-import type { QuestionOutcome } from "./metrics";
+import { outcomeFormat, type QuestionOutcome } from "./metrics";
 
 // 108: phần I/O của công cụ đo (KHÔNG tính coverage). Dựng SQLite + LanceDB + FTS5 THẬT trên thư mục tạm, nạp mọi
 // tài liệu (kể cả nhiễu) vào MỘT notebook qua pipeline thật (chia đoạn + e5 passage), rồi gọi ĐÚNG retrieve() của app
@@ -35,6 +39,8 @@ import type { QuestionOutcome } from "./metrics";
 
 export interface EvalIndex {
   notebookId: string;
+  /** 177: id tài liệu → định dạng (gắn `format` cho từng QuestionOutcome) */
+  formats: ReadonlyMap<string, EvalFormat>;
   /** deps có cache — gọi retrieve() lặp lại cho nhiều cấu hình mà không embed/tìm lại */
   deps: RetrievalDeps;
   /** deps KHÔNG cache (đo độ trễ thật một lượt) */
@@ -160,16 +166,20 @@ async function populate(
     },
     isRuntimeReady: async () => true,
     readFile: async (p) => new Uint8Array(readFileSync(p)),
-    parseFile: async (_kind, bytes) =>
-      parseText(new TextDecoder().decode(bytes)),
+    // 177: PDF qua ĐÚNG parsePdf của app với cấu hình mặc định (y hệt src/main/services/ingestion/ingestion.ts — nhánh "pdf");
+    // còn lại (md) như 108.
+    parseFile: async (kind, bytes) =>
+      kind === "pdf"
+        ? parsePdf(bytes)
+        : parseText(new TextDecoder().decode(bytes)),
     emit: () => {},
   });
 
   for (const d of ds.documents) {
     await pipeline.add({
       notebookId: notebook.id,
-      kind: "md",
-      filePath: join(corpusDir, `${d.id}.md`),
+      kind: docFormat(d),
+      filePath: join(corpusDir, docFile(d)),
     });
   }
   await pipeline.whenIdle();
@@ -193,6 +203,7 @@ async function populate(
 
   return {
     notebookId: notebook.id,
+    formats: new Map(ds.documents.map((d) => [d.id, docFormat(d)])),
     deps: cachedDeps(rawDeps),
     rawDeps,
     bm25Scores: [],
@@ -284,6 +295,8 @@ export async function evaluateConfig(
       split: q.split,
       rejected: scored.length === 0,
       hitRank: rank >= 0 ? rank + 1 : null,
+      format: outcomeFormat(q, index.formats),
+      topSources: scored.slice(0, 6).map((s) => s.sourceTitle),
     });
   }
   return {

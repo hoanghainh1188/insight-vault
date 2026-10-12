@@ -2,7 +2,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { RelevanceConfig } from "../../../src/main/services/rag/relevance-filter";
 import type { EvalMetrics } from "../../../src/main/services/rag/relevance-calibration";
-import type { Histogram } from "./metrics";
+import type {
+  FormatGroups,
+  Histogram,
+  PdfWarning,
+  QuestionOutcome,
+} from "./metrics";
 import type { LlmResult } from "./harness";
 import type { LlmSummary } from "./llm-metrics";
 import type { RerankModelReport } from "./rerank-run";
@@ -44,6 +49,20 @@ export interface EvalReport {
   llm?: LlmResult;
   /** 109: đo bộ chấm độ liên quan theo model (EVAL_RERANK) */
   rerank?: RerankModelReport[];
+  /** 177: PDF_EXTRACTION_VERSION lúc chạy */
+  pdfExtractionVersion?: number;
+  /** 177: số liệu câu vi theo định dạng × tập (THAM KHẢO — không vào cổng 108–109) */
+  byFormat?: FormatGroups<EvalMetrics>;
+  /** 177: cảnh báo nhóm PDF (cận trên Wilson 95% PDF < md) — không đổi mã thoát */
+  pdfWarnings?: PdfWarning[];
+  /**
+   * 177 (điều tra T022): kết quả TỪNG câu (chỉ report.json) — `relevance`: cấu hình 108 hiện hành không bộ chấm (chế độ current);
+   * `production`: cấu hình như app đang chạy (108 + bộ chấm 109 đã ghi). So lượt trước / sau theo questionId.
+   */
+  details?: {
+    relevance?: QuestionOutcome[];
+    production?: QuestionOutcome[];
+  };
   warnings: string[];
 }
 
@@ -101,6 +120,35 @@ function highlights(r: EvalReport, limit = 15): [string, ConfigResult][] {
     .slice(0, limit);
   for (const c of top) rows.push(["top", c]);
   return rows;
+}
+
+/** 177: một dòng bảng nhóm định dạng. */
+function formatRow(split: string, fmt: string, x: EvalMetrics): string {
+  return `| ${split} | ${fmt} | ${x.nAnswerable} | ${pct(x.recallAt1)} | ${pct(x.recallAt3)} | ${pct(x.recallAt6)} ${ci(x.ci95.recallAt6)} | ${x.mrr.toFixed(3)} | ${x.nUnanswerable} | ${pct(x.correctRejection)} |`;
+}
+
+/** 177 (contracts/report.md): mục "Nhóm PDF (tham khảo)"; không có dữ liệu PDF ⇒ rỗng (báo cáo như trước). Thuần. */
+export function renderPdfSection(r: EvalReport): string[] {
+  if (!r.byFormat) return [];
+  const g = r.byFormat;
+  const warn = (w: PdfWarning) =>
+    `⚠️ Cảnh báo: ${w.split === "dev" ? "dev" : "hold-out"} — Recall@6 PDF ${pct(w.pdfRecallAt6)} (cận trên ${pct(w.pdfUpper95)}) thấp hơn Markdown ${pct(w.mdRecallAt6)} (n PDF = ${w.nPdf}).`;
+  return [
+    "## Nhóm PDF (tham khảo — không vào tiêu chí ĐẠT)",
+    "",
+    `Phiên bản trích xuất PDF: ${r.pdfExtractionVersion ?? "?"}`,
+    "",
+    "| Tập | Định dạng | n có đáp án | R@1 | R@3 | R@6 [CI95] | MRR | n không đáp án | Từ chối đúng |",
+    "|---|---|---|---|---|---|---|---|---|",
+    formatRow("dev", "md", g.md.dev),
+    formatRow("dev", "pdf", g.pdf.dev),
+    formatRow("hold-out", "md", g.md.holdout),
+    formatRow("hold-out", "pdf", g.pdf.holdout),
+    "",
+    ...(r.pdfWarnings ?? []).map(warn),
+    "Cỡ mẫu PDF nhỏ — đọc kèm khoảng tin cậy.",
+    "",
+  ];
 }
 
 export function renderMarkdown(r: EvalReport): string {
@@ -171,6 +219,7 @@ export function renderMarkdown(r: EvalReport): string {
       ...chosen,
       ...latency,
       ...table,
+      ...renderPdfSection(r),
       ...(r.rerank ? rerankMd(r.rerank, r.baseline) : []),
       ...llm,
       ...hist,

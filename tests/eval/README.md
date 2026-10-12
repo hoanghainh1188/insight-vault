@@ -1,4 +1,4 @@
-# Công cụ đo truy xuất (108)
+# Công cụ đo truy xuất (108, 177)
 
 Đo chất lượng bước **chọn đoạn** của hỏi đáp có trích dẫn trên một bộ đánh giá công khai. Dev-only: không đóng gói
 vào bản cài, không đọc/ghi dữ liệu người dùng. Quyết định và số liệu: `docs/04-decisions/2026-10-07-relevance-calibration.md`.
@@ -13,28 +13,34 @@ npm run eval:retrieval                    # quét lưới cấu hình (chọn tr
 EVAL_MODE=current npm run eval:retrieval  # chỉ đo cấu hình đang dùng + baseline, so với số liệu đã ghi
 ```
 
-| Biến môi trường      | Mặc định                   | Ý nghĩa                                                                                                  |
-| -------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `EVAL_MODE`          | `sweep`                    | `sweep` quét lưới · `current` đo cấu hình hiện hành (kiểm hồi quy)                                       |
-| `EVAL_CONFIG`        | —                          | JSON một `RelevanceConfig` để đo riêng (ghi đè `EVAL_MODE`)                                              |
-| `EVAL_WITH_LLM`      | `0`                        | `1` = thêm phần end-to-end qua Ollama cục bộ (tham khảo, không xét ĐẠT)                                  |
-| `EVAL_LLM_MODEL`     | model chat đầu tiên        | model Ollama cho phần LLM                                                                                |
-| `EVAL_CACHE_DIR`     | `tests/eval/.cache/models` | nơi tải mô hình e5 (~120MB, lần đầu cần Internet)                                                        |
-| `EVAL_RERANK`        | —                          | 109: danh sách model bộ chấm độ liên quan (phẩy) ⇒ quét 96 cấu hình/model trên đúng `retrieve()` của app |
-| `EVAL_RERANK_TOPN`   | 20                         | 109: số ứng viên đầu (thứ tự RRF) được chấm (`maxCandidates`)                                            |
-| `EVAL_RERANK_MAXLEN` | 512                        | 109: cắt mỗi cặp (câu hỏi, đoạn) ở số token này                                                          |
-| `EVAL_RERANK_FILE`   | theo `process.arch`        | 109: tệp ONNX riêng (vd `model_qint8_arm64`)                                                             |
+| Biến môi trường      | Mặc định                   | Ý nghĩa                                                                                                     |
+| -------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `EVAL_MODE`          | `sweep`                    | `sweep` quét lưới · `current` đo cấu hình hiện hành (kiểm hồi quy)                                          |
+| `EVAL_CONFIG`        | —                          | JSON một `RelevanceConfig` để đo riêng (ghi đè `EVAL_MODE`)                                                 |
+| `EVAL_WITH_LLM`      | `0`                        | `1` = thêm phần end-to-end qua Ollama cục bộ (tham khảo, không xét ĐẠT)                                     |
+| `EVAL_LLM_MODEL`     | model chat đầu tiên        | model Ollama cho phần LLM                                                                                   |
+| `EVAL_CACHE_DIR`     | `tests/eval/.cache/models` | nơi tải mô hình e5 (~120MB, lần đầu cần Internet)                                                           |
+| `EVAL_RERANK`        | —                          | 109: danh sách model bộ chấm độ liên quan (phẩy) ⇒ quét 96 cấu hình/model trên đúng `retrieve()` của app    |
+| `EVAL_RERANK_TOPN`   | 20                         | 109: số ứng viên đầu (thứ tự RRF) được chấm (`maxCandidates`)                                               |
+| `EVAL_RERANK_MAXLEN` | 512                        | 109: cắt mỗi cặp (câu hỏi, đoạn) ở số token này                                                             |
+| `EVAL_RERANK_FILE`   | theo `process.arch`        | 109: tệp ONNX riêng (vd `model_qint8_arm64`)                                                                |
+| `EVAL_DETAILS`       | `0`                        | 177: `1` = ghi kết quả TỪNG câu (`details.relevance` / `details.production` + `topSources`) vào report.json |
 
 Báo cáo: `tests/eval/reports/<thời điểm>/report.{md,json}` (gitignore). Trên GitHub: Actions → `eval-retrieval` →
 Run workflow ⇒ artifact `eval-report`. Job không chặn PR.
 
 ## Cách hoạt động
 
-1. Kiểm dữ liệu: `corpus/manifest.json`, mọi trích đoạn đáp án phải có **nguyên văn** trong tài liệu (`lib/dataset.ts`).
+1. Kiểm dữ liệu: `corpus/manifest.json`, mọi trích đoạn đáp án phải có **nguyên văn** trong văn bản khi nạp của tài liệu
+   (`lib/dataset.ts`) — với PDF là văn bản do **`parsePdf` của app** trích (177; trích dẫn không vắt qua ranh giới trang).
 2. Dựng SQLite + FTS5 + LanceDB thật trên thư mục tạm, nạp mọi tài liệu (kể cả nhiễu) vào một notebook qua pipeline
-   thật với mô hình e5 thật (`lib/harness.ts`).
+   thật với mô hình e5 thật (`lib/harness.ts`); PDF đi đúng nhánh `kind: "pdf"` → `parsePdf` cấu hình mặc định như app.
 3. Gọi đúng `retrieve()` của app với từng cấu hình; embed/tìm kiếm của mỗi câu chỉ chạy một lần (cache).
 4. Tính Recall@1/3/6, MRR, từ chối đúng/nhầm (+ khoảng tin cậy Wilson 95%), phân bố khoảng cách (`lib/metrics.ts`).
+5. (177) Khi corpus có PDF: mục **"Nhóm PDF (tham khảo — không vào tiêu chí ĐẠT)"** — câu tiếng Việt theo định dạng md / pdf ×
+   dev / hold-out, đo trên cấu hình như app đang chạy (cấu hình 108 + bộ chấm 109 đã ghi), kèm `PDF_EXTRACTION_VERSION`. Cảnh báo
+   khi cận trên Wilson 95% Recall@6 nhóm PDF thấp hơn Recall@6 nhóm Markdown (riêng dev / hold-out); cảnh báo không làm eval fail.
+   Phần này nạp mô hình bộ chấm 109 đã ghi (cần cache — lần đầu cần mạng); không nạp được ⇒ đo không bộ chấm + cảnh báo trong báo cáo.
 
 ## Thêm câu hỏi / tài liệu
 
@@ -44,6 +50,13 @@ Run workflow ⇒ artifact `eval-report`. Job không chặn PR.
   `reviewed: null` và nhờ chủ dự án duyệt lại (FR-003).
 - Tài liệu mới: chỉ nguồn được phép tái phân phối; ghi nguồn + giấy phép vào `corpus/manifest.json` và
   `corpus/README.md`.
+- Tài liệu PDF (177): `format: "pdf"`, `file`, `sha256`; trích dẫn chép từ **văn bản `parsePdf`** (bảng dạng `| ô | ô |`, tiếng
+  Việt giữ gạch nối `hợp-đồng`), nằm trọn trong một trang. Câu không đáp án sát chủ đề PDF thêm `topic: "pdf"` để vào nhóm PDF.
+  `npm test` (`tests/unit/eval-pdf-corpus.test.ts`) kiểm sha256, trích tất định ≤ 1000 ms, tổng ≤ 1 MiB, metadata, mọi trích dẫn —
+  không cần mô hình.
+- PDF fixture: `UPDATE_EVAL_FIXTURE=1 npx vitest run tests/unit/eval-pdf-fixture.test.ts` ghi lại tệp (phải trùng từng byte).
+- **Khi `PDF_EXTRACTION_VERSION` / cách trích PDF đổi:** trích dẫn PDF có thể ngừng khớp ⇒ kiểm dữ liệu fail (đây là tín hiệu
+  hồi quy mong muốn). Xử lý: cập nhật trích dẫn theo văn bản mới, tăng `datasetVersion`, đo lại `RELEVANCE_CALIBRATION`.
 
 ## Bộ chấm độ liên quan (109)
 
