@@ -62,6 +62,8 @@ export interface StorageInfo {
   usedBytes: number;
   /** Dung lượng trống của ổ đĩa chứa thư mục (byte). */
   freeBytes: number;
+  /** 186: dung lượng ghi âm cuộc họp (thư mục meetings/) — chỉ có khi đã từng ghi. Hộp sao lưu hiển thị. */
+  meetingsBytes?: number;
 }
 
 // ===== ai-runtime (007) — nguồn: specs/.../ai-runtime/data-model.md =====

@@ -21,6 +21,7 @@ export const VAULT_ITEMS = [
   "insightvault.db-shm",
   "vectors",
   "config.json",
+  "meetings", // 186 (C3): audio cuộc họp hoán đổi cùng DB
 ] as const;
 
 type Phase = "staged" | "movingOut" | "movingIn" | "rollingBack";

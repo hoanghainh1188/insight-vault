@@ -87,7 +87,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       `ingestParsed` chunk/embed/store với `tStart/tEnd` từ timeMap ⇒ `ready`; `resumeInterrupted` bỏ qua `meeting`; `retry`/`relink` meeting ⇒ `notSupported`;
       `remove` meeting gọi hook xoá thư mục; `listByNotebook` trả `meetingPhase`/`transcriptQuality`; `detectKindFromPath` không bao giờ trả `meeting`; **SC-012**: một PDF enqueue trong lúc cuộc họp đang chốt ASR chạy xong trước khi bước chốt kết thúc (chỉ
       `ingestParsed` vào hàng đợi chung).
-- [ ] T020 [P] [US1] Test TRƯỚC `tests/unit/vault-backup-meeting.test.ts`: snapshot có `meetings/`; `VAULT_ITEMS` có `meetings`; bản sao lưu schema v11 ⇒ migrate lên v12;
+- [X] T020 [P] [US1] Test TRƯỚC `tests/unit/vault-backup-meeting.test.ts`: snapshot có `meetings/`; `VAULT_ITEMS` có `meetings`; bản sao lưu schema v11 ⇒ migrate lên v12;
       `expectedSchema(12)` khớp DB mới; ước lượng dung lượng ghi âm cho hộp sao lưu.
 - [X] T021 [P] [US2] Test TRƯỚC (viết vào `tests/unit/source-viewer-audio.test.ts` — sửa kỳ vọng 049 cũ "tự phát" thay vì tạo tệp trùng) (jsdom): mở citation có `tStart` cho nguồn audio, video, meeting ⇒ `currentTime = tStart`,
       `play` KHÔNG được gọi; đổi citation khi đang phát ⇒ tua + `pause`.
@@ -136,7 +136,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       T022 xanh.
 - [ ] T043 [US1] `src/main/services/source-viewer/media-serve.ts`: chấp nhận `kind="meeting"`, đường dẫn từ `meetingFiles.resolvePlayback` (không từ `origin`), Range/206
       giữ nguyên; path không ra renderer.
-- [ ] T044 [US1] `src/main/services/vault-backup/snapshot.ts` + `restore-swap.ts`: sao chép `meetings/`, `VAULT_ITEMS` thêm `meetings`, schema guard v12; hộp sao lưu hiện
+- [X] T044 [US1] `src/main/services/vault-backup/snapshot.ts` + `restore-swap.ts`: sao chép `meetings/`, `VAULT_ITEMS` thêm `meetings`, schema guard v12; hộp sao lưu hiện
       dòng "Ghi âm cuộc họp: N MB" (`dirSize`) — chuỗi i18n domain `backup`. T020 xanh.
 - [ ] T045 [US1] `notebook:delete` trong `src/main/ipc/register.ts` (hoặc service notebooks): trả `UserFacingError("meetingRecording")` khi
       `meetingService.isRecordingNotebook(id)`.

@@ -52,6 +52,7 @@ export const BACKUP_ENTRIES = [
   "insightvault.db",
   "config.json",
   "vectors",
+  "meetings", // 186 (C3): audio cuộc họp do app sở hữu
 ] as const;
 const TOP_FILES = new Set(["manifest.json", "insightvault.db", "config.json"]);
 
@@ -64,7 +65,7 @@ export interface UnpackOptions {
   password?: string;
 }
 
-/** Allowlist entry khi giải nén (FR-025): chỉ File/Directory thuộc 4 thành phần cho phép. */
+/** Allowlist entry khi giải nén (FR-025): chỉ File/Directory thuộc các thành phần cho phép (186: + meetings/). */
 export function isAllowedEntry(rawPath: string, type: string): boolean {
   if (/[\\:]/.test(rawPath)) return false; // `\` / ổ đĩa Windows — không bao giờ có trong bản do app tạo
   const p = posix.normalize(rawPath.replace(/^\.\//, ""));
@@ -72,6 +73,8 @@ export function isAllowedEntry(rawPath: string, type: string): boolean {
   if (TOP_FILES.has(p)) return type === "File";
   if (p === "vectors" || p === "vectors/") return type === "Directory";
   if (p.startsWith("vectors/")) return type === "File" || type === "Directory";
+  if (p === "meetings" || p === "meetings/") return type === "Directory";
+  if (p.startsWith("meetings/")) return type === "File" || type === "Directory";
   return false;
 }
 
