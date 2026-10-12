@@ -125,10 +125,10 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [X] T039 [US1] `src/main/services/meeting-capture/meeting-files.ts` (I/O): tạo/xoá thư mục phiên `<userData>/meetings/<sessionId>/`, ghép `meeting.wav` theo stream,
       xoá `seg-*.wav` + `final/` sau `ready`, `resolvePlayback(sourceId)` (dùng `playbackTarget`), ghi `final/seg-NNNN.json` nguyên tử (tmp→rename), sửa header phân
       đoạn mở (dùng `repairWavHeader`). Đường dẫn kiểm prefix `meetings/`.
-- [ ] T040 [US1] `src/main/services/meeting-capture/asr-worker.ts` (entry `utilityProcess`): nhận `init`, `final` (đọc phân đoạn + 5 s đuôi phân đoạn trước, resample
+- [X] T040 [US1] `src/main/services/meeting-capture/asr-worker.ts` (entry `utilityProcess`): nhận `init`, `final` (đọc phân đoạn + 5 s đuôi phân đoạn trước, resample
       không cần — đã 16 kHz), `cancel`; lazy pipeline `FINAL_MODEL` với `env.cacheDir`; báo `modelDownload{active}`; `IV_ASR_FAKE` ⇒ `fakeTranscribe`; thêm input
       `asr-worker: resolve("src/main/services/meeting-capture/asr-worker.ts")` trong `electron.vite.config.ts`.
-- [ ] T041 [US1] `src/main/services/meeting-capture/asr-client.ts` (I/O): `utilityProcess.fork(join(__dirname, "asr-worker.js"))`, request/response theo `reqId`,
+- [X] T041 [US1] `src/main/services/meeting-capture/asr-client.ts` (I/O): `utilityProcess.fork(join(__dirname, "asr-worker.js"))`, request/response theo `reqId`,
       kiểm bằng `parseWorkerMessage`, restart ≤ 3 lần/5 phút, `modelDownload` ⇒ `setEgressActive(active, "model")`.
 - [ ] T042 [US1] `src/main/services/meeting-capture/meeting-service.ts`: `prepare` (quyền OS macOS `getMediaAccessStatus`/`askForMediaAccess`, model, đĩa qua
       `computeStorageInfo`, online, mở cổng), `start`, `acceptAudio`, `pause`, `resume`, `stop`, `status`, `rename`, `finalize` (R8 — ngôn ngữ bản chốt PR A: `vi`/`en` ⇒ khoá, `auto`/`multi` ⇒ `null`), `recoverOnStartup` (PR A: tự hoàn
