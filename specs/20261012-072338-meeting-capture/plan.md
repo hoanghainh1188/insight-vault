@@ -30,7 +30,7 @@ Không đổi: engine Whisper/transformers.js (045), thuật toán chunk + locat
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5 (strict), Electron 43 (Node 22, `node:sqlite` `DatabaseSync`, `utilityProcess`), React 18.
+**Language/Version**: TypeScript 5 (strict), Electron 43 (Node 24.18 — S1, `node:sqlite` `DatabaseSync`, `utilityProcess`), React 18.
 
 **Primary Dependencies**: có sẵn — `@huggingface/transformers` ^4.2 (Whisper), `audio-decode` (không cần cho meeting), `electron-store`. **Không thêm dependency.**
 Model nháp (`Xenova/whisper-tiny` dự kiến, chốt bằng spike S2) tải lúc chạy về `<userData>/models` như 045.
@@ -183,9 +183,9 @@ migration v12 (DB tạm), `meeting-repo`, catalog i18n vi↔en, whitelist kênh 
 
 | Rủi ro | Dự phòng |
 |---|---|
-| AudioWorklet/16 kHz không chạy trong bản đóng gói | R1 fallback (resample trong worklet; `iv-app://` cho worklet; `ScriptProcessorNode`) — quyết ở S1 trước khi viết UI |
-| onnxruntime không nạp trong `utilityProcess` từ asar | `asarUnpack` `onnxruntime-node/**` (S1 kiểm) |
+| AudioWorklet/16 kHz không chạy trong bản đóng gói | **S1: chạy được trên bản đóng gói mac** (worklet qua `?worker&url`); còn chờ Windows + micro thật chạy tay |
+| onnxruntime không nạp trong `utilityProcess` từ asar | **S1: đã nạp được từ `app.asar`, không cần `asarUnpack`** |
 | RTF nháp > 0,5 trên Windows CPU | Bỏ lượt 5 s, cửa sổ bị bỏ khi tồn đọng; bản chốt vẫn đầy đủ (A2) |
 | Hoàn tất 2 giờ lâu | Chạy nền, checkpoint từng phân đoạn, tiến độ trên danh sách nguồn |
-| Cờ fake media không hiệu lực qua CLI Electron | `app.commandLine.appendSwitch` khi `IV_E2E_FAKE_MIC` (unpackaged only) |
+| Cờ fake audio treo chờ quyền micro trên macOS (S1) | Seam `IV_E2E_FAKE_MIC` phát fixture qua cùng chuỗi AudioContext/worklet/IPC (unpackaged only) |
 | Chưa ký app mac ⇒ quyền micro gắn với bản chưa ký | Ghi rõ trong release notes; entitlements sẵn cho lúc ký |

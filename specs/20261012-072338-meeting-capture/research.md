@@ -6,10 +6,12 @@ hiện có (khảo sát 2026-10-12) và các điểm còn phải đo bằng spik
 ## R1 — Spike S1 (đầu PR A): thu PCM 16 kHz trong renderer sandbox, `file://`, CSP `script-src 'self'`
 
 - **Decision**: `new AudioContext({ sampleRate: 16000 })` + `MediaStreamAudioSourceNode` + `AudioWorkletNode` nạp từ tệp worklet **được bundle cùng origin**
-  (`src/renderer/features/meeting-capture/capture/pcm-worklet.ts`, nạp bằng `audioWorklet.addModule(new URL("./pcm-worklet.ts", import.meta.url))` — Vite xuất
-  thành tệp riêng trong `out/renderer/assets/`). Worklet chuyển Float32 → Int16, gom **1 giây = 16 000 mẫu = 32 000 byte**, `port.postMessage(buffer, [buffer])`.
+  (`src/renderer/features/meeting-capture/capture/pcm-worklet.ts`, nạp bằng `import workletUrl from "./pcm-worklet.ts?worker&url"` + `audioWorklet.addModule(workletUrl)` —
+  Vite biên dịch TS và xuất thành tệp riêng trong `out/renderer/assets/`; **đã xác minh ở S1**, xem ADR `2026-10-12-meeting-capture.md`). Worklet chuyển Float32 → Int16, gom **1 giây = 16 000 mẫu = 32 000 byte**, `port.postMessage(buffer, [buffer])`.
   Spike phải xác nhận trên Electron 43, bản **đóng gói** (`file://`, CSP PROD): (a) AudioContext chấp nhận 16 kHz và tự resample từ 44.1/48 kHz; (b)
   `addModule` từ `file://` không bị CSP/secure-context chặn; (c) đổi thiết bị Bluetooth (đổi tần số gốc) không làm lệch tốc độ.
+- **Kết quả S1 (2026-10-12)**: (a) và (b) đạt trên bản dev và bản đóng gói mac; tốc độ mẫu chính xác (oscillator 440 Hz ⇒ 879 lần qua 0/s). Không cần fallback.
+  (c) chờ chạy tay. Worklet phải **xả lô lẻ** khi tạm dừng/kết thúc (S1 mất phần < 1 s cuối).
 - **Fallback nếu (a) thất bại**: AudioContext ở tần số gốc, worklet resample bằng thuật toán của `resampleTo16k` (tách hàm thuần dùng chung cho renderer qua
   `src/shared/audio/resample.ts`). **Fallback nếu (b) thất bại**: nạp worklet qua `iv-media`-style giao thức `iv-app://` chỉ phục vụ tệp worklet (thêm vào
   `script-src`), hoặc `ScriptProcessorNode` (deprecated nhưng không cần module). Kết quả spike ghi vào ADR thực thi (R16).
@@ -18,7 +20,7 @@ hiện có (khảo sát 2026-10-12) và các điểm còn phải đo bằng spik
 
 ## R2 — Spike S2 (cổng trước PR B): RTF và phát hiện ngôn ngữ
 
-- **Đo**: bộ đo dev-only `tests/spike/asr-rtf.spike.ts` chạy bằng `npm run spike:asr` (`vitest run -c vitest.spike.config.ts`, khuôn của `eval:retrieval`; không đóng gói, không vào CI). Node của Electron 43 = Node 22 nên số đo đại diện cho `utilityProcess`; S1 xác nhận thêm một lần đo trong worker thật ở bản đóng gói; mỗi model × lượng tử hoá:
+- **Đo**: bộ đo dev-only `tests/spike/asr-rtf.spike.ts` chạy bằng `npm run spike:asr` (`vitest run -c vitest.spike.config.ts`, khuôn của `eval:retrieval`; không đóng gói, không vào CI). Node của Electron 43 = Node 24.18 (S1) — chạy bộ đo bằng Node ≥ 24 để số đo đại diện cho `utilityProcess`; S1 xác nhận thêm một lần đo trong worker thật ở bản đóng gói; mỗi model × lượng tử hoá:
   `Xenova/whisper-tiny` (q8, fp32), `Xenova/whisper-base` (q8, fp32); audio mẫu tiếng Việt + English 10 phút (`tests/fixtures/meeting/`); đo RTF = thời gian xử
   lý / thời lượng audio, cửa sổ 10 s (nháp) và phân đoạn 5 phút (chốt). Máy: Mac Apple Silicon (M1 trở lên) + một máy Windows x64 chỉ CPU.
 - **Quy tắc chọn (A2)**: nháp = model nhỏ nhất có RTF ≤ 0,5 trên máy yếu nhất; chốt = `Xenova/whisper-base` (đã có, `DEFAULT_WHISPER_MODEL`). Nếu không model nào
@@ -179,10 +181,11 @@ hiện có (khảo sát 2026-10-12) và các điểm còn phải đo bằng spik
 ## R15 — Kiểm thử (D14, Constitution IV)
 
 - **Seam giả (chỉ `!app.isPackaged`)**: `IV_ASR_FAKE=1` ⇒ worker dùng `fakeTranscriber` (thuần, `fake-asr.ts`): mỗi cửa sổ có tiếng ⇒ segment "đoạn <n>" với timestamp đúng
-  cửa sổ, ngôn ngữ `vi`; `IV_MEETING_SEGMENT_SEC` (≥ 5) cho soak; `IV_MIC_FAKE` **không cần** — e2e dùng cờ Chromium.
-- **E2E**: `electron.launch({ args: [main, "--user-data-dir=…", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
-  "--use-file-for-fake-audio-capture=<tests/fixtures/meeting/speech-16k.wav>"] })` (helper mới `launchMeeting` trong `tests/e2e/helper.ts`). Spike S1 xác nhận cờ có
-  hiệu lực khi truyền qua dòng lệnh Electron; nếu không ⇒ `app.commandLine.appendSwitch` khi `IV_E2E_FAKE_MIC` (unpackaged only).
+  cửa sổ, ngôn ngữ `vi`; `IV_MEETING_SEGMENT_SEC` (≥ 5) cho soak; **`IV_E2E_FAKE_MIC=<tệp wav>`** (S1): `mic-capture.ts` thay `getUserMedia` bằng
+  `AudioBufferSourceNode` phát lặp fixture qua cùng AudioContext/worklet/IPC; `IV_E2E_MIC_DENIED=1` giả lập `micStatus: "denied"`.
+- **E2E**: helper `launchMeeting` trong `tests/e2e/helper.ts` đặt `IV_E2E_FAKE_MIC=tests/fixtures/meeting/speech-16k.wav` + `IV_ASR_FAKE=1`. **S1: trên macOS,
+  `getUserMedia({audio})` với cờ `--use-fake-device-for-media-stream` vẫn treo chờ quyền micro của hệ điều hành** (video giả thì chạy) ⇒ không dựa vào cờ
+  Chromium cho audio; cờ chỉ là tuỳ chọn trên máy đã cấp quyền.
 - **Soak tăng tốc**: e2e `meeting-soak.spec.ts` với `IV_MEETING_SEGMENT_SEC=5`, ghi 120 phân đoạn giả bằng cách bơm lô qua seam `IV_E2E_AUDIO_PUMP` (main tự sinh lô PCM
   từ fixture nhanh gấp N lần, unpackaged only) — kiểm không mất phân đoạn, thời lượng khớp, khôi phục sau `kill`.
 - **Unit (TDD)**: mọi hàm thuần liệt kê ở plan; coverage include các tệp thuần mới; exclude I/O (`capture-writer.ts`, `asr-worker.ts`, `asr-client.ts`, `mic-capture.ts`,

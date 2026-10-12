@@ -34,12 +34,12 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### Spike S1 (task đầu — chặn mọi task renderer capture)
 
-- [ ] T001 [US1] Spike S1 trên branch nháp `186-spike-s1` (KHÔNG merge): màn dev tạm `src/renderer/features/meeting-capture/spike/SpikeCapture.tsx` dùng
+- [X] T001 [US1] Spike S1 trên branch nháp `186-spike-s1` (KHÔNG merge): màn dev tạm `src/renderer/features/meeting-capture/spike/SpikeCapture.tsx` dùng
       `new AudioContext({ sampleRate: 16000 })` + `audioWorklet.addModule(new URL("./spike-worklet.ts", import.meta.url))` ghi 30 s Int16 qua một kênh IPC tạm ra
       `<userData>/spike.wav`; build `npm run dist:mac` và `npm run dist:win`, chạy bản đóng gói (`file://`, CSP PROD) xác minh 3 điểm của research R1 (16 kHz, addModule
       không bị CSP chặn, đổi tai nghe Bluetooth không lệch tốc độ) + một lần `utilityProcess.fork` nạp `@huggingface/transformers` từ asar (R5 — có cần `asarUnpack`
       `onnxruntime-node/**` không) + cờ `--use-fake-device-for-media-stream` có hiệu lực qua dòng lệnh Electron không (R15).
-- [ ] T002 [US1] Ghi kết quả S1 (máy, phiên bản, đạt/không, fallback chọn) vào mục "Kết quả spike S1" của ADR nháp `docs/04-decisions/2026-10-12-meeting-capture.md`;
+- [X] T002 [US1] Ghi kết quả S1 (máy, phiên bản, đạt/không, fallback chọn) vào mục "Kết quả spike S1" của ADR nháp `docs/04-decisions/2026-10-12-meeting-capture.md`;
       nếu cần fallback thì cập nhật research R1/R5/R15 tương ứng trước khi đi tiếp.
 
 ### Setup
@@ -152,8 +152,9 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 ### Implementation — renderer
 
 - [ ] T050 [P] [US1] `src/renderer/features/meeting-capture/default-title.ts` + `format-duration.ts`. T016 xanh.
-- [ ] T051 [US1] `src/renderer/features/meeting-capture/capture/pcm-worklet.ts` (AudioWorkletProcessor: Float32 → Int16, gom 16 000 mẫu, `postMessage` transfer) và
-      `capture/mic-capture.ts` (I/O: `getUserMedia({audio:{deviceId}})`, AudioContext 16 kHz hoặc fallback S1, `addModule`, gửi lô qua `window.api.meetingSendAudio` với
+- [ ] T051 [US1] `src/renderer/features/meeting-capture/capture/pcm-worklet.ts` (AudioWorkletProcessor: Float32 → Int16, gom 16 000 mẫu, `postMessage` transfer, **lệnh `flush`
+      xả lô lẻ** khi tạm dừng/kết thúc — S1) và `capture/mic-capture.ts` (I/O: `getUserMedia({audio:{deviceId}})`, AudioContext 16 kHz, `addModule` qua
+      `import url from "./pcm-worklet.ts?worker&url"` — S1; seam `IV_E2E_FAKE_MIC` (unpackaged) thay `getUserMedia` bằng `AudioBufferSourceNode` phát lặp fixture; gửi lô qua `window.api.meetingSendAudio` với
       `seq`, đệm ≤ 30 s, tràn ⇒ báo lỗi; `stop()` dừng track thật; ánh xạ `NotAllowedError`/`NotFoundError`).
 - [ ] T052 [US1] `src/renderer/features/meeting-capture/RecordingProvider.tsx` (**cấp app, từ PR A** — đặt trong `src/renderer/main.tsx` quanh `RouterProvider`;
       giữ `mic-capture` + state phiên) + hook `useMeetingRecording.ts` (prepare → getUserMedia → start; pause/resume/stop; `onMeetingState`; `meetingStatus` khi mount
@@ -179,13 +180,13 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### E2E
 
-- [ ] T060 [US1] `tests/e2e/helper.ts`: `launchMeeting(opts)` thêm `--use-fake-ui-for-media-stream`, `--use-fake-device-for-media-stream`,
-      `--use-file-for-fake-audio-capture=<fixture>` (hoặc `IV_E2E_FAKE_MIC` theo kết quả S1) + `IV_ASR_FAKE=1`.
+- [ ] T060 [US1] `tests/e2e/helper.ts`: `launchMeeting(opts)` đặt `IV_E2E_FAKE_MIC=tests/fixtures/meeting/speech-16k.wav` + `IV_ASR_FAKE=1` (S1: cờ fake audio của
+      Chromium treo chờ quyền micro trên macOS nên không dùng); `IV_E2E_MIC_DENIED=1` cho kịch bản từ chối quyền.
 - [ ] T061 [P] [US1] `tests/e2e/meeting-record.spec.ts` theo quickstart dòng PR A (vi + một lượt en); thêm assert: **SC-004** từ mở hộp đến đang ghi ≤ 2 lần
       bấm; **SC-010** gắn `session.defaultSession.webRequest.onBeforeRequest` qua `electronApp.evaluate` đếm request không phải `file:`/`iv-media:`/`devtools:` = 0 và
       `getPrivacyState()` luôn `local` suốt ghi → hoàn tất → mở viewer (AI online tắt, `IV_ASR_FAKE`); **FR-041** đổi sang notebook khác giữa phiên ⇒ đồng hồ vẫn chạy,
       thanh "Đang ghi" hiện, quay lại được.
-- [ ] T062 [P] [US1] `tests/e2e/meeting-permission.spec.ts`: quyền bị từ chối ⇒ hướng dẫn, số nguồn không đổi.
+- [ ] T062 [P] [US1] `tests/e2e/meeting-permission.spec.ts` (`IV_E2E_MIC_DENIED=1`): quyền bị từ chối ⇒ hướng dẫn, số nguồn không đổi.
 - [ ] T063 [P] [US2] `tests/e2e/citation-seek-only.spec.ts`: nguồn mp3 + mp4 sẵn có, bấm `[n]` ⇒ `paused === true`, `currentTime` trong khoảng đoạn trích.
 - [ ] T064 [P] [US1] `tests/e2e/meeting-delete.spec.ts`: xoá nguồn cuộc họp ⇒ thư mục `meetings/<sessionId>` không còn.
 

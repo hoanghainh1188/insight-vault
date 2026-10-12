@@ -11,7 +11,7 @@ npm run build          # e2e cần out/
 
 Fixture: `tests/fixtures/meeting/speech-16k.wav` (≈ 60 s lời nói tiếng Việt + 30 s English + 10 s im lặng, 16 kHz mono, tự thu — không dùng audio có bản quyền).
 
-Biến chỉ có hiệu lực khi app **chưa đóng gói**: `IV_ASR_FAKE=1`, `IV_MEETING_SEGMENT_SEC=<n≥5>`, `IV_E2E_AUDIO_PUMP=<fixture>` (soak), cùng `IV_EMBED_FAKE=1`,
+Biến chỉ có hiệu lực khi app **chưa đóng gói**: `IV_ASR_FAKE=1`, `IV_E2E_FAKE_MIC=<fixture>`, `IV_E2E_MIC_DENIED=1`, `IV_MEETING_SEGMENT_SEC=<n≥5>`, `IV_E2E_AUDIO_PUMP=<fixture>` (soak), cùng `IV_EMBED_FAKE=1`,
 `IV_RERANK_FAKE=1` sẵn có.
 
 ## Spike (trước khi code PR A / PR B)
@@ -28,10 +28,10 @@ npm test                                   # vitest + coverage ≥ 80% logic
 npx playwright test tests/e2e/meeting-*.spec.ts
 ```
 
-| PR | E2E (cờ fake mic + `IV_ASR_FAKE=1`) | Kỳ vọng |
+| PR | E2E (`IV_E2E_FAKE_MIC` + `IV_ASR_FAKE=1`) | Kỳ vọng |
 |---|---|---|
 | A | `meeting-record.spec.ts` | Mở hộp bắt đầu (tên mặc định, thông điệp riêng tư) → Bắt đầu → đồng hồ chạy → Tạm dừng ("Đã tạm dừng — không thu âm") → Tiếp tục → Kết thúc (phiên < 5 phút: không hỏi) → màn hoàn tất → nguồn `Sẵn sàng`; hỏi đáp có `[n]` vào nguồn; bấm `[n]` ⇒ `audio.paused === true`, `currentTime` trong khoảng đoạn trích |
-| A | `meeting-permission.spec.ts` | Từ chối quyền (không truyền `--use-fake-ui-for-media-stream`, handler test) ⇒ hướng dẫn, **không** có nguồn mới |
+| A | `meeting-permission.spec.ts` | Từ chối quyền (`IV_E2E_MIC_DENIED=1`) ⇒ hướng dẫn, **không** có nguồn mới |
 | A | `citation-seek-only.spec.ts` | Nguồn mp3/mp4 sẵn có: bấm `[n]` không tự phát |
 | A | `meeting-delete.spec.ts` | Xoá nguồn cuộc họp ⇒ thư mục `meetings/<id>` biến mất |
 | B | `meeting-draft.spec.ts` | Nháp xuất hiện có timestamp; nhãn "Đang nhận dạng" chỉ ở cửa sổ mới nhất; cuộn lên ⇒ "Quay về hiện tại"; đánh dấu bằng nút/bôi chọn; ngôn ngữ "Tiếng Việt · Tự động"; meter có nhãn chữ |
