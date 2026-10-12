@@ -102,7 +102,7 @@ src/main/services/meeting-capture/
   wav.ts                                                    # MỚI (thuần) — buildWavHeader, repairWavHeader
   segments.ts                                               # MỚI (thuần) — rotate, offsets, locateInSegments, duration
   audio-ingress.ts                                          # MỚI (thuần) — validateAudioBatch (R4)
-  stitch.ts                                                 # MỚI (thuần) — stitchSegments (chồng lấn 5 s)
+  stitch.ts                                                 # MỚI (thuần) — stitchTranscriptSegments (chồng lấn 5 s)
   meeting-transcript.ts                                     # MỚI (thuần) — buildMeetingTranscript ⇒ text + spans + timeMap
   disk-guard.ts                                             # MỚI (thuần) — diskLevel / canStart (dùng từ A cho canStart; cảnh báo ở C1)
   meeting-repo.ts                                           # MỚI — DB meeting_session / marker / span
@@ -174,7 +174,7 @@ tests/e2e/meeting-viewer.spec.ts
 ## Hàm thuần — TDD (Constitution IV)
 
 `decideMediaPermission`, `decidePermissionCheck`, `sessionTransition`, `buildWavHeader`, `repairWavHeader`, `segmentShouldRotate`, `segmentOffsets`,
-`locateInSegments`, `validateAudioBatch`, `stitchSegments`, `buildMeetingTranscript`, `diskLevel`, `parseWorkerMessage`, `fakeTranscribe`, `defaultMeetingTitle`,
+`locateInSegments`, `validateAudioBatch`, `stitchTranscriptSegments`, `buildMeetingTranscript`, `diskLevel`, `parseWorkerMessage`, `fakeTranscribe`, `defaultMeetingTitle`,
 `formatDuration`, `isSpeechWindow`, `dedupeHallucination`, `planDraftQueue`, `languagePolicy`, `mergeDraft`, `shouldAutoScroll`, `levelState`,
 `serializeCheckpoint`/`parseCheckpoint`, `classifyOnStartup`, `matchShortcut`, `spanAtTime`, `searchTranscript`, `markerExcerpt`, `buildMeetingMarkdown`; cộng
 migration v12 (DB tạm), `meeting-repo`, catalog i18n vi↔en, whitelist kênh mới.

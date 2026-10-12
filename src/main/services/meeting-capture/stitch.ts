@@ -4,14 +4,14 @@ import type { Segment } from "../ingestion/audio/audio-transcript";
 // Phân đoạn i>0 được nhận dạng kèm `overlapSec` cuối phân đoạn trước (ngữ cảnh). Vùng chồng lấn chia đôi tại
 // cut_i = start_i − overlap/2: segment thuộc phân đoạn i khi điểm giữa ∈ [cut_i, cut_{i+1}).
 
-export interface SegmentResult {
+export interface CaptureSegmentResult {
   /** Giây bắt đầu của phân đoạn trên trục thời gian audio. */
   startSec: number;
   /** Segment đã quy về thời gian tuyệt đối. */
   segments: readonly Segment[];
 }
 
-export function shiftSegments(
+export function shiftTranscriptSegments(
   segments: readonly Segment[],
   deltaSec: number,
 ): Segment[] {
@@ -22,8 +22,8 @@ export function shiftSegments(
   }));
 }
 
-export function stitchSegments(
-  results: readonly SegmentResult[],
+export function stitchTranscriptSegments(
+  results: readonly CaptureSegmentResult[],
   overlapSec: number,
 ): Segment[] {
   const sorted = [...results].sort((a, b) => a.startSec - b.startSec);

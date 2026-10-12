@@ -1,9 +1,10 @@
 # Tasks: Meeting Capture — ghi âm cuộc họp, transcript gần thời gian thực, nguồn cuộc họp trích dẫn theo timestamp (186)
 
 > **Sửa sau analyze (2026-10-12):** K1 diễn giải Constitution III (không còn "ngoại lệ") — plan/research/spec/T065 · P1 `RecordingProvider` + thanh "Đang ghi"
-> + giám sát renderer/không lô 5 s chuyển vào PR A (T042, T047, T052, T054; T113/T117 thành nâng cấp) · P2 US1 AC5/FR-009: PR A chỉ lưu khoảng ngừng, hiển thị ở B/C2 ·
-> C1 SC-002 (T022, T127) · C2 SC-001 180 phút (T127) · C3 SC-012 (T019) · C4 SC-010 tự động (T061) · I1 `MeetingState.segments` (contract, T094) · T1–T3 glossary ·
-> D1 electron-store (contract, T053) · A1 ngôn ngữ bản chốt PR A (T042) · A2 không có micro (T053) · A3 SC-004/SC-008 (T061, T099) · A4 ghi chú lệch D8 (T070).
+>
+> - giám sát renderer/không lô 5 s chuyển vào PR A (T042, T047, T052, T054; T113/T117 thành nâng cấp) · P2 US1 AC5/FR-009: PR A chỉ lưu khoảng ngừng, hiển thị ở B/C2 ·
+>   C1 SC-002 (T022, T127) · C2 SC-001 180 phút (T127) · C3 SC-012 (T019) · C4 SC-010 tự động (T061) · I1 `MeetingState.segments` (contract, T094) · T1–T3 glossary ·
+>   D1 electron-store (contract, T053) · A1 ngôn ngữ bản chốt PR A (T042) · A2 không có micro (T053) · A3 SC-004/SC-008 (T061, T099) · A4 ghi chú lệch D8 (T070).
 
 **Input**: `specs/20261012-072338-meeting-capture/` (plan, spec, research R1–R18, data-model, contracts/meeting-ipc.md, quickstart); quyết định
 `docs/04-decisions/2026-10-12-meeting-capture-clarify.md`.
@@ -34,64 +35,64 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### Spike S1 (task đầu — chặn mọi task renderer capture)
 
-- [X] T001 [US1] Spike S1 trên branch nháp `186-spike-s1` (KHÔNG merge): màn dev tạm `src/renderer/features/meeting-capture/spike/SpikeCapture.tsx` dùng
+- [x] T001 [US1] Spike S1 trên branch nháp `186-spike-s1` (KHÔNG merge): màn dev tạm `src/renderer/features/meeting-capture/spike/SpikeCapture.tsx` dùng
       `new AudioContext({ sampleRate: 16000 })` + `audioWorklet.addModule(new URL("./spike-worklet.ts", import.meta.url))` ghi 30 s Int16 qua một kênh IPC tạm ra
       `<userData>/spike.wav`; build `npm run dist:mac` và `npm run dist:win`, chạy bản đóng gói (`file://`, CSP PROD) xác minh 3 điểm của research R1 (16 kHz, addModule
       không bị CSP chặn, đổi tai nghe Bluetooth không lệch tốc độ) + một lần `utilityProcess.fork` nạp `@huggingface/transformers` từ asar (R5 — có cần `asarUnpack`
       `onnxruntime-node/**` không) + cờ `--use-fake-device-for-media-stream` có hiệu lực qua dòng lệnh Electron không (R15).
-- [X] T002 [US1] Ghi kết quả S1 (máy, phiên bản, đạt/không, fallback chọn) vào mục "Kết quả spike S1" của ADR nháp `docs/04-decisions/2026-10-12-meeting-capture.md`;
+- [x] T002 [US1] Ghi kết quả S1 (máy, phiên bản, đạt/không, fallback chọn) vào mục "Kết quả spike S1" của ADR nháp `docs/04-decisions/2026-10-12-meeting-capture.md`;
       nếu cần fallback thì cập nhật research R1/R5/R15 tương ứng trước khi đi tiếp.
 
 ### Setup
 
-- [X] T003 [US1] Thu fixture `tests/fixtures/meeting/speech-16k.wav` (≈ 60 s tiếng Việt + 30 s English + 10 s im lặng, 16 kHz mono, tự thu) + `tests/fixtures/meeting/README.md`
+- [x] T003 [US1] Thu fixture `tests/fixtures/meeting/speech-16k.wav` (≈ 60 s tiếng Việt + 30 s English + 10 s im lặng, 16 kHz mono, tự thu) + `tests/fixtures/meeting/README.md`
       ghi nguồn và giấy phép.
-- [X] T004 [US1] Tạo domain i18n `src/shared/i18n/domains/meeting.ts` (`meetingVi` as const, `meetingEn: Widen<typeof meetingVi>`), đăng ký namespace `meeting` trong
+- [x] T004 [US1] Tạo domain i18n `src/shared/i18n/domains/meeting.ts` (`meetingVi` as const, `meetingEn: Widen<typeof meetingVi>`), đăng ký namespace `meeting` trong
       `src/shared/i18n/vi.ts` và `src/shared/i18n/en.ts` (khoá được bổ sung dần ở các task UI).
 
 ### Tests trước (FAIL rồi mới code)
 
-- [X] T005 [P] [US1] Test TRƯỚC `tests/unit/permissions.test.ts` cho `decideMediaPermission` / `decidePermissionCheck` (`src/main/services/app-shell/permissions.ts`):
+- [x] T005 [P] [US1] Test TRƯỚC `tests/unit/permissions.test.ts` cho `decideMediaPermission` / `decidePermissionCheck` (`src/main/services/app-shell/permissions.ts`):
       chỉ `true` khi `permission="media"`, `mediaTypes` = `["audio"]`, origin renderer app (file:// hoặc URL dev), cửa sổ chính, `now < armedUntil`; từ chối khi có
       `video`, `mediaTypes` rỗng, origin lạ, hết cổng, mọi permission khác (`geolocation`, `notifications`, `clipboard-read`, `camera`…).
-- [X] T006 [P] [US1] Test TRƯỚC `tests/unit/migration-meeting.test.ts` (khuôn `migration-source.test.ts`): chạy 1..11 + dữ liệu mẫu ⇒ `runMigrations` lên 12; 3 bảng +
+- [x] T006 [P] [US1] Test TRƯỚC `tests/unit/migration-meeting.test.ts` (khuôn `migration-source.test.ts`): chạy 1..11 + dữ liệu mẫu ⇒ `runMigrations` lên 12; 3 bảng +
       index theo data-model §2; CHECK `phase`, `language_mode`, `transcript_quality`, `marker.kind` từ chối giá trị lạ; cascade khi xoá `source`; dữ liệu cũ giữ nguyên;
       `PRAGMA foreign_key_check` rỗng; `user_version = 12`.
-- [X] T007 [P] [US1] Test TRƯỚC `tests/unit/meeting-session-state.test.ts` cho `sessionTransition(state, event)` (`session-state.ts`): mọi chuyển ở data-model §5
+- [x] T007 [P] [US1] Test TRƯỚC `tests/unit/meeting-session-state.test.ts` cho `sessionTransition(state, event)` (`session-state.ts`): mọi chuyển ở data-model §5
       hợp lệ; chuyển không hợp lệ trả lỗi (vd `resume` khi `recording`); `ended_by_user` đặt đúng; ánh xạ phase ⇒ `source.status`.
-- [X] T008 [P] [US1] Test TRƯỚC `tests/unit/meeting-wav.test.ts`: `buildWavHeader(dataBytes, 16000, 1, 16)` đúng 44 byte (RIFF/WAVE/fmt/data, byte rate, block align);
+- [x] T008 [P] [US1] Test TRƯỚC `tests/unit/meeting-wav.test.ts`: `buildWavHeader(dataBytes, 16000, 1, 16)` đúng 44 byte (RIFF/WAVE/fmt/data, byte rate, block align);
       `repairWavHeader(fileSize)` cắt byte lẻ, độ dài data = fileSize − 44, tệp < 44 byte ⇒ rỗng hợp lệ.
-- [X] T009 [P] [US1] Test TRƯỚC `tests/unit/meeting-segments.test.ts` (`segments.ts`): `segmentShouldRotate`, `segmentOffsets` (offset = tổng mẫu phân đoạn trước),
+- [x] T009 [P] [US1] Test TRƯỚC `tests/unit/meeting-segments.test.ts` (`segments.ts`): `segmentShouldRotate`, `segmentOffsets` (offset = tổng mẫu phân đoạn trước),
       `durationSec`, `locateInSegments(segments, tSec)` ⇒ `{index, offsetSec}` (biên đầu/cuối, ngoài phạm vi ⇒ null), `playbackTarget(phase, segments, mergedExists)`
       ⇒ `merged` | `segment n`.
-- [X] T010 [P] [US1] Test TRƯỚC `tests/unit/meeting-audio-ingress.test.ts` cho `validateAudioBatch(state, msg)`: sai sessionId / sender / phase ⇒ `reject`; byteLength 0,
+- [x] T010 [P] [US1] Test TRƯỚC `tests/unit/meeting-audio-ingress.test.ts` cho `validateAudioBatch(state, msg)`: sai sessionId / sender / phase ⇒ `reject`; byteLength 0,
       lẻ, > 65 536 ⇒ `reject`; seq trùng ⇒ `duplicate`; seq nhảy ⇒ `accept` + `gap`; > 4 lô/s ⇒ `rateLimited`; không ném.
-- [X] T011 [P] [US1] Test TRƯỚC `tests/unit/meeting-stitch.test.ts` cho `stitchSegments(prevTail, current, overlapSec=5)`: bỏ segment thuộc vùng chồng lấn, không mất
+- [x] T011 [P] [US1] Test TRƯỚC `tests/unit/meeting-stitch.test.ts` cho `stitchTranscriptSegments(prevTail, current, overlapSec=5)`: bỏ segment thuộc vùng chồng lấn, không mất
       chữ ở ranh giới, không lặp câu bị cắt đôi, phân đoạn đầu không có prevTail.
-- [X] T012 [P] [US1] Test TRƯỚC `tests/unit/meeting-transcript.test.ts` cho `buildMeetingTranscript(segmentsBySeg, offsets)`: text nối `\n` đã trim; spans có thời gian
+- [x] T012 [P] [US1] Test TRƯỚC `tests/unit/meeting-transcript.test.ts` cho `buildMeetingTranscript(segmentsBySeg, offsets)`: text nối `\n` đã trim; spans có thời gian
       **audio tuyệt đối**; khoảng ngừng KHÔNG xuất hiện trong text; `timeMap` dùng được với `timeForCharRange` sẵn có; bất biến `cleanText(text) === text` (offset không
       lệch); 0 segment ⇒ text rỗng.
-- [X] T013 [P] [US1] Test TRƯỚC `tests/unit/meeting-disk-guard.test.ts` cho `diskLevel({freeBytes, recordedBytes, bytesPerMin})` + `canStart`: ngưỡng 30/5/1 phút, dự phòng
+- [x] T013 [P] [US1] Test TRƯỚC `tests/unit/meeting-disk-guard.test.ts` cho `diskLevel({freeBytes, recordedBytes, bytesPerMin})` + `canStart`: ngưỡng 30/5/1 phút, dự phòng
       2× + 500 MB, start bị chặn < 10 phút, freeBytes âm sau dự phòng ⇒ `stop`.
-- [X] T014 [P] [US1] Test TRƯỚC `tests/unit/meeting-asr-protocol.test.ts` cho `parseWorkerMessage` (main nhận) và `parseMainMessage` (worker nhận): đúng mọi loại ở R5,
+- [x] T014 [P] [US1] Test TRƯỚC `tests/unit/meeting-asr-protocol.test.ts` cho `parseWorkerMessage` (main nhận) và `parseMainMessage` (worker nhận): đúng mọi loại ở R5,
       từ chối thiếu trường / sai kiểu / `reqId` không phải chuỗi / đường dẫn ngoài `meetings/`.
-- [X] T015 [P] [US1] Test TRƯỚC `tests/unit/meeting-fake-asr.test.ts` cho `fakeTranscribe(pcm, windowStartSec)`: segment "đoạn <n>" với timestamp đúng cửa sổ, cửa sổ im
+- [x] T015 [P] [US1] Test TRƯỚC `tests/unit/meeting-fake-asr.test.ts` cho `fakeTranscribe(pcm, windowStartSec)`: segment "đoạn <n>" với timestamp đúng cửa sổ, cửa sổ im
       lặng ⇒ rỗng, xác định (cùng vào ⇒ cùng ra).
-- [X] T016 [P] [US1] Test TRƯỚC `tests/unit/meeting-default-title.test.ts` cho `defaultMeetingTitle(date, lang)` (vi "Cuộc họp 12/10, 14:30", en tương ứng) và
+- [x] T016 [P] [US1] Test TRƯỚC `tests/unit/meeting-default-title.test.ts` cho `defaultMeetingTitle(date, lang)` (vi "Cuộc họp 12/10, 14:30", en tương ứng) và
       `formatDuration(sec)` (`00:00:07`, `01:42:18`, > 10 giờ).
-- [X] T017 [P] [US1] Test TRƯỚC `tests/unit/meeting-channels-whitelist.test.ts` (khuôn `chat-channels-whitelist.test.ts`): kênh PR A trong `CHANNELS` + whitelist + preload,
+- [x] T017 [P] [US1] Test TRƯỚC `tests/unit/meeting-channels-whitelist.test.ts` (khuôn `chat-channels-whitelist.test.ts`): kênh PR A trong `CHANNELS` + whitelist + preload,
       tên duy nhất, `meeting:audio` là send, `meeting:state` là push (không trong `ChannelResponse`).
-- [X] T018 [P] [US1] Test TRƯỚC `tests/unit/meeting-repo.test.ts` (DB tạm v12): tạo/đọc/cập nhật `meeting_session` (phase, segments_json, pause_gaps_json, duration,
+- [x] T018 [P] [US1] Test TRƯỚC `tests/unit/meeting-repo.test.ts` (DB tạm v12): tạo/đọc/cập nhật `meeting_session` (phase, segments_json, pause_gaps_json, duration,
       quality, final_progress); `replaceSpans` xoá-rồi-chèn trong giao dịch; `listByPhase`; JSON hỏng ⇒ mảng rỗng + không ném.
-- [X] T019 [P] [US1] Test TRƯỚC `tests/unit/pipeline-meeting.test.ts`: `createMeetingSource` tạo `kind="meeting"`, `status="processing"`, `origin="meeting:<id>"`;
+- [x] T019 [P] [US1] Test TRƯỚC `tests/unit/pipeline-meeting.test.ts`: `createMeetingSource` tạo `kind="meeting"`, `status="processing"`, `origin="meeting:<id>"`;
       `ingestParsed` chunk/embed/store với `tStart/tEnd` từ timeMap ⇒ `ready`; `resumeInterrupted` bỏ qua `meeting`; `retry`/`relink` meeting ⇒ `notSupported`;
       `remove` meeting gọi hook xoá thư mục; `listByNotebook` trả `meetingPhase`/`transcriptQuality`; `detectKindFromPath` không bao giờ trả `meeting`; **SC-012**: một PDF enqueue trong lúc cuộc họp đang chốt ASR chạy xong trước khi bước chốt kết thúc (chỉ
       `ingestParsed` vào hàng đợi chung).
-- [X] T020 [P] [US1] Test TRƯỚC `tests/unit/vault-backup-meeting.test.ts`: snapshot có `meetings/`; `VAULT_ITEMS` có `meetings`; bản sao lưu schema v11 ⇒ migrate lên v12;
+- [x] T020 [P] [US1] Test TRƯỚC `tests/unit/vault-backup-meeting.test.ts`: snapshot có `meetings/`; `VAULT_ITEMS` có `meetings`; bản sao lưu schema v11 ⇒ migrate lên v12;
       `expectedSchema(12)` khớp DB mới; ước lượng dung lượng ghi âm cho hộp sao lưu.
-- [X] T021 [P] [US2] Test TRƯỚC (viết vào `tests/unit/source-viewer-audio.test.ts` — sửa kỳ vọng 049 cũ "tự phát" thay vì tạo tệp trùng) (jsdom): mở citation có `tStart` cho nguồn audio, video, meeting ⇒ `currentTime = tStart`,
+- [x] T021 [P] [US2] Test TRƯỚC (viết vào `tests/unit/source-viewer-audio.test.ts` — sửa kỳ vọng 049 cũ "tự phát" thay vì tạo tệp trùng) (jsdom): mở citation có `tStart` cho nguồn audio, video, meeting ⇒ `currentTime = tStart`,
       `play` KHÔNG được gọi; đổi citation khi đang phát ⇒ tua + `pause`.
-- [X] T022 [P] [US1] Test TRƯỚC `tests/unit/meeting-service.test.ts` với fake writer/files/asr-client/repo/pipeline: start (sau prepare, cổng quyền, một phiên duy nhất,
+- [x] T022 [P] [US1] Test TRƯỚC `tests/unit/meeting-service.test.ts` với fake writer/files/asr-client/repo/pipeline: start (sau prepare, cổng quyền, một phiên duy nhất,
       chặn khi đĩa < 10 phút) ⇒ tạo nguồn; audio batch ⇒ writer; pause/resume ⇒ đóng/mở phân đoạn + gap; stop ⇒ finalizing ⇒ ASR chốt từng phân đoạn với chồng lấn ⇒
       `replaceSpans` + `ingestParsed` ⇒ `done`; checkpoint `final/seg-*.json` bỏ qua phân đoạn đã xong; ASR lỗi không nháp ⇒ `incomplete` + `ready` 0 chunk;
       `recoverOnStartup` sửa header + tự hoàn tất mọi phiên dang dở; **worker treo/chết giữa phiên (SC-002)** ⇒ writer vẫn nhận đủ mẫu, thời lượng đúng, worker được
@@ -99,111 +100,111 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### Implementation — main
 
-- [X] T023 [US1] Append migration `version: 12` vào cuối `MIGRATIONS` trong `src/main/db/migrations.ts` theo data-model §2 (3 bảng + 2 index). T006 xanh.
-- [X] T024 [US1] `src/shared/ipc/types.ts`: `SourceKind` thêm `"meeting"`; `SourceSummary.meetingPhase?`, `transcriptQuality?`; kiểu `MeetingPhase`, `MeetingState`,
+- [x] T023 [US1] Append migration `version: 12` vào cuối `MIGRATIONS` trong `src/main/db/migrations.ts` theo data-model §2 (3 bảng + 2 index). T006 xanh.
+- [x] T024 [US1] `src/shared/ipc/types.ts`: `SourceKind` thêm `"meeting"`; `SourceSummary.meetingPhase?`, `transcriptQuality?`; kiểu `MeetingPhase`, `MeetingState`,
       `MeetingPrepareResult`, `MeetingStartInput`, `MeetingMarker`, `LanguageMode` theo contracts/meeting-ipc.md.
-- [X] T025 [US1] `src/main/services/meeting-capture/meeting-constants.ts`: hằng số R3/R13 (`SAMPLE_RATE`, `SEGMENT_SEC` có override `IV_MEETING_SEGMENT_SEC` khi chưa
+- [x] T025 [US1] `src/main/services/meeting-capture/meeting-constants.ts`: hằng số R3/R13 (`SAMPLE_RATE`, `SEGMENT_SEC` có override `IV_MEETING_SEGMENT_SEC` khi chưa
       đóng gói, `FSYNC_SEC`, `CHECKPOINT_SEC`, `BATCH_MAX_BYTES`, `RENDERER_BUFFER_SEC`, `BYTES_PER_MIN`, `ARM_WINDOW_MS=15000`, `END_CONFIRM_MIN_SEC=300`,
       `FINAL_OVERLAP_SEC=5`, `FINAL_MODEL`).
-- [X] T026 [P] [US1] `src/main/services/app-shell/permissions.ts`; trong `src/main/index.ts` `installSecurity` dùng `decideMediaPermission`/`decidePermissionCheck` với
+- [x] T026 [P] [US1] `src/main/services/app-shell/permissions.ts`; trong `src/main/index.ts` `installSecurity` dùng `decideMediaPermission`/`decidePermissionCheck` với
       `armedUntil` lấy từ meeting-service, giữ `setDevicePermissionHandler(() => false)`, sửa comment ("chỉ mic audio khi người dùng bắt đầu ghi — 186"). T005 xanh.
-- [X] T027 [P] [US1] `src/main/services/meeting-capture/session-state.ts`. T007 xanh.
-- [X] T028 [P] [US1] `src/main/services/meeting-capture/wav.ts`. T008 xanh.
-- [X] T029 [P] [US1] `src/main/services/meeting-capture/segments.ts`. T009 xanh.
-- [X] T030 [P] [US1] `src/main/services/meeting-capture/audio-ingress.ts`. T010 xanh.
-- [X] T031 [P] [US1] `src/main/services/meeting-capture/stitch.ts`. T011 xanh.
-- [X] T032 [P] [US1] `src/main/services/meeting-capture/meeting-transcript.ts` (dùng lại `TimeMapEntry` của `ingestion/audio/audio-transcript.ts`). T012 xanh.
-- [X] T033 [P] [US1] `src/main/services/meeting-capture/disk-guard.ts`. T013 xanh.
-- [X] T034 [P] [US1] `src/main/services/meeting-capture/asr-protocol.ts`. T014 xanh.
-- [X] T035 [P] [US1] `src/main/services/meeting-capture/fake-asr.ts`. T015 xanh.
-- [X] T036 [US1] `src/main/services/meeting-capture/meeting-repo.ts` (SQL tham số hoá; sau T023). T018 xanh.
-- [X] T037 [US1] `src/main/services/ingestion/pipeline.ts`: tách `indexParsed` khỏi `processFull`; thêm `createMeetingSource`, `ingestParsed`; `resumeInterrupted` bỏ
+- [x] T027 [P] [US1] `src/main/services/meeting-capture/session-state.ts`. T007 xanh.
+- [x] T028 [P] [US1] `src/main/services/meeting-capture/wav.ts`. T008 xanh.
+- [x] T029 [P] [US1] `src/main/services/meeting-capture/segments.ts`. T009 xanh.
+- [x] T030 [P] [US1] `src/main/services/meeting-capture/audio-ingress.ts`. T010 xanh.
+- [x] T031 [P] [US1] `src/main/services/meeting-capture/stitch.ts`. T011 xanh.
+- [x] T032 [P] [US1] `src/main/services/meeting-capture/meeting-transcript.ts` (dùng lại `TimeMapEntry` của `ingestion/audio/audio-transcript.ts`). T012 xanh.
+- [x] T033 [P] [US1] `src/main/services/meeting-capture/disk-guard.ts`. T013 xanh.
+- [x] T034 [P] [US1] `src/main/services/meeting-capture/asr-protocol.ts`. T014 xanh.
+- [x] T035 [P] [US1] `src/main/services/meeting-capture/fake-asr.ts`. T015 xanh.
+- [x] T036 [US1] `src/main/services/meeting-capture/meeting-repo.ts` (SQL tham số hoá; sau T023). T018 xanh.
+- [x] T037 [US1] `src/main/services/ingestion/pipeline.ts`: tách `indexParsed` khỏi `processFull`; thêm `createMeetingSource`, `ingestParsed`; `resumeInterrupted` bỏ
       `kind="meeting"`; `retry`/`relink` meeting ⇒ `UserFacingError("notSupported")`; `remove` gọi `onRemoveMeeting(sourceId)` (tiêm); `src/main/services/ingestion/source-repo.ts`
       `listByNotebook` LEFT JOIN `meeting_session`; `src/main/services/ingestion/parsers/index.ts` `SIZE_LIMITS.meeting`. T019 xanh.
-- [X] T038 [US1] `src/main/services/meeting-capture/capture-writer.ts` (I/O): mở `seg-NNNN.wav` với header 0, append Int16, `fsync` mỗi `FSYNC_SEC`, đóng ⇒ ghi header
+- [x] T038 [US1] `src/main/services/meeting-capture/capture-writer.ts` (I/O): mở `seg-NNNN.wav` với header 0, append Int16, `fsync` mỗi `FSYNC_SEC`, đóng ⇒ ghi header
       đúng + fsync; xoay khi `segmentShouldRotate`.
-- [X] T039 [US1] `src/main/services/meeting-capture/meeting-files.ts` (I/O): tạo/xoá thư mục phiên `<userData>/meetings/<sessionId>/`, ghép `meeting.wav` theo stream,
+- [x] T039 [US1] `src/main/services/meeting-capture/meeting-files.ts` (I/O): tạo/xoá thư mục phiên `<userData>/meetings/<sessionId>/`, ghép `meeting.wav` theo stream,
       xoá `seg-*.wav` + `final/` sau `ready`, `resolvePlayback(sourceId)` (dùng `playbackTarget`), ghi `final/seg-NNNN.json` nguyên tử (tmp→rename), sửa header phân
       đoạn mở (dùng `repairWavHeader`). Đường dẫn kiểm prefix `meetings/`.
-- [X] T040 [US1] `src/main/services/meeting-capture/asr-worker.ts` (entry `utilityProcess`): nhận `init`, `final` (đọc phân đoạn + 5 s đuôi phân đoạn trước, resample
+- [x] T040 [US1] `src/main/services/meeting-capture/asr-worker.ts` (entry `utilityProcess`): nhận `init`, `final` (đọc phân đoạn + 5 s đuôi phân đoạn trước, resample
       không cần — đã 16 kHz), `cancel`; lazy pipeline `FINAL_MODEL` với `env.cacheDir`; báo `modelDownload{active}`; `IV_ASR_FAKE` ⇒ `fakeTranscribe`; thêm input
       `asr-worker: resolve("src/main/services/meeting-capture/asr-worker.ts")` trong `electron.vite.config.ts`.
-- [X] T041 [US1] `src/main/services/meeting-capture/asr-client.ts` (I/O): `utilityProcess.fork(join(__dirname, "asr-worker.js"))`, request/response theo `reqId`,
+- [x] T041 [US1] `src/main/services/meeting-capture/asr-client.ts` (I/O): `utilityProcess.fork(join(__dirname, "asr-worker.js"))`, request/response theo `reqId`,
       kiểm bằng `parseWorkerMessage`, restart ≤ 3 lần/5 phút, `modelDownload` ⇒ `setEgressActive(active, "model")`.
-- [X] T042 [US1] `src/main/services/meeting-capture/meeting-service.ts`: `prepare` (quyền OS macOS `getMediaAccessStatus`/`askForMediaAccess`, model, đĩa qua
+- [x] T042 [US1] `src/main/services/meeting-capture/meeting-service.ts`: `prepare` (quyền OS macOS `getMediaAccessStatus`/`askForMediaAccess`, model, đĩa qua
       `computeStorageInfo`, online, mở cổng), `start`, `acceptAudio`, `pause`, `resume`, `stop`, `status`, `rename`, `finalize` (R8 — ngôn ngữ bản chốt PR A: `vi`/`en` ⇒ khoá, `auto`/`multi` ⇒ `null`), `recoverOnStartup` (PR A: tự hoàn
       tất), `onSourceRemoved`, `isRecordingNotebook`, `onRendererGone` + giám sát "không lô > 5 s" (PR A: tự kết thúc + hoàn tất); push `meeting:state` mỗi 1 s và khi đổi phase chỉ tới `ownerWebContentsId`; tiến độ hoàn tất qua `source:progress`.
       T022 xanh.
-- [X] T043 [US1] `src/main/services/source-viewer/media-serve.ts`: chấp nhận `kind="meeting"`, đường dẫn từ `meetingFiles.resolvePlayback` (không từ `origin`), Range/206
+- [x] T043 [US1] `src/main/services/source-viewer/media-serve.ts`: chấp nhận `kind="meeting"`, đường dẫn từ `meetingFiles.resolvePlayback` (không từ `origin`), Range/206
       giữ nguyên; path không ra renderer.
-- [X] T044 [US1] `src/main/services/vault-backup/snapshot.ts` + `restore-swap.ts`: sao chép `meetings/`, `VAULT_ITEMS` thêm `meetings`, schema guard v12; hộp sao lưu hiện
+- [x] T044 [US1] `src/main/services/vault-backup/snapshot.ts` + `restore-swap.ts`: sao chép `meetings/`, `VAULT_ITEMS` thêm `meetings`, schema guard v12; hộp sao lưu hiện
       dòng "Ghi âm cuộc họp: N MB" (`dirSize`) — chuỗi i18n domain `backup`. T020 xanh.
-- [X] T045 [US1] `notebook:delete` trong `src/main/ipc/register.ts` (hoặc service notebooks): trả `UserFacingError("meetingRecording")` khi
+- [x] T045 [US1] `notebook:delete` trong `src/main/ipc/register.ts` (hoặc service notebooks): trả `UserFacingError("meetingRecording")` khi
       `meetingService.isRecordingNotebook(id)`.
-- [X] T046 [US1] `src/shared/ipc/channels.ts` (kênh PR A theo contract) + `src/preload/index.ts` (hàm từng kênh: `meetingPrepare`, `meetingStart`, `meetingSendAudio`,
+- [x] T046 [US1] `src/shared/ipc/channels.ts` (kênh PR A theo contract) + `src/preload/index.ts` (hàm từng kênh: `meetingPrepare`, `meetingStart`, `meetingSendAudio`,
       `meetingPause`, `meetingResume`, `meetingStop`, `meetingStatus`, `meetingRename`, `onMeetingState`) + `src/main/ipc/register.ts` (mục "meeting-capture",
       `safeHandleWithSender` cho start/pause/resume/stop, `ipcMain.on` cho `meeting:audio` chỉ nhận từ owner). T017 xanh.
-- [X] T047 [US1] `src/main/index.ts`: tạo `asrClient` + `meetingService` (tiêm repo, pipeline, files, writer factory, storage, privacy, notification), gọi
+- [x] T047 [US1] `src/main/index.ts`: tạo `asrClient` + `meetingService` (tiêm repo, pipeline, files, writer factory, storage, privacy, notification), gọi
       `recoverOnStartup()` sau `resumeInterrupted()`; `webContents.on("render-process-gone")` ⇒ `meetingService.onRendererGone()`; thông báo hệ điều hành (`Notification`) khi nguồn cuộc họp `ready` mà cửa sổ không focus (D15).
-- [X] T048 [US1] `electron-builder.yml`: `mac.extendInfo.NSMicrophoneUsageDescription` (R11), `mac.entitlements`/`entitlementsInherit: build/entitlements.mac.plist`;
+- [x] T048 [US1] `electron-builder.yml`: `mac.extendInfo.NSMicrophoneUsageDescription` (R11), `mac.entitlements`/`entitlementsInherit: build/entitlements.mac.plist`;
       tạo `build/entitlements.mac.plist` (`com.apple.security.device.audio-input`); `asarUnpack` `onnxruntime-node/**` nếu S1 yêu cầu.
-- [X] T049 [US1] `vitest.config.ts`: thêm tệp thuần mới vào `coverage.include`, tệp I/O vào `exclude`.
+- [x] T049 [US1] `vitest.config.ts`: thêm tệp thuần mới vào `coverage.include`, tệp I/O vào `exclude`.
 
 ### Implementation — renderer
 
-- [X] T050 [P] [US1] `src/renderer/features/meeting-capture/default-title.ts` + `src/shared/meeting/format-duration.ts` (dùng chung main/renderer — bản xuất Markdown C2 cũng cần). T016 xanh.
-- [X] T051 [US1] `src/renderer/features/meeting-capture/capture/pcm-worklet.ts` (AudioWorkletProcessor: Float32 → Int16, gom 16 000 mẫu, `postMessage` transfer, **lệnh `flush`
+- [x] T050 [P] [US1] `src/renderer/features/meeting-capture/default-title.ts` + `src/shared/meeting/format-duration.ts` (dùng chung main/renderer — bản xuất Markdown C2 cũng cần). T016 xanh.
+- [x] T051 [US1] `src/renderer/features/meeting-capture/capture/pcm-worklet.ts` (AudioWorkletProcessor: Float32 → Int16, gom 16 000 mẫu, `postMessage` transfer, **lệnh `flush`
       xả lô lẻ** khi tạm dừng/kết thúc — S1) và `capture/mic-capture.ts` (I/O: `getUserMedia({audio:{deviceId}})`, AudioContext 16 kHz, `addModule` qua
       `import url from "./pcm-worklet.ts?worker&url"` — S1; seam `IV_E2E_FAKE_MIC` (unpackaged) thay `getUserMedia` bằng `AudioBufferSourceNode` phát lặp fixture; gửi lô qua `window.api.meetingSendAudio` với
       `seq`, đệm ≤ 30 s, tràn ⇒ báo lỗi; `stop()` dừng track thật; ánh xạ `NotAllowedError`/`NotFoundError`).
-- [X] T052 [US1] `src/renderer/features/meeting-capture/RecordingProvider.tsx` (**cấp app, từ PR A** — đặt trong `src/renderer/main.tsx` quanh `RouterProvider`;
+- [x] T052 [US1] `src/renderer/features/meeting-capture/RecordingProvider.tsx` (**cấp app, từ PR A** — đặt trong `src/renderer/main.tsx` quanh `RouterProvider`;
       giữ `mic-capture` + state phiên) + hook `useMeetingRecording.ts` (prepare → getUserMedia → start; pause/resume/stop; `onMeetingState`; `meetingStatus` khi mount
       để gắn lại) + `RecordingStatusBar.tsx` trong header `src/renderer/app/App.tsx` ("● Đang ghi 00:12:03 — Quay lại") ⇒ đổi notebook/route KHÔNG dừng mic (FR-041,
       FR-048).
-- [X] T053 [US1] `src/renderer/features/meeting-capture/StartRecordingDialog.tsx`: tên mặc định, notebook đích, chọn micro khi > 1 (`enumerateDevices`), ngôn ngữ (4 lựa
+- [x] T053 [US1] `src/renderer/features/meeting-capture/StartRecordingDialog.tsx`: tên mặc định, notebook đích, chọn micro khi > 1 (`enumerateDevices`), ngôn ngữ (4 lựa
       chọn; PR A chỉ lưu, chưa phát hiện), thông điệp riêng tư + phụ chú online / thiếu model (C6), `canStart=false` ⇒ giải thích, quyền bị từ chối ⇒ hướng dẫn theo
       hệ điều hành (không tạo nguồn); nhớ micro + ngôn ngữ lần trước qua **electron-store ở main** (`lastDeviceLabel`/`lastLanguageMode` của `meeting:prepare`, lưu khi `meeting:start` — D15);
       không có thiết bị thu (`enumerateDevices` rỗng) ⇒ nút Bắt đầu vô hiệu + giải thích (Edge Case).
-- [X] T054 [US1] `src/renderer/features/meeting-capture/RecordingView.tsx` (đọc state từ `RecordingProvider`): thanh đầu `● Đang ghi · hh:mm:ss · Lưu trên máy` (chữ + chấm, đồng hồ nổi bật,
+- [x] T054 [US1] `src/renderer/features/meeting-capture/RecordingView.tsx` (đọc state từ `RecordingProvider`): thanh đầu `● Đang ghi · hh:mm:ss · Lưu trên máy` (chữ + chấm, đồng hồ nổi bật,
       `aria-live` không đọc mỗi giây), vùng nội dung (PR A: placeholder "Transcript sẽ có sau khi kết thúc"), thanh dưới: Tạm dừng↔Tiếp tục ("Đã tạm dừng — không thu
       âm"), Kết thúc ghi tách biệt + hộp xác nhận khi ≥ `END_CONFIRM_MIN_SEC` (dùng lại component xác nhận sẵn có).
-- [X] T055 [US1] `src/renderer/features/meeting-capture/FinalizeView.tsx`: tiêu đề sửa được (`meetingRename`), tổng thời lượng, "Đang chốt transcript và lập chỉ mục" +
+- [x] T055 [US1] `src/renderer/features/meeting-capture/FinalizeView.tsx`: tiêu đề sửa được (`meetingRename`), tổng thời lượng, "Đang chốt transcript và lập chỉ mục" +
       tiến độ từ `onSourceProgress`, nút Về notebook, Mở khi hoàn tất (còn ở màn ⇒ tự mở viewer; đã rời ⇒ toast "Cuộc họp … đã sẵn sàng — Mở").
-- [X] T056 [US1] `src/renderer/features/sources/SourceList.tsx`: nút icon 🎙 cạnh `+` (`data-testid="record-meeting-btn"`, tooltip + `aria-label`), nhãn theo
+- [x] T056 [US1] `src/renderer/features/sources/SourceList.tsx`: nút icon 🎙 cạnh `+` (`data-testid="record-meeting-btn"`, tooltip + `aria-label`), nhãn theo
       `meetingPhase` ("Đang ghi", "Đã tạm dừng", "Đang hoàn tất", "Chưa hoàn thiện"); `src/renderer/features/sources/Workspace.tsx`: chế độ tập trung hiển thị
       `RecordingView`/`FinalizeView` thay cột giữa khi có phiên của notebook.
-- [X] T057 [US2] `src/renderer/features/source-viewer/SourceViewer.tsx`: bỏ `play()` ở effect citation (`:105-106`), khi đổi citation thì `pause()` + tua; `kind="meeting"`
+- [x] T057 [US2] `src/renderer/features/source-viewer/SourceViewer.tsx`: bỏ `play()` ở effect citation (`:105-106`), khi đổi citation thì `pause()` + tua; `kind="meeting"`
       ⇒ player audio như `audio`. T021 xanh.
-- [X] T058 [US1] Điền chuỗi vi + en cho mọi UI PR A vào `src/shared/i18n/domains/meeting.ts` (+ mã lỗi `meetingRecording`, `meetingAlreadyRecording`, `meetingDiskLow`,
+- [x] T058 [US1] Điền chuỗi vi + en cho mọi UI PR A vào `src/shared/i18n/domains/meeting.ts` (+ mã lỗi `meetingRecording`, `meetingAlreadyRecording`, `meetingDiskLow`,
       `notSupported` vào domain tương ứng); `tests/unit/i18n-catalog.test.ts` xanh.
-- [X] T059 [US1] Thông báo live region (`announce`, `src/renderer/shared/a11y/messages.ts`): bắt đầu ghi, tạm dừng, tiếp tục, kết thúc, cuộc họp sẵn sàng — không đọc đồng hồ.
+- [x] T059 [US1] Thông báo live region (`announce`, `src/renderer/shared/a11y/messages.ts`): bắt đầu ghi, tạm dừng, tiếp tục, kết thúc, cuộc họp sẵn sàng — không đọc đồng hồ.
 
 ### E2E
 
-- [X] T060 [US1] `tests/e2e/helper.ts`: `launchMeeting(opts)` đặt `IV_E2E_FAKE_MIC=tests/fixtures/meeting/speech-16k.wav` + `IV_ASR_FAKE=1` (S1: cờ fake audio của
+- [x] T060 [US1] `tests/e2e/helper.ts`: `launchMeeting(opts)` đặt `IV_E2E_FAKE_MIC=tests/fixtures/meeting/speech-16k.wav` + `IV_ASR_FAKE=1` (S1: cờ fake audio của
       Chromium treo chờ quyền micro trên macOS nên không dùng); `IV_E2E_MIC_DENIED=1` cho kịch bản từ chối quyền.
-- [X] T061 [P] [US1] (gộp T062/T063/T064 vào cùng tệp; thêm `tests/e2e/meeting-backend.spec.ts` cho đường phía main) `tests/e2e/meeting-record.spec.ts` theo quickstart dòng PR A (vi + một lượt en); thêm assert: **SC-004** từ mở hộp đến đang ghi ≤ 2 lần
+- [x] T061 [P] [US1] (gộp T062/T063/T064 vào cùng tệp; thêm `tests/e2e/meeting-backend.spec.ts` cho đường phía main) `tests/e2e/meeting-record.spec.ts` theo quickstart dòng PR A (vi + một lượt en); thêm assert: **SC-004** từ mở hộp đến đang ghi ≤ 2 lần
       bấm; **SC-010** gắn `session.defaultSession.webRequest.onBeforeRequest` qua `electronApp.evaluate` đếm request không phải `file:`/`iv-media:`/`devtools:` = 0 và
       `getPrivacyState()` luôn `local` suốt ghi → hoàn tất → mở viewer (AI online tắt, `IV_ASR_FAKE`); **FR-041** đổi sang notebook khác giữa phiên ⇒ đồng hồ vẫn chạy,
       thanh "Đang ghi" hiện, quay lại được.
-- [X] T062 [P] [US1] `tests/e2e/meeting-permission.spec.ts` (`IV_E2E_MIC_DENIED=1`): quyền bị từ chối ⇒ hướng dẫn, số nguồn không đổi.
-- [X] T063 [P] [US2] (gộp: e2e `meeting-record.spec.ts` mở kết quả tìm toàn văn của nguồn cuộc họp ⇒ không tự phát; mp3/mp4 phủ bởi `source-viewer-audio.test.ts` jsdom — không có Whisper thật trong e2e) `tests/e2e/citation-seek-only.spec.ts`: nguồn mp3 + mp4 sẵn có, bấm `[n]` ⇒ `paused === true`, `currentTime` trong khoảng đoạn trích.
-- [X] T064 [P] [US1] `tests/e2e/meeting-delete.spec.ts`: xoá nguồn cuộc họp ⇒ thư mục `meetings/<sessionId>` không còn.
+- [x] T062 [P] [US1] (gộp vào `tests/e2e/meeting-record.spec.ts`) kịch bản `IV_E2E_MIC_DENIED=1`: quyền bị từ chối ⇒ hướng dẫn, số nguồn không đổi.
+- [x] T063 [P] [US2] (gộp: e2e `meeting-record.spec.ts` mở kết quả tìm toàn văn của nguồn cuộc họp ⇒ không tự phát; mp3/mp4 phủ bởi `source-viewer-audio.test.ts` jsdom — không có Whisper thật trong e2e) `tests/e2e/citation-seek-only.spec.ts`: nguồn mp3 + mp4 sẵn có, bấm `[n]` ⇒ `paused === true`, `currentTime` trong khoảng đoạn trích.
+- [x] T064 [P] [US1] (gộp vào `tests/e2e/meeting-record.spec.ts`) kịch bản xoá nguồn cuộc họp ⇒ thư mục `meetings/<sessionId>` không còn.
 
 ### ADR + glossary
 
 - [ ] T065 [US1] Hoàn thiện ADR thực thi `docs/04-decisions/2026-10-12-meeting-capture.md` (research R16 mục 1: thay 049 #3, ngoại lệ 049 #2, diễn giải Constitution III (không phải ngoại lệ),
       chính sách quyền, utilityProcess ASR, kết quả S1) + thêm dòng `docs/04-decisions/INDEX.md` bằng script.
-- [ ] T066 [US1] Append thuật ngữ mới phát sinh khi code (nếu có, vd `meeting:audio`, cổng quyền `armedUntil`) vào `docs/00-glossary.md` bằng script — chỉ THÊM dòng.
+- [X] T066 [US1] Append thuật ngữ mới phát sinh khi code (nếu có, vd `meeting:audio`, cổng quyền `armedUntil`) vào `docs/00-glossary.md` bằng script — chỉ THÊM dòng.
 
 ### Cổng review PR A
 
-- [ ] T067 [US1] Gọi **code-reviewer** đối chiếu constitution + spec + plan + tasks; xử lý mọi Blocking.
-- [ ] T068 [US1] Gọi **glossary-steward**; append term thiếu.
-- [ ] T069 [US1] Gọi **security-reviewer** (BẮT BUỘC): `installSecurity`/quyền OS, kênh nhị phân `meeting:audio` (sender, kích thước, tần suất), kênh mới whitelist,
+- [X] T067 [US1] Gọi **code-reviewer** đối chiếu constitution + spec + plan + tasks; xử lý mọi Blocking.
+- [X] T068 [US1] Gọi **glossary-steward**; append term thiếu.
+- [X] T069 [US1] Gọi **security-reviewer** (BẮT BUỘC): `installSecurity`/quyền OS, kênh nhị phân `meeting:audio` (sender, kích thước, tần suất), kênh mới whitelist,
       FS `meetings/` (prefix, xoá), worker (đường dẫn, tin nhắn), không log nội dung, CSP. Mọi Blocking phải sửa.
-- [ ] T070 [US1] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-record.spec.ts tests/e2e/meeting-permission.spec.ts
-      tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
+- [X] T070 [US1] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-record.spec.ts tests/e2e/meeting-permission.spec.ts
+    tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
       mac; mở PR A — mô tả PR ghi chú lệch tạm D8 (bảo trì vector bị chặn khi đang ghi cho tới PR C1, T116).
 
 **Checkpoint**: PR A merge — ghi cuộc họp thành nguồn dùng được, citation chỉ tua.
@@ -311,7 +312,7 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
       thiếu Shift, phím lặp (`repeat`), ô nhập văn bản không chặn tổ hợp Mod+Shift.
 - [ ] T107 [P] [US5] Test TRƯỚC `tests/unit/meeting-service-durability.test.ts`: checkpoint mỗi 30 s + khi đóng phân đoạn; `rendererGone` / không lô > 5 s ⇒ `interrupted`;
       `stopForQuit` ⇒ `stopping` + `endedByUser`; `recover(finalize|keepIncomplete|discard)`; `finalizeAgain` cho `incomplete` và `quality=draft`; `pause({reason:
-      "deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
+    "deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
 - [ ] T108 [P] [US6] Test TRƯỚC `tests/unit/vault-lock-meeting.test.ts`: bảo trì vector KHÔNG bị chặn bởi phiên `recording|paused`, VẪN bị chặn bởi `finalizing`; sao
       lưu/khôi phục bị chặn khi đang ghi.
 - [ ] T109 [P] [US5] Mở rộng `tests/unit/meeting-channels-whitelist.test.ts` cho kênh PR C1.

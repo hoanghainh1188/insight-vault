@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { createMeetingFiles } from "../../src/main/services/meeting-capture/meeting-files";
 import {
   segmentFileName,
-  type SegmentRecord,
+  type CaptureSegment,
 } from "../../src/main/services/meeting-capture/segments";
 
 // 186 — I/O tệp phiên ghi trên thư mục tạm THẬT (R3, R8, D9): writer WAV tăng dần, sửa header sau sự cố, ghép
@@ -59,7 +59,7 @@ describe("repairSegments (sau sự cố)", () => {
       f.segmentPath(SID, 1),
       Buffer.concat([header0, Buffer.alloc(6401, 5)]),
     );
-    const segs: SegmentRecord[] = [
+    const segs: CaptureSegment[] = [
       { index: 0, file: segmentFileName(0), samples: 1600, closed: true },
       { index: 1, file: segmentFileName(1), samples: 100, closed: false },
       { index: 2, file: segmentFileName(2), samples: 50, closed: false },
@@ -78,7 +78,7 @@ describe("ghép, checkpoint, xoá", () => {
   it("mergeSegments ⇒ meeting.wav = nối dữ liệu các phân đoạn, header tổng", async () => {
     const f = createMeetingFiles(join(root, "meetings"), { fsyncSec: 1 });
     await f.ensureSessionDir(SID);
-    const segs: SegmentRecord[] = [];
+    const segs: CaptureSegment[] = [];
     for (let i = 0; i < 3; i++) {
       const w = f.openWriter(SID, i, () => undefined);
       w.append(pcm(1000 * (i + 1), i + 1));

@@ -9,13 +9,13 @@ import {
   createMeetingService,
   type MeetingService,
   type MeetingFiles,
-  type SegmentWriter,
+  type CaptureSegmentWriter,
   type AsrFinalClient,
   type MeetingServiceDeps,
   AsrError,
 } from "../../src/main/services/meeting-capture/meeting-service";
 import { createMicGate } from "../../src/main/services/app-shell/permissions";
-import type { SegmentRecord } from "../../src/main/services/meeting-capture/segments";
+import type { CaptureSegment } from "../../src/main/services/meeting-capture/segments";
 import type { Segment } from "../../src/main/services/ingestion/audio/audio-transcript";
 import type { MeetingState, Source } from "@shared/ipc/types";
 
@@ -48,6 +48,11 @@ interface Harness {
   tick: () => void;
   setAsr: (fn: AsrFinalClient["final"]) => void;
   setFree: (bytes: number) => void;
+  /** Kết quả trả về của ingestParsed (mặc định true). */
+  setIngestOk: (ok: boolean) => void;
+  /** Giả lập lỗi I/O của writer đang mở. */
+  failWriter: () => void;
+  gate: ReturnType<typeof createMicGate>;
   idle: () => Promise<void>;
   recreate: () => MeetingService;
 }
@@ -78,6 +83,9 @@ function harness(
   const notified: string[] = [];
   const asrCalls: Harness["asrCalls"] = [];
   let free = 50 * 1024 * 1024 * 1024;
+  let ingestOk = true;
+  let writerError: ((e: unknown) => void) | null = null;
+  const gate = createMicGate(() => clock.now, 15_000);
   let idSeq = 0;
   let intervalFn: (() => void) | null = null;
   // Mặc định ASR trả một câu cho mỗi phân đoạn, thời gian tương đối đầu phân đoạn.
@@ -90,9 +98,10 @@ function harness(
     segmentPath: (sid, i) =>
       `/data/meetings/${sid}/seg-${String(i).padStart(4, "0")}.wav`,
     ensureSessionDir: async () => undefined,
-    openWriter: (_sid, index): SegmentWriter => {
+    openWriter: (_sid, index, onError): CaptureSegmentWriter => {
       const w = { index, bytes: 0, closed: false };
       writers.push(w);
+      writerError = onError;
       return {
         append: (b) => {
           w.bytes += b.byteLength;
@@ -161,7 +170,7 @@ function harness(
           text: parsed.pages.map((p) => p.text).join(""),
           timeMap: parsed.timeMap,
         });
-        return true;
+        return ingestOk;
       },
     },
     sources: {
@@ -175,7 +184,7 @@ function harness(
     files,
     asr: { final: (req) => (asrCalls.push(req), asrImpl(req)) },
     freeBytes: async () => free,
-    micGate: createMicGate(() => clock.now, 15_000),
+    micGate: gate,
     mediaAccess: {
       status: () => opts.micStatus ?? "granted",
       ask: async () => (opts.micStatus ?? "granted") === "granted",
@@ -218,6 +227,9 @@ function harness(
     tick: () => intervalFn?.(),
     setAsr: (fn) => (asrImpl = fn),
     setFree: (b) => (free = b),
+    setIngestOk: (ok) => (ingestOk = ok),
+    failWriter: () => writerError?.(new Error("EIO")),
+    gate,
     idle: () => svc.whenIdle(),
     recreate: () => createMeetingService(deps),
   };
@@ -373,7 +385,7 @@ describe("ghi audio", () => {
     const { sessionId, sourceId } = await startSession(short);
     feed(short, sessionId, 7);
     await short.svc.whenIdle();
-    const segs = short.repo.get(sourceId)?.segments as SegmentRecord[];
+    const segs = short.repo.get(sourceId)?.segments as CaptureSegment[];
     expect(segs.map((s) => [s.index, s.samples, s.closed])).toEqual([
       [0, 5 * RATE, true],
       [1, 0, false],
@@ -611,6 +623,172 @@ describe("đổi tên / xoá / notebook", () => {
     release();
     await short.idle();
     expect(short.ingested).toEqual([]);
-    expect(short.deletedSessions).toEqual([sessionId]);
+    // M2: xoá ngay khi người dùng xoá + xoá lần cuối sau khi bước hoàn tất dừng.
+    expect(short.deletedSessions.length).toBeGreaterThanOrEqual(1);
+    expect(new Set(short.deletedSessions)).toEqual(new Set([sessionId]));
+  });
+});
+
+describe("review PR A — main tự kết thúc phải báo renderer (B1)", () => {
+  it("đĩa sắp đầy (< 1 phút) ⇒ tự kết thúc, push phase finalizing + endReason diskFull", async () => {
+    const { sessionId, sourceId } = await startSession(h);
+    h.setFree(500 * 1024 * 1024 + 10_000); // dưới 1 phút sau dự phòng
+    feed(h, sessionId, 31); // vượt chu kỳ kiểm đĩa 30 s
+    await h.idle();
+    expect(h.svc.status()).toBeNull();
+    expect(h.pushes.at(-1)).toMatchObject({
+      sourceId,
+      phase: "finalizing",
+      endReason: "diskFull",
+    });
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      endedByUser: true,
+    });
+  });
+
+  it("không nhận lô > 5 s ⇒ push phase finalizing + endReason noAudio", async () => {
+    const { sessionId } = await startSession(h);
+    feed(h, sessionId, 2);
+    h.clock.now += 20_000; // quá cả ân hạn khởi đầu
+    h.tick();
+    await h.idle();
+    expect(h.pushes.at(-1)).toMatchObject({
+      phase: "finalizing",
+      endReason: "noAudio",
+    });
+  });
+
+  it("lỗi ghi tệp ⇒ đóng phiên an toàn, push endReason crash", async () => {
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 2);
+    h.failWriter();
+    await h.idle();
+    expect(h.svc.status()).toBeNull();
+    expect(h.pushes.at(-1)).toMatchObject({
+      phase: "finalizing",
+      endReason: "crash",
+    });
+    expect(h.repo.get(sourceId)?.endedByUser).toBe(false);
+  });
+});
+
+describe("review PR A — hoàn tất bền khi lập chỉ mục chưa xong (B2)", () => {
+  it("ingestParsed chưa thành công ⇒ phase giữ finalizing; khởi động lại thì hoàn tất tiếp", async () => {
+    h.setIngestOk(false);
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 3);
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.repo.get(sourceId)?.phase).toBe("finalizing");
+    expect(h.deletedSegments).toEqual([]);
+    h.setIngestOk(true);
+    const svc2 = h.recreate();
+    await svc2.recoverOnStartup();
+    await svc2.whenIdle();
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      transcriptQuality: "final",
+    });
+    expect(h.deletedSegments).toEqual([sessionId]);
+  });
+});
+
+describe("review PR A — tiếp tục ghi có ân hạn (B3)", () => {
+  it("sau resume chưa có lô trong 6 s vẫn còn ghi; quá ân hạn 15 s mới bị coi là mất audio", async () => {
+    const { sessionId } = await startSession(h);
+    feed(h, sessionId, 1);
+    await h.svc.pause(OWNER, { sessionId, reason: "user" });
+    await h.svc.resume(OWNER, { sessionId });
+    h.clock.now += 6_000;
+    h.tick();
+    expect(h.svc.status()?.phase).toBe("recording");
+    h.clock.now += 10_000;
+    h.tick();
+    await h.idle();
+    expect(h.svc.status()).toBeNull();
+  });
+});
+
+describe("review PR A — start đồng thời (B4)", () => {
+  it("hai lệnh start song song ⇒ chỉ một phiên, lệnh còn lại meetingAlreadyRecording", async () => {
+    await h.svc.prepare(OWNER, { notebookId: "nb1" });
+    const input = { notebookId: "nb1", title: "x", languageMode: "auto" };
+    const r = await Promise.allSettled([
+      h.svc.start(OWNER, input),
+      h.svc.start(OWNER, input),
+    ]);
+    expect(r.filter((x) => x.status === "fulfilled")).toHaveLength(1);
+    const rejected = r.find(
+      (x) => x.status === "rejected",
+    ) as PromiseRejectedResult;
+    expect(String(rejected.reason)).toMatch(/meetingAlreadyRecording/);
+    expect(h.sources.size).toBe(1);
+  });
+});
+
+describe("review PR A — cổng micro (M1)", () => {
+  it("prepare mở cổng chỉ khi chưa có phiên và notebook tồn tại", async () => {
+    await h.svc.prepare(OWNER, { notebookId: "khong-co" });
+    expect(h.gate.armedUntil()).toBe(0);
+    await h.svc.prepare(OWNER, { notebookId: "nb1" });
+    expect(h.gate.armedUntil()).toBeGreaterThan(0);
+    await h.svc.start(OWNER, {
+      notebookId: "nb1",
+      title: "x",
+      languageMode: "auto",
+    });
+    expect(h.gate.armedUntil()).toBe(0);
+    await h.svc.prepare(OWNER, { notebookId: "nb1" });
+    expect(h.gate.armedUntil()).toBe(0);
+  });
+});
+
+describe("review PR A — xoá khi đang hoàn tất không để tệp mồ côi (M2)", () => {
+  it("xoá trong lúc ASR chạy ⇒ sau khi hoàn tất dừng, thư mục phiên bị xoá lại lần cuối", async () => {
+    let release!: () => void;
+    const gateAsr = new Promise<void>((r) => (release = r));
+    h.setAsr(async () => {
+      await gateAsr;
+      return [{ text: "x", tStart: 0, tEnd: 1 }];
+    });
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 3);
+    await h.svc.stop(OWNER, { sessionId });
+    await h.svc.onSourceRemoved(sourceId);
+    release();
+    await h.idle();
+    expect(h.deletedSessions.length).toBeGreaterThanOrEqual(2);
+    expect(h.deletedSessions.every((x) => x === sessionId)).toBe(true);
+    expect(h.merged).toEqual([]);
+  });
+});
+
+describe("review PR A — khoảng mất lô liền kề được gộp (M3)", () => {
+  it("hai lần nhảy seq ở cùng vị trí thời gian ⇒ một khoảng ngừng", async () => {
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 1);
+    h.clock.now += 1000;
+    h.svc.acceptAudio(OWNER, { sessionId, seq: 3, pcm: new ArrayBuffer(0) }); // lô rỗng bị bỏ
+    h.svc.acceptAudio(OWNER, { sessionId, seq: 3, pcm: new ArrayBuffer(SEC) });
+    h.clock.now += 1000;
+    await h.idle();
+    expect(h.repo.get(sourceId)?.pauseGaps).toEqual([
+      { atSec: 1, wallSeconds: 2, reason: "interrupted" },
+    ]);
+  });
+});
+
+describe("review PR A — ASR lỗi không báo 'sẵn sàng' (S3)", () => {
+  it("chưa có transcript ⇒ không notifyReady", async () => {
+    h.setAsr(async () => {
+      throw new AsrError("asrFailed");
+    });
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 2);
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.repo.get(sourceId)?.phase).toBe("incomplete");
+    expect(h.notified).toEqual([]);
   });
 });

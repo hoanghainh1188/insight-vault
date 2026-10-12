@@ -666,7 +666,7 @@ export interface MeetingStartResult {
 
 export type DiskLevel = "ok" | "warn" | "urgent" | "stop";
 
-export interface MeetingSegmentInfo {
+export interface CaptureSegmentInfo {
   index: number;
   durationSec: number;
   closed: boolean;
@@ -681,8 +681,10 @@ export interface MeetingState {
   phase: "recording" | "paused" | "stopping" | "finalizing" | "interrupted";
   /** Thời gian audio đã ghi (giây) — không tính khoảng tạm dừng. */
   durationSec: number;
-  segments: MeetingSegmentInfo[];
+  segments: CaptureSegmentInfo[];
   pauseReason?: "user" | "deviceLost";
+  /** Main tự kết thúc phiên (review B1): renderer tắt micro + hiện lý do. Không có ⇒ người dùng kết thúc. */
+  endReason?: "diskFull" | "noAudio" | "rendererGone" | "crash";
   diskLevel: Exclude<DiskLevel, "stop">;
   minutesRemaining: number;
   /** PR B. */

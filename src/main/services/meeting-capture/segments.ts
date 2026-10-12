@@ -1,9 +1,9 @@
-import type { MeetingSegmentInfo } from "@shared/ipc/types";
+import type { CaptureSegmentInfo } from "@shared/ipc/types";
 
 // 186 — phân đoạn ghi âm (CaptureSegment, R3/R10). THUẦN: tên tệp, xoay, offset trên trục thời gian audio, định vị phát lại.
 
 /** Bản ghi một phân đoạn (lưu trong meeting_session.segments_json). `file` là tên tương đối trong thư mục phiên. */
-export interface SegmentRecord {
+export interface CaptureSegment {
   index: number;
   file: string;
   samples: number;
@@ -23,7 +23,7 @@ export function segmentShouldRotate(
 
 /** Giây bắt đầu của từng phân đoạn trên trục thời gian audio. */
 export function segmentOffsets(
-  segments: readonly SegmentRecord[],
+  segments: readonly CaptureSegment[],
   sampleRate: number,
 ): number[] {
   const out: number[] = [];
@@ -36,16 +36,16 @@ export function segmentOffsets(
 }
 
 export function totalDurationSec(
-  segments: readonly SegmentRecord[],
+  segments: readonly CaptureSegment[],
   sampleRate: number,
 ): number {
   return segments.reduce((sum, s) => sum + s.samples, 0) / sampleRate;
 }
 
 export function toSegmentInfo(
-  segments: readonly SegmentRecord[],
+  segments: readonly CaptureSegment[],
   sampleRate: number,
-): MeetingSegmentInfo[] {
+): CaptureSegmentInfo[] {
   return segments.map((s) => ({
     index: s.index,
     durationSec: s.samples / sampleRate,
@@ -55,7 +55,7 @@ export function toSegmentInfo(
 
 /** Thời gian audio ⇒ (phân đoạn, offset trong phân đoạn). Ngoài phạm vi ⇒ null. */
 export function locateInSegments(
-  segments: readonly SegmentRecord[],
+  segments: readonly CaptureSegment[],
   tSec: number,
   sampleRate: number,
 ): { index: number; offsetSec: number } | null {
@@ -77,7 +77,7 @@ export type PlaybackTarget =
 
 /** Tệp nào phục vụ cho iv-media: đã ghép ⇒ meeting.wav; chưa ⇒ phân đoạn được yêu cầu (mặc định 0). */
 export function playbackTarget(
-  segments: readonly SegmentRecord[],
+  segments: readonly CaptureSegment[],
   mergedExists: boolean,
   requestedSeg: number | undefined,
 ): PlaybackTarget | null {

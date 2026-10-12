@@ -7,13 +7,17 @@ import {
   locateInSegments,
   playbackTarget,
   toSegmentInfo,
-  type SegmentRecord,
+  type CaptureSegment,
 } from "../../src/main/services/meeting-capture/segments";
 
 // 186 — phân đoạn ghi âm (R3, R10): tên tệp, xoay, offset thời gian audio, định vị khi phát lại. Hàm thuần.
 
 const RATE = 16000;
-const seg = (index: number, seconds: number, closed = true): SegmentRecord => ({
+const seg = (
+  index: number,
+  seconds: number,
+  closed = true,
+): CaptureSegment => ({
   index,
   file: segmentFileName(index),
   samples: seconds * RATE,

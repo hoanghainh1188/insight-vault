@@ -65,6 +65,10 @@ export const meetingVi = {
     open: "Mở",
     ready: "Đã sẵn sàng",
     titleLabel: "Tiêu đề cuộc họp",
+    incomplete:
+      "Đã lưu audio — chưa có transcript. Bạn có thể nghe lại; transcript sẽ được tạo khi có model nhận dạng.",
+    failed:
+      "Chưa lập chỉ mục được cuộc họp. Audio vẫn an toàn — app sẽ thử lại khi mở lại.",
   },
   phase: {
     recording: "Đang ghi",
@@ -85,6 +89,16 @@ export const meetingVi = {
     ended: "Đã kết thúc ghi. Đang chốt transcript và lập chỉ mục.",
     ready: "Cuộc họp “{title}” đã sẵn sàng.",
     deviceLost: "Mất microphone — đã tạm dừng ghi.",
+  },
+  ended: {
+    diskFull:
+      "Ổ đĩa sắp đầy — đã tự kết thúc ghi. Audio đã ghi được giữ nguyên.",
+    noAudio:
+      "Không còn nhận được âm thanh — đã kết thúc ghi. Audio đã ghi được giữ nguyên.",
+    rendererGone:
+      "Cửa sổ ghi gặp sự cố — đã kết thúc ghi. Audio đã ghi được giữ nguyên.",
+    crash:
+      "Không ghi được tệp âm thanh — đã kết thúc ghi. Audio đã ghi được giữ nguyên.",
   },
 } as const;
 
@@ -152,6 +166,10 @@ export const meetingEn: Widen<typeof meetingVi> = {
     open: "Open",
     ready: "Ready",
     titleLabel: "Meeting title",
+    incomplete:
+      "Audio saved — no transcript yet. You can listen to it; the transcript will be created once the speech model is available.",
+    failed:
+      "The meeting could not be indexed yet. The audio is safe — the app will try again next time it starts.",
   },
   phase: {
     recording: "Recording",
@@ -172,5 +190,15 @@ export const meetingEn: Widen<typeof meetingVi> = {
     ended: "Recording ended. Finalizing the transcript and indexing.",
     ready: "Meeting “{title}” is ready.",
     deviceLost: "Microphone lost — recording paused.",
+  },
+  ended: {
+    diskFull:
+      "The disk is almost full — recording ended automatically. The audio recorded so far is kept.",
+    noAudio:
+      "Audio stopped arriving — recording ended. The audio recorded so far is kept.",
+    rendererGone:
+      "The recording window crashed — recording ended. The audio recorded so far is kept.",
+    crash:
+      "The audio file could not be written — recording ended. The audio recorded so far is kept.",
   },
 };

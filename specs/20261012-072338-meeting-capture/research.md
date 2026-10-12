@@ -95,7 +95,7 @@ hiện có (khảo sát 2026-10-12) và các điểm còn phải đo bằng spik
 
 - **Decision**: `finalize(sessionId)` trong `meeting-service`:
   1. phase `finalizing`; với mỗi phân đoạn chưa có `final/seg-NNNN.json`: gửi worker `final` kèm **5 s cuối của phân đoạn trước** làm ngữ cảnh chồng lấn; kết quả
-     segment có `tStart` âm (thuộc phần chồng lấn) bị cắt bởi hàm thuần `stitchSegments(prevTail, current, overlapSec=5)`; ghi JSON nguyên tử (tmp→rename) = checkpoint.
+     segment có `tStart` âm (thuộc phần chồng lấn) bị cắt bởi hàm thuần `stitchTranscriptSegments(prevTail, current, overlapSec=5)`; ghi JSON nguyên tử (tmp→rename) = checkpoint.
   2. Đủ mọi phân đoạn ⇒ hàm thuần `buildMeetingTranscript(segmentsBySeg, segmentOffsets)` ⇒ `{ text, spans[], timeMap }` với thời gian **audio** tuyệt đối (offset
      phân đoạn = tổng thời lượng phân đoạn trước; khoảng ngừng không có trong text — D2). Văn bản nối segment bằng `\n` và đã trim ⇒ `cleanText` không đổi offset (test
      canh).

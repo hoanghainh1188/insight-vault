@@ -7,7 +7,7 @@ import type {
 } from "@shared/ipc/types";
 import type { Db } from "../../db/database";
 import type { TimeMapEntry } from "../ingestion/audio/audio-transcript";
-import type { SegmentRecord } from "./segments";
+import type { CaptureSegment } from "./segments";
 
 // 186 — repo meeting_session / transcript_span (data-model §2). SQL tham số hoá; JSON trong DB coi là không tin cậy
 // (hỏng ⇒ mảng rỗng, không ném). Đánh dấu (meeting_marker) thêm ở PR B.
@@ -30,7 +30,7 @@ export interface MeetingSession {
   startedAt: number;
   endedAt: number | null;
   durationMs: number;
-  segments: SegmentRecord[];
+  segments: CaptureSegment[];
   pauseGaps: PauseGap[];
   transcriptQuality: TranscriptQuality | null;
   finalProgress: number;
@@ -104,7 +104,7 @@ function parseArray<T>(json: string, item: (v: unknown) => T | null): T[] {
   return raw.map(item).filter((x): x is T => x !== null);
 }
 
-const segmentItem = (v: unknown): SegmentRecord | null =>
+const segmentItem = (v: unknown): CaptureSegment | null =>
   isObj(v) &&
   isNum(v["index"]) &&
   typeof v["file"] === "string" &&

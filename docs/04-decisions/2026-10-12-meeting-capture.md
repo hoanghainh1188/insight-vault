@@ -69,3 +69,16 @@ Kết quả chạy tay sẽ được bổ sung vào mục này; nếu có điể
    Main giám sát `render-process-gone` và "không nhận lô > 5 s" ⇒ PR A tự kết thúc + hoàn tất (PR C1 đổi sang thẻ phục hồi).
 7. **Seam e2e (chỉ bản chưa đóng gói).** `IV_ASR_FAKE` (ASR giả trong worker thật), `IV_E2E_FAKE_MIC` (renderer dùng tín hiệu thử
    qua cùng AudioContext/worklet — `MeetingPrepareResult.testFakeMic`), `IV_E2E_MIC_DENIED`, `IV_MEETING_SEGMENT_SEC`.
+
+## Rủi ro thấp còn mở sau security-review PR A (T069)
+
+M1–M3 và L1 đã sửa trong PR A. Các mục dưới đây chấp nhận tạm, theo dõi ở PR sau:
+
+- **L2** — kênh `meeting:*` chỉ kiểm `sender.id === ownerId`, chưa kiểm `senderFrame === sender.mainFrame`. Hiện không có
+  iframe/webview; thêm kiểm khi xuất hiện frame con (hoặc ở PR C1).
+- **L3** — `meeting:status` / `meeting:rename` không gắn owner (một cửa sổ; `rename` đã có `assertVaultWritable`, tiêu đề ≤ 200).
+- **L4** — `safeHandle` trả `Error.message` thô (có thể lộ đường dẫn fs). Mẫu chung toàn app, không riêng 186 — xử lý chung.
+- **L5** — entitlements macOS rộng (`disable-library-validation`, áp cả `entitlementsInherit`). Thu hẹp khi bật ký/notarize.
+- **L6** — model Whisper tải từ HuggingFace không kiểm hash (giống đường 045). Xem lại cùng spike S2 (PR B).
+
+**Lệch tạm D8:** khi đang ghi, bảo trì vector (khoá vault) bị chặn tới PR C1 (T116 — `excludeRecording`).

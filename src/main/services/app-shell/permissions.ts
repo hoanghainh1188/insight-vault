@@ -2,8 +2,15 @@
 // Mặc định vẫn TỪ CHỐI mọi quyền (Constitution I/III). Ngoại lệ duy nhất: micro (media, audio-only) cho cửa sổ chính
 // của app, chỉ trong "cổng" ngắn sau khi người dùng bấm Bắt đầu ghi / Tiếp tục.
 
-/** URL thuộc renderer của app: bản đóng gói (file://) hoặc đúng origin của dev server (ELECTRON_RENDERER_URL). */
-export function isAppOrigin(url: string, devUrl: string | undefined): boolean {
+/**
+ * URL thuộc renderer của app: dev ⇒ đúng origin của dev server (ELECTRON_RENDERER_URL); đóng gói ⇒ đúng tệp
+ * `renderer/index.html` của app khi biết `appIndexUrl` (review L1 — không nhận mọi trang file://), bỏ qua hash/query.
+ */
+export function isAppOrigin(
+  url: string,
+  devUrl: string | undefined,
+  appIndexUrl?: string,
+): boolean {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -17,7 +24,14 @@ export function isAppOrigin(url: string, devUrl: string | undefined): boolean {
       return false;
     }
   }
-  return parsed.protocol === "file:";
+  if (parsed.protocol !== "file:") return false;
+  if (!appIndexUrl) return true;
+  try {
+    const want = new URL(appIndexUrl);
+    return parsed.pathname === want.pathname && want.protocol === "file:";
+  } catch {
+    return false;
+  }
 }
 
 export interface MediaPermissionRequest {
@@ -30,6 +44,8 @@ export interface MediaPermissionRequest {
   armedUntil: number;
   now: number;
   devUrl: string | undefined;
+  /** URL file:// của renderer/index.html (bản đóng gói). */
+  appIndexUrl?: string;
 }
 
 export function decideMediaPermission(req: MediaPermissionRequest): boolean {
@@ -41,7 +57,7 @@ export function decideMediaPermission(req: MediaPermissionRequest): boolean {
     req.isMainFrame &&
     req.isMainWindow &&
     req.now < req.armedUntil &&
-    isAppOrigin(req.requestingUrl, req.devUrl)
+    isAppOrigin(req.requestingUrl, req.devUrl, req.appIndexUrl)
   );
 }
 
@@ -51,6 +67,7 @@ export interface PermissionCheck {
   requestingUrl: string;
   isMainWindow: boolean;
   devUrl: string | undefined;
+  appIndexUrl?: string;
 }
 
 /** setPermissionCheckHandler: chỉ trả true cho micro của cửa sổ chính (không cần cổng — kiểm không cấp quyền thu). */
@@ -59,7 +76,7 @@ export function decidePermissionCheck(check: PermissionCheck): boolean {
     check.permission === "media" &&
     check.mediaType === "audio" &&
     check.isMainWindow &&
-    isAppOrigin(check.requestingUrl, check.devUrl)
+    isAppOrigin(check.requestingUrl, check.devUrl, check.appIndexUrl)
   );
 }
 

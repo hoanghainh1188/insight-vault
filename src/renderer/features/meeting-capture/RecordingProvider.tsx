@@ -20,6 +20,8 @@ import {
 // 186 — phiên ghi ở CẤP APP (đặt quanh RouterProvider — analyze P1): đổi notebook/route KHÔNG dừng micro. Giữ thu âm
 // (mic-capture), số thứ tự lô, trạng thái đẩy từ main (meeting:state) và màn hoàn tất của phiên vừa kết thúc.
 // Mọi quyết định (phiên hợp lệ, thời lượng, đĩa) ở main; renderer chỉ hiển thị + chuyển lô PCM.
+// Review PR A: main tự kết thúc ⇒ tắt micro + màn hoàn tất có lý do (B1); Tiếp tục lỗi ⇒ quay về tạm dừng (B3); mất thiết
+// bị ⇒ dừng hẳn capture (S2); lô chờ trước khi có phiên được xả theo nhịp ≤ 4 lô/giây, có trần (S7).
 
 export interface StartRequest {
   notebookId: string;
@@ -28,6 +30,8 @@ export interface StartRequest {
   deviceId?: string;
 }
 
+export type EndReason = NonNullable<MeetingState["endReason"]>;
+
 export interface FinalizingInfo {
   sourceId: string;
   notebookId: string;
@@ -35,6 +39,7 @@ export interface FinalizingInfo {
   durationSec: number;
   openWhenDone: boolean;
   ready: boolean;
+  endReason?: EndReason;
 }
 
 export type StartOutcome =
@@ -58,6 +63,10 @@ interface RecordingContextValue {
   dismissFinalizing(): void;
 }
 
+/** Lô chờ tối đa trước khi có sessionId (~8 s) và nhịp xả (khớp giới hạn 4 lô/giây ở main). */
+export const PENDING_MAX = 8;
+export const PENDING_FLUSH_MS = 260;
+
 const RecordingContext = createContext<RecordingContextValue | null>(null);
 
 export function useRecording(): RecordingContextValue {
@@ -67,10 +76,14 @@ export function useRecording(): RecordingContextValue {
   return ctx;
 }
 
-/** Cho component tuỳ chọn (vd. test) — không ném khi thiếu provider. */
-export function useRecordingOptional(): RecordingContextValue | null {
-  return useContext(RecordingContext);
+interface Session {
+  sessionId: string;
+  deviceId?: string;
+  fakeTone: boolean;
 }
+
+const isLive = (s: MeetingState | null): boolean =>
+  s !== null && (s.phase === "recording" || s.phase === "paused");
 
 export function RecordingProvider({
   children,
@@ -83,18 +96,74 @@ export function RecordingProvider({
   const [busy, setBusy] = useState(false);
   const capture = useRef<MicCapture | null>(null);
   const seq = useRef(0);
-  const session = useRef<{
-    sessionId: string;
-    deviceId?: string;
-    fakeTone: boolean;
-  } | null>(null);
+  const session = useRef<Session | null>(null);
+  const stateRef = useRef<MeetingState | null>(null);
+  stateRef.current = state;
 
-  // Trạng thái từ main + gắn lại sau reload (meeting:status).
+  const stopCapture = useCallback(async (): Promise<void> => {
+    const c = capture.current;
+    capture.current = null;
+    await c?.stop().catch(() => undefined);
+  }, []);
+
+  const send = (sessionId: string, pcm: ArrayBuffer): void =>
+    window.api.meetingSendAudio({ sessionId, seq: seq.current++, pcm });
+
+  /** Mất thiết bị/quyền (D10): dừng capture (xả lô lẻ) rồi tạm dừng phiên để giữ dữ liệu. */
+  const onDeviceLost = useCallback(
+    (sessionId: string) => {
+      announce(t.t("meeting.a11y.deviceLost"), "assertive");
+      void stopCapture().then(() =>
+        window.api
+          .meetingPause({ sessionId, reason: "deviceLost" })
+          .then(setState, () => undefined),
+      );
+    },
+    [stopCapture, t],
+  );
+
+  /** Mở micro cho phiên đã có sessionId. */
+  const openCapture = useCallback(
+    (s: Session): Promise<MicCapture> =>
+      startMicCapture({
+        ...(s.deviceId ? { deviceId: s.deviceId } : {}),
+        fakeTone: s.fakeTone,
+        onBatch: (pcm) => send(s.sessionId, pcm),
+        onEnded: () => onDeviceLost(s.sessionId),
+      }),
+    [onDeviceLost],
+  );
+
+  /** Main tự kết thúc phiên (đĩa đầy / mất audio / sự cố) ⇒ tắt micro + chuyển màn hoàn tất có lý do. */
+  const onMainEnded = useCallback(
+    (s: MeetingState) => {
+      void stopCapture();
+      session.current = null;
+      setState(null);
+      setFinalizing({
+        sourceId: s.sourceId,
+        notebookId: s.notebookId,
+        title: s.title,
+        durationSec: s.durationSec,
+        openWhenDone: false,
+        ready: false,
+        ...(s.endReason ? { endReason: s.endReason } : {}),
+      });
+      if (s.endReason)
+        announce(t.t(`meeting.ended.${s.endReason}`), "assertive");
+    },
+    [stopCapture, t],
+  );
+
   useEffect(() => {
-    const off = window.api.onMeetingState((s) => setState(s));
+    const off = window.api.onMeetingState((s) => {
+      if (isLive(s)) setState(s);
+      else if (s.endReason && stateRef.current?.sessionId === s.sessionId)
+        onMainEnded(s);
+    });
     void window.api.meetingStatus().then((s) => setState((cur) => cur ?? s));
     return off;
-  }, []);
+  }, [onMainEnded]);
 
   // Nguồn của màn hoàn tất chuyển ready ⇒ đánh dấu xong + thông báo (D15).
   useEffect(() => {
@@ -108,63 +177,31 @@ export function RecordingProvider({
     });
   }, [finalizing, t]);
 
-  const openCapture = useCallback(
-    async (
-      sessionId: string,
-      deviceId: string | undefined,
-      fakeTone: boolean,
-    ): Promise<MicCapture> =>
-      startMicCapture({
-        ...(deviceId ? { deviceId } : {}),
-        fakeTone,
-        onBatch: (pcm) =>
-          window.api.meetingSendAudio({ sessionId, seq: seq.current++, pcm }),
-        onEnded: () => {
-          // D10 (rút thiết bị / mất quyền): tạm dừng để giữ dữ liệu; người dùng tiếp tục khi có micro.
-          announce(t.t("meeting.a11y.deviceLost"), "assertive");
-          capture.current = null;
-          void window.api
-            .meetingPause({ sessionId, reason: "deviceLost" })
-            .then(setState, () => undefined);
-        },
-      }),
-    [t],
-  );
-
   const start = useCallback(
     async (req: StartRequest): Promise<StartOutcome> => {
       setBusy(true);
       let mic: MicCapture | null = null;
       try {
-        // Mở lại cổng quyền ngay trước getUserMedia (cổng 15 s — người dùng có thể đã mở hộp lâu).
+        // Mở lại cổng quyền ngay trước getUserMedia (cổng ngắn, dùng một lần — review M1).
         const prep = await window.api.meetingPrepare({
           notebookId: req.notebookId,
         });
         const fakeTone = prep.testFakeMic === true;
-        // Micro mở được TRƯỚC khi tạo nguồn (FR-005): lô đầu chỉ gửi sau khi có sessionId.
+        // Micro mở được TRƯỚC khi tạo nguồn (FR-005): lô đến trước khi có sessionId được giữ (có trần) rồi xả theo nhịp.
         const pending: ArrayBuffer[] = [];
         let sessionId: string | null = null;
+        let endedEarly = false;
         seq.current = 0;
         mic = await startMicCapture({
           ...(req.deviceId ? { deviceId: req.deviceId } : {}),
           fakeTone,
           onBatch: (pcm) => {
-            if (sessionId)
-              window.api.meetingSendAudio({
-                sessionId,
-                seq: seq.current++,
-                pcm,
-              });
-            else pending.push(pcm);
+            if (sessionId) send(sessionId, pcm);
+            else if (pending.length < PENDING_MAX) pending.push(pcm);
           },
           onEnded: () => {
-            announce(t.t("meeting.a11y.deviceLost"), "assertive");
-            capture.current = null;
-            if (sessionId) {
-              void window.api
-                .meetingPause({ sessionId, reason: "deviceLost" })
-                .then(setState, () => undefined);
-            }
+            if (sessionId) onDeviceLost(sessionId);
+            else endedEarly = true;
           },
         });
         const started = await window.api.meetingStart({
@@ -173,16 +210,25 @@ export function RecordingProvider({
           languageMode: req.languageMode,
           ...(mic.deviceLabel ? { deviceLabel: mic.deviceLabel } : {}),
         });
-        sessionId = started.sessionId;
-        for (const pcm of pending.splice(0)) {
-          window.api.meetingSendAudio({ sessionId, seq: seq.current++, pcm });
-        }
-        capture.current = mic;
+        const sid = started.sessionId;
         session.current = {
-          sessionId,
+          sessionId: sid,
           ...(req.deviceId ? { deviceId: req.deviceId } : {}),
           fakeTone,
         };
+        capture.current = mic;
+        // Xả lô chờ theo nhịp (không vượt giới hạn tần suất ở main), rồi chuyển sang gửi thẳng.
+        const flush = (): void => {
+          const pcm = pending.shift();
+          if (pcm) {
+            send(sid, pcm);
+            setTimeout(flush, PENDING_FLUSH_MS);
+          } else {
+            sessionId = sid;
+          }
+        };
+        flush();
+        if (endedEarly) onDeviceLost(sid);
         setFinalizing(null);
         announce(t.t("meeting.a11y.started"));
         return { ok: true };
@@ -194,53 +240,71 @@ export function RecordingProvider({
         setBusy(false);
       }
     },
-    [t],
+    [onDeviceLost, t],
   );
 
+  /** Phiên hiện hành — kể cả sau khi tải lại trang (session.current mất) dùng sessionId từ main (N2). */
+  const currentSessionId = (): string | null =>
+    session.current?.sessionId ?? stateRef.current?.sessionId ?? null;
+
   const pause = useCallback(async () => {
-    const s = session.current;
-    if (!s) return;
+    const sid = currentSessionId();
+    if (!sid) return;
     setBusy(true);
     try {
-      await capture.current?.stop(); // xả lô lẻ TRƯỚC khi main đóng phân đoạn
-      capture.current = null;
+      await stopCapture(); // xả lô lẻ TRƯỚC khi main đóng phân đoạn
       setState(
-        await window.api.meetingPause({
-          sessionId: s.sessionId,
-          reason: "user",
-        }),
+        await window.api.meetingPause({ sessionId: sid, reason: "user" }),
       );
       announce(t.t("meeting.a11y.paused"));
     } finally {
       setBusy(false);
     }
-  }, [t]);
+  }, [stopCapture, t]);
 
   const resume = useCallback(async () => {
-    const s = session.current;
-    if (!s) return;
+    const sid = currentSessionId();
+    if (!sid) return;
     setBusy(true);
     try {
       // Main mở cổng quyền + phân đoạn mới trước, rồi mới mở lại micro (D11: tạm dừng tắt micro thật).
-      setState(await window.api.meetingResume({ sessionId: s.sessionId }));
-      capture.current = await openCapture(s.sessionId, s.deviceId, s.fakeTone);
-      announce(t.t("meeting.a11y.resumed"));
+      setState(await window.api.meetingResume({ sessionId: sid }));
+      const s: Session = session.current ?? {
+        sessionId: sid,
+        fakeTone:
+          (
+            await window.api.meetingPrepare({
+              notebookId: stateRef.current?.notebookId ?? "",
+            })
+          ).testFakeMic === true,
+      };
+      session.current = s;
+      try {
+        capture.current = await openCapture(s);
+        announce(t.t("meeting.a11y.resumed"));
+      } catch {
+        // B3: không mở được micro ⇒ quay về tạm dừng (giữ phiên) thay vì để main coi là mất audio.
+        announce(t.t("meeting.a11y.deviceLost"), "assertive");
+        setState(
+          await window.api.meetingPause({
+            sessionId: sid,
+            reason: "deviceLost",
+          }),
+        );
+      }
     } finally {
       setBusy(false);
     }
   }, [openCapture, t]);
 
   const stop = useCallback(async () => {
-    const s = session.current;
-    const cur = state;
-    if (!s || !cur) return;
+    const sid = currentSessionId();
+    const cur = stateRef.current;
+    if (!sid || !cur) return;
     setBusy(true);
     try {
-      await capture.current?.stop();
-      capture.current = null;
-      const { sourceId } = await window.api.meetingStop({
-        sessionId: s.sessionId,
-      });
+      await stopCapture();
+      const { sourceId } = await window.api.meetingStop({ sessionId: sid });
       session.current = null;
       setState(null);
       setFinalizing({
@@ -255,7 +319,7 @@ export function RecordingProvider({
     } finally {
       setBusy(false);
     }
-  }, [state, t]);
+  }, [stopCapture, t]);
 
   const rename = useCallback(
     async (title: string) => {

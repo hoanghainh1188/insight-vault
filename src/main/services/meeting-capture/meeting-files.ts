@@ -12,9 +12,9 @@ import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import type { Segment } from "../ingestion/audio/audio-transcript";
 import { parseWorkerMessage } from "./asr-protocol";
-import { createSegmentWriter } from "./capture-writer";
+import { createCaptureSegmentWriter } from "./capture-writer";
 import type { MeetingFiles } from "./meeting-service";
-import { segmentFileName, type SegmentRecord } from "./segments";
+import { segmentFileName, type CaptureSegment } from "./segments";
 import { WAV_HEADER_BYTES, buildWavHeader, repairWavHeader } from "./wav";
 
 // 186 — tệp của phiên ghi trong <userData>/meetings/<sessionId>/ (I/O, research R3/R8/R10, data-model §3). App SỞ HỮU các
@@ -71,13 +71,13 @@ export function createMeetingFiles(
     },
 
     openWriter: (sessionId, index, onError) =>
-      createSegmentWriter(segmentPath(sessionId, index), {
+      createCaptureSegmentWriter(segmentPath(sessionId, index), {
         fsyncSec: opts.fsyncSec,
         onError,
       }),
 
     async repairSegments(sessionId, segments) {
-      const out: SegmentRecord[] = [];
+      const out: CaptureSegment[] = [];
       for (const s of segments) {
         const p = segmentPath(sessionId, s.index);
         let size: number;

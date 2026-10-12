@@ -1,15 +1,15 @@
 import { open, type FileHandle } from "node:fs/promises";
-import type { SegmentWriter } from "./meeting-service";
+import type { CaptureSegmentWriter } from "./meeting-service";
 import { WAV_HEADER_BYTES, buildWavHeader } from "./wav";
 
 // 186 — ghi MỘT phân đoạn WAV PCM16 tăng dần (I/O, research R3/D9). Header 0 lúc mở; PCM ghi nối tiếp qua chuỗi
 // promise (append không chờ đĩa); fsync mỗi `fsyncSec` ⇒ sự cố mất ≤ fsyncSec; close() ghi header đúng + fsync.
 // Lỗi I/O báo MỘT lần qua onError (service đóng phiên an toàn). Không đọc/log nội dung audio.
 
-export function createSegmentWriter(
+export function createCaptureSegmentWriter(
   path: string,
   opts: { fsyncSec: number; now?: () => number; onError: (e: unknown) => void },
-): SegmentWriter {
+): CaptureSegmentWriter {
   const now = opts.now ?? Date.now;
   let samples = 0;
   let position = WAV_HEADER_BYTES;

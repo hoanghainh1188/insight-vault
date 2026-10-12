@@ -182,6 +182,20 @@
 .rec-progress {
   display: block;
   margin-top: 8px;
+  overflow: hidden;
+}
+/* N4: chỉ animate transform (compositor), không animate width. */
+.rec-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rec-progress-fill {
+    transition: none;
+  }
 }
 .rec-controls {
   display: flex;

@@ -11,95 +11,45 @@ import type {
 import { UserFacingError } from "@shared/codes/user-error";
 import type { MicGate } from "../app-shell/permissions";
 import type { IngestionPipeline } from "../ingestion/pipeline";
-import type { Segment } from "../ingestion/audio/audio-transcript";
-import type { AsrErrorCode, AsrLanguage } from "./asr-protocol";
 import { validateAudioBatch, type IngressState } from "./audio-ingress";
 import { canStart, diskLevel, minutesRemaining } from "./disk-guard";
 import {
   BYTES_PER_MIN,
   CHECKPOINT_SEC,
   FINAL_MODEL_SIZE_MB,
-  FINAL_OVERLAP_SEC,
   NO_AUDIO_TIMEOUT_MS,
+  RESUME_GRACE_MS,
 } from "./meeting-constants";
 import type { MeetingRepo, MeetingSession } from "./meeting-repo";
-import { buildMeetingTranscript } from "./meeting-transcript";
+import { finalizeSession } from "./meeting-finalizer";
+import type {
+  AsrFinalClient,
+  CaptureSegmentWriter,
+  MeetingFiles,
+} from "./meeting-io";
 import {
   segmentFileName,
-  segmentOffsets,
   segmentShouldRotate,
   toSegmentInfo,
   totalDurationSec,
-  type SegmentRecord,
+  type CaptureSegment,
 } from "./segments";
 import {
   sessionTransition,
   type SessionEvent,
   type SessionSnapshot,
 } from "./session-state";
-import { shiftSegments, stitchSegments, type SegmentResult } from "./stitch";
+
+export {
+  AsrError,
+  type AsrFinalClient,
+  type CaptureSegmentWriter,
+  type MeetingFiles,
+} from "./meeting-io";
 
 // 186 — điều phối phiên ghi (research R4, R8, R12; data-model §5). Mọi I/O tiêm vào ⇒ unit-test không cần Electron/đĩa.
 // Việc GHI tệp (writer) không phụ thuộc ASR (A3): ASR chốt chạy ở asr-worker sau khi kết thúc, tuần tự từng phiên.
 // KHÔNG log nội dung (audio, transcript, tiêu đề) — Constitution III.
-
-export class AsrError extends Error {
-  constructor(readonly code: AsrErrorCode) {
-    super(code);
-    this.name = "AsrError";
-  }
-}
-
-/** Ghi một phân đoạn WAV tăng dần (I/O ở capture-writer.ts). */
-export interface SegmentWriter {
-  /** Đưa PCM vào hàng ghi (không chờ đĩa). */
-  append(bytes: Uint8Array): void;
-  samples(): number;
-  /** Ghi nốt + header đúng + fsync. Trả số mẫu. */
-  close(): Promise<number>;
-}
-
-/** Thao tác tệp của phiên (I/O ở meeting-files.ts). Đường dẫn luôn nằm trong `meetingsRoot`. */
-export interface MeetingFiles {
-  meetingsRoot: string;
-  segmentPath(sessionId: string, index: number): string;
-  ensureSessionDir(sessionId: string): Promise<void>;
-  openWriter(
-    sessionId: string,
-    index: number,
-    onError: (e: unknown) => void,
-  ): SegmentWriter;
-  /** Sửa header phân đoạn ghi dở sau sự cố; trả danh sách với `samples` thật, mọi phân đoạn `closed`. */
-  repairSegments(
-    sessionId: string,
-    segments: readonly SegmentRecord[],
-  ): Promise<SegmentRecord[]>;
-  readFinal(sessionId: string, index: number): Promise<Segment[] | null>;
-  writeFinal(
-    sessionId: string,
-    index: number,
-    segments: readonly Segment[],
-  ): Promise<void>;
-  mergeSegments(
-    sessionId: string,
-    segments: readonly SegmentRecord[],
-  ): Promise<void>;
-  deleteSegments(
-    sessionId: string,
-    segments: readonly SegmentRecord[],
-  ): Promise<void>;
-  deleteSession(sessionId: string): Promise<void>;
-}
-
-export interface AsrFinalClient {
-  /** Segment trả về có thời gian TƯƠNG ĐỐI đầu phân đoạn hiện tại (vùng ngữ cảnh của phân đoạn trước có giá trị âm). */
-  final(req: {
-    segmentPath: string;
-    prevSegmentPath?: string;
-    overlapSec: number;
-    language: AsrLanguage;
-  }): Promise<Segment[]>;
-}
 
 export interface MeetingServiceDeps {
   repo: MeetingRepo;
@@ -177,12 +127,14 @@ interface Active {
   languageMode: LanguageMode;
   snap: SessionSnapshot;
   ingress: IngressState;
-  writer: SegmentWriter | null;
-  segments: SegmentRecord[];
+  writer: CaptureSegmentWriter | null;
+  segments: CaptureSegment[];
   pauseGaps: PauseGap[];
   pausedAtWall: number | null;
   pauseReason: "user" | "deviceLost" | undefined;
   lastBatchAt: number;
+  /** B3: sau Tiếp tục, micro cần thời gian mở lại ⇒ không coi là mất audio trước mốc này. */
+  graceUntil: number;
   minutesRemaining: number;
   lastDiskCheck: number;
   lastPersist: number;
@@ -199,14 +151,25 @@ function cleanTitle(v: unknown): string {
   return t;
 }
 
-function finalLanguage(mode: LanguageMode): AsrLanguage {
-  return mode === "vi" || mode === "en" ? mode : null;
+type EndReason = NonNullable<MeetingState["endReason"]>;
+
+/** Gộp khoảng mất lô vào khoảng liền trước nếu cùng vị trí thời gian (review M3 — mảng không phình). */
+function addGap(gaps: readonly PauseGap[], gap: PauseGap): PauseGap[] {
+  const last = gaps[gaps.length - 1];
+  if (last && last.reason === gap.reason && last.atSec === gap.atSec) {
+    return [
+      ...gaps.slice(0, -1),
+      { ...last, wallSeconds: last.wallSeconds + gap.wallSeconds },
+    ];
+  }
+  return [...gaps, gap];
 }
 
 export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
   const { repo, files, sampleRate } = deps;
   const segmentSamples = deps.segmentSeconds * sampleRate;
   let active: Active | null = null;
+  let starting = false;
   let watchdog: ReturnType<typeof setInterval> | null = null;
   let ioChain: Promise<void> = Promise.resolve();
   let finalizeChain: Promise<void> = Promise.resolve();
@@ -216,12 +179,14 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     event: string,
     meta?: Record<string, string | number | boolean>,
   ): void => deps.logEvent?.(event, meta);
+  const errName = (e: unknown): string =>
+    e instanceof Error ? e.name : "unknown";
 
   /** Việc I/O tuần tự; lỗi được ghi log (không nội dung) và không làm hỏng chuỗi. */
   const enqueueIo = (fn: () => Promise<void>): Promise<void> => {
     const run = ioChain.then(fn);
     ioChain = run.catch((e: unknown) =>
-      log("meeting.ioError", { name: e instanceof Error ? e.name : "unknown" }),
+      log("meeting.ioError", { name: errName(e) }),
     );
     return run;
   };
@@ -229,7 +194,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
   const durationSec = (a: Active): number =>
     totalDurationSec(a.segments, sampleRate);
 
-  const state = (a: Active): MeetingState => {
+  const state = (a: Active, endReason?: EndReason): MeetingState => {
     const level = diskLevel(a.minutesRemaining);
     return {
       sessionId: a.sessionId,
@@ -242,6 +207,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       ...(a.snap.phase === "paused" && a.pauseReason
         ? { pauseReason: a.pauseReason }
         : {}),
+      ...(endReason ? { endReason } : {}),
       diskLevel: level === "stop" ? "urgent" : level,
       minutesRemaining: a.minutesRemaining,
       transcriptLagging: false,
@@ -249,7 +215,8 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     };
   };
 
-  const pushState = (a: Active): void => deps.push(a.ownerId, state(a));
+  const pushState = (a: Active, endReason?: EndReason): void =>
+    deps.push(a.ownerId, state(a, endReason));
 
   const persist = (a: Active): void => {
     a.lastPersist = deps.now();
@@ -282,14 +249,14 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       a.segments.length === 0
         ? 0
         : (a.segments[a.segments.length - 1]?.index ?? -1) + 1;
-    a.writer = files.openWriter(a.sessionId, index, (e) => onWriterError(a, e));
+    a.writer = files.openWriter(a.sessionId, index, () => onWriterError(a));
     a.segments = [
       ...a.segments,
       { index, file: segmentFileName(index), samples: 0, closed: false },
     ];
   };
 
-  /** Đóng phân đoạn đang mở (chờ đĩa). */
+  /** Đóng phân đoạn đang mở (chờ đĩa). Lỗi đóng chỉ ghi log — phân đoạn sửa được lúc phục hồi. */
   const closeSegment = async (a: Active): Promise<void> => {
     const w = a.writer;
     if (!w) return;
@@ -299,7 +266,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     );
     await enqueueIo(async () => {
       await w.close();
-    });
+    }).catch(() => undefined);
   };
 
   const stopWatchdog = (): void => {
@@ -315,12 +282,47 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
 
   const queueFinalize = (sourceId: string): void => {
     finalizeChain = finalizeChain.then(() =>
-      runFinalize(sourceId).catch((e: unknown) =>
-        log("meeting.finalizeError", {
-          name: e instanceof Error ? e.name : "unknown",
-        }),
+      finalizeSession(
+        {
+          repo,
+          files,
+          asr: deps.asr,
+          pipeline: deps.pipeline,
+          sources: deps.sources,
+          emitProgress: deps.emitProgress,
+          notifyReady: deps.notifyReady,
+          sampleRate,
+          isRemoved: (id) => removed.has(id),
+          enqueueIo,
+          log,
+        },
+        sourceId,
+      ).catch((e: unknown) =>
+        log("meeting.finalizeError", { name: errName(e) }),
       ),
     );
+  };
+
+  /**
+   * Kết thúc phiên rồi xếp hàng hoàn tất. Luôn persist + hoàn tất kể cả khi đóng phân đoạn lỗi (S5), và PUSH trạng thái
+   * cuối tới cửa sổ ghi (B1) — renderer tắt micro + chuyển màn hoàn tất.
+   */
+  const endSession = async (
+    a: Active,
+    events: SessionEvent[],
+    endReason?: EndReason,
+  ): Promise<void> => {
+    for (const e of events.slice(0, 1)) transition(a, e);
+    deactivate();
+    try {
+      await closeSegment(a);
+    } finally {
+      for (const e of events.slice(1)) transition(a, e);
+      persist(a);
+      repo.update(a.sourceId, { endedAt: deps.now() });
+      pushState(a, endReason);
+      queueFinalize(a.sourceId);
+    }
   };
 
   /** Phiên bị cắt ngang (renderer chết / mất audio / lỗi ghi). PR A: tự kết thúc và hoàn tất (endedByUser=false). */
@@ -329,18 +331,30 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     cause: "rendererGone" | "noAudio" | "crash",
   ): Promise<void> => {
     if (active !== a) return;
-    transition(a, { type: "interrupt", cause });
-    deactivate();
-    await closeSegment(a);
-    transition(a, { type: "recover", action: "finalize" });
-    persist(a);
     log("meeting.interrupted", { cause });
-    queueFinalize(a.sourceId);
+    await endSession(
+      a,
+      [
+        { type: "interrupt", cause },
+        { type: "recover", action: "finalize" },
+      ],
+      cause,
+    );
   };
 
-  function onWriterError(a: Active, _e: unknown): void {
+  function onWriterError(a: Active): void {
     void interruptAndFinalize(a, "crash");
   }
+
+  const stopActive = (
+    a: Active,
+    cause: "user" | "diskFull" | "quitConfirmed",
+  ): Promise<void> =>
+    endSession(
+      a,
+      [{ type: "stop", cause }, { type: "segmentsClosed" }],
+      cause === "diskFull" ? "diskFull" : undefined,
+    );
 
   const checkDisk = async (a: Active): Promise<void> => {
     const recordedBytes = durationSec(a) * sampleRate * 2;
@@ -358,104 +372,15 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     }
   };
 
-  const stopActive = async (
-    a: Active,
-    cause: "user" | "diskFull" | "quitConfirmed",
-  ): Promise<void> => {
-    transition(a, { type: "stop", cause });
-    deactivate();
-    await closeSegment(a);
-    transition(a, { type: "segmentsClosed" });
-    persist(a);
-    repo.update(a.sourceId, { endedAt: deps.now() });
-    queueFinalize(a.sourceId);
-  };
-
-  async function runFinalize(sourceId: string): Promise<void> {
-    const s = repo.get(sourceId);
-    const src = deps.sources.getById(sourceId);
-    if (!s || !src || removed.has(sourceId) || s.phase !== "finalizing") return;
-    const offsets = segmentOffsets(s.segments, sampleRate);
-    const offsetOf = new Map(
-      s.segments.map((seg, i) => [seg.index, offsets[i] ?? 0]),
-    );
-    const withAudio = s.segments.filter((seg) => seg.samples > 0);
-    const language = finalLanguage(s.languageMode);
-    const results: SegmentResult[] = [];
-    let failed = false;
-
-    for (let k = 0; k < withAudio.length; k++) {
-      if (removed.has(sourceId)) return;
-      const seg = withAudio[k] as SegmentRecord;
-      const startSec = offsetOf.get(seg.index) ?? 0;
-      let abs = await files.readFinal(s.sessionId, seg.index);
-      if (!abs) {
-        const prev = k > 0 ? withAudio[k - 1] : undefined;
-        try {
-          const rel = await deps.asr.final({
-            segmentPath: files.segmentPath(s.sessionId, seg.index),
-            ...(prev
-              ? { prevSegmentPath: files.segmentPath(s.sessionId, prev.index) }
-              : {}),
-            overlapSec: prev ? FINAL_OVERLAP_SEC : 0,
-            language,
-          });
-          if (removed.has(sourceId)) return;
-          abs = shiftSegments(rel, startSec);
-          await files.writeFinal(s.sessionId, seg.index, abs);
-        } catch (e) {
-          log("meeting.asrFailed", {
-            code: e instanceof AsrError ? e.code : "asrFailed",
-          });
-          failed = true;
-          break;
-        }
-      }
-      results.push({ startSec, segments: abs });
-      repo.update(sourceId, { finalProgress: k + 1 });
-      deps.emitProgress(
-        sourceId,
-        src.notebookId,
-        (0.8 * (k + 1)) / withAudio.length,
-      );
-    }
-    if (removed.has(sourceId)) return;
-
-    await files.mergeSegments(s.sessionId, s.segments);
-    const transcript = failed
-      ? { text: "", spans: [], timeMap: [] }
-      : buildMeetingTranscript(stitchSegments(results, FINAL_OVERLAP_SEC));
-    repo.replaceSpans(sourceId, transcript.spans);
-    const next = sessionTransition(
-      { phase: s.phase, endedByUser: s.endedByUser },
-      failed
-        ? { type: "finalizeFailed" }
-        : { type: "finalized", quality: "final" },
-    );
-    if (next.ok) {
-      repo.update(sourceId, {
-        phase: next.state.phase,
-        transcriptQuality: failed ? null : "final",
-      });
-    }
-    const ok = await deps.pipeline.ingestParsed(sourceId, {
-      pages: [{ page: null, text: transcript.text }],
-      pageCount: null,
-      timeMap: transcript.timeMap,
-    });
-    if (!ok || removed.has(sourceId)) return;
-    // Bản chốt đủ ⇒ phân đoạn không còn cần (meeting.wav là bản phát lại). Chưa hoàn thiện ⇒ giữ để "Hoàn tất transcript".
-    if (!failed) await files.deleteSegments(s.sessionId, s.segments);
-    deps.notifyReady(sourceId, src.notebookId, src.title);
-  }
-
   const startWatchdog = (): void => {
     stopWatchdog();
     watchdog = deps.setInterval(() => {
       const a = active;
       if (!a || a.snap.phase !== "recording") return;
-      if (deps.now() - a.lastBatchAt > NO_AUDIO_TIMEOUT_MS)
+      const now = deps.now();
+      if (now > a.graceUntil && now - a.lastBatchAt > NO_AUDIO_TIMEOUT_MS) {
         void interruptAndFinalize(a, "noAudio");
+      }
     }, 1000);
   };
 
@@ -463,10 +388,14 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     async prepare(_senderId, input) {
       if (!isObj(input) || !str(input["notebookId"]))
         throw new UserFacingError("meetingInvalidInput");
+      const notebookOk = deps.notebookExists(
+        str(input["notebookId"]) as string,
+      );
       let micStatus = deps.testFakeMic ? "granted" : deps.mediaAccess.status();
       if (micStatus === "notDetermined")
         micStatus = (await deps.mediaAccess.ask()) ? "granted" : "denied";
-      deps.micGate.arm();
+      // M1: chỉ mở cổng quyền micro khi thật sự sắp bắt đầu một phiên mới.
+      if (active === null && !starting && notebookOk) deps.micGate.arm();
       const minutes = minutesRemaining({
         freeBytes: await deps.freeBytes(),
         recordedBytes: 0,
@@ -480,6 +409,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
         modelSizeMb: FINAL_MODEL_SIZE_MB,
         minutesRemaining: minutes,
         canStart:
+          notebookOk &&
           micStatus !== "denied" &&
           micStatus !== "restricted" &&
           canStart(minutes) &&
@@ -512,68 +442,75 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       ) {
         throw new UserFacingError("meetingInvalidInput");
       }
-      if (active) throw new UserFacingError("meetingAlreadyRecording");
-      if (!deps.notebookExists(notebookId))
-        throw new UserFacingError("notebookNotFound");
-      const minutes = minutesRemaining({
-        freeBytes: await deps.freeBytes(),
-        recordedBytes: 0,
-        bytesPerMin: BYTES_PER_MIN,
-      });
-      if (!canStart(minutes)) throw new UserFacingError("meetingDiskLow");
-
-      const sessionId = deps.uuid();
-      await files.ensureSessionDir(sessionId);
-      const source = deps.pipeline.createMeetingSource({
-        notebookId,
-        title,
-        sessionId,
-      });
-      const now = deps.now();
-      repo.create({
-        sourceId: source.id,
-        sessionId,
-        languageMode,
-        ...(typeof deviceLabel === "string" ? { deviceLabel } : {}),
-        startedAt: now,
-      });
-      const a: Active = {
-        sessionId,
-        sourceId: source.id,
-        notebookId,
-        title,
-        ownerId: senderId,
-        languageMode,
-        snap: { phase: "recording", endedByUser: false },
-        ingress: {
+      // B4: cờ đồng bộ đặt TRƯỚC await đầu tiên ⇒ hai lệnh start song song không cùng lọt qua.
+      if (active || starting)
+        throw new UserFacingError("meetingAlreadyRecording");
+      starting = true;
+      try {
+        if (!deps.notebookExists(notebookId))
+          throw new UserFacingError("notebookNotFound");
+        const minutes = minutesRemaining({
+          freeBytes: await deps.freeBytes(),
+          recordedBytes: 0,
+          bytesPerMin: BYTES_PER_MIN,
+        });
+        if (!canStart(minutes)) throw new UserFacingError("meetingDiskLow");
+        const sessionId = deps.uuid();
+        await files.ensureSessionDir(sessionId);
+        const source = deps.pipeline.createMeetingSource({
+          notebookId,
+          title,
           sessionId,
+        });
+        const now = deps.now();
+        repo.create({
+          sourceId: source.id,
+          sessionId,
+          languageMode,
+          ...(typeof deviceLabel === "string" ? { deviceLabel } : {}),
+          startedAt: now,
+        });
+        const a: Active = {
+          sessionId,
+          sourceId: source.id,
+          notebookId,
+          title,
           ownerId: senderId,
-          phase: "recording",
-          expectedSeq: 0,
-          windowStartMs: 0,
-          batchesInWindow: 0,
-        },
-        writer: null,
-        segments: [],
-        pauseGaps: [],
-        pausedAtWall: null,
-        pauseReason: undefined,
-        lastBatchAt: now,
-        minutesRemaining: minutes,
-        lastDiskCheck: now,
-        lastPersist: now,
-      };
-      openSegment(a);
-      persist(a);
-      active = a;
-      if (typeof deviceLabel === "string")
-        deps.prefs.set(PREF_DEVICE, deviceLabel);
-      deps.prefs.set(PREF_LANGUAGE, languageMode);
-      deps.micGate.disarm();
-      startWatchdog();
-      pushState(a);
-      log("meeting.started", { languageMode });
-      return { sessionId, sourceId: source.id };
+          languageMode,
+          snap: { phase: "recording", endedByUser: false },
+          ingress: {
+            sessionId,
+            ownerId: senderId,
+            phase: "recording",
+            expectedSeq: 0,
+            windowStartMs: 0,
+            batchesInWindow: 0,
+          },
+          writer: null,
+          segments: [],
+          pauseGaps: [],
+          pausedAtWall: null,
+          pauseReason: undefined,
+          lastBatchAt: now,
+          graceUntil: now,
+          minutesRemaining: minutes,
+          lastDiskCheck: now,
+          lastPersist: now,
+        };
+        openSegment(a);
+        persist(a);
+        active = a;
+        if (typeof deviceLabel === "string")
+          deps.prefs.set(PREF_DEVICE, deviceLabel);
+        deps.prefs.set(PREF_LANGUAGE, languageMode);
+        deps.micGate.disarm();
+        startWatchdog();
+        pushState(a);
+        log("meeting.started", { languageMode });
+        return { sessionId, sourceId: source.id };
+      } finally {
+        starting = false;
+      }
     },
 
     acceptAudio(senderId, msg) {
@@ -593,14 +530,11 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       a.ingress = v.next;
       a.lastBatchAt = now;
       if (v.gapBatches > 0) {
-        a.pauseGaps = [
-          ...a.pauseGaps,
-          {
-            atSec: durationSec(a),
-            wallSeconds: v.gapBatches,
-            reason: "interrupted",
-          },
-        ];
+        a.pauseGaps = addGap(a.pauseGaps, {
+          atSec: durationSec(a),
+          wallSeconds: v.gapBatches,
+          reason: "interrupted",
+        });
         persist(a);
       }
       a.writer.append(v.bytes);
@@ -618,7 +552,9 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       }
       if (now - a.lastDiskCheck >= CHECKPOINT_SEC * 1000) {
         a.lastDiskCheck = now;
-        void checkDisk(a);
+        void checkDisk(a).catch((e: unknown) =>
+          log("meeting.diskCheckError", { name: errName(e) }),
+        );
       }
       pushState(a);
     },
@@ -630,9 +566,10 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
           ? "deviceLost"
           : "user";
       transition(a, { type: "pause", reason });
-      await closeSegment(a);
+      // N3: đặt mốc tạm dừng TRƯỚC await (resume chen vào không bị ghi đè).
       a.pausedAtWall = deps.now();
       a.pauseReason = reason;
+      await closeSegment(a);
       persist(a);
       pushState(a);
       return state(a);
@@ -645,17 +582,15 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       const now = deps.now();
       const wallSeconds =
         a.pausedAtWall === null ? 0 : (now - a.pausedAtWall) / 1000;
-      a.pauseGaps = [
-        ...a.pauseGaps,
-        {
-          atSec: durationSec(a),
-          wallSeconds,
-          reason: a.pauseReason === "deviceLost" ? "deviceLost" : "user",
-        },
-      ];
+      a.pauseGaps = addGap(a.pauseGaps, {
+        atSec: durationSec(a),
+        wallSeconds,
+        reason: a.pauseReason === "deviceLost" ? "deviceLost" : "user",
+      });
       a.pausedAtWall = null;
       a.pauseReason = undefined;
       a.lastBatchAt = now;
+      a.graceUntil = now + RESUME_GRACE_MS;
       openSegment(a);
       persist(a);
       pushState(a);
@@ -742,7 +677,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       for (;;) {
         const io = ioChain;
         const fin = finalizeChain;
-        await io;
+        await io.catch(() => undefined);
         await fin;
         if (io === ioChain && fin === finalizeChain) return;
       }

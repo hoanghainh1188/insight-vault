@@ -23,10 +23,10 @@ export const CHECKPOINT_SEC = 30;
 export const BATCH_MAX_BYTES = 65536;
 /** Số lô tối đa mỗi cửa sổ 1 s (chống tràn). */
 export const MAX_BATCHES_PER_SEC = 4;
-/** Đệm phía renderer khi IPC chậm (giây). */
-export const RENDERER_BUFFER_SEC = 30;
 /** Không nhận lô nào quá N ms khi đang ghi ⇒ phiên bị gián đoạn (P1 / D7). */
 export const NO_AUDIO_TIMEOUT_MS = 5000;
+/** Sau Tiếp tục, ân hạn cho micro mở lại (getUserMedia có thể chậm, nhất là Bluetooth) — review B3. */
+export const RESUME_GRACE_MS = 15_000;
 
 /** Cổng quyền micro mở sau hành động người dùng (R11). */
 export const ARM_WINDOW_MS = 15_000;

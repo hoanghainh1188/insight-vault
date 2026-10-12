@@ -41,6 +41,7 @@ import {
   webContents,
 } from "electron";
 import { randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import Store from "electron-store";
 import { CHANNELS } from "@shared/ipc/channels";
 import type { SourceProgressEvent } from "@shared/ipc/types";
@@ -143,19 +144,24 @@ let mainWebContentsId: number | null = null;
 function installSecurity(): void {
   const ses = session.defaultSession;
   const devUrl = process.env["ELECTRON_RENDERER_URL"];
+  const appIndexUrl = pathToFileURL(
+    join(__dirname, "../renderer/index.html"),
+  ).href;
   ses.setPermissionRequestHandler((wc, permission, cb, details) => {
-    cb(
-      decideMediaPermission({
-        permission,
-        mediaTypes: (details as { mediaTypes?: string[] }).mediaTypes,
-        requestingUrl: details.requestingUrl,
-        isMainFrame: details.isMainFrame,
-        isMainWindow: wc.id === mainWebContentsId,
-        armedUntil: micGate.armedUntil(),
-        now: Date.now(),
-        devUrl,
-      }),
-    );
+    const granted = decideMediaPermission({
+      permission,
+      mediaTypes: (details as { mediaTypes?: string[] }).mediaTypes,
+      requestingUrl: details.requestingUrl,
+      isMainFrame: details.isMainFrame,
+      isMainWindow: wc.id === mainWebContentsId,
+      armedUntil: micGate.armedUntil(),
+      now: Date.now(),
+      devUrl,
+      appIndexUrl,
+    });
+    // Review M1: cổng dùng MỘT lần — đã cấp cho lần getUserMedia này thì đóng (Tiếp tục/đổi thiết bị mở lại).
+    if (granted) micGate.disarm();
+    cb(granted);
   });
   ses.setPermissionCheckHandler((wc, permission, requestingOrigin, details) =>
     decidePermissionCheck({
@@ -164,6 +170,7 @@ function installSecurity(): void {
       requestingUrl: details.requestingUrl ?? requestingOrigin,
       isMainWindow: wc !== null && wc.id === mainWebContentsId,
       devUrl,
+      appIndexUrl,
     }),
   );
   ses.setDevicePermissionHandler(() => false);

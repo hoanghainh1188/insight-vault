@@ -11,14 +11,14 @@ Ký hiệu: **I** = invoke (renderer→main, có phản hồi) · **S** = send (
 | Kênh | Kiểu | Vào | Ra | Ghi chú |
 |---|---|---|---|---|
 | `meeting:prepare` | I | `{ notebookId }` | `{ micStatus: "granted"\|"notDetermined"\|"denied"\|"restricted"\|"unknown", modelReady: boolean, modelSizeMb: number, minutesRemaining: number, canStart: boolean, onlineActive: boolean, recordingActive: boolean, lastDeviceLabel?: string, lastLanguageMode?: LanguageMode }` | Mở cổng quyền 15 s (R11). macOS hỏi quyền OS ở đây. `last*` đọc từ electron-store (D15). `canStart=false` khi `minutesRemaining<10` hoặc đang có phiên. |
-| `meeting:start` | I (sender) | `{ notebookId, title, languageMode, deviceLabel? }` | `{ sessionId, sourceId }` | Gọi **sau** khi `getUserMedia` thành công (FR-005). Lưu `deviceLabel` + `languageMode` vào electron-store (D15). Ghi `ownerWebContentsId`. Lỗi: `meetingAlreadyRecording`, `meetingDiskLow`, `notebookNotFound`, `invalidInput`. |
-| `meeting:audio` | S | `{ sessionId, seq, pcm: ArrayBuffer }` | — | R4. Sai ⇒ bỏ + đếm, không ném. Chỉ từ `ownerWebContentsId`. |
+| `meeting:start` | I (sender) | `{ notebookId, title, languageMode, deviceLabel? }` | `{ sessionId, sourceId }` | Gọi **sau** khi `getUserMedia` thành công (FR-005). Lưu `deviceLabel` + `languageMode` vào electron-store (D15). Ghi `ownerId`. Lỗi: `meetingAlreadyRecording`, `meetingDiskLow`, `notebookNotFound`, `invalidInput`. |
+| `meeting:audio` | S | `{ sessionId, seq, pcm: ArrayBuffer }` | — | R4. Sai ⇒ bỏ + đếm, không ném. Chỉ từ `ownerId`. |
 | `meeting:pause` | I (sender) | `{ sessionId, reason: "user"\|"deviceLost" }` | `MeetingState` | Đóng phân đoạn. |
 | `meeting:resume` | I (sender) | `{ sessionId, deviceLabel? }` | `MeetingState` | Mở lại cổng quyền 15 s; phân đoạn mới. |
 | `meeting:stop` | I (sender) | `{ sessionId }` | `{ sourceId }` | ⇒ `stopping` ⇒ `finalizing` (nền). |
 | `meeting:status` | I | — | `MeetingState \| null` | Renderer gắn lại sau reload/điều hướng. |
 | `meeting:rename` | I | `{ sourceId, title }` | `{ ok: true }` | Chỉ `kind="meeting"`. |
-| `meeting:state` | P | `MeetingState` | — | Chỉ tới `ownerWebContentsId` (và cửa sổ chính). Phát khi đổi phase, mỗi 1 s thời lượng, đổi mức đĩa/lag/ngôn ngữ. |
+| `meeting:state` | P | `MeetingState` | — | Chỉ tới `ownerId` (và cửa sổ chính). Phát khi đổi phase, mỗi 1 s thời lượng, đổi mức đĩa/lag/ngôn ngữ. |
 
 `MeetingState`:
 

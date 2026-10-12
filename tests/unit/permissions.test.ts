@@ -118,3 +118,37 @@ describe("createMicGate", () => {
     expect(gate.armedUntil()).toBe(0);
   });
 });
+
+describe("isAppOrigin — bản đóng gói chỉ nhận đúng index.html của app (review L1)", () => {
+  const INDEX =
+    "file:///Applications/InsightVault.app/Contents/Resources/app.asar/out/renderer/index.html";
+  it("đúng tệp index (bỏ qua hash/query) ⇒ true; tệp file:// khác ⇒ false", () => {
+    expect(isAppOrigin(`${INDEX}#/workspace/nb1`, undefined, INDEX)).toBe(true);
+    expect(isAppOrigin(`${INDEX}?x=1`, undefined, INDEX)).toBe(true);
+    expect(isAppOrigin("file:///tmp/evil.html", undefined, INDEX)).toBe(false);
+    expect(
+      isAppOrigin(
+        "file:///Applications/InsightVault.app/Contents/Resources/app.asar/out/renderer/other.html",
+        undefined,
+        INDEX,
+      ),
+    ).toBe(false);
+  });
+
+  it("decideMediaPermission dùng appIndexUrl khi có", () => {
+    expect(
+      decideMediaPermission({
+        ...base,
+        appIndexUrl: INDEX,
+        requestingUrl: "file:///tmp/evil.html",
+      }),
+    ).toBe(false);
+    expect(
+      decideMediaPermission({
+        ...base,
+        appIndexUrl: INDEX,
+        requestingUrl: `${INDEX}#/workspace/nb1`,
+      }),
+    ).toBe(true);
+  });
+});

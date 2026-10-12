@@ -16,6 +16,8 @@ export function FinalizeView({
   const f = rec.finalizing;
   const [title, setTitle] = useState(f?.title ?? "");
   const [pct, setPct] = useState(0);
+  // S4 / S3: kết cục ngoài "sẵn sàng có transcript" — lỗi lập chỉ mục (sẽ thử lại khi mở app) hoặc chưa có transcript.
+  const [outcome, setOutcome] = useState<"ok" | "incomplete" | "failed">("ok");
 
   // Đồng bộ ô tiêu đề khi chuyển sang phiên khác (không ghi đè khi người dùng đang gõ cùng phiên).
   const sourceId = f?.sourceId;
@@ -25,10 +27,19 @@ export function FinalizeView({
   useEffect(() => {
     if (!f) return;
     return window.api.onSourceProgress((e) => {
-      if (e.sourceId === f.sourceId && e.status !== "ready")
-        setPct(Math.round(e.progress * 100));
+      if (e.sourceId !== f.sourceId) return;
+      if (e.status === "error") setOutcome("failed");
+      else if (e.status !== "ready") setPct(Math.round(e.progress * 100));
     });
   }, [f]);
+
+  // Sẵn sàng ⇒ phân biệt có transcript hay chỉ có audio (phase incomplete).
+  useEffect(() => {
+    if (!f?.ready) return;
+    void window.api.sourceGet(f.sourceId).then((src) => {
+      if (src?.meetingPhase === "incomplete") setOutcome("incomplete");
+    });
+  }, [f?.ready, f?.sourceId]);
 
   // Xong + đã chọn "Mở khi hoàn tất" ⇒ mở trình xem và rời màn hoàn tất.
   useEffect(() => {
@@ -75,7 +86,24 @@ export function FinalizeView({
       </header>
 
       <div className="rec-body">
-        {f.ready ? (
+        {f.endReason && (
+          <p
+            className="form-notice"
+            role="status"
+            data-testid="finalize-end-reason"
+          >
+            {t.t(`meeting.ended.${f.endReason}`)}
+          </p>
+        )}
+        {outcome === "failed" ? (
+          <p className="form-error" role="alert" data-testid="finalize-failed">
+            {t.t("meeting.finalize.failed")}
+          </p>
+        ) : f.ready && outcome === "incomplete" ? (
+          <p data-testid="finalize-incomplete">
+            {t.t("meeting.finalize.incomplete")}
+          </p>
+        ) : f.ready ? (
           <p className="rec-ready" data-testid="finalize-ready">
             {t.t("meeting.finalize.ready")}
           </p>
@@ -93,8 +121,8 @@ export function FinalizeView({
               aria-valuenow={pct}
             >
               <span
-                className="src-progress-fill"
-                style={{ width: `${pct}%` }}
+                className="rec-progress-fill"
+                style={{ transform: `scaleX(${pct / 100})` }}
               />
             </div>
           </>

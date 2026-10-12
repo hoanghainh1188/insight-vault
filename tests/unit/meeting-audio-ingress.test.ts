@@ -144,3 +144,15 @@ describe("validateAudioBatch — giới hạn tần suất (≤ 4 lô/giây)", (
     expect(later.verdict).toBe("accept");
   });
 });
+
+describe("validateAudioBatch — chặn seq nhảy vọt (review M3)", () => {
+  it("seq vượt kỳ vọng quá 3600 lô ⇒ reject payload", () => {
+    expect(validateAudioBatch(base, msg({ seq: 3601 }), 0)).toEqual({
+      verdict: "reject",
+      reason: "payload",
+    });
+    expect(validateAudioBatch(base, msg({ seq: 3600 }), 0).verdict).toBe(
+      "accept",
+    );
+  });
+});

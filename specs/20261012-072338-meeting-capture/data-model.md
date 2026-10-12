@@ -83,7 +83,7 @@ Sao lưu (085): thư mục `meetings/` được đưa vào snapshot + `VAULT_ITE
 
 ## 4. Thực thể runtime (main, không lưu DB)
 
-- **ActiveRecording** (một bản duy nhất): `{ sessionId, sourceId, ownerWebContentsId, phase, expectedSeq, segmentWriter, samplesInSegment, durationSamples,
+- **ActiveRecording** (một bản duy nhất): `{ sessionId, sourceId, ownerId, phase, expectedSeq, segmentWriter, samplesInSegment, durationSamples,
   armedUntil, lastBatchAt, diskLevel, draftQueue, languageState }`.
 - **MeetingState** (push `meeting:state`, contract): gồm `segments: {index, durationSec, closed}[]` để renderer tính `?seg=n` bằng `locateInSegments`.
 - **DraftWindow**: `{ id: "w<index>", tStart, tEnd, text, pending: boolean }` — push qua `meeting:draft`.
@@ -125,4 +125,4 @@ PR A ⇒ tự hoàn tất).
 ## 7. Glossary
 
 Thuật ngữ đã append (tag 186) trong `docs/00-glossary.md`. Tên code bám đúng: `MeetingSession`, `CaptureSegment`, `MeetingMarker`, `pauseGap`, `transcript_span`,
-`languageMode`, `levelState`, `diskWarning`, `asr-worker`.
+`languageMode`, `levelState`, `diskLevel`, `asr-worker`.
