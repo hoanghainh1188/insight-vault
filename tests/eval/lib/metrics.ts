@@ -1,5 +1,6 @@
 import type { RelevanceConfig } from "../../../src/main/services/rag/relevance-filter";
 import type { EvalMetrics } from "../../../src/main/services/rag/relevance-calibration";
+import type { EvalFormat, EvalQuestion } from "./dataset";
 
 // 108: chỉ số đánh giá truy xuất (research R5) + chọn cấu hình (FR-011/012) + xác nhận hold-out (C2).
 // Hàm THUẦN — unit test ở tests/unit/eval-metrics.test.ts.
@@ -19,6 +20,22 @@ export interface QuestionOutcome {
   rejected: boolean;
   /** hạng (1-based) của đoạn trúng đầu tiên trong kết quả cuối; null = không trúng */
   hitRank: number | null;
+  /** 177: định dạng tài liệu đích (outcomeFormat); null / thiếu ⇒ không vào nhóm định dạng */
+  format?: EvalFormat | null;
+  /** 177 (điều tra T022): tên nguồn của 6 đoạn đầu kết quả cuối — chỉ để đọc báo cáo, không dùng chấm */
+  topSources?: string[];
+}
+
+/**
+ * 177 (R7): định dạng của câu — có đáp án ⇒ định dạng của docIds[0] (thiếu trong manifest ⇒ md); không đáp án ⇒ "pdf" khi
+ * `topic === "pdf"`, ngược lại null.
+ */
+export function outcomeFormat(
+  q: Pick<EvalQuestion, "type" | "docIds" | "topic">,
+  formats: ReadonlyMap<string, EvalFormat>,
+): EvalFormat | null {
+  if (q.type === "unanswerable") return q.topic === "pdf" ? "pdf" : null;
+  return formats.get(q.docIds[0]) ?? "md";
 }
 
 const answerable = (xs: readonly QuestionOutcome[]) =>
@@ -110,17 +127,71 @@ export function computeMetrics(xs: readonly QuestionOutcome[]): EvalMetrics {
   };
 }
 
-/** dev / holdout: chỉ câu tiếng Việt (tiêu chí ĐẠT); en: tham khảo (cả hai split). */
+/** 177: câu tiếng Việt theo định dạng × tập. */
+export interface SplitGroups<T> {
+  dev: T;
+  holdout: T;
+}
+export type FormatGroups<T> = Record<EvalFormat, SplitGroups<T>>;
+
+/**
+ * dev / holdout: chỉ câu tiếng Việt (tiêu chí ĐẠT); en: tham khảo (cả hai split). 177: `byFormat` (md / pdf × dev / holdout, chỉ
+ * câu vi) để báo cáo nhóm PDF THAM KHẢO — ba nhóm cũ không đổi (cổng 108–109).
+ */
 export function groupOutcomes(xs: readonly QuestionOutcome[]): {
   dev: QuestionOutcome[];
   holdout: QuestionOutcome[];
   en: QuestionOutcome[];
+  byFormat: FormatGroups<QuestionOutcome[]>;
 } {
+  const dev = xs.filter((o) => o.lang === "vi" && o.split === "dev");
+  const holdout = xs.filter((o) => o.lang === "vi" && o.split === "holdout");
+  const of = (ys: readonly QuestionOutcome[], f: EvalFormat) =>
+    ys.filter((o) => o.format === f);
   return {
-    dev: xs.filter((o) => o.lang === "vi" && o.split === "dev"),
-    holdout: xs.filter((o) => o.lang === "vi" && o.split === "holdout"),
+    dev,
+    holdout,
     en: xs.filter((o) => o.lang === "en"),
+    byFormat: {
+      md: { dev: of(dev, "md"), holdout: of(holdout, "md") },
+      pdf: { dev: of(dev, "pdf"), holdout: of(holdout, "pdf") },
+    },
   };
+}
+
+/** 177 (R8): cảnh báo nhóm PDF — chỉ báo, không làm eval fail. */
+export interface PdfWarning {
+  split: "dev" | "holdout";
+  pdfRecallAt6: number;
+  /** cận trên khoảng tin cậy Wilson 95% của Recall@6 nhóm PDF */
+  pdfUpper95: number;
+  mdRecallAt6: number;
+  /** số câu PDF có đáp án */
+  nPdf: number;
+}
+
+/** 177 (clarify #4): cảnh báo khi cận trên Wilson 95% Recall@6 PDF < Recall@6 md, tính riêng dev / hold-out. */
+export function pdfWarnings(
+  byFormat: FormatGroups<readonly QuestionOutcome[]>,
+): PdfWarning[] {
+  return (["dev", "holdout"] as const).flatMap((split) => {
+    const pdf = answerable(byFormat.pdf[split]);
+    if (pdf.length === 0) return [];
+    const hits = pdf.filter((o) => o.hitRank !== null && o.hitRank <= 6).length;
+    const pdfUpper95 = wilson95(hits, pdf.length)[1];
+    const mdRecallAt6 = recallAtK(byFormat.md[split], 6);
+    return pdfUpper95 < mdRecallAt6
+      ? [
+          {
+            split,
+            pdfRecallAt6: hits / pdf.length,
+            pdfUpper95,
+            mdRecallAt6,
+            nPdf: pdf.length,
+          },
+        ]
+      : [];
+  });
 }
 
 const GATE_COST: Record<RelevanceConfig["bm25Gate"], number> = {

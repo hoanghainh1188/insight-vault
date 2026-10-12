@@ -97,5 +97,29 @@
     "retrievedAt": "2026-10-07",
     "noise": true,
     "revisionId": 74981543
+  },
+  {
+    "id": "hop-dong-thue-kho",
+    "title": "Hợp đồng thuê kho số 07/2026 (tự soạn)",
+    "sourceUrl": "tests/eval/lib/pdf-fixture.ts",
+    "license": "CC0-1.0",
+    "retrievedAt": "2026-10-12",
+    "noise": false,
+    "format": "pdf",
+    "file": "hop-dong-thue-kho.pdf",
+    "sha256": "55552fc8f5c768ec5e622278f8d35942775426dd9ba32f6c90dba037fb559c2f",
+    "generator": "tests/eval/lib/pdf-fixture.ts"
+  },
+  {
+    "id": "tuyen-2a-ha-noi",
+    "title": "Tuyến 2A (Đường sắt đô thị Hà Nội)",
+    "sourceUrl": "https://vi.wikipedia.org/w/index.php?title=Tuy%E1%BA%BFn_2A_(%C4%90%C6%B0%E1%BB%9Dng_s%E1%BA%AFt_%C4%91%C3%B4_th%E1%BB%8B_H%C3%A0_N%E1%BB%99i)&oldid=75630311",
+    "license": "CC BY-SA 4.0",
+    "retrievedAt": "2026-10-12",
+    "noise": false,
+    "revisionId": 75630311,
+    "format": "pdf",
+    "file": "tuyen-2a-ha-noi.pdf",
+    "sha256": "abf73820f73b6491cbd19dba510a7aec735905b33cc12c794814fb9500ea13a6"
   }
 ]

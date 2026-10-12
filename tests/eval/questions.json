@@ -1,8 +1,8 @@
 {
-  "datasetVersion": "3",
+  "datasetVersion": "4",
   "reviewed": {
     "by": "Hải",
-    "date": "2026-10-08"
+    "date": "2026-10-12"
   },
   "questions": [
     {
@@ -1752,6 +1752,439 @@
       "split": "dev",
       "quotes": [],
       "docIds": []
+    },
+    {
+      "id": "q-149",
+      "text": "Tuyến 2A dài bao nhiêu km và có bao nhiêu ga trên cao?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "toàn tuyến có tổng chiều dài là 13,05 km với 12 ga trên cao"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-150",
+      "text": "Tuyến 2A chính thức đưa vào khai thác thương mại ngày nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Ngày 6 tháng 11 năm 2021, Tuyến 2A chính thức trở thành tuyến đường sắt đô thị đầu tiên tại Việt Nam được đưa vào khai thác thương mại."
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-151",
+      "text": "Mỗi đoàn tàu của Tuyến 2A chở được tối đa bao nhiêu hành khách?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Mỗi đoàn tàu gồm 4 toa có khả năng chuyên chở tối đa 1 362 hành khách."
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-152",
+      "text": "Tuyến 2A được vận hành bởi bao nhiêu đoàn tàu và do ai sản xuất?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Tuyến 2A hiện đang được vận hành bởi 13 đoàn tàu công nghệ cao dòng BDK02 loại B1 do BSR sản xuất."
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-153",
+      "text": "Depot của Tuyến 2A đặt ở đâu và rộng bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "được đặt tại phường Phú Lương với diện tích khoảng 19,6 ha"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-154",
+      "text": "Giá vé một lượt tối đa đi hết Tuyến 2A là bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "tối đa 15 000 đồng/lượt với toàn tuyến"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-155",
+      "text": "Vé tàu trong ngày của Tuyến 2A giá bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Vé tàu trong ngày: 30 000 đồng/người, không giới hạn số lượt đi lại trên tuyến trong ngày."
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-156",
+      "text": "Những ai được miễn vé đi Tuyến 2A?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Người có công, người cao tuổi, người khuyết tật, trẻ em dưới 6 tuổi, nhân khẩu thuộc hộ nghèo được miễn vé."
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-157",
+      "text": "Tuyến Cát Linh – Hà Đông bắt đầu được tính đến từ năm nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Ý tưởng thực hiện tuyến đường sắt đô thị Cát Linh – Hà Đông xuất hiện từ năm 2003"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-158",
+      "text": "Khi khởi công năm 2011, tổng mức đầu tư của dự án Cát Linh – Hà Đông là bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Dự án được khởi công xây dựng vào tháng 10 năm 2011, với tổng mức đầu tư 552,86 triệu USD (8 770 tỷ VND)",
+        "đầu là 8 770 tỷ đồng"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-159",
+      "text": "Đợt chạy thử toàn tuyến cuối năm 2020 đã vận hành bao nhiêu chuyến tàu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Toàn tuyến đã vận hành hơn 5 700 chuyến tàu an toàn với tổng số trên 70 000 km"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-160",
+      "text": "Tháng 12 năm 2014, sự cố gì xảy ra tại công trường ga Văn Quán?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "một giàn giáo tại công trường ga Văn Quán bị sập khiến một taxi bị mắc kẹt"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-161",
+      "text": "Tuyến 2A kết nối với tuyến buýt nhanh BRT01 tại những ga nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "kết nối với Tuyến buýt nhanh số 01 (BRT 01): tại các ga Yên Nghĩa, ga Văn Khê, ga La Khê và ga Cát Linh."
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-162",
+      "text": "Theo bảng danh sách nhà ga, ga Láng thuộc phường nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "| T2A 04 | Láng | Lang | | 9B, 16, 24, 27, 161, 88 | 1,0 | 2,8 | Đống Đa |"
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-163",
+      "text": "Hà Nội đang được kiến nghị chọn hướng tuyến nào để kéo dài Tuyến 2A tới Xuân Mai?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Hiện Ban Quản lý Đường sắt Đô thị Hà Nội đang đề nghị UBND Thành phố Hà Nội xem xét và chấp thuận phương án 2.",
+        "Phương án 2 là cải tuyến đoạn ở giữa."
+      ],
+      "docIds": [
+        "tuyen-2a-ha-noi"
+      ]
+    },
+    {
+      "id": "q-164",
+      "text": "Hợp đồng thuê kho số 07/2026 có hiệu lực trong bao lâu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Bản hợp-đồng thuê kho này có hiệu lực từ ngày ký và kéo dài năm năm."
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-165",
+      "text": "Hợp đồng thuê kho được xem xét lại bao lâu một lần?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Both parties agree to a long-term lease of the warehouse with a yearly review."
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-166",
+      "text": "Tranh chấp về hợp đồng thuê kho được giải quyết ở đâu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Mọi tranh chấp được giải quyết tại tòa án nơi đặt kho."
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-167",
+      "text": "Bên thuê kho phải trả phí thuê vào lúc nào?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Bên thuê trả phí thuê trước ngày mười của tháng đầu mỗi quý"
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-168",
+      "text": "Bên cho thuê kho có nghĩa vụ bảo trì những gì?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Bên cho thuê bảo trì mái kho, hệ thống điện và bình chữa cháy"
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-169",
+      "text": "Bên cho thuê phải báo trước bao lâu nếu muốn tăng phí thuê kho?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Bên cho thuê báo trước ba mươi ngày nếu muốn tăng phí."
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-170",
+      "text": "Phí thuê kho quý 3 là bao nhiêu triệu đồng?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "| Quý 3 | 1.250 | 87,5 |"
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-171",
+      "text": "Tổng phí thuê kho cả năm đầu là bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "| Cả năm | 4.800 | 336,0 |"
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-172",
+      "text": "Theo phụ lục hợp đồng thuê kho, việc kiểm tra an toàn cháy nổ diễn ra vào ngày nào trong quý?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "holdout",
+      "quotes": [
+        "Kho được kiểm tra phòng cháy vào ngày mười lăm của tháng cuối mỗi quý."
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-173",
+      "text": "Biên bản kiểm tra kho được lưu ở đâu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Biên bản kiểm tra do hai bên cùng ký và lưu tại văn phòng khu công nghiệp."
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-174",
+      "text": "Nền kho số 3 chịu tải bao nhiêu?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "nền bê tông chịu tải ba tấn trên mỗi mét vuông"
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-175",
+      "text": "Phí thuê kho đã bao gồm tiền điện cho máy lạnh chưa?",
+      "lang": "vi",
+      "type": "answerable",
+      "split": "dev",
+      "quotes": [
+        "Phí thuê đã gồm tiền điện chiếu sáng nhưng chưa gồm tiền điện cho máy lạnh."
+      ],
+      "docIds": [
+        "hop-dong-thue-kho"
+      ]
+    },
+    {
+      "id": "q-176",
+      "text": "Mỗi ga của Tuyến 2A có bao nhiêu thang máy?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
+    },
+    {
+      "id": "q-177",
+      "text": "Ga Yên Nghĩa có bao nhiêu chỗ gửi xe máy?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
+    },
+    {
+      "id": "q-178",
+      "text": "Vào giờ cao điểm, các chuyến tàu Tuyến 2A chạy cách nhau bao nhiêu phút?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
+    },
+    {
+      "id": "q-179",
+      "text": "Mức lương của lái tàu Tuyến 2A là bao nhiêu?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
+    },
+    {
+      "id": "q-180",
+      "text": "Tiền đặt cọc khi thuê kho số 3 là bao nhiêu?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
+    },
+    {
+      "id": "q-181",
+      "text": "Hợp đồng thuê kho quy định mức phạt khi bên thuê trả phí chậm là bao nhiêu?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
+    },
+    {
+      "id": "q-182",
+      "text": "Kho số 3 có lắp camera giám sát không?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "holdout",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
+    },
+    {
+      "id": "q-183",
+      "text": "Công ty nào bảo hiểm hàng hóa cất trong kho số 3?",
+      "lang": "vi",
+      "type": "unanswerable",
+      "split": "dev",
+      "quotes": [],
+      "docIds": [],
+      "topic": "pdf"
     }
   ]
 }
