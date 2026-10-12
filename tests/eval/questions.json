@@ -1856,7 +1856,7 @@
     },
     {
       "id": "q-157",
-      "text": "Ý tưởng làm tuyến đường sắt Cát Linh – Hà Đông xuất hiện từ năm nào?",
+      "text": "Tuyến Cát Linh – Hà Đông bắt đầu được tính đến từ năm nào?",
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
@@ -1874,7 +1874,8 @@
       "type": "answerable",
       "split": "dev",
       "quotes": [
-        "Dự án được khởi công xây dựng vào tháng 10 năm 2011, với tổng mức đầu tư 552,86 triệu USD (8 770 tỷ VND)"
+        "Dự án được khởi công xây dựng vào tháng 10 năm 2011, với tổng mức đầu tư 552,86 triệu USD (8 770 tỷ VND)",
+        "đầu là 8 770 tỷ đồng"
       ],
       "docIds": [
         "tuyen-2a-ha-noi"
@@ -1895,7 +1896,7 @@
     },
     {
       "id": "q-160",
-      "text": "Sự cố nào xảy ra tại công trường ga Văn Quán?",
+      "text": "Tháng 12 năm 2014, sự cố gì xảy ra tại công trường ga Văn Quán?",
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
@@ -1921,12 +1922,12 @@
     },
     {
       "id": "q-162",
-      "text": "Trong bảng nhà ga Tuyến 2A, ga Láng mang ký hiệu nào?",
+      "text": "Theo bảng danh sách nhà ga, ga Láng thuộc phường nào?",
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
       "quotes": [
-        "| T2A 04 | Láng | Lang |"
+        "| T2A 04 | Láng | Lang | | 9B, 16, 24, 27, 161, 88 | 1,0 | 2,8 | Đống Đa |"
       ],
       "docIds": [
         "tuyen-2a-ha-noi"
@@ -1934,12 +1935,13 @@
     },
     {
       "id": "q-163",
-      "text": "Ban Quản lý Đường sắt Đô thị Hà Nội đề nghị chọn phương án nào cho đoạn kéo dài Yên Nghĩa – Xuân Mai?",
+      "text": "Hà Nội đang được kiến nghị chọn hướng tuyến nào để kéo dài Tuyến 2A tới Xuân Mai?",
       "lang": "vi",
       "type": "answerable",
       "split": "dev",
       "quotes": [
-        "Hiện Ban Quản lý Đường sắt Đô thị Hà Nội đang đề nghị UBND Thành phố Hà Nội xem xét và chấp thuận phương án 2."
+        "Hiện Ban Quản lý Đường sắt Đô thị Hà Nội đang đề nghị UBND Thành phố Hà Nội xem xét và chấp thuận phương án 2.",
+        "Phương án 2 là cải tuyến đoạn ở giữa."
       ],
       "docIds": [
         "tuyen-2a-ha-noi"
@@ -1963,7 +1965,7 @@
       "text": "Hợp đồng thuê kho được xem xét lại bao lâu một lần?",
       "lang": "vi",
       "type": "answerable",
-      "split": "dev",
+      "split": "holdout",
       "quotes": [
         "Both parties agree to a long-term lease of the warehouse with a yearly review."
       ],
@@ -2015,7 +2017,7 @@
       "text": "Bên cho thuê phải báo trước bao lâu nếu muốn tăng phí thuê kho?",
       "lang": "vi",
       "type": "answerable",
-      "split": "dev",
+      "split": "holdout",
       "quotes": [
         "Bên cho thuê báo trước ba mươi ngày nếu muốn tăng phí."
       ],
@@ -2051,7 +2053,7 @@
     },
     {
       "id": "q-172",
-      "text": "Kho được kiểm tra phòng cháy vào thời điểm nào?",
+      "text": "Theo phụ lục hợp đồng thuê kho, việc kiểm tra an toàn cháy nổ diễn ra vào ngày nào trong quý?",
       "lang": "vi",
       "type": "answerable",
       "split": "holdout",
@@ -2093,7 +2095,7 @@
       "text": "Phí thuê kho đã bao gồm tiền điện cho máy lạnh chưa?",
       "lang": "vi",
       "type": "answerable",
-      "split": "holdout",
+      "split": "dev",
       "quotes": [
         "Phí thuê đã gồm tiền điện chiếu sáng nhưng chưa gồm tiền điện cho máy lạnh."
       ],
