@@ -5,7 +5,7 @@ import { createServer, type Server } from "node:http";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import type { Page } from "@playwright/test";
-import { launchFresh, dismissOnboarding } from "./helper";
+import { launchFresh, dismissOnboarding, sizedWindow } from "./helper";
 
 // 178 (T048, US3): yêu cầu tuỳ chỉnh end-to-end với "Ollama" giả HTTP ghi lại messages — yêu cầu CHỈ ở tin user (khối
 // <request>), không ở system; rỗng / 501 ký tự ⇒ không có request AI; yêu cầu B thay A đang chạy ⇒ chỉ B thành phiên bản;
@@ -117,10 +117,7 @@ test("178 — yêu cầu tuỳ chỉnh: chỉ ở tin user, kiểm độ dài, B
   const fake = await fakeOllama();
   const app = await launchFresh({ OLLAMA_HOST: fake.url });
   try {
-    const win = await app.firstWindow();
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0]!.setSize(900, 760),
-    );
+    const win = await sizedWindow(app, 900, 760);
     await dismissOnboarding(win);
     const nbId = await openNotebook(win, await smallDoc());
     await expect(win.getByTestId("studio-btn-summary")).toBeEnabled({
@@ -210,10 +207,7 @@ test("178 — yêu cầu tuỳ chỉnh (en): nhãn dịch, không tràn ở 900 
   const fake = await fakeOllama();
   const app = await launchFresh({ OLLAMA_HOST: fake.url, IV_UI_LANG: "en" });
   try {
-    const win = await app.firstWindow();
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0]!.setSize(900, 760),
-    );
+    const win = await sizedWindow(app, 900, 760);
     await dismissOnboarding(win);
     await openNotebook(win, await smallDoc());
     await expect(win.getByTestId("studio-custom-submit")).toHaveText("Create");

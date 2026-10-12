@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { createServer, type Server } from "node:http";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { launchFresh, dismissOnboarding } from "./helper";
+import { launchFresh, dismissOnboarding, sizedWindow } from "./helper";
 
 // 178 (T020): lịch sử phiên bản Studio end-to-end với "Ollama" giả HTTP — mỗi lượt trả nội dung khác nhau.
 // 3 lần tạo ⇒ 3 phiên bản; chọn bản 1 + Copy đúng bản; xoá bản đang xem (xác nhận); Tạo lại + Huỷ ⇒ không thêm bản;
@@ -110,10 +110,7 @@ test("178 — phiên bản: tạo 3 lần, chọn bản cũ + Copy, xoá có xá
   const fake = await fakeOllama();
   const app = await launchFresh({ OLLAMA_HOST: fake.url });
   try {
-    const win = await app.firstWindow();
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0]!.setSize(900, 760),
-    );
+    const win = await sizedWindow(app, 900, 760);
     await dismissOnboarding(win);
     const nbId = await openNotebook(win, await smallDoc());
 

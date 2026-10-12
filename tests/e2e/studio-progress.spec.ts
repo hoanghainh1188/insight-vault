@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { createServer, type Server } from "node:http";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { launchFresh, dismissOnboarding } from "./helper";
+import { launchFresh, dismissOnboarding, sizedWindow } from "./helper";
 
 // 146 (T020): tiến độ Studio end-to-end với "Ollama" giả (như #135) — /api/tags + /api/chat chậm ~1,5 s. Notebook nhỏ ⇒ một lượt
 // ⇒ thẻ hiện "Đang viết…" (bất định) rồi kết quả. Cột Studio hẹp không tràn (vi/en); (L1) giảm chuyển động ⇒ thanh không chạy.
@@ -90,10 +90,7 @@ for (const lang of ["vi", "en"] as const) {
     const { server, url } = await fakeOllama();
     const app = await launchFresh({ OLLAMA_HOST: url, IV_UI_LANG: lang });
     try {
-      const win = await app.firstWindow();
-      await app.evaluate(({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows()[0]!.setSize(1024, 760),
-      );
+      const win = await sizedWindow(app, 1024, 760);
       await dismissOnboarding(win);
 
       // Preload: kênh chỉ nhận, không lộ invoke chung.
@@ -167,10 +164,7 @@ test("146 — nhiều phần: đọc i/N tăng dần rồi viết; cửa sổ nh
   const { server, url } = await fakeOllama(700);
   const app = await launchFresh({ OLLAMA_HOST: url });
   try {
-    const win = await app.firstWindow();
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0]!.setSize(900, 700),
-    );
+    const win = await sizedWindow(app, 900, 700);
     await dismissOnboarding(win);
     await openNotebook(win, big);
     const btn = win.getByTestId("studio-btn-keyPoints");

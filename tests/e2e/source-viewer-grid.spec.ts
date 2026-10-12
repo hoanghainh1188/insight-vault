@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { createServer, type Server } from "node:http";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { launchFresh, dismissOnboarding } from "./helper";
+import { launchFresh, dismissOnboarding, sizedWindow } from "./helper";
 import { makePdf } from "../fixtures/pdf/make-pdf";
 import { borderlessTable } from "../fixtures/pdf/samples";
 
@@ -81,10 +81,7 @@ for (const lang of ["vi", "en"] as const) {
     const { server, url } = await fakeOllama();
     const app = await launchFresh({ OLLAMA_HOST: url, IV_UI_LANG: lang });
     try {
-      const win = await app.firstWindow();
-      await app.evaluate(({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows()[0]!.setSize(900, 760),
-      );
+      const win = await sizedWindow(app, 900, 760);
       await dismissOnboarding(win);
       await openWithTablePdf(win);
 

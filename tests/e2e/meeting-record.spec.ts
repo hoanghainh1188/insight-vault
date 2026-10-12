@@ -1,7 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { dismissOnboarding, launchMeeting, openNewWorkspace } from "./helper";
+import {
+  dismissOnboarding,
+  evaluateMain,
+  launchMeeting,
+  openNewWorkspace,
+  readyWindow,
+} from "./helper";
 
 // 186 — PR A qua giao diện (quickstart dòng PR A): hộp bắt đầu → ghi → tạm dừng/tiếp tục → điều hướng không dừng ghi →
 // kết thúc → màn hoàn tất → nguồn sẵn sàng → mở trích dẫn từ tìm toàn văn chỉ TUA (C1) → xoá nguồn xoá audio. Kèm SC-004
@@ -10,17 +16,20 @@ import { dismissOnboarding, launchMeeting, openNewWorkspace } from "./helper";
 test("ghi cuộc họp qua giao diện, hoàn tất, trích dẫn chỉ tua, xoá được", async () => {
   test.setTimeout(120_000);
   const { app, userData } = await launchMeeting();
-  // SC-010: đếm mọi request không phải tài nguyên nội bộ của app.
-  await app.evaluate(({ session }) => {
-    const g = globalThis as unknown as { __external: string[] };
-    g.__external = [];
+  // 196: chờ cửa sổ đầu tải xong rồi mới hỏi main (gọi ngay sau launch ⇒ "Execution context was destroyed" chập chờn).
+  // Bộ đếm vẫn đăng ký trước mọi thao tác của luồng ghi ⇒ SC-010 không bị nới; tải shell lúc khởi động do no-egress (V8) phủ.
+  const win = await readyWindow(app);
+  // SC-010: đếm mọi request không phải tài nguyên nội bộ của app (idempotent — evaluateMain có thể chạy lại 1 lần).
+  await evaluateMain(app, ({ session }) => {
+    const g = globalThis as unknown as { __external?: string[] };
+    g.__external ??= [];
+    const external = g.__external;
     session.defaultSession.webRequest.onBeforeRequest((d, cb) => {
       if (!/^(file|iv-media|devtools|data|blob|chrome-extension):/.test(d.url))
-        g.__external.push(d.url);
+        external.push(d.url);
       cb({});
     });
   });
-  const win = await app.firstWindow();
   await dismissOnboarding(win);
   const nbId = await openNewWorkspace(win);
 
@@ -109,8 +118,9 @@ test("ghi cuộc họp qua giao diện, hoàn tất, trích dẫn chỉ tua, xo�
   expect(await audio.evaluate((a: HTMLAudioElement) => a.paused)).toBe(true);
 
   // SC-010.
-  const external = await app.evaluate(
-    () => (globalThis as unknown as { __external: string[] }).__external,
+  const external = await evaluateMain(
+    app,
+    () => (globalThis as unknown as { __external?: string[] }).__external,
   );
   expect(external).toEqual([]);
   expect((await win.evaluate(() => window.api.getPrivacyState())).mode).toBe(
