@@ -40,6 +40,49 @@ export async function launchFreshAt(
   return { app, userData };
 }
 
+/**
+ * 196: chờ cửa sổ đầu tải xong DOM rồi mới trả — gọi trước mọi app.evaluate ở đầu test. app.evaluate ngay sau launch
+ * đua với lần điều hướng đầu ⇒ "Execution context was destroyed" chập chờn trên CI (ubuntu + xvfb).
+ */
+export async function readyWindow(app: ElectronApplication): Promise<Page> {
+  const win = await app.firstWindow();
+  await win.waitForLoadState("domcontentloaded");
+  return win;
+}
+
+/**
+ * 196: app.evaluate ở main process, thử lại đúng 1 lần nếu ngữ cảnh bị huỷ do điều hướng. `fn` PHẢI idempotent (lần
+ * đầu có thể đã chạy một phần trước khi lỗi ném về) và không dùng biến đóng gói — truyền qua `arg` (hàm bị tuần tự hoá).
+ */
+export async function evaluateMain<R, A = undefined>(
+  app: ElectronApplication,
+  fn: (electron: typeof import("electron"), arg: A) => R | Promise<R>,
+  arg?: A,
+): Promise<R> {
+  try {
+    return await app.evaluate(fn, arg as A);
+  } catch (e) {
+    if (!String(e).includes("Execution context was destroyed")) throw e;
+    return await app.evaluate(fn, arg as A);
+  }
+}
+
+/** Đặt kích thước cửa sổ đầu (chờ cửa sổ sẵn sàng trước — xem readyWindow). Trả cửa sổ. */
+export async function sizedWindow(
+  app: ElectronApplication,
+  width: number,
+  height: number,
+): Promise<Page> {
+  const win = await readyWindow(app);
+  await evaluateMain(
+    app,
+    ({ BrowserWindow }, [w, h]) =>
+      BrowserWindow.getAllWindows()[0]!.setSize(w, h),
+    [width, height] as const,
+  );
+  return win;
+}
+
 /** OLLAMA_HOST trỏ cổng chắc chắn không có service → ping fail → ollamaReady=false (tất định). */
 export const UNREACHABLE_OLLAMA = { OLLAMA_HOST: "http://127.0.0.1:1" };
 
