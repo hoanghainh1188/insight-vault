@@ -8,6 +8,7 @@ import {
   RERANK_MODEL,
   RERANK_MODEL_REVISION,
 } from "../../../src/main/services/rerank/model-version";
+import { passageIds } from "./rerank-diagnose";
 
 // 109 (research R1–R3, R11): nạp bộ chấm độ liên quan (cross-encoder) trong công cụ đo + đo độ trễ/RAM/event loop. I/O,
 // KHÔNG tính coverage. Điểm cache theo (truy vấn, id) ⇒ quét 96 cấu hình chỉ chấm một lần/câu.
@@ -28,6 +29,11 @@ export interface RerankScorer {
   model: string;
   modelFile: string | null;
   score: (query: string, passages: Passage[]) => Promise<Map<string, number>>;
+  /**
+   * 187 (research R2): phần ĐOẠN còn lại sau khi tokenizer cắt cặp (câu hỏi, đoạn) ở cùng `max_length` của scorer — giải mã lại
+   * thành chữ để kiểm trích dẫn đáp án có còn trong cửa sổ bộ chấm thấy không.
+   */
+  windowText: (query: string, passageText: string) => string;
   stats: () => RerankStats;
   dispose: () => void;
 }
@@ -46,7 +52,7 @@ interface SeqModel {
     inputs: unknown,
   ): Promise<{ logits: { sigmoid(): { tolist(): number[][] } } }>;
 }
-type Tokenizer = (
+type Tokenizer = ((
   a: string[],
   o: {
     text_pair: string[];
@@ -54,7 +60,10 @@ type Tokenizer = (
     truncation: boolean;
     max_length: number;
   },
-) => unknown;
+) => unknown) & {
+  sep_token_id: number;
+  decode: (ids: number[], o: { skip_special_tokens: boolean }) => string;
+};
 
 export async function loadScorer(
   model: string,
@@ -128,10 +137,24 @@ export async function loadScorer(
     );
   };
 
+  const windowText = (query: string, passageText: string): string => {
+    const enc = tokenizer([query], {
+      text_pair: [passageText],
+      padding: false,
+      truncation: true,
+      max_length: maxLength,
+    }) as { input_ids: { tolist(): (number | bigint)[][] } };
+    const ids = enc.input_ids.tolist()[0].map(Number);
+    return tokenizer.decode(passageIds(ids, tokenizer.sep_token_id), {
+      skip_special_tokens: true,
+    });
+  };
+
   return {
     model,
     modelFile,
     score,
+    windowText,
     stats: () => ({
       coldLoadMs,
       callMs: [...callMs],

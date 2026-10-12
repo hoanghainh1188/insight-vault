@@ -33,6 +33,7 @@ import { PDF_EXTRACTION_VERSION } from "../../src/shared/ipc/types";
 import { docFormat } from "./lib/dataset";
 import { runRerankModel } from "./lib/rerank-run";
 import { loadScorer } from "./lib/rerank";
+import { diagnoseRerank } from "./lib/rerank-diagnose";
 import {
   describeConfig,
   renderMarkdown,
@@ -51,6 +52,7 @@ const CACHE_DIR = resolve(
   process.env.EVAL_CACHE_DIR ?? resolve(EVAL_DIR, ".cache", "models"),
 );
 const key = (c: RelevanceConfig) => JSON.stringify(c);
+const DETAILS = process.env.EVAL_DETAILS === "1";
 
 function percentile(xs: readonly number[], p: number): number {
   const s = [...xs].sort((a, b) => a - b);
@@ -307,6 +309,7 @@ describe("eval:retrieval", () => {
         "pdfExtractionVersion" | "byFormat" | "pdfWarnings"
       > = {};
       let productionDetails: QuestionOutcome[] | undefined;
+      let rerankDiagnosis: EvalReport["rerankDiagnosis"];
       if (ds.documents.some((d) => docFormat(d) === "pdf")) {
         // Review #177: chưa có cache mô hình bộ chấm (máy offline lần đầu) ⇒ đo nhóm PDF KHÔNG bộ chấm + cảnh báo, không fail lượt.
         const scorer = RELEVANCE_CALIBRATION.rerank
@@ -331,10 +334,20 @@ describe("eval:retrieval", () => {
               ? {
                   score: scorer.score,
                   cfg: RELEVANCE_CALIBRATION.rerank.config,
+                  // 187: EVAL_DETAILS=1 ⇒ ghi điểm mọi ứng viên + cửa sổ token (chẩn đoán); không đổi số liệu / cổng.
+                  ...(DETAILS
+                    ? { record: { windowText: scorer.windowText } }
+                    : {}),
                 }
               : undefined,
           );
           productionDetails = outcomes;
+          if (DETAILS && scorer && RELEVANCE_CALIBRATION.rerank) {
+            rerankDiagnosis = diagnoseRerank(
+              outcomes,
+              RELEVANCE_CALIBRATION.rerank.config.minScore,
+            );
+          }
           const fg = groupOutcomes(outcomes).byFormat;
           pdfPart = {
             pdfExtractionVersion: PDF_EXTRACTION_VERSION,
@@ -375,8 +388,7 @@ describe("eval:retrieval", () => {
         ...(rerank.length > 0 ? { rerank } : {}),
         ...pdfPart,
         // Review #177: kết quả từng câu chỉ ghi khi EVAL_DETAILS=1 (điều tra hồi quy) — report.json mặc định gọn.
-        ...(process.env.EVAL_DETAILS === "1" &&
-        (relevanceDetails || productionDetails)
+        ...(DETAILS && (relevanceDetails || productionDetails)
           ? {
               details: {
                 ...(relevanceDetails ? { relevance: relevanceDetails } : {}),
@@ -384,6 +396,7 @@ describe("eval:retrieval", () => {
               },
             }
           : {}),
+        ...(rerankDiagnosis ? { rerankDiagnosis } : {}),
         warnings,
       };
 

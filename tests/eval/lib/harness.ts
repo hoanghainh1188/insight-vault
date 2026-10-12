@@ -31,6 +31,7 @@ import {
   type EvalQuestion,
 } from "./dataset";
 import { outcomeFormat, type QuestionOutcome } from "./metrics";
+import type { RerankCandidate } from "./rerank-diagnose";
 
 // 108: phần I/O của công cụ đo (KHÔNG tính coverage). Dựng SQLite + LanceDB + FTS5 THẬT trên thư mục tạm, nạp mọi
 // tài liệu (kể cả nhiễu) vào MỘT notebook qua pipeline thật (chia đoạn + e5 passage), rồi gọi ĐÚNG retrieve() của app
@@ -256,6 +257,57 @@ export interface RerankRun {
   cfg: RerankConfig;
   /** đếm số lần bước chấm bị bỏ qua (fail-open) — phải bằng 0 khi đo */
   onSkip?: (reason: string) => void;
+  /**
+   * 187 (research R1): ghi điểm của MỌI ứng viên mỗi lượt chấm (kể cả câu bị từ chối) ⇒ `QuestionOutcome.rerankCandidates`.
+   * `windowText` (scorer) cho cờ trích dẫn còn trong cửa sổ token của đoạn đúng.
+   */
+  record?: { windowText: (query: string, passageText: string) => string };
+}
+
+type Scored = { id: string; text: string; score: number };
+
+/** 187: ô ghi lượt chấm của câu ĐANG đo (đặt lại trước mỗi câu ⇒ không lẫn câu trùng chữ; null = câu không được chấm). */
+type ScoreSlot = { last: Scored[] | null };
+
+/** 187: bọc hàm chấm để nhớ ứng viên theo ĐÚNG thứ tự retrieve() gửi + điểm (thiếu điểm ⇒ NaN, không âm thầm thành 0). */
+function recordingScore(
+  score: RerankRun["score"],
+  slot: ScoreSlot,
+): RerankRun["score"] {
+  return async (query, passages) => {
+    const scores = await score(query, passages);
+    slot.last = passages.map((p) => ({
+      ...p,
+      score: scores.get(p.id) ?? Number.NaN,
+    }));
+    return scores;
+  };
+}
+
+/** 187: ứng viên đã ghi của một câu ⇒ `RerankCandidate[]` (hit + trích dẫn trong cửa sổ cho đoạn đúng). */
+function toCandidates(
+  q: EvalQuestion,
+  scored: readonly Scored[],
+  deps: RetrievalDeps,
+  windowText: (query: string, passageText: string) => string,
+): RerankCandidate[] {
+  const sourceOf = new Map(
+    deps.getChunksByIds(scored.map((s) => s.id)).map((c) => [c.id, c.sourceId]),
+  );
+  return scored.map((s) => {
+    const hit =
+      q.type === "answerable" && chunkContainsAnyQuote(s.text, q.quotes);
+    const sid = sourceOf.get(s.id);
+    return {
+      chunkId: s.id,
+      source: sid ? deps.sourceTitle(sid) : "?",
+      score: s.score,
+      hit,
+      quoteInWindow: hit
+        ? chunkContainsAnyQuote(windowText(q.text, s.text), q.quotes)
+        : null,
+    };
+  });
 }
 
 /**
@@ -268,12 +320,18 @@ export async function evaluateConfig(
   cfg: RelevanceConfig,
   rerank?: RerankRun,
 ): Promise<{ outcomes: QuestionOutcome[]; avgRetrieveMs: number }> {
+  const slot: ScoreSlot = { last: null };
+  const score =
+    rerank?.record && rerank.score
+      ? recordingScore(rerank.score, slot)
+      : rerank?.score;
   const deps: RetrievalDeps = rerank
-    ? { ...index.deps, rerank: rerank.score, onRerankSkip: rerank.onSkip }
+    ? { ...index.deps, rerank: score, onRerankSkip: rerank.onSkip }
     : index.deps;
   const outcomes: QuestionOutcome[] = [];
   let total = 0;
   for (const q of questions) {
+    slot.last = null;
     const t0 = performance.now();
     const scored = await retrieve(
       q.text,
@@ -284,6 +342,7 @@ export async function evaluateConfig(
       rerank?.cfg ?? null,
     );
     total += performance.now() - t0;
+    const recorded = slot.last;
     const rank =
       q.type === "answerable"
         ? scored.findIndex((s) => chunkContainsAnyQuote(s.chunk.text, q.quotes))
@@ -297,6 +356,17 @@ export async function evaluateConfig(
       hitRank: rank >= 0 ? rank + 1 : null,
       format: outcomeFormat(q, index.formats),
       topSources: scored.slice(0, 6).map((s) => s.sourceTitle),
+      // Câu không được chấm (không ứng viên / fail-open) ⇒ không gắn ứng viên ⇒ diagnoseRerank bỏ qua, không đoán nguyên nhân.
+      ...(rerank?.record && recorded
+        ? {
+            rerankCandidates: toCandidates(
+              q,
+              recorded,
+              index.deps,
+              rerank.record.windowText,
+            ),
+          }
+        : {}),
     });
   }
   return {

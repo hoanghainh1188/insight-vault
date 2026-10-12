@@ -336,6 +336,34 @@ describe("177: validateQuestions — PDF", () => {
   });
 });
 
+describe("187: validateQuestions — topicDocId", () => {
+  const docs = [doc("d0"), doc("n0", { noise: true })];
+  const run = (qs: EvalQuestion[]) =>
+    validateQuestions(
+      { datasetVersion: "5", reviewed: null, questions: qs },
+      new Map([["d0", "Hà Nội là thủ đô."]]),
+      new Set(["d0", "n0"]),
+      new Set(["n0"]),
+      docs,
+    ).join("\n");
+  const u = (id: string, topicDocId: string) =>
+    q(id, { type: "unanswerable", quotes: [], docIds: [], topicDocId });
+
+  it("câu unanswerable trỏ tài liệu thật ⇒ hợp lệ", () => {
+    expect(run([u("u1", "d0")])).toBe("");
+  });
+
+  it("chỉ ở câu unanswerable; id phải tồn tại và không phải tài liệu nhiễu", () => {
+    expect(
+      run([q("a1", { docIds: ["d0"], quotes: ["Hà Nội"], topicDocId: "d0" })]),
+    ).toMatch(/câu a1: topicDocId chỉ dùng cho câu unanswerable/);
+    expect(run([u("u2", "x9")])).toMatch(/câu u2: topicDocId lạ "x9"/);
+    expect(run([u("u3", "n0")])).toMatch(
+      /câu u3: topicDocId trỏ tài liệu nhiễu "n0"/,
+    );
+  });
+});
+
 describe("177: loadDataset — PDF qua parsePdf thật", () => {
   let dir = "";
   afterEach(() => {

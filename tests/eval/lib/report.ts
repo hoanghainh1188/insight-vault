@@ -11,6 +11,7 @@ import type {
 import type { LlmResult } from "./harness";
 import type { LlmSummary } from "./llm-metrics";
 import type { RerankModelReport } from "./rerank-run";
+import type { RerankCause, RerankDiagnosis } from "./rerank-diagnose";
 import type { RerankConfig } from "../../../src/main/services/rag/rerank-filter";
 
 // 108: báo cáo công cụ đo — console + tests/eval/reports/<ts>/report.{json,md} (gitignore). I/O, không tính coverage.
@@ -63,6 +64,8 @@ export interface EvalReport {
     relevance?: QuestionOutcome[];
     production?: QuestionOutcome[];
   };
+  /** 187: chẩn đoán bộ chấm trên đường app (EVAL_DETAILS=1) — câu có nguyên nhân ≠ ok + danh sách quan tâm */
+  rerankDiagnosis?: RerankDiagnosis[];
   warnings: string[];
 }
 
@@ -151,6 +154,36 @@ export function renderPdfSection(r: EvalReport): string[] {
   ];
 }
 
+const DIAG_CAUSES: readonly RerankCause[] = [
+  "cutOff",
+  "lowScoreInWindow",
+  "rankedOut",
+  "nearTopicHighScore",
+  "notRetrieved",
+];
+const score3 = (x: number | null) => (x === null ? "—" : x.toFixed(3));
+
+/** 187 (contracts/diagnostics.md): mục "Chẩn đoán bộ chấm"; không có ⇒ rỗng. Chỉ id / điểm — không in nội dung đoạn. Thuần. */
+export function renderRerankDiagnosis(r: EvalReport): string[] {
+  if (!r.rerankDiagnosis) return [];
+  const ds = r.rerankDiagnosis;
+  const row = (d: RerankDiagnosis) =>
+    `| ${d.questionId} | ${d.type === "answerable" ? "có đáp án" : "không đáp án"} | ${d.split === "dev" ? "dev" : "hold-out"} | ${d.cause} | ${score3(d.bestScore)} | ${score3(d.answerScore)} | ${d.answerRrfRank ?? "—"} | ${d.quoteInWindow === null ? "—" : d.quoteInWindow ? "có" : "không"} |`;
+  const total = DIAG_CAUSES.map(
+    (c) => `${c} ${ds.filter((d) => d.cause === c).length}`,
+  ).join(" · ");
+  return [
+    "## Chẩn đoán bộ chấm (cấu hình đã ghi — chỉ khi EVAL_DETAILS=1)",
+    "",
+    "| Câu | Loại | Tập | Nguyên nhân | Điểm cao nhất | Điểm đoạn đúng | Hạng RRF đoạn đúng | Đáp án trong cửa sổ token |",
+    "|---|---|---|---|---|---|---|---|",
+    ...ds.map(row),
+    "",
+    `Tổng theo nguyên nhân: ${total}`,
+    "",
+  ];
+}
+
 export function renderMarkdown(r: EvalReport): string {
   const head = [
     `# Báo cáo đánh giá truy xuất — ${r.runAt}`,
@@ -220,6 +253,7 @@ export function renderMarkdown(r: EvalReport): string {
       ...latency,
       ...table,
       ...renderPdfSection(r),
+      ...renderRerankDiagnosis(r),
       ...(r.rerank ? rerankMd(r.rerank, r.baseline) : []),
       ...llm,
       ...hist,
