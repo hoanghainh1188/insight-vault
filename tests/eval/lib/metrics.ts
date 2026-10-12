@@ -1,6 +1,7 @@
 import type { RelevanceConfig } from "../../../src/main/services/rag/relevance-filter";
 import type { EvalMetrics } from "../../../src/main/services/rag/relevance-calibration";
 import type { EvalFormat, EvalQuestion } from "./dataset";
+import type { RerankCandidate } from "./rerank-diagnose";
 
 // 108: chỉ số đánh giá truy xuất (research R5) + chọn cấu hình (FR-011/012) + xác nhận hold-out (C2).
 // Hàm THUẦN — unit test ở tests/unit/eval-metrics.test.ts.
@@ -24,6 +25,8 @@ export interface QuestionOutcome {
   format?: EvalFormat | null;
   /** 177 (điều tra T022): tên nguồn của 6 đoạn đầu kết quả cuối — chỉ để đọc báo cáo, không dùng chấm */
   topSources?: string[];
+  /** 187: điểm bộ chấm của MỌI ứng viên (thứ tự RRF) — chỉ khi chạy bộ chấm với `record` (EVAL_DETAILS=1) */
+  rerankCandidates?: RerankCandidate[];
 }
 
 /**

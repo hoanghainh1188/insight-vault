@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   renderMarkdown,
   renderPdfSection,
+  renderRerankDiagnosis,
   type ConfigResult,
   type EvalReport,
 } from "../eval/lib/report";
@@ -104,5 +105,74 @@ describe("renderPdfSection", () => {
 
   it("renderMarkdown chèn mục PDF khi có dữ liệu", () => {
     expect(renderMarkdown(withPdf(true))).toContain("## Nhóm PDF");
+  });
+});
+
+// 187 (T007, contracts/diagnostics.md): mục "Chẩn đoán bộ chấm" — bảng từng câu + tổng theo nguyên nhân; không in nội dung đoạn.
+describe("renderRerankDiagnosis", () => {
+  const diag = base({
+    rerankDiagnosis: [
+      {
+        questionId: "q-162",
+        type: "answerable",
+        split: "holdout",
+        bestScore: 0.41,
+        answerScore: 0.2,
+        answerRrfRank: 3,
+        quoteInWindow: false,
+        cause: "cutOff",
+      },
+      {
+        questionId: "q-176",
+        type: "unanswerable",
+        split: "dev",
+        bestScore: 0.93,
+        answerScore: null,
+        answerRrfRank: null,
+        quoteInWindow: null,
+        cause: "nearTopicHighScore",
+      },
+      {
+        questionId: "q-170",
+        type: "answerable",
+        split: "dev",
+        bestScore: 0.88,
+        answerScore: 0.88,
+        answerRrfRank: 1,
+        quoteInWindow: true,
+        cause: "ok",
+      },
+    ],
+  });
+
+  it("không có rerankDiagnosis ⇒ rỗng; renderMarkdown không có mục", () => {
+    expect(renderRerankDiagnosis(base())).toEqual([]);
+    expect(renderMarkdown(base())).not.toContain("Chẩn đoán bộ chấm");
+  });
+
+  it("có ⇒ tiêu đề, bảng từng câu, tổng theo nguyên nhân", () => {
+    const md = renderRerankDiagnosis(diag).join("\n");
+    expect(md).toContain(
+      "## Chẩn đoán bộ chấm (cấu hình đã ghi — chỉ khi EVAL_DETAILS=1)",
+    );
+    expect(md).toContain(
+      "| Câu | Loại | Tập | Nguyên nhân | Điểm cao nhất | Điểm đoạn đúng | Hạng RRF đoạn đúng | Đáp án trong cửa sổ token |",
+    );
+    expect(md).toContain(
+      "| q-162 | có đáp án | hold-out | cutOff | 0.410 | 0.200 | 3 | không |",
+    );
+    expect(md).toContain(
+      "| q-176 | không đáp án | dev | nearTopicHighScore | 0.930 | — | — | — |",
+    );
+    expect(md).toContain(
+      "| q-170 | có đáp án | dev | ok | 0.880 | 0.880 | 1 | có |",
+    );
+    expect(md).toContain(
+      "Tổng theo nguyên nhân: cutOff 1 · lowScoreInWindow 0 · rankedOut 0 · nearTopicHighScore 1 · notRetrieved 0",
+    );
+  });
+
+  it("renderMarkdown chèn mục chẩn đoán khi có", () => {
+    expect(renderMarkdown(diag)).toContain("## Chẩn đoán bộ chấm");
   });
 });

@@ -54,6 +54,8 @@ Run workflow ⇒ artifact `eval-report`. Job không chặn PR.
   Việt giữ gạch nối `hợp-đồng`), nằm trọn trong một trang. Câu không đáp án sát chủ đề PDF thêm `topic: "pdf"` để vào nhóm PDF.
   `npm test` (`tests/unit/eval-pdf-corpus.test.ts`) kiểm sha256, trích tất định ≤ 1000 ms, tổng ≤ 1 MiB, metadata, mọi trích dẫn —
   không cần mô hình.
+- (187, v5) Câu không đáp án **sát chủ đề** một tài liệu thật: thêm `topicDocId` = id tài liệu đó (chỉ ở `unanswerable`, không trỏ tài
+  liệu nhiễu); mỗi tài liệu thật có ≥ 2 câu như vậy (`tests/unit/eval-dataset-v5.test.ts`).
 - PDF fixture: `UPDATE_EVAL_FIXTURE=1 npx vitest run tests/unit/eval-pdf-fixture.test.ts` ghi lại tệp (phải trùng từng byte).
 - **Khi `PDF_EXTRACTION_VERSION` / cách trích PDF đổi:** trích dẫn PDF có thể ngừng khớp ⇒ kiểm dữ liệu fail (đây là tín hiệu
   hồi quy mong muốn). Xử lý: cập nhật trích dẫn theo văn bản mới, tăng `datasetVersion`, đo lại `RELEVANCE_CALIBRATION`.
@@ -69,6 +71,23 @@ Báo cáo có mục "Bộ chấm độ liên quan": kết luận cổng (từ ch
 ≥ 0,75, English không tụt so với mốc cùng lượt), cấu hình chọn trên dev, Pareto, độ trễ p50/p95, RSS, event loop. Đổi model bộ chấm ⇒ đổi
 `RERANK_MODEL_VERSION` (`src/main/services/rerank/model-version.ts`) ⇒ test canh giữ fail cho tới khi đo lại và cập nhật
 `RELEVANCE_CALIBRATION.rerank`. Kết quả + quyết định: `docs/04-decisions/2026-10-08-unanswerable-detection.md`.
+
+### Chẩn đoán bộ chấm (187)
+
+`EVAL_DETAILS=1` ⇒ phần đo đường app (cấu hình 108 + bộ chấm đã ghi) ghi, cho từng câu, điểm của **mọi** ứng viên được chấm
+(`details.production[].rerankCandidates`: `chunkId`, `source`, `score`, `hit`, `quoteInWindow` — kể cả câu bị từ chối, vốn không có
+`rerankScore` trong kết quả `retrieve()`). `quoteInWindow` = trích dẫn đáp án còn nằm trong phần đoạn sau khi tokenizer cắt cặp
+(câu hỏi, đoạn) ở `maxTokens` (`windowText` của scorer, `lib/rerank.ts`). report.md thêm mục **"Chẩn đoán bộ chấm"**
+(`lib/rerank-diagnose.ts`): mỗi câu có vấn đề + bộ kiểm hồi quy đáp án-trong-bảng (q-162, q-170, q-171) và q-176 / q-179, nguyên nhân
+`cutOff` (đáp án bị cắt khỏi cửa sổ) / `lowScoreInWindow` (trong cửa sổ nhưng điểm < `minScore`) / `rankedOut` (đủ điểm nhưng vẫn
+rơi khỏi top 6) / `nearTopicHighScore` (câu không đáp
+án lọt) / `notRetrieved` (đoạn đúng không có trong ứng viên). Chỉ in id / điểm, không in nội dung đoạn. Không đổi số liệu / cổng.
+`rerankCandidates` ghi tiêu đề nguồn (như `topSources`) — chỉ dùng `EVAL_DETAILS=1` với corpus của bộ đánh giá, không trỏ vào tài liệu
+người dùng rồi chia sẻ report.json.
+
+```bash
+EVAL_DETAILS=1 EVAL_MODE=current npm run eval:retrieval
+```
 
 ## Khi đổi mô hình embedding hoặc cách chia đoạn
 
