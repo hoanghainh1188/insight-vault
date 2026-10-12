@@ -98,7 +98,11 @@ export interface IngestionPipeline {
   /** Đánh dấu nguồn kẹt queued/processing sau restart → error (retry được). Gọi lúc khởi động. Bỏ qua kind=meeting. */
   resumeInterrupted(): void;
   /** 186: tạo hàng nguồn cuộc họp (status processing) — gọi SAU khi micro đã mở được (FR-005). */
-  createMeetingSource(input: { notebookId: string; title: string; sessionId: string }): Source;
+  createMeetingSource(input: {
+    notebookId: string;
+    title: string;
+    sessionId: string;
+  }): Source;
   /**
    * 186: lập chỉ mục transcript cuộc họp đã chốt qua hàng đợi chung (chỉ bước chunk/embed/store — ASR chốt chạy ngoài).
    * Trả true khi nguồn `ready`; false khi dừng ở awaiting_embedding / lỗi / bị huỷ.
@@ -575,7 +579,8 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     async retry(id) {
       const src = sourceRepo.getById(id);
       if (!src) throw new UserFacingError("sourceNotFound");
-      if (src.kind === "meeting") throw new UserFacingError("meetingNotSupported");
+      if (src.kind === "meeting")
+        throw new UserFacingError("meetingNotSupported");
       if (src.status !== "error")
         throw new UserFacingError("sourceRetryNotError");
       await vectorStore.deleteBySource(id);
@@ -623,7 +628,8 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
     async remove(id) {
       if (queue.cancel(id) === "dropped") pendingIngest.get(id)?.(false);
       // 186: audio cuộc họp do app sở hữu ⇒ huỷ phiên/hoàn tất + xoá thư mục trước khi xoá hàng (FR-015).
-      if (sourceRepo.getById(id)?.kind === "meeting") await deps.onRemoveMeeting?.(id);
+      if (sourceRepo.getById(id)?.kind === "meeting")
+        await deps.onRemoveMeeting?.(id);
       reprocessing.delete(id); // 112: nguồn bị xoá ⇒ không còn lần xử lý lại nào
       await vectorStore.deleteBySource(id);
       return sourceRepo.delete(id); // cascade chunk
@@ -727,7 +733,8 @@ export function createIngestionPipeline(deps: PipelineDeps): IngestionPipeline {
                 e instanceof StepError ? e.code : errorCodeForStep("embed");
               sourceRepo.updateStatus(sourceId, "error", label);
               const s = reload(sourceId);
-              if (s) send(s, e instanceof StepError ? e.step : "embed", 0, label);
+              if (s)
+                send(s, e instanceof StepError ? e.step : "embed", 0, label);
             }
             resolve(false);
           }

@@ -1,3 +1,4 @@
+import type { MeetingService } from "../services/meeting-capture/meeting-service";
 import { UserFacingError } from "@shared/codes/user-error";
 import { app, ipcMain, BrowserWindow, clipboard, shell } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
@@ -104,6 +105,8 @@ interface RegisterDeps {
   reprocessSource: (id: unknown) => Promise<SourceReprocessResult>;
   // 123 — ngôn ngữ giao diện (lưu lựa chọn + ngôn ngữ hiệu lực).
   uiLanguage: UiLanguageService;
+  // 186 — Ghi cuộc họp.
+  meeting: MeetingService;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
@@ -138,6 +141,7 @@ export function registerIpc({
   relinkSource,
   reprocessSource,
   uiLanguage,
+  meeting,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -261,6 +265,14 @@ export function registerIpc({
 
   safeHandle(CHANNELS.notebookDelete, async (id) => {
     assertVaultWritable();
+    // 186: không xoá notebook đang ghi cuộc họp (FR-042); audio cuộc họp do app sở hữu ⇒ dọn thư mục trước khi
+    // cascade xoá hàng (nếu không sẽ thành tệp mồ côi).
+    if (meeting.isRecordingNotebook(id as string)) {
+      throw new UserFacingError("meetingRecording");
+    }
+    for (const s of sourceRepo.listByNotebook(id as string)) {
+      if (s.kind === "meeting") await meeting.onSourceRemoved(s.id);
+    }
     await vectorStore.deleteByNotebook(id as string);
     return notebookRepo.delete(id as string);
   });
@@ -276,6 +288,10 @@ export function registerIpc({
   safeHandle(CHANNELS.sourceGet, (id) => sourceRepo.getById(id as string));
   safeHandle(CHANNELS.sourceDelete, (id) => {
     assertVaultWritable();
+    // 186: không xoá nguồn cuộc họp đang được ghi (FR-042) — kết thúc ghi trước.
+    if (meeting.status()?.sourceId === id) {
+      throw new UserFacingError("meetingRecording");
+    }
     return pipeline.remove(id as string);
   });
   safeHandle(CHANNELS.sourceRetry, (id) => {
@@ -509,4 +525,41 @@ export function registerIpc({
   safeHandle(CHANNELS.getRestoreResult, () => backupService.getRestoreResult());
 
   logEvent("ipc.registered", { channels: Object.values(CHANNELS).length });
+
+  // meeting-capture (186) — mọi kiểm tra ở meeting-service (phiên, chủ sở hữu, đầu vào). KHÔNG log tham số/nội dung.
+  safeHandleWithSender(CHANNELS.meetingPrepare, (sender, input) =>
+    meeting.prepare(sender.id, input),
+  );
+  safeHandleWithSender(CHANNELS.meetingStart, (sender, input) => {
+    assertVaultWritable();
+    return meeting.start(sender.id, input);
+  });
+  safeHandleWithSender(CHANNELS.meetingPause, (sender, input) =>
+    meeting.pause(sender.id, input),
+  );
+  safeHandleWithSender(CHANNELS.meetingResume, (sender, input) =>
+    meeting.resume(sender.id, input),
+  );
+  safeHandleWithSender(CHANNELS.meetingStop, (sender, input) =>
+    meeting.stop(sender.id, input),
+  );
+  safeHandle(CHANNELS.meetingStatus, () => meeting.status());
+  safeHandle(CHANNELS.meetingRename, (input) => {
+    assertVaultWritable();
+    return meeting.rename(input);
+  });
+  // Kênh SEND duy nhất (renderer→main, không phản hồi): lô PCM. Lô sai bị bỏ trong service (không ném).
+  if (!isWhitelisted(CHANNELS.meetingAudio)) {
+    throw new Error("IPC channel not whitelisted: meeting:audio");
+  }
+  ipcMain.on(CHANNELS.meetingAudio, (event, batch: unknown) => {
+    const b = (
+      typeof batch === "object" && batch !== null ? batch : {}
+    ) as Record<string, unknown>;
+    meeting.acceptAudio(event.sender.id, {
+      sessionId: b["sessionId"],
+      seq: b["seq"],
+      pcm: b["pcm"],
+    });
+  });
 }

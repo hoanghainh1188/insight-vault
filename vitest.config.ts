@@ -78,12 +78,18 @@ export default defineConfig({
         // 091 a11y: kênh thông báo + câu thông báo (thuần).
         "src/renderer/shared/a11y/announcer.ts",
         "src/renderer/shared/a11y/messages.ts",
+        // 186: phần thuần dùng chung + renderer của Ghi cuộc họp.
+        "src/shared/meeting/**/*.ts",
+        "src/renderer/features/meeting-capture/default-title.ts",
       ],
       // Composition roots / wiring quanh thư viện ngoài (I/O native, parser lib) — phủ bởi e2e/integration,
       // không phải business logic thuần. Loại khỏi ngưỡng coverage.
       // Chỉ loại các adapter I/O native / composition root (không test được thuần). pipeline.ts GIỮ
       // trong ngưỡng vì chứa business logic (cancel/resume/error-by-step) đã phủ test bằng DI.
       exclude: [
+        // 186: entry utilityProcess (Whisper/transformers.js, parentPort) — chỉ chạy trong Electron, phủ bởi e2e
+        // (IV_ASR_FAKE). Phần thuần (giao thức, ASR giả) đã tính coverage.
+        "src/main/services/meeting-capture/asr-worker.ts",
         // 085: adapter hộp thoại Electron (I/O native) — phủ bởi e2e (IV_E2E_DIALOG_PATH).
         "src/main/services/vault-backup/dialogs.ts",
         // 088: adapter node:fs cho sink nhật ký (I/O thuần; logic xoay vòng ở log-file.ts đã tính coverage).

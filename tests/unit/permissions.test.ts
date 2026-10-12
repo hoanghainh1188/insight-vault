@@ -104,7 +104,8 @@ describe("decidePermissionCheck", () => {
 
 describe("createMicGate", () => {
   it("mở cổng ARM_WINDOW_MS từ thời điểm arm; đóng thủ công được", async () => {
-    const { createMicGate } = await import("../../src/main/services/app-shell/permissions");
+    const { createMicGate } =
+      await import("../../src/main/services/app-shell/permissions");
     let t = 1000;
     const gate = createMicGate(() => t, 15_000);
     expect(gate.armedUntil()).toBe(0);

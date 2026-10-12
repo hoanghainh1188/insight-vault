@@ -141,7 +141,8 @@ describe("createMediaHandler — nguồn cuộc họp (186)", () => {
   const calls: [string, number | undefined][] = [];
   function meetingRepo(): SourceRepo {
     return {
-      getById: (id: string) => (id === "m1" ? { ...audioSource(id), kind: "meeting" } : null),
+      getById: (id: string) =>
+        id === "m1" ? { ...audioSource(id), kind: "meeting" } : null,
       getOrigin: () => "meeting:sess-1",
     } as unknown as SourceRepo;
   }
@@ -157,7 +158,9 @@ describe("createMediaHandler — nguồn cuộc họp (186)", () => {
     const full = await h(new Request("iv-media://source/m1"));
     expect(full.status).toBe(200);
     expect(full.headers.get("Content-Type")).toBe("audio/wav");
-    const part = await h(new Request("iv-media://source/m1", { headers: { Range: "bytes=0-4" } }));
+    const part = await h(
+      new Request("iv-media://source/m1", { headers: { Range: "bytes=0-4" } }),
+    );
     expect(part.status).toBe(206);
     expect(Buffer.from(await part.arrayBuffer()).toString()).toBe("01234");
   });
@@ -165,14 +168,22 @@ describe("createMediaHandler — nguồn cuộc họp (186)", () => {
   it("?seg=n chuyển cho resolver; seg lạ ⇒ 404 không gọi resolver", async () => {
     const h = createMediaHandler(meetingRepo(), resolve);
     calls.length = 0;
-    expect((await h(new Request("iv-media://source/m1?seg=0"))).status).toBe(200);
-    expect((await h(new Request("iv-media://source/m1?seg=3"))).status).toBe(404);
+    expect((await h(new Request("iv-media://source/m1?seg=0"))).status).toBe(
+      200,
+    );
+    expect((await h(new Request("iv-media://source/m1?seg=3"))).status).toBe(
+      404,
+    );
     expect(calls).toEqual([
       ["m1", 0],
       ["m1", 3],
     ]);
-    expect((await h(new Request("iv-media://source/m1?seg=../x"))).status).toBe(404);
-    expect((await h(new Request("iv-media://source/m1?seg=-1"))).status).toBe(404);
+    expect((await h(new Request("iv-media://source/m1?seg=../x"))).status).toBe(
+      404,
+    );
+    expect((await h(new Request("iv-media://source/m1?seg=-1"))).status).toBe(
+      404,
+    );
     expect(calls).toHaveLength(2);
   });
 

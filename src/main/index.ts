@@ -3,7 +3,25 @@ import {
   decideMediaPermission,
   decidePermissionCheck,
 } from "./services/app-shell/permissions";
-import { ARM_WINDOW_MS } from "./services/meeting-capture/meeting-constants";
+import {
+  ARM_WINDOW_MS,
+  FINAL_MODEL,
+  FSYNC_SEC,
+  SAMPLE_RATE,
+  segmentSeconds,
+} from "./services/meeting-capture/meeting-constants";
+import {
+  createMeetingService,
+  type MeetingService,
+} from "./services/meeting-capture/meeting-service";
+import { createMeetingRepo } from "./services/meeting-capture/meeting-repo";
+import { createMeetingFiles } from "./services/meeting-capture/meeting-files";
+import {
+  createAsrClient,
+  type UtilityProcessLike,
+} from "./services/meeting-capture/asr-client";
+import { playbackTarget } from "./services/meeting-capture/segments";
+import type { MicStatus } from "@shared/ipc/types";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { realpath } from "node:fs/promises";
@@ -14,10 +32,15 @@ import {
   dialog,
   Menu,
   nativeImage,
+  Notification,
   protocol,
   session,
   shell,
+  systemPreferences,
+  utilityProcess,
+  webContents,
 } from "electron";
+import { randomUUID } from "node:crypto";
 import Store from "electron-store";
 import { CHANNELS } from "@shared/ipc/channels";
 import type { SourceProgressEvent } from "@shared/ipc/types";
@@ -36,6 +59,7 @@ import { createStudioRepo } from "./services/studio/studio-repo";
 import { createStudioService } from "./services/studio/studio-service";
 import { createContentSearch } from "./services/search/content-search";
 import {
+  getPrivacyState,
   onPrivacyChange,
   setEgressActive,
 } from "./services/app-shell/privacy-state";
@@ -112,6 +136,8 @@ protocol.registerSchemesAsPrivileged([
 // 186: ngoại lệ DUY NHẤT — micro (media, audio-only) cho cửa sổ chính của app, chỉ trong cổng ngắn sau khi người dùng
 // bấm Bắt đầu ghi/Tiếp tục (micGate). Chính sách là hàm thuần ở services/app-shell/permissions.ts (có test).
 const micGate = createMicGate(Date.now, ARM_WINDOW_MS);
+// 186: tạo trong whenReady (cần DB/pipeline); createWindow dùng cho render-process-gone.
+let meetingService: MeetingService | null = null;
 let mainWebContentsId: number | null = null;
 
 function installSecurity(): void {
@@ -178,6 +204,11 @@ function createWindow(): void {
   });
 
   mainWebContentsId = win.webContents.id; // 186: chỉ cửa sổ chính được xin micro
+  // 186 (P1): renderer của cửa sổ ghi chết ⇒ đóng phiên an toàn + hoàn tất (không để phiên "đang ghi" mồ côi).
+  const wcId = win.webContents.id;
+  win.webContents.on("render-process-gone", () =>
+    meetingService?.onRendererGone(wcId),
+  );
   win.once("ready-to-show", () => win.show());
 
   // Local-first: chặn mọi điều hướng ra ngoài + cửa sổ popup ngoài (Constitution I).
@@ -408,6 +439,9 @@ app
       isVaultLocked: () => vaultLock.isLocked(),
       // 116: đếm ghi cho bảo trì kho vector (bộ điều phối tạo bên dưới, sau vaultLock).
       onVectorWrite: () => vectorMaintenance?.notifyWrite(),
+      // 186: meetingService tạo bên dưới (cần pipeline) ⇒ ref lười.
+      onRemoveMeeting: async (sourceId) =>
+        meetingService?.onSourceRemoved(sourceId),
     });
 
     // 109 (review): người dùng đã có nguồn sẵn sàng từ trước (nâng cấp, không thêm nguồn mới) ⇒ tải nền bộ chấm sau khi mở app
@@ -420,9 +454,119 @@ app
       }, 5000).unref?.();
     }
 
+    // 186: Ghi cuộc họp — tệp trong <userData>/meetings/, ASR trong utilityProcess (tách khỏi việc ghi audio).
+    const meetingRepo = createMeetingRepo(db);
+    const meetingFiles = createMeetingFiles(join(dataDir.path, "meetings"), {
+      fsyncSec: FSYNC_SEC,
+    });
+    const modelsDir = join(dataDir.path, "models");
+    const asrClient = createAsrClient({
+      workerPath: join(__dirname, "asr-worker.js"),
+      meetingsRoot: meetingFiles.meetingsRoot,
+      cacheDir: modelsDir,
+      finalModel: FINAL_MODEL,
+      // ASR giả tất định CHỈ cho e2e trên bản chưa đóng gói (R15).
+      fake: process.env["IV_ASR_FAKE"] === "1" && !app.isPackaged,
+      fork: (path, args) =>
+        utilityProcess.fork(path, args, {
+          serviceName: "InsightVault ASR",
+          stdio: "ignore",
+        }) as unknown as UtilityProcessLike,
+      onModelDownload: (active) => setEgressActive(active, "model"),
+    });
+    const toMicStatus = (s: string): MicStatus =>
+      s === "not-determined"
+        ? "notDetermined"
+        : s === "granted" || s === "denied" || s === "restricted"
+          ? s
+          : "unknown";
+    meetingService = createMeetingService({
+      repo: meetingRepo,
+      pipeline: ingestion.pipeline,
+      sources: ingestion.sourceRepo,
+      notebookExists: (id) => notebookRepo.list().some((n) => n.id === id),
+      files: meetingFiles,
+      asr: asrClient,
+      freeBytes: async () => {
+        try {
+          const s = await createFsOps().statfs(dataDir.path);
+          return s.bavail * s.bsize;
+        } catch {
+          return 0;
+        }
+      },
+      micGate,
+      mediaAccess: {
+        status: () =>
+          process.platform === "darwin" || process.platform === "win32"
+            ? toMicStatus(systemPreferences.getMediaAccessStatus("microphone"))
+            : "unknown",
+        ask: () =>
+          process.platform === "darwin"
+            ? systemPreferences.askForMediaAccess("microphone")
+            : Promise.resolve(true),
+      },
+      isOnlineActive: () => getPrivacyState().mode !== "local",
+      isModelReady: async () =>
+        process.env["IV_ASR_FAKE"] === "1" && !app.isPackaged
+          ? true
+          : existsSync(join(modelsDir, FINAL_MODEL)),
+      prefs: { get: (k) => store.get(k), set: (k, v) => store.set(k, v) },
+      push: (id, state) => {
+        const wc = webContents.fromId(id);
+        if (wc && !wc.isDestroyed()) wc.send(CHANNELS.meetingState, state);
+      },
+      emitProgress: (sourceId, notebookId, frac) =>
+        emitProgress({
+          sourceId,
+          notebookId,
+          status: "processing",
+          step: "parse",
+          progress: frac,
+        }),
+      notifyReady: (_sourceId, _notebookId, title) => {
+        // D15: thông báo hệ điều hành khi cửa sổ không focus (toast trong app do renderer hiện theo source:progress).
+        if (BrowserWindow.getFocusedWindow() || !Notification.isSupported())
+          return;
+        new Notification({
+          title: app.getName(),
+          body: uiLanguage
+            .translator()
+            .t("meeting.finalize.readyToast", { title }),
+        }).show();
+      },
+      logEvent: (event, meta) => logEvent(event, meta ?? {}),
+      now: Date.now,
+      uuid: randomUUID,
+      setInterval: (fn, ms) => setInterval(fn, ms),
+      clearInterval: (h) => clearInterval(h),
+      segmentSeconds: segmentSeconds(app.isPackaged, process.env),
+      sampleRate: SAMPLE_RATE,
+    });
+    const meeting = meetingService;
+    app.on("will-quit", () => {
+      meeting.dispose();
+      asrClient.dispose();
+    });
+
     // 049 (2a-player): phục vụ file audio gốc cho <audio> qua iv-media:// (đọc file CHỈ main, tra sourceId→
-    // path từ DB, chỉ nguồn kind=audio). Local: không egress.
-    protocol.handle("iv-media", createMediaHandler(ingestion.sourceRepo));
+    // path từ DB, chỉ nguồn kind=audio). Local: không egress. 186: nguồn cuộc họp — tệp do main tra từ phiên ghi.
+    protocol.handle(
+      "iv-media",
+      createMediaHandler(ingestion.sourceRepo, (sourceId, seg) => {
+        const s = meetingRepo.get(sourceId);
+        if (!s) return null;
+        const t = playbackTarget(
+          s.segments,
+          meetingFiles.hasMerged(s.sessionId),
+          seg,
+        );
+        if (!t) return null;
+        return t.kind === "merged"
+          ? meetingFiles.mergedPath(s.sessionId)
+          : meetingFiles.segmentPath(s.sessionId, t.index);
+      }),
+    );
 
     // chat-history (027): lưu bền hội thoại theo notebook (migration #4).
     const chatRepo = createChatRepo(db);
@@ -691,6 +835,7 @@ app
         fileExists: async (p) => existsSync(p),
         hashFile: hashFileStreaming,
       }),
+      meeting,
     });
 
     // 145: menu ứng dụng theo ngôn ngữ giao diện — dựng lúc khởi động và dựng lại ngay khi đổi ngôn ngữ.
@@ -731,6 +876,8 @@ app
     // - queued/processing (kẹt do đóng/crash giữa chừng) → error retry được (B3).
     // - awaiting_embedding → tự nhúng tiếp khi runtime AI sẵn sàng (US4, FR-009).
     ingestion.pipeline.resumeInterrupted();
+    // 186: phiên ghi dang dở (sập/thoát giữa chừng) — sửa header phân đoạn rồi tự hoàn tất (PR A).
+    void meeting.recoverOnStartup();
     void ingestion.pipeline.resumeAwaiting();
     // 116: một lần bắt kịp sau khởi động (vault cũ chưa từng bảo trì) — trễ, không chặn cửa sổ.
     maintenance.scheduleStartup();

@@ -68,6 +68,8 @@ export async function createIngestion(opts: {
   isVaultLocked?: () => boolean;
   /** 116: mỗi thao tác ghi vector thành công ⇒ báo bộ lên lịch bảo trì kho vector. */
   onVectorWrite?: () => void;
+  /** 186: xoá nguồn cuộc họp ⇒ huỷ phiên + xoá thư mục audio do app sở hữu (meeting-service, tạo sau ⇒ ref lười). */
+  onRemoveMeeting?: (sourceId: string) => Promise<void>;
 }): Promise<Ingestion> {
   const sourceRepo = createSourceRepo(opts.db);
   const lanceStore = await createLanceVectorStore(
@@ -100,6 +102,7 @@ export async function createIngestion(opts: {
   const pipeline = createIngestionPipeline({
     sourceRepo,
     vectorStore,
+    ...(opts.onRemoveMeeting ? { onRemoveMeeting: opts.onRemoveMeeting } : {}),
     // 059: embedding nạp nguồn dùng embedder IN-PROCESS (e5 passage) — thay Ollama (đảo 031). Provider giữ
     // chữ ký cũ ({embed:{text}→{vector}}) để pipeline/embed.ts không đổi; adapter gắn tiền tố passage.
     getProvider: () => ({

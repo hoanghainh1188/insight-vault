@@ -79,7 +79,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       lặng ⇒ rỗng, xác định (cùng vào ⇒ cùng ra).
 - [X] T016 [P] [US1] Test TRƯỚC `tests/unit/meeting-default-title.test.ts` cho `defaultMeetingTitle(date, lang)` (vi "Cuộc họp 12/10, 14:30", en tương ứng) và
       `formatDuration(sec)` (`00:00:07`, `01:42:18`, > 10 giờ).
-- [ ] T017 [P] [US1] Test TRƯỚC `tests/unit/meeting-channels-whitelist.test.ts` (khuôn `chat-channels-whitelist.test.ts`): kênh PR A trong `CHANNELS` + whitelist + preload,
+- [X] T017 [P] [US1] Test TRƯỚC `tests/unit/meeting-channels-whitelist.test.ts` (khuôn `chat-channels-whitelist.test.ts`): kênh PR A trong `CHANNELS` + whitelist + preload,
       tên duy nhất, `meeting:audio` là send, `meeting:state` là push (không trong `ChannelResponse`).
 - [X] T018 [P] [US1] Test TRƯỚC `tests/unit/meeting-repo.test.ts` (DB tạm v12): tạo/đọc/cập nhật `meeting_session` (phase, segments_json, pause_gaps_json, duration,
       quality, final_progress); `replaceSpans` xoá-rồi-chèn trong giao dịch; `listByPhase`; JSON hỏng ⇒ mảng rỗng + không ném.
@@ -130,7 +130,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       `asr-worker: resolve("src/main/services/meeting-capture/asr-worker.ts")` trong `electron.vite.config.ts`.
 - [X] T041 [US1] `src/main/services/meeting-capture/asr-client.ts` (I/O): `utilityProcess.fork(join(__dirname, "asr-worker.js"))`, request/response theo `reqId`,
       kiểm bằng `parseWorkerMessage`, restart ≤ 3 lần/5 phút, `modelDownload` ⇒ `setEgressActive(active, "model")`.
-- [ ] T042 [US1] `src/main/services/meeting-capture/meeting-service.ts`: `prepare` (quyền OS macOS `getMediaAccessStatus`/`askForMediaAccess`, model, đĩa qua
+- [X] T042 [US1] `src/main/services/meeting-capture/meeting-service.ts`: `prepare` (quyền OS macOS `getMediaAccessStatus`/`askForMediaAccess`, model, đĩa qua
       `computeStorageInfo`, online, mở cổng), `start`, `acceptAudio`, `pause`, `resume`, `stop`, `status`, `rename`, `finalize` (R8 — ngôn ngữ bản chốt PR A: `vi`/`en` ⇒ khoá, `auto`/`multi` ⇒ `null`), `recoverOnStartup` (PR A: tự hoàn
       tất), `onSourceRemoved`, `isRecordingNotebook`, `onRendererGone` + giám sát "không lô > 5 s" (PR A: tự kết thúc + hoàn tất); push `meeting:state` mỗi 1 s và khi đổi phase chỉ tới `ownerWebContentsId`; tiến độ hoàn tất qua `source:progress`.
       T022 xanh.
@@ -138,16 +138,16 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
       giữ nguyên; path không ra renderer.
 - [X] T044 [US1] `src/main/services/vault-backup/snapshot.ts` + `restore-swap.ts`: sao chép `meetings/`, `VAULT_ITEMS` thêm `meetings`, schema guard v12; hộp sao lưu hiện
       dòng "Ghi âm cuộc họp: N MB" (`dirSize`) — chuỗi i18n domain `backup`. T020 xanh.
-- [ ] T045 [US1] `notebook:delete` trong `src/main/ipc/register.ts` (hoặc service notebooks): trả `UserFacingError("meetingRecording")` khi
+- [X] T045 [US1] `notebook:delete` trong `src/main/ipc/register.ts` (hoặc service notebooks): trả `UserFacingError("meetingRecording")` khi
       `meetingService.isRecordingNotebook(id)`.
-- [ ] T046 [US1] `src/shared/ipc/channels.ts` (kênh PR A theo contract) + `src/preload/index.ts` (hàm từng kênh: `meetingPrepare`, `meetingStart`, `meetingSendAudio`,
+- [X] T046 [US1] `src/shared/ipc/channels.ts` (kênh PR A theo contract) + `src/preload/index.ts` (hàm từng kênh: `meetingPrepare`, `meetingStart`, `meetingSendAudio`,
       `meetingPause`, `meetingResume`, `meetingStop`, `meetingStatus`, `meetingRename`, `onMeetingState`) + `src/main/ipc/register.ts` (mục "meeting-capture",
       `safeHandleWithSender` cho start/pause/resume/stop, `ipcMain.on` cho `meeting:audio` chỉ nhận từ owner). T017 xanh.
-- [ ] T047 [US1] `src/main/index.ts`: tạo `asrClient` + `meetingService` (tiêm repo, pipeline, files, writer factory, storage, privacy, notification), gọi
+- [X] T047 [US1] `src/main/index.ts`: tạo `asrClient` + `meetingService` (tiêm repo, pipeline, files, writer factory, storage, privacy, notification), gọi
       `recoverOnStartup()` sau `resumeInterrupted()`; `webContents.on("render-process-gone")` ⇒ `meetingService.onRendererGone()`; thông báo hệ điều hành (`Notification`) khi nguồn cuộc họp `ready` mà cửa sổ không focus (D15).
-- [ ] T048 [US1] `electron-builder.yml`: `mac.extendInfo.NSMicrophoneUsageDescription` (R11), `mac.entitlements`/`entitlementsInherit: build/entitlements.mac.plist`;
+- [X] T048 [US1] `electron-builder.yml`: `mac.extendInfo.NSMicrophoneUsageDescription` (R11), `mac.entitlements`/`entitlementsInherit: build/entitlements.mac.plist`;
       tạo `build/entitlements.mac.plist` (`com.apple.security.device.audio-input`); `asarUnpack` `onnxruntime-node/**` nếu S1 yêu cầu.
-- [ ] T049 [US1] `vitest.config.ts`: thêm tệp thuần mới vào `coverage.include`, tệp I/O vào `exclude`.
+- [X] T049 [US1] `vitest.config.ts`: thêm tệp thuần mới vào `coverage.include`, tệp I/O vào `exclude`.
 
 ### Implementation — renderer
 

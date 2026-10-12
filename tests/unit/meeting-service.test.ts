@@ -138,7 +138,17 @@ function harness(
         db.prepare(
           `INSERT INTO source (id, notebook_id, kind, title, origin, status, content_hash, created_at, updated_at)
            VALUES (?,?,?,?,?,?,?,?,?)`,
-        ).run(s.id, notebookId, "meeting", title, `meeting:${sessionId}`, "processing", `h-${sessionId}`, 1, 1);
+        ).run(
+          s.id,
+          notebookId,
+          "meeting",
+          title,
+          `meeting:${sessionId}`,
+          "processing",
+          `h-${sessionId}`,
+          1,
+          1,
+        );
         return s;
       },
       ingestParsed: async (sourceId, parsed) => {

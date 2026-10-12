@@ -111,20 +111,37 @@ describe("SourceViewer audio player (049)", () => {
       },
       configurable: true,
     });
-    Object.defineProperty(audio, "readyState", { get: () => 1, configurable: true });
+    Object.defineProperty(audio, "readyState", {
+      get: () => 1,
+      configurable: true,
+    });
     const play = vi.fn().mockResolvedValue(undefined);
     const pause = vi.fn();
     audio.play = play as unknown as HTMLAudioElement["play"];
     audio.pause = pause;
-    render(viewerState({ target: { sourceId: "aud 1", citation: citation(40) } }));
+    render(
+      viewerState({ target: { sourceId: "aud 1", citation: citation(40) } }),
+    );
     expect(seeked).toBe(40);
     expect(pause).toHaveBeenCalled();
     expect(play).not.toHaveBeenCalled();
   });
 
   it("186: kind=meeting ⇒ player audio iv-media:// + chỉ tua", () => {
-    const meeting: SourceContent = { ...audioContent, kind: "meeting", title: "Cuộc họp 12/10, 14:30" };
-    render(viewerState({ content: meeting, target: { sourceId: "m 1", citation: { ...citation(605), sourceId: "m 1" } } }));
+    const meeting: SourceContent = {
+      ...audioContent,
+      kind: "meeting",
+      title: "Cuộc họp 12/10, 14:30",
+    };
+    render(
+      viewerState({
+        content: meeting,
+        target: {
+          sourceId: "m 1",
+          citation: { ...citation(605), sourceId: "m 1" },
+        },
+      }),
+    );
     const audio = container.querySelector("audio") as HTMLAudioElement | null;
     expect(audio).not.toBeNull();
     expect(audio?.getAttribute("src")).toBe("iv-media://source/m%201");
@@ -137,7 +154,8 @@ describe("SourceViewer audio player (049)", () => {
       configurable: true,
     });
     const play = vi.fn().mockResolvedValue(undefined);
-    (audio as HTMLAudioElement).play = play as unknown as HTMLAudioElement["play"];
+    (audio as HTMLAudioElement).play =
+      play as unknown as HTMLAudioElement["play"];
     act(() => {
       (audio as HTMLAudioElement).dispatchEvent(new Event("loadedmetadata"));
     });
@@ -209,7 +227,8 @@ describe("SourceViewer audio player (049)", () => {
       configurable: true,
     });
     const vplay = vi.fn().mockResolvedValue(undefined);
-    (el as HTMLVideoElement).play = vplay as unknown as HTMLVideoElement["play"];
+    (el as HTMLVideoElement).play =
+      vplay as unknown as HTMLVideoElement["play"];
     act(() => {
       (el as HTMLVideoElement).dispatchEvent(new Event("loadedmetadata"));
     });

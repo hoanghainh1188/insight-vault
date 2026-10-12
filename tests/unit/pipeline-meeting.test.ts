@@ -328,10 +328,22 @@ describe("hành vi riêng cho kind=meeting", () => {
 describe("ingestParsed — xoá nguồn khi task còn chờ trong hàng đợi", () => {
   it("promise kết thúc false (không treo)", async () => {
     const h = harness();
-    const meeting = h.pipeline.createMeetingSource({ notebookId: "nb1", title: "Họp", sessionId: "s1" });
-    await h.pipeline.add({ notebookId: "nb1", kind: "txt", filePath: "/d.txt" }); // chiếm hàng đợi (parse đang chờ)
+    const meeting = h.pipeline.createMeetingSource({
+      notebookId: "nb1",
+      title: "Họp",
+      sessionId: "s1",
+    });
+    await h.pipeline.add({
+      notebookId: "nb1",
+      kind: "txt",
+      filePath: "/d.txt",
+    }); // chiếm hàng đợi (parse đang chờ)
     const tr = buildMeetingTranscript([{ text: "a", tStart: 0, tEnd: 1 }]);
-    const pending = h.pipeline.ingestParsed(meeting.id, { pages: [{ page: null, text: tr.text }], pageCount: null, timeMap: tr.timeMap });
+    const pending = h.pipeline.ingestParsed(meeting.id, {
+      pages: [{ page: null, text: tr.text }],
+      pageCount: null,
+      timeMap: tr.timeMap,
+    });
     await h.pipeline.remove(meeting.id);
     await expect(pending).resolves.toBe(false);
     h.releasePdf();

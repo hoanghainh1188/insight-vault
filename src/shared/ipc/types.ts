@@ -636,11 +636,7 @@ export interface PauseGap {
 }
 
 export type MicStatus =
-  | "granted"
-  | "notDetermined"
-  | "denied"
-  | "restricted"
-  | "unknown";
+  "granted" | "notDetermined" | "denied" | "restricted" | "unknown";
 
 export interface MeetingPrepareResult {
   micStatus: MicStatus;
@@ -699,4 +695,3 @@ export interface MeetingAudioBatch {
   seq: number;
   pcm: ArrayBuffer;
 }
-

@@ -139,7 +139,6 @@ export const meetingEn: Widen<typeof meetingVi> = {
     done: "Ready",
   },
   capture: {
-    failed:
-      "Audio could not be recorded. The audio recorded so far is kept.",
+    failed: "Audio could not be recorded. The audio recorded so far is kept.",
   },
 };
