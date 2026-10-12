@@ -204,7 +204,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [x] T069 [US1] Gọi **security-reviewer** (BẮT BUỘC): `installSecurity`/quyền OS, kênh nhị phân `meeting:audio` (sender, kích thước, tần suất), kênh mới whitelist,
       FS `meetings/` (prefix, xoá), worker (đường dẫn, tin nhắn), không log nội dung, CSP. Mọi Blocking phải sửa.
 - [x] T070 [US1] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-record.spec.ts tests/e2e/meeting-permission.spec.ts
-  tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
+tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
       mac; mở PR A — mô tả PR ghi chú lệch tạm D8 (bảo trì vector bị chặn khi đang ghi cho tới PR C1, T116).
 
 **Checkpoint**: PR A merge — ghi cuộc họp thành nguồn dùng được, citation chỉ tua.
@@ -323,23 +323,26 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 
 ### Tests trước (FAIL rồi mới code)
 
-- [ ] T104 [P] [US5] Test TRƯỚC `tests/unit/meeting-checkpoint.test.ts` cho `serializeCheckpoint`/`parseCheckpoint`: khứ hồi đủ trường (phân đoạn, gap, ngôn ngữ, đánh dấu,
+> Ghi chú 2026-10-12: hàm thuần T104–T106 → T110–T111 + phần thuần của T122 (`shortcuts.ts`: `matchShortcut`, `shortcutLabel`) làm
+> trước trên branch `186-pr-c1` (xếp chồng trên `186-pr-b`), chưa nối vào service/UI.
+
+- [x] T104 [P] [US5] Test TRƯỚC `tests/unit/meeting-checkpoint.test.ts` cho `serializeCheckpoint`/`parseCheckpoint`: khứ hồi đủ trường (phân đoạn, gap, ngôn ngữ, đánh dấu,
       offset nháp, `endedByUser`), JSON hỏng/thiếu trường/phiên bản lạ ⇒ `null` không ném.
-- [ ] T105 [P] [US5] Test TRƯỚC `tests/unit/meeting-recovery.test.ts` cho `classifyOnStartup(phase, endedByUser)` ⇒ `autoFinalize` | `recoveryCard` | `none` (đủ bảng
+- [x] T105 [P] [US5] Test TRƯỚC `tests/unit/meeting-recovery.test.ts` cho `classifyOnStartup(phase, endedByUser)` ⇒ `autoFinalize` | `recoveryCard` | `none` (đủ bảng
       data-model §5).
-- [ ] T106 [P] [US6] Test TRƯỚC `tests/unit/meeting-shortcuts.test.ts` cho `matchShortcut(event, platform)`: `Mod+Shift+P|M|E` trên mac (Cmd) và Windows (Ctrl), bỏ qua khi
+- [x] T106 [P] [US6] Test TRƯỚC `tests/unit/meeting-shortcuts.test.ts` cho `matchShortcut(event, platform)`: `Mod+Shift+P|M|E` trên mac (Cmd) và Windows (Ctrl), bỏ qua khi
       thiếu Shift, phím lặp (`repeat`), ô nhập văn bản không chặn tổ hợp Mod+Shift.
 - [ ] T107 [P] [US5] Test TRƯỚC `tests/unit/meeting-service-durability.test.ts`: checkpoint mỗi 30 s + khi đóng phân đoạn; `rendererGone` / không lô > 5 s ⇒ `interrupted`;
       `stopForQuit` ⇒ `stopping` + `endedByUser`; `recover(finalize|keepIncomplete|discard)`; `finalizeAgain` cho `incomplete` và `quality=draft`; `pause({reason:
-  "deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
+"deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
 - [ ] T108 [P] [US6] Test TRƯỚC `tests/unit/vault-lock-meeting.test.ts`: bảo trì vector KHÔNG bị chặn bởi phiên `recording|paused`, VẪN bị chặn bởi `finalizing`; sao
       lưu/khôi phục bị chặn khi đang ghi.
 - [ ] T109 [P] [US5] Mở rộng `tests/unit/meeting-channels-whitelist.test.ts` cho kênh PR C1.
 
 ### Implementation
 
-- [ ] T110 [P] [US5] `src/main/services/meeting-capture/checkpoint.ts`. T104 xanh.
-- [ ] T111 [P] [US5] `src/main/services/meeting-capture/recovery.ts`. T105 xanh.
+- [x] T110 [P] [US5] `src/main/services/meeting-capture/checkpoint.ts`. T104 xanh.
+- [x] T111 [P] [US5] `src/main/services/meeting-capture/recovery.ts`. T105 xanh.
 - [ ] T112 [US5] `src/main/services/meeting-capture/session-store.ts` (I/O): ghi `session.json` tmp→rename + fsync; đọc khi khởi động.
 - [ ] T113 [US5] `meeting-service.ts`: checkpoint định kỳ, `recoverOnStartup` theo `classifyOnStartup` (thay tự hoàn tất của PR A cho phiên không do người dùng kết thúc),
       `listRecoverable`, `recover`, `finalizeAgain`, `stopForQuit`, đổi hành vi "không lô > 5 s" / `onRendererGone` của PR A từ tự hoàn tất sang `interrupted` + thẻ phục hồi, đĩa (cảnh báo + tự dừng), `pause` lý do `deviceLost`.
