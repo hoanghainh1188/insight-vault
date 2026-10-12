@@ -41,6 +41,10 @@ export default defineConfig({
         "tests/eval/lib/metrics.ts",
         "tests/eval/lib/grid.ts",
         "tests/eval/lib/rerank-grid.ts",
+        // 177: PDF fixture của bộ đánh giá (thuần, tất định).
+        "tests/eval/lib/pdf-fixture.ts",
+        // report.ts giữ NGOÀI coverage như 108 (writeReport + phần render lớn là I/O / định dạng); phần mới renderPdfSection có
+        // test riêng ở tests/unit/eval-report.test.ts.
         "src/main/services/ingestion/fts-fold.ts",
         "src/main/services/ingestion/keyword-store.ts",
         "src/renderer/shared/useModalA11y.ts",

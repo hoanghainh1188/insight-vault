@@ -12,6 +12,8 @@ import {
   groupOutcomes,
   histogram,
   mrr,
+  outcomeFormat,
+  pdfWarnings,
   recallAtK,
   wilson95,
   type QuestionOutcome,
@@ -283,5 +285,113 @@ describe("buildGrid (T018)", () => {
 
   it("không có mốc BM25 ⇒ không sinh minScore", () => {
     expect(buildGrid().some((c) => c.bm25Gate === "minScore")).toBe(false);
+  });
+});
+
+// 177: nhóm theo định dạng tài liệu (md / pdf) + cảnh báo nhóm PDF (research R7–R8). Nhóm cũ dev / holdout / en KHÔNG đổi.
+describe("177: outcomeFormat", () => {
+  const formats = new Map<string, "md" | "pdf">([
+    ["m", "md"],
+    ["p", "pdf"],
+  ]);
+  const q = (over: Record<string, unknown>) =>
+    ({
+      id: "q",
+      text: "?",
+      lang: "vi",
+      type: "answerable",
+      split: "dev",
+      quotes: ["x"],
+      docIds: ["p"],
+      ...over,
+    }) as never;
+
+  it("câu có đáp án ⇒ định dạng của docIds[0]", () => {
+    expect(outcomeFormat(q({ docIds: ["p"] }), formats)).toBe("pdf");
+    expect(outcomeFormat(q({ docIds: ["m"] }), formats)).toBe("md");
+  });
+
+  it("câu không đáp án: topic 'pdf' ⇒ pdf; còn lại ⇒ null", () => {
+    const u = { type: "unanswerable", quotes: [], docIds: [] };
+    expect(outcomeFormat(q({ ...u, topic: "pdf" }), formats)).toBe("pdf");
+    expect(outcomeFormat(q(u), formats)).toBeNull();
+  });
+
+  it("docId lạ ⇒ md (mặc định của manifest)", () => {
+    expect(outcomeFormat(q({ docIds: ["zz"] }), formats)).toBe("md");
+  });
+});
+
+describe("177: groupOutcomes.byFormat", () => {
+  const xs = [
+    ans(1, { format: "md" }),
+    ans(2, { format: "pdf" }),
+    ans(1, { format: "pdf", split: "holdout" }),
+    unans(true, { format: "pdf" }),
+    unans(false, { format: null }),
+    ans(1, { format: "pdf", lang: "en" }),
+    ans(1),
+  ];
+
+  it("nhóm cũ giữ nguyên (cùng phần tử như trước khi có format)", () => {
+    const g = groupOutcomes(xs);
+    expect(g.dev).toHaveLength(5);
+    expect(g.holdout).toHaveLength(1);
+    expect(g.en).toHaveLength(1);
+  });
+
+  it("byFormat chỉ câu tiếng Việt; format thiếu / null không vào nhóm định dạng", () => {
+    const { byFormat } = groupOutcomes(xs);
+    expect(byFormat.md.dev).toHaveLength(1);
+    expect(byFormat.pdf.dev).toHaveLength(2);
+    expect(byFormat.pdf.holdout).toHaveLength(1);
+    expect(byFormat.md.holdout).toHaveLength(0);
+  });
+});
+
+describe("177: pdfWarnings (cận trên Wilson 95% PDF < Recall@6 md)", () => {
+  const many = (n: number, hit: boolean, over: Partial<QuestionOutcome>) =>
+    Array.from({ length: n }, () => ans(hit ? 1 : null, over));
+
+  it("PDF tụt rõ ⇒ 1 cảnh báo đúng trường (dev)", () => {
+    const g = groupOutcomes([
+      ...many(40, true, { format: "md" }),
+      ...many(4, true, { format: "pdf" }),
+      ...many(16, false, { format: "pdf" }),
+    ]);
+    const w = pdfWarnings(g.byFormat);
+    expect(w).toHaveLength(1);
+    expect(w[0].split).toBe("dev");
+    expect(w[0].nPdf).toBe(20);
+    expect(w[0].pdfRecallAt6).toBeCloseTo(0.2);
+    expect(w[0].mdRecallAt6).toBe(1);
+    expect(w[0].pdfUpper95).toBeCloseTo(wilson95(4, 20)[1]);
+    expect(w[0].pdfUpper95).toBeLessThan(1);
+  });
+
+  it("chênh lệch không có ý nghĩa thống kê (cỡ mẫu nhỏ) ⇒ không cảnh báo", () => {
+    // md 36/40 = 90%; PDF 2/3 ⇒ cận trên Wilson ≈ 94% ≥ 90%.
+    const g = groupOutcomes([
+      ...many(36, true, { format: "md" }),
+      ...many(4, false, { format: "md" }),
+      ...many(2, true, { format: "pdf" }),
+      ...many(1, false, { format: "pdf" }),
+    ]);
+    expect(pdfWarnings(g.byFormat)).toEqual([]);
+  });
+
+  it("không có câu PDF có đáp án ⇒ không cảnh báo", () => {
+    const g = groupOutcomes([...many(5, true, { format: "md" })]);
+    expect(pdfWarnings(g.byFormat)).toEqual([]);
+  });
+
+  it("tính riêng dev / hold-out", () => {
+    const g = groupOutcomes([
+      ...many(30, true, { format: "md", split: "holdout" }),
+      ...many(20, false, { format: "pdf", split: "holdout" }),
+      ...many(30, true, { format: "md" }),
+      ...many(20, true, { format: "pdf" }),
+    ]);
+    expect(pdfWarnings(g.byFormat).map((w) => w.split)).toEqual(["holdout"]);
   });
 });

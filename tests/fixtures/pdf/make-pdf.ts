@@ -224,3 +224,66 @@ export function makePdf(pages: FixturePage[]): Uint8Array {
   out += `trailer\n<< /Size ${objs.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefAt}\n%%EOF\n`;
   return new Uint8Array(Buffer.from(out, "latin1"));
 }
+
+/** 177: tuỳ chọn dàn một đoạn văn thành các dòng `FixtureText`. */
+export interface ParagraphLayout {
+  /** lề trái (điểm, gốc trên-trái) */
+  x: number;
+  /** baseline của dòng đầu */
+  y: number;
+  /** bề rộng tối đa của dòng (điểm) */
+  width: number;
+  size: number;
+  /** khoảng cách baseline giữa hai dòng */
+  leading: number;
+  /** từ có gạch nối (vd "hợp-đồng") được CỐ Ý ngắt dòng ngay sau dấu gạch — mô phỏng gạch nối cuối dòng (147 a) */
+  hyphenateAt?: readonly string[];
+}
+
+/**
+ * 177 (research R4): dàn đoạn văn theo bề rộng cố định CHAR_WIDTH (ngắt theo từ, tham lam) ⇒ `FixtureText[]` MỚI. Thuần, tất định;
+ * chỉ THÊM vào bộ sinh — không đổi `makePdf`. Từ dài hơn cả dòng đứng một mình một dòng.
+ */
+export function layoutParagraph(
+  text: string,
+  o: ParagraphLayout,
+): FixtureText[] {
+  const maxChars = Math.max(
+    1,
+    Math.floor(o.width / (o.size * (CHAR_WIDTH / 1000))),
+  );
+  const forced = new Set(o.hyphenateAt ?? []);
+  const pieces = text
+    .split(/\s+/)
+    .filter((w) => w !== "")
+    .flatMap((w) => {
+      const cut = w.indexOf("-");
+      return forced.has(w) && cut > 0
+        ? [
+            { word: w.slice(0, cut + 1), breakAfter: true },
+            { word: w.slice(cut + 1), breakAfter: false },
+          ]
+        : [{ word: w, breakAfter: false }];
+    });
+  const lines: string[] = [];
+  let cur: string[] = [];
+  const len = (ws: readonly string[]): number => [...ws.join(" ")].length;
+  for (const p of pieces) {
+    if (cur.length > 0 && len([...cur, p.word]) > maxChars) {
+      lines.push(cur.join(" "));
+      cur = [];
+    }
+    cur = [...cur, p.word];
+    if (p.breakAfter) {
+      lines.push(cur.join(" "));
+      cur = [];
+    }
+  }
+  if (cur.length > 0) lines.push(cur.join(" "));
+  return lines.map((line, i) => ({
+    x: o.x,
+    y: o.y + i * o.leading,
+    size: o.size,
+    text: line,
+  }));
+}

@@ -1,0 +1,2 @@
+# 177: PDF của bộ đánh giá truy xuất là tệp nhị phân (không diff, không đổi EOL) — sha256 trong manifest phải khớp từng byte.
+tests/eval/corpus/*.pdf binary

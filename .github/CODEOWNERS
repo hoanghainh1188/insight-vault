@@ -27,3 +27,6 @@ docs/00-glossary.md            @hoanghainh1188
 docs/01-basic-design/          @hoanghainh1188
 docs/02-detail-design/         @hoanghainh1188
 docs/03-ui/                    @hoanghainh1188
+
+# 177: PDF của bộ đánh giá (tệp nhị phân bên thứ ba / sinh) — đổi tệp cần steward duyệt (sha256 cùng repo không chống tệp độc ngay từ đầu).
+/tests/eval/corpus/*.pdf       @hoanghainh1188
