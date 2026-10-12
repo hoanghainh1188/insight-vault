@@ -4,9 +4,11 @@ import {
 } from "@shared/codes/source-error";
 import type {
   Chunk,
+  MeetingPhase,
   Source,
   SourceKind,
   SourceStatus,
+  TranscriptQuality,
 } from "@shared/ipc/types";
 import { foldVietnamese } from "./fts-fold";
 import type { Db } from "../../db/database";
@@ -33,7 +35,15 @@ interface SourceRow {
   created_at: number;
   updated_at: number;
   extraction_version: number;
+  // 186: LEFT JOIN meeting_session — chỉ có giá trị với kind="meeting".
+  meeting_phase?: MeetingPhase | null;
+  meeting_quality?: TranscriptQuality | null;
 }
+
+// 186: mọi SELECT nguồn kèm phase/chất lượng transcript của phiên ghi (nhãn UI — A9). Alias `s` cho bảng source.
+const SOURCE_SELECT =
+  "SELECT s.*, ms.phase AS meeting_phase, ms.transcript_quality AS meeting_quality " +
+  "FROM source s LEFT JOIN meeting_session ms ON ms.source_id = s.id";
 
 interface ChunkRow {
   id: string;
@@ -63,6 +73,8 @@ function toSource(r: SourceRow): Source {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     extractionVersion: r.extraction_version,
+    ...(r.meeting_phase ? { meetingPhase: r.meeting_phase } : {}),
+    ...(r.meeting_quality ? { transcriptQuality: r.meeting_quality } : {}),
   };
 }
 
@@ -160,7 +172,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
 
   const getById = (id: string): Source | null => {
     const row = db
-      .prepare("SELECT * FROM source WHERE id = ?")
+      .prepare(`${SOURCE_SELECT} WHERE s.id = ?`)
       .get(id) as unknown as SourceRow | undefined;
     return row ? toSource(row) : null;
   };
@@ -273,7 +285,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
     listByNotebook(notebookId) {
       const rows = db
         .prepare(
-          "SELECT * FROM source WHERE notebook_id = ? ORDER BY created_at ASC",
+          `${SOURCE_SELECT} WHERE s.notebook_id = ? ORDER BY s.created_at ASC`,
         )
         .all(notebookId) as unknown as SourceRow[];
       return rows.map(toSource);
@@ -282,7 +294,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
     listByStatus(status) {
       const rows = db
         .prepare(
-          "SELECT * FROM source WHERE status = ? ORDER BY created_at ASC",
+          `${SOURCE_SELECT} WHERE s.status = ? ORDER BY s.created_at ASC`,
         )
         .all(status) as unknown as SourceRow[];
       return rows.map(toSource);
@@ -298,7 +310,7 @@ export function createSourceRepo(db: Db, deps: RepoDeps = {}): SourceRepo {
     findDuplicate(notebookId, contentHash) {
       const row = db
         .prepare(
-          "SELECT * FROM source WHERE notebook_id = ? AND content_hash = ? LIMIT 1",
+          `${SOURCE_SELECT} WHERE s.notebook_id = ? AND s.content_hash = ? LIMIT 1`,
         )
         .get(notebookId, contentHash) as unknown as SourceRow | undefined;
       return row ? toSource(row) : null;

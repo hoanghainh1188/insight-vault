@@ -1,6 +1,10 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import { CHANNELS } from "@shared/ipc/channels";
 import type {
+  MeetingPrepareResult,
+  MeetingStartInput,
+  MeetingStartResult,
+  MeetingState,
   AddSourceInput,
   AddSourceResult,
   AppInfo,
@@ -297,6 +301,43 @@ const api = {
       cb(payload);
     ipcRenderer.on(CHANNELS.backupProgress, listener);
     return () => ipcRenderer.removeListener(CHANNELS.backupProgress, listener);
+  },
+  // meeting-capture (186) — một hàm cho mỗi kênh; main kiểm mọi tham số.
+  meetingPrepare: (input: {
+    notebookId: string;
+  }): Promise<MeetingPrepareResult> =>
+    ipcRenderer.invoke(CHANNELS.meetingPrepare, input),
+  meetingStart: (input: MeetingStartInput): Promise<MeetingStartResult> =>
+    ipcRenderer.invoke(CHANNELS.meetingStart, input),
+  /** Lô PCM16 16 kHz (~1 s) — send không chờ phản hồi; ArrayBuffer được clone sang main. */
+  meetingSendAudio: (batch: {
+    sessionId: string;
+    seq: number;
+    pcm: ArrayBuffer;
+  }): void => ipcRenderer.send(CHANNELS.meetingAudio, batch),
+  meetingPause: (input: {
+    sessionId: string;
+    reason: "user" | "deviceLost";
+  }): Promise<MeetingState> => ipcRenderer.invoke(CHANNELS.meetingPause, input),
+  meetingResume: (input: {
+    sessionId: string;
+    deviceLabel?: string;
+  }): Promise<MeetingState> =>
+    ipcRenderer.invoke(CHANNELS.meetingResume, input),
+  meetingStop: (input: { sessionId: string }): Promise<{ sourceId: string }> =>
+    ipcRenderer.invoke(CHANNELS.meetingStop, input),
+  meetingStatus: (): Promise<MeetingState | null> =>
+    ipcRenderer.invoke(CHANNELS.meetingStatus),
+  meetingRename: (input: {
+    sourceId: string;
+    title: string;
+  }): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.meetingRename, input),
+  /** Trạng thái phiên ghi (push từ main, chỉ tới cửa sổ đang ghi). Trả hàm huỷ đăng ký. */
+  onMeetingState: (cb: (s: MeetingState) => void): (() => void) => {
+    const listener = (_e: unknown, payload: MeetingState): void => cb(payload);
+    ipcRenderer.on(CHANNELS.meetingState, listener);
+    return () => ipcRenderer.removeListener(CHANNELS.meetingState, listener);
   },
 };
 

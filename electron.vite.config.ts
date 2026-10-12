@@ -31,7 +31,13 @@ function cspPlugin(): Plugin {
 export default defineConfig({
   main: {
     build: {
-      rollupOptions: { input: { index: resolve("src/main/index.ts") } },
+      rollupOptions: {
+        input: {
+          index: resolve("src/main/index.ts"),
+          // 186: utilityProcess nhận dạng tiếng nói cho Ghi cuộc họp (tách khỏi việc ghi audio ở main).
+          "asr-worker": resolve("src/main/services/meeting-capture/asr-worker.ts"),
+        },
+      },
     },
     resolve: { alias: { "@shared": resolve("src/shared") } },
   },

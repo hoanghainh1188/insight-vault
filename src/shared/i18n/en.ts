@@ -13,6 +13,7 @@ import { crashEn } from "./domains/crash";
 import { dialogsEn } from "./domains/dialogs";
 import { a11yEn } from "./domains/a11y";
 import { menuEn } from "./domains/menu";
+import { meetingEn } from "./domains/meeting";
 
 // 123 — bản English (bản dịch phát sinh từ vi.ts; thuật ngữ theo cột English của docs/00-glossary.md).
 
@@ -31,4 +32,5 @@ export const en: Messages = {
   dialogs: dialogsEn,
   a11y: a11yEn,
   menu: menuEn,
+  meeting: meetingEn,
 };

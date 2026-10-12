@@ -57,5 +57,9 @@ export async function computeStorageInfo(
   } catch {
     freeBytes = 0;
   }
-  return { path, usedBytes, freeBytes };
+  // 186: dung lượng ghi âm cuộc họp (C3 — hộp sao lưu hiện "Ghi âm cuộc họp: N MB"). Không có thư mục ⇒ bỏ trường.
+  const meetingsBytes = await dirSize(join(path, "meetings"), fs);
+  return meetingsBytes > 0
+    ? { path, usedBytes, freeBytes, meetingsBytes }
+    : { path, usedBytes, freeBytes };
 }

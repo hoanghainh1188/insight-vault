@@ -7,6 +7,9 @@ import {
 } from "../../src/main/db/migrations";
 import { STUDIO_ALL_KINDS } from "../../src/main/services/studio/constants";
 
+// Phiên bản schema mới nhất (186 thêm v12) — test này chỉ khẳng định v11 được áp, không khoá "v11 là cuối".
+const LATEST = Math.max(...MIGRATIONS.map((m) => m.version));
+
 // 178 (research R1, data-model.md): migration #11 dựng lại studio_result — bỏ UNIQUE(notebook_id, kind), CHECK 9 kind,
 // +5 cột NULL (custom_prompt, source_ids_json, parts, truncated, local), index phiên bản. Dữ liệu v10 giữ nguyên.
 
@@ -62,8 +65,8 @@ function insertVersion(db: Db, id: string, kind: string, extra = ""): void {
 describe("migration v11 — studio_result nhiều phiên bản (178)", () => {
   it("nâng lên v11 và giữ nguyên mọi dòng cũ; 5 cột mới NULL", () => {
     const db = seedV10();
-    expect(runMigrations(db)).toBe(11);
-    expect(getUserVersion(db)).toBe(11);
+    expect(runMigrations(db)).toBe(LATEST);
+    expect(getUserVersion(db)).toBe(LATEST);
     const rows = db
       .prepare("SELECT * FROM studio_result ORDER BY id")
       .all() as unknown as Row[];
@@ -193,7 +196,7 @@ describe("migration v11 — studio_result nhiều phiên bản (178)", () => {
 
   it("DB mới tạo từ đầu cũng ở v11 với cùng schema", () => {
     const db = openDatabase(":memory:");
-    expect(runMigrations(db)).toBe(11);
+    expect(runMigrations(db)).toBe(LATEST);
     const cols = (
       db.prepare("PRAGMA table_info(studio_result)").all() as {
         name: string;

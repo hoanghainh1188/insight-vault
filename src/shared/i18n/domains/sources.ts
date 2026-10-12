@@ -34,6 +34,7 @@ export const sourcesVi = {
     audio: "Âm thanh",
     video: "Video",
     image: "Hình ảnh",
+    meeting: "Cuộc họp",
     pdfPages: { one: "PDF · {count} trang", other: "PDF · {count} trang" },
   },
   list: {
@@ -147,6 +148,7 @@ export const sourcesEn: Widen<typeof sourcesVi> = {
     audio: "Audio",
     video: "Video",
     image: "Image",
+    meeting: "Meeting",
     pdfPages: { one: "PDF · {count} page", other: "PDF · {count} pages" },
   },
   list: {

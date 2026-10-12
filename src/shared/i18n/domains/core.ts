@@ -57,6 +57,14 @@ export const coreVi = {
     apiKeyMissing: "{provider}: chưa nhập khóa API.",
     modelNotSelected: "{provider}: chưa chọn mô hình.",
     apiKeyInvalidInput: "Khóa API hoặc nhà cung cấp không hợp lệ.",
+    meetingRecording:
+      "Notebook này đang ghi cuộc họp — hãy kết thúc ghi trước.",
+    meetingAlreadyRecording:
+      "Đang có một cuộc họp được ghi. Hãy kết thúc ghi trước khi bắt đầu cuộc họp mới.",
+    meetingDiskLow: "Ổ đĩa không đủ dung lượng để ghi.",
+    meetingNotSupported: "Thao tác này không áp dụng cho nguồn cuộc họp.",
+    meetingNotFound: "Phiên ghi không còn tồn tại.",
+    meetingInvalidInput: "Thông tin phiên ghi không hợp lệ.",
   },
   online: {
     auth: "Khóa API không hợp lệ hoặc đã hết hạn.",
@@ -135,6 +143,14 @@ export const coreEn: Widen<typeof coreVi> = {
     apiKeyMissing: "{provider}: no API key entered.",
     modelNotSelected: "{provider}: no model selected.",
     apiKeyInvalidInput: "Invalid API key or provider.",
+    meetingRecording:
+      "This notebook is recording a meeting — end the recording first.",
+    meetingAlreadyRecording:
+      "A meeting is already being recorded. End that recording before starting a new one.",
+    meetingDiskLow: "Not enough disk space to record.",
+    meetingNotSupported: "This action does not apply to meeting sources.",
+    meetingNotFound: "The recording session no longer exists.",
+    meetingInvalidInput: "Invalid recording session details.",
   },
   online: {
     auth: "The API key is invalid or has expired.",

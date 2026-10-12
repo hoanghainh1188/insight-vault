@@ -9,7 +9,7 @@ import { extensionsForKind } from "../../src/main/services/ingestion/parsers";
 // 101 — liên kết lại file gốc: chỉ nhận tệp có CÙNG nội dung (SHA-256 = content_hash) để trích dẫn [n] (lưu vị trí
 // trong nội dung cũ) vẫn đúng (Constitution II). Đường dẫn chỉ đến từ hộp thoại ở main.
 
-function repoWith(kind: "audio" | "url" | "pdf" = "audio") {
+function repoWith(kind: "audio" | "url" | "pdf" | "meeting" = "audio") {
   const db = openDatabase(":memory:");
   runMigrations(db);
   db.prepare(
@@ -121,6 +121,20 @@ describe("createRelink", () => {
     expect(await r("s1")).toEqual({ status: "notApplicable" });
     expect(await r("khong-co")).toEqual({ status: "notApplicable" });
     expect(await r(42)).toEqual({ status: "notApplicable" });
+    expect(pickFile).not.toHaveBeenCalled();
+  });
+
+  it("186: nguồn cuộc họp (audio do app sở hữu) ⇒ notApplicable, không mở hộp thoại", async () => {
+    const pickFile = vi.fn(async () => "/x.wav");
+    const r = createRelink({
+      repo: repoWith("meeting"),
+      pickFile,
+      hashFile: async () => ({ hash: "", byteLength: 0 }),
+      log: () => undefined,
+      realpath: async (p) => p,
+      isLocked: () => false,
+    });
+    expect(await r("s1")).toEqual({ status: "notApplicable" });
     expect(pickFile).not.toHaveBeenCalled();
   });
 
