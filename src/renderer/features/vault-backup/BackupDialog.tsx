@@ -36,6 +36,20 @@ export function BackupDialog({
   const [pw2, setPw2] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const running = phase.kind === "running";
+  // 186 (C3): audio cuộc họp nằm TRONG bản sao lưu ⇒ cho người dùng thấy dung lượng (file có thể lớn).
+  const [meetingsBytes, setMeetingsBytes] = useState<number | null>(null);
+  useEffect(() => {
+    let alive = true;
+    window.api
+      .getStorageInfo()
+      .then((info) => {
+        if (alive && info.meetingsBytes) setMeetingsBytes(info.meetingsBytes);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const close = useCallback(() => {
     if (!running) onClose();
@@ -87,6 +101,13 @@ export function BackupDialog({
               <code> .ivbackup</code>
               {t.t("backup.dialog.descAfter")}
             </p>
+            {meetingsBytes !== null && (
+              <p className="vb-desc" data-testid="backup-meetings-size">
+                {t.t("backup.dialog.meetingsIncluded", {
+                  size: formatBytes(meetingsBytes, lang),
+                })}
+              </p>
+            )}
             <label className="vb-check">
               <input
                 type="checkbox"

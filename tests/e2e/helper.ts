@@ -52,3 +52,34 @@ export async function dismissOnboarding(win: Page): Promise<void> {
     await onboarding.waitFor({ state: "hidden", timeout: 5000 });
   }
 }
+
+/**
+ * 186: app cho e2e Ghi cuộc họp — ASR giả + tín hiệu thử thay micro (IV_E2E_FAKE_MIC; spike S1: cờ fake audio của Chromium
+ * treo chờ quyền micro macOS). `denied` ⇒ giả lập hệ điều hành từ chối quyền micro. Chỉ có hiệu lực ở bản chưa đóng gói.
+ */
+export async function launchMeeting(
+  opts: { denied?: boolean; env?: Record<string, string> } = {},
+): Promise<{ app: ElectronApplication; userData: string }> {
+  return launchFreshAt({
+    IV_ASR_FAKE: "1",
+    ...(opts.denied ? { IV_E2E_MIC_DENIED: "1" } : { IV_E2E_FAKE_MIC: "1" }),
+    ...(opts.env ?? {}),
+  });
+}
+
+/** Tạo notebook qua API rồi mở Workspace của nó. Trả id. */
+export async function openNewWorkspace(
+  win: Page,
+  name = "Họp e2e",
+): Promise<string> {
+  const id = await win.evaluate(
+    async (n) =>
+      (await window.api.notebookCreate({ name: n, color: "#1E6B57" })).id,
+    name,
+  );
+  await win.evaluate((nb) => {
+    window.location.hash = `#/workspace/${nb}`;
+  }, id);
+  await win.getByTestId("workspace").waitFor({ state: "visible" });
+  return id;
+}

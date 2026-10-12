@@ -54,6 +54,12 @@ mac:
   # v0.1: KHÔNG ký (unsigned) — người dùng mở lần đầu qua chuột phải → Open.
   identity: null
   artifactName: ${productName}-${version}-${arch}.${ext}
+  # 186: Ghi cuộc họp — macOS hiện câu này trong hộp xin quyền micro (bắt buộc từ Mojave, kể cả bản chưa ký).
+  extendInfo:
+    NSMicrophoneUsageDescription: "InsightVault records meetings you start, and processes the audio on this computer."
+  # 186: sẵn sàng cho lúc bật ký/hardened runtime (pha sau) — vô hại khi identity: null.
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
   # 078: bản mac chỉ cần binary onnxruntime-node cho darwin → LOẠI win32+linux (~176M). Merge với `files` chung.
   files:
     - "!node_modules/onnxruntime-node/bin/napi-v6/win32/**"

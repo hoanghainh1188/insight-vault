@@ -32,6 +32,9 @@ import type {
   CrashNotice,
   SourceRelinkResult,
   SourceReprocessResult,
+  MeetingPrepareResult,
+  MeetingStartResult,
+  MeetingState,
 } from "./types";
 
 /**
@@ -137,6 +140,17 @@ export const CHANNELS = {
   restoreConfirm: "restore:confirm",
   restoreCancel: "restore:cancel",
   getRestoreResult: "app:getRestoreResult",
+  // meeting-capture (186) — ghi cuộc họp. Audio/FS/ASR CHỈ ở main; renderer gửi lô PCM qua kênh send meeting:audio
+  // (main kiểm sender/phiên/thứ tự/kích thước/tần suất), nhận trạng thái qua push meeting:state (chỉ cửa sổ ghi).
+  meetingPrepare: "meeting:prepare",
+  meetingStart: "meeting:start",
+  meetingAudio: "meeting:audio", // send renderer→main (KHÔNG vào ChannelResponse)
+  meetingPause: "meeting:pause",
+  meetingResume: "meeting:resume",
+  meetingStop: "meeting:stop",
+  meetingStatus: "meeting:status",
+  meetingRename: "meeting:rename",
+  meetingState: "meeting:state", // event push main→renderer (KHÔNG vào ChannelResponse)
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -227,4 +241,12 @@ export interface ChannelResponse {
   [CHANNELS.restoreConfirm]: RestoreConfirmResult;
   [CHANNELS.restoreCancel]: { ok: true };
   [CHANNELS.getRestoreResult]: RestoreResult | null;
+  // meeting-capture (186) — meeting:audio (send) và meeting:state (push) không vào đây
+  [CHANNELS.meetingPrepare]: MeetingPrepareResult;
+  [CHANNELS.meetingStart]: MeetingStartResult;
+  [CHANNELS.meetingPause]: MeetingState;
+  [CHANNELS.meetingResume]: MeetingState;
+  [CHANNELS.meetingStop]: { sourceId: string };
+  [CHANNELS.meetingStatus]: MeetingState | null;
+  [CHANNELS.meetingRename]: { ok: true };
 }

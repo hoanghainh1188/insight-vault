@@ -10,6 +10,7 @@ import { RestoreResultNotice } from "../features/vault-backup/RestoreResultNotic
 import { ErrorBoundary } from "../shared/ErrorBoundary";
 import { LiveRegion } from "../shared/a11y/LiveRegion";
 import { CrashNoticeBanner } from "../features/crash-report/CrashNoticeBanner";
+import { RecordingStatusBar } from "../features/meeting-capture/RecordingStatusBar";
 
 // Layout vỏ: header in-app (dưới khung native OS) + nav rail trái + vùng nội dung (<Outlet/>).
 // 088: vùng nội dung bọc ErrorBoundary — lỗi 1 màn không kéo sập header/nav; điều hướng đi là tự hồi phục.
@@ -19,6 +20,8 @@ export function App(): JSX.Element {
   return (
     <div className="app">
       <AppHeader />
+      {/* 186: micro đang hoạt động luôn hiện rõ dù ở màn khác (FR-048). */}
+      <RecordingStatusBar />
       <RestoreResultNotice />
       <CrashNoticeBanner />
       <ReindexBanner />

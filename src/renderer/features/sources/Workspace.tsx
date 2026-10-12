@@ -9,6 +9,10 @@ import { fitWidths, useColumnWidths } from "./useColumnWidths";
 import { useElementWidth } from "./useElementWidth";
 import { setLastNotebookId } from "../../shared/lastNotebook";
 import { useT } from "../../shared/i18n/i18n-context";
+import { useRecording } from "../meeting-capture/RecordingProvider";
+import { RecordingView } from "../meeting-capture/RecordingView";
+import { FinalizeView } from "../meeting-capture/FinalizeView";
+import { isRecordingNotebook } from "../meeting-capture/meeting-ui";
 
 // Workspace 3 cột (prototype S2). Cột NGUỒN (011) + Chat (013) + Studio (021). Quản state trình xem nguồn
 // (019). 025: kéo đổi độ rộng cột (splitter + CSS var) + nhớ notebook gần nhất (nav).
@@ -20,6 +24,8 @@ export function Workspace(): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // #128: cửa sổ hẹp ⇒ co Nguồn/Studio để Chat không bị bóp (độ rộng đã lưu giữ nguyên).
   const shown = fitWidths(widths, useElementWidth(ref));
+  // 186: chế độ tập trung — notebook đang ghi ⇒ cột giữa là màn ghi; vừa kết thúc ⇒ màn hoàn tất.
+  const rec = useRecording();
 
   // Nhớ notebook mở gần nhất (C) — nút Workspace trên rail dùng để mở lại.
   useEffect(() => {
@@ -48,7 +54,13 @@ export function Workspace(): JSX.Element {
         aria-orientation="vertical"
         aria-label={t.t("sources.list.resizeSources")}
       />
-      <ChatColumn notebookId={notebookId} onCite={viewer.openCitation} />
+      {isRecordingNotebook(rec.state, notebookId) ? (
+        <RecordingView />
+      ) : rec.finalizing?.notebookId === notebookId ? (
+        <FinalizeView onOpenSource={viewer.openSource} />
+      ) : (
+        <ChatColumn notebookId={notebookId} onCite={viewer.openCitation} />
+      )}
       <div
         className="col-splitter"
         data-testid="splitter-studio"

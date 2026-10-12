@@ -35,4 +35,9 @@ export const VI_LITERAL_ALLOWLIST: ReadonlyArray<{
     reason:
       "Regex đ/Đ ⇒ d/D khi gấp dấu cho tìm toàn văn FTS5 (055) — xử lý dữ liệu, không phải chuỗi giao diện.",
   },
+  {
+    file: "src/main/services/meeting-capture/fake-asr.ts",
+    reason:
+      "186: ASR GIẢ chỉ cho e2e (IV_ASR_FAKE, bản chưa đóng gói) sinh transcript tiếng Việt 'đoạn <n>' để e2e đi qua cả tìm toàn văn gấp dấu — nội dung transcript giả, không phải chuỗi giao diện.",
+  },
 ];

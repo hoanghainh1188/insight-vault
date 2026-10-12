@@ -38,6 +38,15 @@ export async function createSnapshot(
   if (existsSync(vectors)) {
     await cp(vectors, join(input.destDir, "vectors"), { recursive: true });
   }
+  // 186 (C3): audio cuộc họp do app sở hữu — bản DUY NHẤT ⇒ vào bản sao lưu. Sao lưu bị chặn khi đang ghi/hoàn tất
+  // (nguồn processing ⇒ vault bận) nên không có tệp đang mở; bỏ tệp tạm của ghi nguyên tử (*.tmp).
+  const meetings = join(input.dataDir, "meetings");
+  if (existsSync(meetings)) {
+    await cp(meetings, join(input.destDir, "meetings"), {
+      recursive: true,
+      filter: (src) => !src.endsWith(".tmp"),
+    });
+  }
   await writeFile(
     join(input.destDir, "config.json"),
     JSON.stringify(input.config),

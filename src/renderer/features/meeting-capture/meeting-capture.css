@@ -1,0 +1,232 @@
+/* 186 — Ghi cuộc họp. Dùng token chung (tokens.css); chỉ animate opacity (prefers-reduced-motion tôn trọng). */
+
+.src-head-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+/* Cụm nút giữ nguyên một dòng; phần tiêu đề + dòng tổng hợp co lại (cột Nguồn hẹp tới 262 px, nhãn English dài hơn). */
+.src-head-actions .btn-outline-sm {
+  white-space: nowrap;
+}
+.src-head > div:first-child {
+  min-width: 0;
+}
+.btn-icon-sm {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out-expo);
+}
+.btn-icon-sm:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.btn-icon-sm:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn-icon-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Hộp bắt đầu */
+.modal.meeting-start {
+  position: relative;
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal.meeting-start h3 {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+/* Nút chính trong .modal-actions: .modal-actions button đặt nền trắng ⇒ khôi phục màu nhấn. */
+.modal.meeting-start .modal-actions .btn-primary-sm {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.modal.meeting-start .modal-actions .btn-primary-sm:hover:not(:disabled) {
+  background: var(--accent-ink);
+}
+.modal.meeting-start .modal-actions .btn-primary-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ms-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.ms-field select,
+.ms-field input {
+  font: inherit;
+  color: var(--ink);
+}
+.ms-field select {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.ms-privacy {
+  border-left: 3px solid var(--local);
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.ms-privacy p {
+  margin: 0;
+}
+.ms-note {
+  margin-top: 4px !important;
+  color: var(--ink-faint);
+}
+
+/* Màn ghi / hoàn tất (cột giữa, chế độ tập trung) */
+.rec-view {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
+}
+.rec-head {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.rec-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.rec-status {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.rec-state {
+  font-weight: 600;
+  color: var(--ink);
+}
+.rec-clock {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: rec-pulse 1.6s var(--ease-out-expo) infinite;
+}
+.rec-dot.paused {
+  background: var(--ink-faint);
+  animation: none;
+}
+@keyframes rec-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rec-dot {
+    animation: none;
+  }
+}
+.rec-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  color: var(--ink-soft);
+}
+.rec-placeholder {
+  margin: 0;
+  color: var(--ink-faint);
+}
+.rec-ready {
+  margin: 0;
+  color: var(--local);
+  font-weight: 600;
+}
+.rec-progress {
+  display: block;
+  margin-top: 8px;
+  overflow: hidden;
+}
+/* N4: chỉ animate transform (compositor), không animate width. */
+.rec-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rec-progress-fill {
+    transition: none;
+  }
+}
+.rec-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line-soft);
+}
+.rec-spacer {
+  flex: 1;
+}
+.rec-main {
+  min-width: 112px;
+}
+
+/* Thanh trạng thái toàn cục + toast */
+.rec-bar-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.rec-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: var(--danger-bg);
+  border-bottom: 1px solid var(--danger-line);
+  color: var(--ink);
+  font-size: 13px;
+}
+.rec-toast {
+  background: var(--accent-soft);
+  border-bottom-color: var(--accent-line);
+}

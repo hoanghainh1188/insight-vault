@@ -14,6 +14,8 @@ export const SIZE_LIMITS: Record<SourceKind, number> = {
   audio: 200 * MB, // 045 — file audio lớn (bóc băng cục bộ); 051 thêm m4a/aac cùng giới hạn
   video: 1024 * MB, // 051 — video lớn (tách audio + phát file gốc)
   image: 50 * MB, // 053 — ảnh OCR (tesseract.js)
+  // 186 — nguồn cuộc họp KHÔNG đi readFile/assertWithinLimit (ghi theo phân đoạn); giới hạn thực tế là đĩa (A7).
+  meeting: Number.POSITIVE_INFINITY,
 };
 
 /** Lỗi vượt giới hạn — mã lỗi nguồn "tooLarge" (123: lưu mã, giao diện dịch). */

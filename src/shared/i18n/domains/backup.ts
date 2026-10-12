@@ -42,6 +42,7 @@ export const backupVi = {
     descBefore:
       "Lưu toàn bộ notebook, nguồn đã xử lý, lịch sử chat, kết quả Studio và cấu hình vào một file",
     descAfter: ". Không gồm file gốc (PDF, audio, video, ảnh) và khoá API.",
+    meetingsIncluded: "Gồm ghi âm cuộc họp: {size}.",
     protect: "Bảo vệ bằng mật khẩu",
     password: "Mật khẩu",
     passwordConfirm: "Nhập lại mật khẩu",
@@ -128,6 +129,7 @@ export const backupEn: Widen<typeof backupVi> = {
       "Saves all notebooks, processed sources, chat history, Studio results and settings to a single",
     descAfter:
       " file. Original files (PDF, audio, video, images) and API keys are not included.",
+    meetingsIncluded: "Includes meeting recordings: {size}.",
     protect: "Protect with a password",
     password: "Password",
     passwordConfirm: "Re-enter password",
