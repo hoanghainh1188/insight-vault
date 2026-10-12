@@ -120,9 +120,9 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [X] T037 [US1] `src/main/services/ingestion/pipeline.ts`: tách `indexParsed` khỏi `processFull`; thêm `createMeetingSource`, `ingestParsed`; `resumeInterrupted` bỏ
       `kind="meeting"`; `retry`/`relink` meeting ⇒ `UserFacingError("notSupported")`; `remove` gọi `onRemoveMeeting(sourceId)` (tiêm); `src/main/services/ingestion/source-repo.ts`
       `listByNotebook` LEFT JOIN `meeting_session`; `src/main/services/ingestion/parsers/index.ts` `SIZE_LIMITS.meeting`. T019 xanh.
-- [ ] T038 [US1] `src/main/services/meeting-capture/capture-writer.ts` (I/O): mở `seg-NNNN.wav` với header 0, append Int16, `fsync` mỗi `FSYNC_SEC`, đóng ⇒ ghi header
+- [X] T038 [US1] `src/main/services/meeting-capture/capture-writer.ts` (I/O): mở `seg-NNNN.wav` với header 0, append Int16, `fsync` mỗi `FSYNC_SEC`, đóng ⇒ ghi header
       đúng + fsync; xoay khi `segmentShouldRotate`.
-- [ ] T039 [US1] `src/main/services/meeting-capture/meeting-files.ts` (I/O): tạo/xoá thư mục phiên `<userData>/meetings/<sessionId>/`, ghép `meeting.wav` theo stream,
+- [X] T039 [US1] `src/main/services/meeting-capture/meeting-files.ts` (I/O): tạo/xoá thư mục phiên `<userData>/meetings/<sessionId>/`, ghép `meeting.wav` theo stream,
       xoá `seg-*.wav` + `final/` sau `ready`, `resolvePlayback(sourceId)` (dùng `playbackTarget`), ghi `final/seg-NNNN.json` nguyên tử (tmp→rename), sửa header phân
       đoạn mở (dùng `repairWavHeader`). Đường dẫn kiểm prefix `meetings/`.
 - [ ] T040 [US1] `src/main/services/meeting-capture/asr-worker.ts` (entry `utilityProcess`): nhận `init`, `final` (đọc phân đoạn + 5 s đuôi phân đoạn trước, resample
