@@ -57,27 +57,27 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [ ] T006 [P] [US1] Test TRƯỚC `tests/unit/migration-meeting.test.ts` (khuôn `migration-source.test.ts`): chạy 1..11 + dữ liệu mẫu ⇒ `runMigrations` lên 12; 3 bảng +
       index theo data-model §2; CHECK `phase`, `language_mode`, `transcript_quality`, `marker.kind` từ chối giá trị lạ; cascade khi xoá `source`; dữ liệu cũ giữ nguyên;
       `PRAGMA foreign_key_check` rỗng; `user_version = 12`.
-- [ ] T007 [P] [US1] Test TRƯỚC `tests/unit/meeting-session-state.test.ts` cho `sessionTransition(state, event)` (`session-state.ts`): mọi chuyển ở data-model §5
+- [X] T007 [P] [US1] Test TRƯỚC `tests/unit/meeting-session-state.test.ts` cho `sessionTransition(state, event)` (`session-state.ts`): mọi chuyển ở data-model §5
       hợp lệ; chuyển không hợp lệ trả lỗi (vd `resume` khi `recording`); `ended_by_user` đặt đúng; ánh xạ phase ⇒ `source.status`.
-- [ ] T008 [P] [US1] Test TRƯỚC `tests/unit/meeting-wav.test.ts`: `buildWavHeader(dataBytes, 16000, 1, 16)` đúng 44 byte (RIFF/WAVE/fmt/data, byte rate, block align);
+- [X] T008 [P] [US1] Test TRƯỚC `tests/unit/meeting-wav.test.ts`: `buildWavHeader(dataBytes, 16000, 1, 16)` đúng 44 byte (RIFF/WAVE/fmt/data, byte rate, block align);
       `repairWavHeader(fileSize)` cắt byte lẻ, độ dài data = fileSize − 44, tệp < 44 byte ⇒ rỗng hợp lệ.
-- [ ] T009 [P] [US1] Test TRƯỚC `tests/unit/meeting-segments.test.ts` (`segments.ts`): `segmentShouldRotate`, `segmentOffsets` (offset = tổng mẫu phân đoạn trước),
+- [X] T009 [P] [US1] Test TRƯỚC `tests/unit/meeting-segments.test.ts` (`segments.ts`): `segmentShouldRotate`, `segmentOffsets` (offset = tổng mẫu phân đoạn trước),
       `durationSec`, `locateInSegments(segments, tSec)` ⇒ `{index, offsetSec}` (biên đầu/cuối, ngoài phạm vi ⇒ null), `playbackTarget(phase, segments, mergedExists)`
       ⇒ `merged` | `segment n`.
-- [ ] T010 [P] [US1] Test TRƯỚC `tests/unit/meeting-audio-ingress.test.ts` cho `validateAudioBatch(state, msg)`: sai sessionId / sender / phase ⇒ `reject`; byteLength 0,
+- [X] T010 [P] [US1] Test TRƯỚC `tests/unit/meeting-audio-ingress.test.ts` cho `validateAudioBatch(state, msg)`: sai sessionId / sender / phase ⇒ `reject`; byteLength 0,
       lẻ, > 65 536 ⇒ `reject`; seq trùng ⇒ `duplicate`; seq nhảy ⇒ `accept` + `gap`; > 4 lô/s ⇒ `rateLimited`; không ném.
-- [ ] T011 [P] [US1] Test TRƯỚC `tests/unit/meeting-stitch.test.ts` cho `stitchSegments(prevTail, current, overlapSec=5)`: bỏ segment thuộc vùng chồng lấn, không mất
+- [X] T011 [P] [US1] Test TRƯỚC `tests/unit/meeting-stitch.test.ts` cho `stitchSegments(prevTail, current, overlapSec=5)`: bỏ segment thuộc vùng chồng lấn, không mất
       chữ ở ranh giới, không lặp câu bị cắt đôi, phân đoạn đầu không có prevTail.
-- [ ] T012 [P] [US1] Test TRƯỚC `tests/unit/meeting-transcript.test.ts` cho `buildMeetingTranscript(segmentsBySeg, offsets)`: text nối `\n` đã trim; spans có thời gian
+- [X] T012 [P] [US1] Test TRƯỚC `tests/unit/meeting-transcript.test.ts` cho `buildMeetingTranscript(segmentsBySeg, offsets)`: text nối `\n` đã trim; spans có thời gian
       **audio tuyệt đối**; khoảng ngừng KHÔNG xuất hiện trong text; `timeMap` dùng được với `timeForCharRange` sẵn có; bất biến `cleanText(text) === text` (offset không
       lệch); 0 segment ⇒ text rỗng.
-- [ ] T013 [P] [US1] Test TRƯỚC `tests/unit/meeting-disk-guard.test.ts` cho `diskLevel({freeBytes, recordedBytes, bytesPerMin})` + `canStart`: ngưỡng 30/5/1 phút, dự phòng
+- [X] T013 [P] [US1] Test TRƯỚC `tests/unit/meeting-disk-guard.test.ts` cho `diskLevel({freeBytes, recordedBytes, bytesPerMin})` + `canStart`: ngưỡng 30/5/1 phút, dự phòng
       2× + 500 MB, start bị chặn < 10 phút, freeBytes âm sau dự phòng ⇒ `stop`.
-- [ ] T014 [P] [US1] Test TRƯỚC `tests/unit/meeting-asr-protocol.test.ts` cho `parseWorkerMessage` (main nhận) và `parseMainMessage` (worker nhận): đúng mọi loại ở R5,
+- [X] T014 [P] [US1] Test TRƯỚC `tests/unit/meeting-asr-protocol.test.ts` cho `parseWorkerMessage` (main nhận) và `parseMainMessage` (worker nhận): đúng mọi loại ở R5,
       từ chối thiếu trường / sai kiểu / `reqId` không phải chuỗi / đường dẫn ngoài `meetings/`.
-- [ ] T015 [P] [US1] Test TRƯỚC `tests/unit/meeting-fake-asr.test.ts` cho `fakeTranscribe(pcm, windowStartSec)`: segment "đoạn <n>" với timestamp đúng cửa sổ, cửa sổ im
+- [X] T015 [P] [US1] Test TRƯỚC `tests/unit/meeting-fake-asr.test.ts` cho `fakeTranscribe(pcm, windowStartSec)`: segment "đoạn <n>" với timestamp đúng cửa sổ, cửa sổ im
       lặng ⇒ rỗng, xác định (cùng vào ⇒ cùng ra).
-- [ ] T016 [P] [US1] Test TRƯỚC `tests/unit/meeting-default-title.test.ts` cho `defaultMeetingTitle(date, lang)` (vi "Cuộc họp 12/10, 14:30", en tương ứng) và
+- [X] T016 [P] [US1] Test TRƯỚC `tests/unit/meeting-default-title.test.ts` cho `defaultMeetingTitle(date, lang)` (vi "Cuộc họp 12/10, 14:30", en tương ứng) và
       `formatDuration(sec)` (`00:00:07`, `01:42:18`, > 10 giờ).
 - [ ] T017 [P] [US1] Test TRƯỚC `tests/unit/meeting-channels-whitelist.test.ts` (khuôn `chat-channels-whitelist.test.ts`): kênh PR A trong `CHANNELS` + whitelist + preload,
       tên duy nhất, `meeting:audio` là send, `meeting:state` là push (không trong `ChannelResponse`).
@@ -100,22 +100,22 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 ### Implementation — main
 
 - [ ] T023 [US1] Append migration `version: 12` vào cuối `MIGRATIONS` trong `src/main/db/migrations.ts` theo data-model §2 (3 bảng + 2 index). T006 xanh.
-- [ ] T024 [US1] `src/shared/ipc/types.ts`: `SourceKind` thêm `"meeting"`; `SourceSummary.meetingPhase?`, `transcriptQuality?`; kiểu `MeetingPhase`, `MeetingState`,
+- [X] T024 [US1] `src/shared/ipc/types.ts`: `SourceKind` thêm `"meeting"`; `SourceSummary.meetingPhase?`, `transcriptQuality?`; kiểu `MeetingPhase`, `MeetingState`,
       `MeetingPrepareResult`, `MeetingStartInput`, `MeetingMarker`, `LanguageMode` theo contracts/meeting-ipc.md.
-- [ ] T025 [US1] `src/main/services/meeting-capture/meeting-constants.ts`: hằng số R3/R13 (`SAMPLE_RATE`, `SEGMENT_SEC` có override `IV_MEETING_SEGMENT_SEC` khi chưa
+- [X] T025 [US1] `src/main/services/meeting-capture/meeting-constants.ts`: hằng số R3/R13 (`SAMPLE_RATE`, `SEGMENT_SEC` có override `IV_MEETING_SEGMENT_SEC` khi chưa
       đóng gói, `FSYNC_SEC`, `CHECKPOINT_SEC`, `BATCH_MAX_BYTES`, `RENDERER_BUFFER_SEC`, `BYTES_PER_MIN`, `ARM_WINDOW_MS=15000`, `END_CONFIRM_MIN_SEC=300`,
       `FINAL_OVERLAP_SEC=5`, `FINAL_MODEL`).
 - [ ] T026 [P] [US1] `src/main/services/app-shell/permissions.ts`; trong `src/main/index.ts` `installSecurity` dùng `decideMediaPermission`/`decidePermissionCheck` với
       `armedUntil` lấy từ meeting-service, giữ `setDevicePermissionHandler(() => false)`, sửa comment ("chỉ mic audio khi người dùng bắt đầu ghi — 186"). T005 xanh.
-- [ ] T027 [P] [US1] `src/main/services/meeting-capture/session-state.ts`. T007 xanh.
-- [ ] T028 [P] [US1] `src/main/services/meeting-capture/wav.ts`. T008 xanh.
-- [ ] T029 [P] [US1] `src/main/services/meeting-capture/segments.ts`. T009 xanh.
-- [ ] T030 [P] [US1] `src/main/services/meeting-capture/audio-ingress.ts`. T010 xanh.
-- [ ] T031 [P] [US1] `src/main/services/meeting-capture/stitch.ts`. T011 xanh.
-- [ ] T032 [P] [US1] `src/main/services/meeting-capture/meeting-transcript.ts` (dùng lại `TimeMapEntry` của `ingestion/audio/audio-transcript.ts`). T012 xanh.
-- [ ] T033 [P] [US1] `src/main/services/meeting-capture/disk-guard.ts`. T013 xanh.
-- [ ] T034 [P] [US1] `src/main/services/meeting-capture/asr-protocol.ts`. T014 xanh.
-- [ ] T035 [P] [US1] `src/main/services/meeting-capture/fake-asr.ts`. T015 xanh.
+- [X] T027 [P] [US1] `src/main/services/meeting-capture/session-state.ts`. T007 xanh.
+- [X] T028 [P] [US1] `src/main/services/meeting-capture/wav.ts`. T008 xanh.
+- [X] T029 [P] [US1] `src/main/services/meeting-capture/segments.ts`. T009 xanh.
+- [X] T030 [P] [US1] `src/main/services/meeting-capture/audio-ingress.ts`. T010 xanh.
+- [X] T031 [P] [US1] `src/main/services/meeting-capture/stitch.ts`. T011 xanh.
+- [X] T032 [P] [US1] `src/main/services/meeting-capture/meeting-transcript.ts` (dùng lại `TimeMapEntry` của `ingestion/audio/audio-transcript.ts`). T012 xanh.
+- [X] T033 [P] [US1] `src/main/services/meeting-capture/disk-guard.ts`. T013 xanh.
+- [X] T034 [P] [US1] `src/main/services/meeting-capture/asr-protocol.ts`. T014 xanh.
+- [X] T035 [P] [US1] `src/main/services/meeting-capture/fake-asr.ts`. T015 xanh.
 - [ ] T036 [US1] `src/main/services/meeting-capture/meeting-repo.ts` (SQL tham số hoá; sau T023). T018 xanh.
 - [ ] T037 [US1] `src/main/services/ingestion/pipeline.ts`: tách `indexParsed` khỏi `processFull`; thêm `createMeetingSource`, `ingestParsed`; `resumeInterrupted` bỏ
       `kind="meeting"`; `retry`/`relink` meeting ⇒ `UserFacingError("notSupported")`; `remove` gọi `onRemoveMeeting(sourceId)` (tiêm); `src/main/services/ingestion/source-repo.ts`
@@ -151,7 +151,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### Implementation — renderer
 
-- [ ] T050 [P] [US1] `src/renderer/features/meeting-capture/default-title.ts` + `format-duration.ts`. T016 xanh.
+- [X] T050 [P] [US1] `src/renderer/features/meeting-capture/default-title.ts` + `src/shared/meeting/format-duration.ts` (dùng chung main/renderer — bản xuất Markdown C2 cũng cần). T016 xanh.
 - [ ] T051 [US1] `src/renderer/features/meeting-capture/capture/pcm-worklet.ts` (AudioWorkletProcessor: Float32 → Int16, gom 16 000 mẫu, `postMessage` transfer, **lệnh `flush`
       xả lô lẻ** khi tạm dừng/kết thúc — S1) và `capture/mic-capture.ts` (I/O: `getUserMedia({audio:{deviceId}})`, AudioContext 16 kHz, `addModule` qua
       `import url from "./pcm-worklet.ts?worker&url"` — S1; seam `IV_E2E_FAKE_MIC` (unpackaged) thay `getUserMedia` bằng `AudioBufferSourceNode` phát lặp fixture; gửi lô qua `window.api.meetingSendAudio` với

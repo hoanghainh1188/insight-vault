@@ -19,6 +19,7 @@ const KIND_ICON: Record<Source["kind"], string> = {
   audio: "AUD",
   video: "VID",
   image: "IMG",
+  meeting: "MTG", // 186
 };
 
 function subLabel(s: Source, tr: Translator): string {

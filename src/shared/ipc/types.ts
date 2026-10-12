@@ -221,7 +221,16 @@ export interface SetColorInput {
 // ===== ingestion (011) — nguồn: specs/.../ingestion/data-model.md =====
 
 export type SourceKind =
-  "pdf" | "docx" | "txt" | "md" | "url" | "audio" | "video" | "image";
+  | "pdf"
+  | "docx"
+  | "txt"
+  | "md"
+  | "url"
+  | "audio"
+  | "video"
+  | "image"
+  /** 186: nguồn cuộc họp — ghi trực tiếp trong app, audio do app sở hữu. Không bao giờ suy từ đuôi tệp. */
+  | "meeting";
 
 /** Vùng bao chữ trên ảnh (053), chuẩn hoá 0..1 theo kích thước ảnh → overlay co giãn theo `<img>`. */
 export interface Bbox {
@@ -262,6 +271,10 @@ export interface Source {
   updatedAt: number;
   /** 112: cách trích đã dùng cho văn bản/chunk hiện tại (1 = trước 112; PDF bố cục = PDF_EXTRACTION_VERSION). */
   extractionVersion: number;
+  /** 186: chỉ có với kind="meeting" — giai đoạn phiên ghi (nhãn UI thay cho status). */
+  meetingPhase?: MeetingPhase;
+  /** 186: chỉ có với kind="meeting" đã hoàn tất — transcript chốt hay dùng tạm bản nháp. */
+  transcriptQuality?: TranscriptQuality;
 }
 
 /** 112: phiên bản cách trích PDF có bố cục (dòng/cột/bảng). PDF có version thấp hơn ⇒ gợi ý "Xử lý lại". */
@@ -581,3 +594,107 @@ export type RestoreConfirmResult = { status: "relaunching" } | VaultBackupError;
 export type RestoreResult =
   | { ok: true; backupCreatedAt: string; preRestorePath: string | null }
   | { ok: false; reason: "swapFailed" };
+
+// ===== meeting capture (186) — nguồn: specs/20261012-072338-meeting-capture/{data-model,contracts/meeting-ipc}.md =====
+
+/** Giai đoạn phiên ghi (data-model §5). Ánh xạ status: done|incomplete ⇒ ready; còn lại ⇒ processing. */
+export type MeetingPhase =
+  | "recording"
+  | "paused"
+  | "stopping"
+  | "finalizing"
+  | "interrupted"
+  | "incomplete"
+  | "done";
+
+/** Chế độ ngôn ngữ ghi (D6) — KHÁC uiLanguage (123). */
+export type LanguageMode = "auto" | "vi" | "en" | "multi";
+
+export type TranscriptQuality = "final" | "draft";
+
+export type MeetingMarkerKind = "decision" | "actionItem" | "question";
+
+export interface MeetingMarker {
+  id: string;
+  kind: MeetingMarkerKind;
+  /** Giây thời gian audio. Đánh dấu điểm: tEnd = tStart. */
+  tStart: number;
+  tEnd: number;
+}
+
+export type PauseGapReason = "user" | "deviceLost" | "interrupted";
+
+/** Khoảng ngừng — metadata, KHÔNG vào văn bản lập chỉ mục (D2). */
+export interface PauseGap {
+  /** Vị trí trên trục thời gian audio (giây). */
+  atSec: number;
+  /** Độ dài thực (giây) của lần ngừng. */
+  wallSeconds: number;
+  reason: PauseGapReason;
+}
+
+export type MicStatus =
+  | "granted"
+  | "notDetermined"
+  | "denied"
+  | "restricted"
+  | "unknown";
+
+export interface MeetingPrepareResult {
+  micStatus: MicStatus;
+  modelReady: boolean;
+  modelSizeMb: number;
+  minutesRemaining: number;
+  canStart: boolean;
+  onlineActive: boolean;
+  recordingActive: boolean;
+  lastDeviceLabel?: string;
+  lastLanguageMode?: LanguageMode;
+}
+
+export interface MeetingStartInput {
+  notebookId: string;
+  title: string;
+  languageMode: LanguageMode;
+  deviceLabel?: string;
+}
+
+export interface MeetingStartResult {
+  sessionId: string;
+  sourceId: string;
+}
+
+export type DiskLevel = "ok" | "warn" | "urgent" | "stop";
+
+export interface MeetingSegmentInfo {
+  index: number;
+  durationSec: number;
+  closed: boolean;
+}
+
+/** Trạng thái phiên đang hoạt động (push meeting:state, invoke meeting:status). */
+export interface MeetingState {
+  sessionId: string;
+  sourceId: string;
+  notebookId: string;
+  title: string;
+  phase: "recording" | "paused" | "stopping" | "finalizing" | "interrupted";
+  /** Thời gian audio đã ghi (giây) — không tính khoảng tạm dừng. */
+  durationSec: number;
+  segments: MeetingSegmentInfo[];
+  pauseReason?: "user" | "deviceLost";
+  diskLevel: Exclude<DiskLevel, "stop">;
+  minutesRemaining: number;
+  /** PR B. */
+  transcriptLagging: boolean;
+  /** PR B. */
+  modelReady: boolean;
+}
+
+/** Lô PCM renderer→main (kênh send meeting:audio). */
+export interface MeetingAudioBatch {
+  sessionId: string;
+  seq: number;
+  pcm: ArrayBuffer;
+}
+
