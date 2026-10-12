@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Segment } from "../ingestion/audio/audio-transcript";
 import { parseWorkerMessage, type MainToWorker } from "./asr-protocol";
+import type { DetectedLanguage } from "./language-detect";
 import { AsrError, type AsrFinalClient } from "./meeting-service";
 
 // 186 — phía main của asr-worker (utilityProcess, research R5). Fork LƯỜI ở yêu cầu đầu; khớp phản hồi theo reqId; mọi
@@ -38,23 +39,19 @@ export function createAsrClient(
   let child: UtilityProcessLike | null = null;
   let downloading = false;
   const forkTimes: number[] = [];
-  const pending = new Map<
-    string,
-    {
-      resolve: (s: Segment[]) => void;
-      reject: (e: AsrError) => void;
-      timer: ReturnType<typeof setTimeout>;
-    }
-  >();
-
-  const settle = (
-    reqId: string,
-  ): {
-    resolve: (s: Segment[]) => void;
+  // Mỗi yêu cầu chờ đúng MỘT loại trả lời (final ⇒ result, detect ⇒ language); loại khác cho cùng reqId bị bỏ qua.
+  type Kind = "final" | "detect";
+  interface Pending {
+    kind: Kind;
+    resolve: (v: unknown) => void;
     reject: (e: AsrError) => void;
-  } | null => {
+    timer: ReturnType<typeof setTimeout>;
+  }
+  const pending = new Map<string, Pending>();
+
+  const settle = (reqId: string, kind?: Kind): Pending | null => {
     const p = pending.get(reqId);
-    if (!p) return null;
+    if (!p || (kind && p.kind !== kind)) return null;
     clearTimeout(p.timer);
     pending.delete(reqId);
     return p;
@@ -83,7 +80,13 @@ export function createAsrClient(
       const m = parseWorkerMessage(raw);
       if (!m) return;
       if (m.type === "modelDownload") setDownloading(m.active);
-      else if (m.type === "result") settle(m.reqId)?.resolve(m.segments);
+      else if (m.type === "result")
+        settle(m.reqId, "final")?.resolve(m.segments);
+      else if (m.type === "language")
+        settle(m.reqId, "detect")?.resolve({
+          language: m.language,
+          confidence: m.confidence,
+        });
       else if (m.type === "error")
         settle(m.reqId)?.reject(new AsrError(m.code));
     });
@@ -103,20 +106,42 @@ export function createAsrClient(
     return c;
   };
 
+  const request = <T>(
+    kind: Kind,
+    build: (reqId: string) => MainToWorker,
+  ): Promise<T> => {
+    const c = ensureChild();
+    if (!c) return Promise.reject(new AsrError("asrFailed"));
+    const reqId = randomUUID();
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        settle(reqId)?.reject(new AsrError("asrFailed"));
+        c.postMessage({ type: "cancel", reqId } satisfies MainToWorker);
+      }, timeoutMs);
+      pending.set(reqId, {
+        kind,
+        resolve: resolve as (v: unknown) => void,
+        reject,
+        timer,
+      });
+      c.postMessage(build(reqId));
+    });
+  };
+
   return {
     final(req) {
-      const c = ensureChild();
-      if (!c) return Promise.reject(new AsrError("asrFailed"));
-      const reqId = randomUUID();
-      return new Promise<Segment[]>((resolve, reject) => {
-        const timer = setTimeout(() => {
-          settle(reqId)?.reject(new AsrError("asrFailed"));
-          c.postMessage({ type: "cancel", reqId } satisfies MainToWorker);
-        }, timeoutMs);
-        pending.set(reqId, { resolve, reject, timer });
-        const msg: MainToWorker = { type: "final", reqId, ...req };
-        c.postMessage(msg);
-      });
+      return request<Segment[]>("final", (reqId) => ({
+        type: "final",
+        reqId,
+        ...req,
+      }));
+    },
+    detectLanguage(req) {
+      return request<DetectedLanguage>("detect", (reqId) => ({
+        type: "detect",
+        reqId,
+        segmentPath: req.segmentPath,
+      }));
     },
     dispose() {
       failAll("cancelled");

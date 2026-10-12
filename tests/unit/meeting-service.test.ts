@@ -44,9 +44,11 @@ interface Harness {
     overlapSec: number;
     language: string | null;
   }[];
+  detectCalls: string[];
   clock: { now: number };
   tick: () => void;
   setAsr: (fn: AsrFinalClient["final"]) => void;
+  setDetect: (fn: AsrFinalClient["detectLanguage"]) => void;
   setFree: (bytes: number) => void;
   /** Kết quả trả về của ingestParsed (mặc định true). */
   setIngestOk: (ok: boolean) => void;
@@ -89,6 +91,11 @@ function harness(
   let idSeq = 0;
   let intervalFn: (() => void) | null = null;
   // Mặc định ASR trả một câu cho mỗi phân đoạn, thời gian tương đối đầu phân đoạn.
+  const detectCalls: string[] = [];
+  let detectImpl: AsrFinalClient["detectLanguage"] = async () => ({
+    language: "en",
+    confidence: 0.9,
+  });
   let asrImpl: AsrFinalClient["final"] = async (req) => [
     { text: `câu của ${req.segmentPath.split("/").pop()}`, tStart: 1, tEnd: 3 },
   ];
@@ -182,7 +189,13 @@ function harness(
     },
     notebookExists: (id) => id === "nb1",
     files,
-    asr: { final: (req) => (asrCalls.push(req), asrImpl(req)) },
+    asr: {
+      final: (req) => (asrCalls.push(req), asrImpl(req)),
+      detectLanguage: (req) => (
+        detectCalls.push(req.segmentPath),
+        detectImpl(req)
+      ),
+    },
     freeBytes: async () => free,
     micGate: gate,
     mediaAccess: {
@@ -223,9 +236,11 @@ function harness(
     ingested,
     notified,
     asrCalls,
+    detectCalls,
     clock,
     tick: () => intervalFn?.(),
     setAsr: (fn) => (asrImpl = fn),
+    setDetect: (fn) => (detectImpl = fn),
     setFree: (b) => (free = b),
     setIngestOk: (ok) => (ingestOk = ok),
     failWriter: () => writerError?.(new Error("EIO")),
@@ -516,17 +531,59 @@ describe("kết thúc + hoàn tất (ASR chốt từng phân đoạn)", () => {
     expect(h.ingested[0].text).toBe("");
   });
 
-  it("ngôn ngữ bản chốt: auto/multi ⇒ null", async () => {
+  // ADR spike S2: transformers.js không tự phát hiện ngôn ngữ (mặc định tiếng Anh) ⇒ auto phải phát hiện trước bản chốt.
+  async function autoSession(segs = 2) {
     await h.svc.prepare(OWNER, { notebookId: "nb1" });
-    const { sessionId } = await h.svc.start(OWNER, {
+    const r = await h.svc.start(OWNER, {
       notebookId: "nb1",
       title: "x",
       languageMode: "auto",
     });
+    feed(h, r.sessionId, segs);
+    return r;
+  }
+
+  it("auto ⇒ phát hiện MỘT lần trên phân đoạn đầu có audio, lưu vào phiên, mọi lượt chốt dùng nó", async () => {
+    const { sessionId, sourceId } = await autoSession(2);
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.detectCalls).toHaveLength(1);
+    expect(h.detectCalls[0]).toMatch(/seg-0000\.wav$/);
+    expect(h.asrCalls.length).toBeGreaterThan(0);
+    expect(h.asrCalls.every((c) => c.language === "en")).toBe(true);
+    expect(h.repo.get(sourceId)?.language).toBe("en");
+  });
+
+  it("chế độ khoá ngôn ngữ ⇒ không phát hiện", async () => {
+    const { sessionId } = await startSession(h);
     feed(h, sessionId, 2);
     await h.svc.stop(OWNER, { sessionId });
     await h.idle();
+    expect(h.detectCalls).toEqual([]);
+    expect(h.asrCalls[0].language).toBe("vi");
+  });
+
+  it("phát hiện lỗi ⇒ vẫn hoàn tất, bản chốt không có ngôn ngữ (null), không lưu", async () => {
+    h.setDetect(async () => {
+      throw new AsrError("asrFailed");
+    });
+    const { sessionId, sourceId } = await autoSession(2);
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
     expect(h.asrCalls[0].language).toBeNull();
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      language: null,
+    });
+  });
+
+  it("phiên đã có ngôn ngữ (chạy lại hoàn tất) ⇒ không phát hiện lại", async () => {
+    const { sessionId, sourceId } = await autoSession(2);
+    h.repo.update(sourceId, { language: "vi" });
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.detectCalls).toEqual([]);
+    expect(h.asrCalls[0].language).toBe("vi");
   });
 });
 

@@ -1,10 +1,13 @@
-import type { LanguageMode } from "@shared/ipc/types";
 import type { Segment } from "../ingestion/audio/audio-transcript";
 import type { AsrLanguage } from "./asr-protocol";
 import { FINAL_OVERLAP_SEC } from "./meeting-constants";
 import type { MeetingRepo, MeetingSession } from "./meeting-repo";
 import { buildMeetingTranscript } from "./meeting-transcript";
 import type { MeetingServiceDeps } from "./meeting-service";
+import {
+  resolveFinalLanguage,
+  type DetectedLanguageCode,
+} from "./language-detect";
 import { AsrError, type AsrFinalClient, type MeetingFiles } from "./meeting-io";
 import { segmentOffsets, type CaptureSegment } from "./segments";
 import { sessionTransition } from "./session-state";
@@ -34,8 +37,35 @@ export interface FinalizerDeps {
   log(event: string, meta?: Record<string, string | number | boolean>): void;
 }
 
-function finalLanguage(mode: LanguageMode): AsrLanguage {
-  return mode === "vi" || mode === "en" ? mode : null;
+/**
+ * Ngôn ngữ cho bản chốt (ADR spike S2): chế độ khoá thắng; auto/multi dùng ngôn ngữ đã lưu của phiên, chưa có thì phát hiện
+ * MỘT lần trên phân đoạn đầu có audio rồi lưu (chạy lại hoàn tất không phát hiện lại). Phát hiện lỗi ⇒ null (vẫn hoàn tất).
+ */
+async function sessionLanguage(
+  d: FinalizerDeps,
+  s: MeetingSession,
+): Promise<AsrLanguage> {
+  const known = resolveFinalLanguage(s.languageMode, s.language);
+  if (known) return known;
+  const first = s.segments.find((seg) => seg.samples > 0);
+  if (!first) return null;
+  let detected: DetectedLanguageCode;
+  try {
+    detected = (
+      await d.asr.detectLanguage({
+        segmentPath: d.files.segmentPath(s.sessionId, first.index),
+      })
+    ).language;
+  } catch (e) {
+    d.log("meeting.languageDetectFailed", {
+      code: e instanceof AsrError ? e.code : "asrFailed",
+    });
+    return null;
+  }
+  if (!d.isRemoved(s.sourceId))
+    d.repo.update(s.sourceId, { language: detected });
+  d.log("meeting.languageDetected", { language: detected });
+  return detected;
 }
 
 /** Nhận dạng chốt các phân đoạn có audio; trả kết quả theo thứ tự, hoặc null nếu ASR lỗi / nguồn bị xoá. */
@@ -43,6 +73,7 @@ async function recognizeAll(
   d: FinalizerDeps,
   s: MeetingSession,
   notebookId: string,
+  language: AsrLanguage,
 ): Promise<{ results: CaptureSegmentResult[]; failed: boolean } | null> {
   const offsets = segmentOffsets(s.segments, d.sampleRate);
   const offsetOf = new Map(
@@ -54,7 +85,14 @@ async function recognizeAll(
     if (d.isRemoved(s.sourceId)) return null;
     const seg = withAudio[k] as CaptureSegment;
     const startSec = offsetOf.get(seg.index) ?? 0;
-    const abs = await recognizeOne(d, s, seg, withAudio[k - 1], startSec);
+    const abs = await recognizeOne(
+      d,
+      s,
+      seg,
+      withAudio[k - 1],
+      startSec,
+      language,
+    );
     if (abs === "removed") return null;
     if (abs === "failed") return { results, failed: true };
     results.push({ startSec, segments: abs });
@@ -70,6 +108,7 @@ async function recognizeOne(
   seg: CaptureSegment,
   prev: CaptureSegment | undefined,
   startSec: number,
+  language: AsrLanguage,
 ): Promise<Segment[] | "failed" | "removed"> {
   const cached = await d.files.readFinal(s.sessionId, seg.index);
   if (cached) return cached;
@@ -80,7 +119,7 @@ async function recognizeOne(
         ? { prevSegmentPath: d.files.segmentPath(s.sessionId, prev.index) }
         : {}),
       overlapSec: prev ? FINAL_OVERLAP_SEC : 0,
-      language: finalLanguage(s.languageMode),
+      language,
     });
     if (d.isRemoved(s.sourceId)) return "removed";
     const abs = shiftTranscriptSegments(rel, startSec);
@@ -103,7 +142,9 @@ export async function finalizeSession(
   const src = d.sources.getById(sourceId);
   if (!s || !src || d.isRemoved(sourceId) || s.phase !== "finalizing") return;
   try {
-    const rec = await recognizeAll(d, s, src.notebookId);
+    const language = await sessionLanguage(d, s);
+    if (d.isRemoved(sourceId)) return;
+    const rec = await recognizeAll(d, s, src.notebookId, language);
     if (!rec || d.isRemoved(sourceId)) return;
     await d.enqueueIo(() => d.files.mergeSegments(s.sessionId, s.segments));
     if (d.isRemoved(sourceId)) return;

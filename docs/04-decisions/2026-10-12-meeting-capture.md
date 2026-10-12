@@ -70,6 +70,12 @@ Kết quả chạy tay sẽ được bổ sung vào mục này; nếu có điể
 7. **Seam e2e (chỉ bản chưa đóng gói).** `IV_ASR_FAKE` (ASR giả trong worker thật), `IV_E2E_FAKE_MIC` (renderer dùng tín hiệu thử
    qua cùng AudioContext/worklet — `MeetingPrepareResult.testFakeMic`), `IV_E2E_MIC_DENIED`, `IV_MEETING_SEGMENT_SEC`.
 
+8. **Ngôn ngữ bản chốt ở chế độ Tự động.** transformers.js 4.x khi thiếu `language` KHÔNG tự phát hiện mà mặc định tiếng Anh
+   (fixture tiếng Việt ra câu tiếng Anh vô nghĩa lặp lại). Trước bản chốt, worker phát hiện ngôn ngữ MỘT lần trên ≤ 30 s đầu của
+   phân đoạn đầu có audio: encoder + một bước decoder sau `<|startoftranscript|>`, so logits `<|vi|>`/`<|en|>` (phương pháp của spike
+   S2, dùng lại model của pipeline). Kết quả lưu vào `meeting_session.language`; mọi lượt chốt truyền ngôn ngữ đó; phát hiện lỗi ⇒
+   vẫn hoàn tất với `language = null` (ghi log mã lỗi). Chế độ khoá `vi`/`en` không phát hiện.
+
 ## Rủi ro thấp còn mở sau security-review PR A (T069)
 
 M1–M3 và L1 đã sửa trong PR A. Các mục dưới đây chấp nhận tạm, theo dõi ở PR sau:

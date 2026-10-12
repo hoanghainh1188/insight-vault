@@ -146,3 +146,44 @@ describe("asr-client", () => {
     await expect(p).rejects.toBeInstanceOf(AsrError);
   });
 });
+
+describe("asr-client — detectLanguage", () => {
+  it("gửi detect, trả ngôn ngữ + độ tin cậy khi worker báo language", async () => {
+    const { client, children } = setup();
+    const p = client.detectLanguage({ segmentPath: REQ.segmentPath });
+    expect(children[0].sent[1]).toMatchObject({
+      type: "detect",
+      segmentPath: REQ.segmentPath,
+    });
+    children[0].emit({
+      type: "language",
+      reqId: reqIdOf(children[0]),
+      language: "en",
+      confidence: 0.97,
+    });
+    await expect(p).resolves.toEqual({ language: "en", confidence: 0.97 });
+  });
+
+  it("worker trả result cho reqId của detect (sai loại) ⇒ bỏ qua; error ⇒ AsrError", async () => {
+    const { client, children } = setup();
+    const p = client.detectLanguage({ segmentPath: REQ.segmentPath });
+    const id = reqIdOf(children[0]);
+    children[0].emit({ type: "result", reqId: id, segments: [] });
+    children[0].emit({ type: "error", reqId: id, code: "asrFailed" });
+    await expect(p).rejects.toEqual(new AsrError("asrFailed"));
+  });
+
+  it("final nhận tin language (sai loại) ⇒ bỏ qua", async () => {
+    const { client, children } = setup();
+    const p = client.final(REQ);
+    const id = reqIdOf(children[0]);
+    children[0].emit({
+      type: "language",
+      reqId: id,
+      language: "vi",
+      confidence: 1,
+    });
+    children[0].emit({ type: "result", reqId: id, segments: [] });
+    await expect(p).resolves.toEqual([]);
+  });
+});

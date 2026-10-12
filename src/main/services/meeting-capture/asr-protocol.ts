@@ -17,11 +17,19 @@ export type MainToWorker =
       overlapSec: number;
       language: AsrLanguage;
     }
+  /** Phát hiện ngôn ngữ trên ≤ 30 s đầu của phân đoạn (ADR spike S2). */
+  | { type: "detect"; reqId: string; segmentPath: string }
   | { type: "cancel"; reqId: string };
 
 export type WorkerToMain =
   | { type: "ready" }
   | { type: "result"; reqId: string; segments: Segment[] }
+  | {
+      type: "language";
+      reqId: string;
+      language: "vi" | "en";
+      confidence: number;
+    }
   | { type: "progress"; reqId: string; frac: number }
   | { type: "modelDownload"; active: boolean }
   | { type: "error"; reqId: string; code: AsrErrorCode };
@@ -102,6 +110,14 @@ export function parseMainMessage(
         language,
       };
     }
+    case "detect": {
+      const { reqId, segmentPath } = raw;
+      return isStr(reqId) &&
+        isStr(segmentPath) &&
+        isInsideDir(meetingsRoot, segmentPath)
+        ? { type: "detect", reqId, segmentPath }
+        : null;
+    }
     case "cancel":
       return isStr(raw["reqId"])
         ? { type: "cancel", reqId: raw["reqId"] }
@@ -137,6 +153,16 @@ export function parseWorkerMessage(raw: unknown): WorkerToMain | null {
       const segments = parseSegments(raw["segments"]);
       return isStr(raw["reqId"]) && segments
         ? { type: "result", reqId: raw["reqId"], segments }
+        : null;
+    }
+    case "language": {
+      const { reqId, language, confidence } = raw;
+      return isStr(reqId) &&
+        (language === "vi" || language === "en") &&
+        isNum(confidence) &&
+        confidence >= 0 &&
+        confidence <= 1
+        ? { type: "language", reqId, language, confidence }
         : null;
     }
     case "progress": {

@@ -178,3 +178,41 @@ describe("parseWorkerMessage (main nhận)", () => {
     expect(parseWorkerMessage(m)).toBeNull();
   });
 });
+
+describe("phát hiện ngôn ngữ (ADR spike S2)", () => {
+  it("detect hợp lệ; đường dẫn ngoài meetings/ ⇒ null", () => {
+    const m = { type: "detect", reqId: "d1", segmentPath: SEG };
+    expect(parseMainMessage(m, ROOT)).toEqual(m);
+    expect(
+      parseMainMessage({ ...m, segmentPath: "/etc/passwd" }, ROOT),
+    ).toBeNull();
+    expect(parseMainMessage({ type: "detect", segmentPath: SEG }, ROOT)).toBe(
+      null,
+    );
+  });
+
+  it("language hợp lệ (vi/en, độ tin cậy 0..1)", () => {
+    const m = {
+      type: "language",
+      reqId: "d1",
+      language: "en",
+      confidence: 0.9,
+    };
+    expect(parseWorkerMessage(m)).toEqual(m);
+  });
+
+  it.each([
+    [
+      "ngôn ngữ lạ",
+      { type: "language", reqId: "d", language: "fr", confidence: 1 },
+    ],
+    ["null", { type: "language", reqId: "d", language: null, confidence: 1 }],
+    [
+      "tin cậy > 1",
+      { type: "language", reqId: "d", language: "vi", confidence: 2 },
+    ],
+    ["thiếu reqId", { type: "language", language: "vi", confidence: 1 }],
+  ])("language %s ⇒ null", (_n, m) => {
+    expect(parseWorkerMessage(m)).toBeNull();
+  });
+});

@@ -6,6 +6,7 @@ import {
   type WorkerToMain,
 } from "./asr-protocol";
 import { fakeTranscribe } from "./fake-asr";
+import { pickLanguage } from "./language-detect";
 import { SAMPLE_RATE } from "./meeting-constants";
 import { WAV_HEADER_BYTES } from "./wav";
 
@@ -20,6 +21,8 @@ type Port = {
 };
 const port = (process as unknown as { parentPort: Port }).parentPort;
 const meetingsRoot = process.argv[2] ?? "";
+/** Whisper nhìn tối đa 30 s cho một lượt encoder — đủ để phát hiện ngôn ngữ. */
+const DETECT_SEC = 30;
 
 interface AsrChunk {
   text: string;
@@ -35,17 +38,20 @@ let pipePromise: Promise<Pipe> | null = null;
 const cancelled = new Set<string>();
 let queue: Promise<void> = Promise.resolve();
 
+/** PCM của cả tệp, hoặc chỉ `last` giây cuối (vùng chồng lấn) / `first` giây đầu (phát hiện ngôn ngữ). */
 async function readPcm(
   path: string,
-  lastSeconds?: number,
+  range: { last?: number; first?: number } = {},
 ): Promise<Int16Array> {
   const size = (await stat(path)).size;
   const dataBytes = Math.max(0, size - WAV_HEADER_BYTES);
+  const limitSec = range.last ?? range.first;
   const want =
-    lastSeconds === undefined
+    limitSec === undefined
       ? dataBytes
-      : Math.min(dataBytes, Math.floor(lastSeconds * SAMPLE_RATE) * 2);
-  const start = WAV_HEADER_BYTES + (dataBytes - want);
+      : Math.min(dataBytes, Math.floor(limitSec * SAMPLE_RATE) * 2);
+  const start =
+    WAV_HEADER_BYTES + (range.last !== undefined ? dataBytes - want : 0);
   const buf = Buffer.alloc(want - (want % 2));
   const fh = await open(path, "r");
   try {
@@ -78,6 +84,85 @@ function loadPipeline(cfg: NonNullable<typeof config>): Promise<Pipe> {
   return pipePromise;
 }
 
+const toFloat = (pcm: Int16Array): Float32Array => {
+  const f32 = new Float32Array(pcm.length);
+  for (let i = 0; i < pcm.length; i++) f32[i] = (pcm[i] ?? 0) / 0x8000;
+  return f32;
+};
+
+/** Phần của pipeline ASR dùng cho bước phát hiện ngôn ngữ (cùng model đã nạp — không tải/nạp thêm). */
+interface PipeParts {
+  model: (
+    x: object,
+  ) => Promise<{ logits: { dims: number[]; data: ArrayLike<number> } }>;
+  processor: (x: Float32Array) => Promise<{ input_features: unknown }>;
+  tokenizer: { convert_tokens_to_ids(t: string): number };
+}
+
+/** Logits của <|vi|>, <|en|> ở bước decoder đầu sau <|startoftranscript|> (ADR spike S2). */
+async function languageLogits(
+  pipe: Pipe,
+  pcm: Float32Array,
+): Promise<[number, number]> {
+  const { model, processor, tokenizer } = pipe as unknown as PipeParts;
+  const tf = await import("@huggingface/transformers");
+  const sot = tokenizer.convert_tokens_to_ids("<|startoftranscript|>");
+  const { input_features } = await processor(pcm);
+  const { logits } = await model({
+    input_features,
+    decoder_input_ids: new tf.Tensor(
+      "int64",
+      BigInt64Array.from([BigInt(sot)]),
+      [1, 1],
+    ),
+  });
+  const vocab = logits.dims[logits.dims.length - 1] ?? 0;
+  const steps = logits.dims[logits.dims.length - 2] ?? 1;
+  const base = (steps - 1) * vocab;
+  const at = (tok: string): number =>
+    logits.data[base + tokenizer.convert_tokens_to_ids(tok)] ?? Number.NaN;
+  return [at("<|vi|>"), at("<|en|>")];
+}
+
+async function handleDetect(
+  msg: Extract<MainToWorker, { type: "detect" }>,
+): Promise<void> {
+  const fail = (code: "asrFailed" | "modelMissing" | "cancelled"): void =>
+    port.postMessage({ type: "error", reqId: msg.reqId, code });
+  if (cancelled.delete(msg.reqId)) return fail("cancelled");
+  const cfg = config;
+  if (!cfg) return fail("asrFailed");
+  if (cfg.fake) {
+    port.postMessage({
+      type: "language",
+      reqId: msg.reqId,
+      language: "vi",
+      confidence: 1,
+    });
+    return;
+  }
+  let pcm: Int16Array;
+  let pipe: Pipe;
+  try {
+    pcm = await readPcm(msg.segmentPath, { first: DETECT_SEC });
+  } catch {
+    return fail("asrFailed");
+  }
+  try {
+    pipe = await loadPipeline(cfg);
+  } catch {
+    return fail("modelMissing");
+  }
+  try {
+    const picked = pickLanguage(...(await languageLogits(pipe, toFloat(pcm))));
+    if (!picked) return fail("asrFailed");
+    if (cancelled.delete(msg.reqId)) return;
+    port.postMessage({ type: "language", reqId: msg.reqId, ...picked });
+  } catch {
+    fail("asrFailed");
+  }
+}
+
 async function handleFinal(
   msg: Extract<MainToWorker, { type: "final" }>,
 ): Promise<void> {
@@ -96,7 +181,7 @@ async function handleFinal(
     const current = await readPcm(msg.segmentPath);
     const tail =
       msg.prevSegmentPath && msg.overlapSec > 0
-        ? await readPcm(msg.prevSegmentPath, msg.overlapSec)
+        ? await readPcm(msg.prevSegmentPath, { last: msg.overlapSec })
         : new Int16Array(0);
     tailSec = tail.length / SAMPLE_RATE;
     combined = new Int16Array(tail.length + current.length);
@@ -123,10 +208,7 @@ async function handleFinal(
       return;
     }
     try {
-      const f32 = new Float32Array(combined.length);
-      for (let i = 0; i < combined.length; i++)
-        f32[i] = (combined[i] ?? 0) / 0x8000;
-      const out = await pipe(f32, {
+      const out = await pipe(toFloat(combined), {
         return_timestamps: true,
         chunk_length_s: 30,
         ...(msg.language ? { language: msg.language, task: "transcribe" } : {}),
@@ -164,6 +246,8 @@ port.on("message", (e) => {
   } else if (msg.type === "cancel") {
     cancelled.add(msg.reqId);
   } else {
-    queue = queue.then(() => handleFinal(msg)).catch(() => undefined);
+    const run =
+      msg.type === "detect" ? () => handleDetect(msg) : () => handleFinal(msg);
+    queue = queue.then(run).catch(() => undefined);
   }
 });

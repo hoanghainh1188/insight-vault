@@ -1,6 +1,7 @@
 import type { Segment } from "../ingestion/audio/audio-transcript";
 import type { AsrErrorCode, AsrLanguage } from "./asr-protocol";
 import type { CaptureSegment } from "./segments";
+import type { DetectedLanguage } from "./language-detect";
 
 // 186 — hợp đồng I/O của Ghi cuộc họp (writer phân đoạn, tệp phiên, client ASR) + lỗi ASR. Tách riêng để service và
 // finalizer cùng dùng mà không import vòng.
@@ -61,4 +62,6 @@ export interface AsrFinalClient {
     overlapSec: number;
     language: AsrLanguage;
   }): Promise<Segment[]>;
+  /** Ngôn ngữ của ≤ 30 s đầu phân đoạn — một bước decoder giới hạn {vi, en} (ADR spike S2). */
+  detectLanguage(req: { segmentPath: string }): Promise<DetectedLanguage>;
 }
