@@ -77,6 +77,28 @@ export const REPORT_META_KEYS: ReadonlySet<string> = new Set([
 ]);
 const MAX_VALUE_CHARS = 80;
 
+/** 186 PR B (ADR meeting-asr-spike mục 7): khoá của dòng chẩn đoán hiệu năng ghi cuộc họp — chỉ số đo + cấu hình máy. */
+const PERF_EVENTS: ReadonlySet<string> = new Set([
+  "meeting.perf",
+  "meeting.finalPerf",
+]);
+const PERF_META_KEYS: ReadonlySet<string> = new Set([
+  "platform",
+  "arch",
+  "cpu",
+  "cores",
+  "ramGb",
+  "draftWindows",
+  "draftRtfMean",
+  "draftRtfP95",
+  "draftDropped",
+  "draftDowngraded",
+  "draftModel",
+  "rtf",
+  "audioMin",
+]);
+const MAX_PERF_RECORDS = 6;
+
 /** Giá trị → chuỗi an toàn: chỉ chữ/số/._:>- (không xuống dòng, không ``` phá khối code), cắt độ dài. */
 function cleanValue(v: unknown): string {
   const raw = Array.isArray(v) ? v.map(String).join(">") : String(v);
@@ -86,7 +108,11 @@ function cleanValue(v: unknown): string {
     : clean;
 }
 
-function formatRecord(r: LogRecord, home: string | undefined): string {
+function formatRecord(
+  r: LogRecord,
+  home: string | undefined,
+  keys: ReadonlySet<string> = REPORT_META_KEYS,
+): string {
   // Phòng thủ chiều sâu: meta đã redact lúc ghi; soạn báo cáo thì redact + che thư mục nhà lại, rồi chỉ giữ khoá
   // trong allowlist với giá trị đã làm sạch.
   const clean = redact(r.meta);
@@ -94,7 +120,7 @@ function formatRecord(r: LogRecord, home: string | undefined): string {
   const pairs =
     safe !== null && typeof safe === "object" && !Array.isArray(safe)
       ? Object.entries(safe as Record<string, unknown>)
-          .filter(([k]) => REPORT_META_KEYS.has(k))
+          .filter(([k]) => keys.has(k))
           .map(([k, v]) => `${k}=${cleanValue(v)}`)
       : [];
   const text = [cleanValue(r.ts), cleanValue(r.event), ...pairs].join(" ");
@@ -124,6 +150,21 @@ export function buildReport({
     errors.length > 0
       ? errors.map((r) => formatRecord(r, home)).join("\n")
       : "(no errors in the recent log)";
+  const perf = records
+    .filter((r) => PERF_EVENTS.has(r.event))
+    .slice(-MAX_PERF_RECORDS)
+    .map((r) => formatRecord(r, home, PERF_META_KEYS));
+  const perfBlock =
+    perf.length > 0
+      ? [
+          "### Meeting recording performance",
+          "Speed of on-device speech recognition on this computer (rtf < 1 = faster than real time), with its CPU model, core count and RAM. No audio, text or titles.",
+          "```",
+          ...perf,
+          "```",
+          "",
+        ]
+      : [];
   const native =
     nativeCrashes.count > 0
       ? `Native crashes on this computer: ${nativeCrashes.count} (latest ${nativeCrashes.latestAt})`
@@ -142,6 +183,7 @@ export function buildReport({
     errorBlock,
     "```",
     "",
+    ...perfBlock,
     "### Native crashes",
     `- ${native}`,
     "- Minidump files stay on this computer and are not attached (they may contain document content).",

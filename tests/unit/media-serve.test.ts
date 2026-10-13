@@ -3,6 +3,7 @@ import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createMediaHandler } from "../../src/main/services/source-viewer/media-serve";
+import { buildWavHeader } from "../../src/main/services/meeting-capture/wav";
 import type { SourceRepo } from "../../src/main/services/ingestion/source-repo";
 import type { Source } from "@shared/ipc/types";
 
@@ -151,18 +152,43 @@ describe("createMediaHandler — nguồn cuộc họp (186)", () => {
     return id === "m1" && (seg === undefined || seg === 0) ? wavPath() : null;
   };
 
-  beforeAll(() => writeFileSync(join(dir, "meeting.wav"), BODY));
+  // Phân đoạn đang ghi: header độ dài 0 + 20 byte dữ liệu đã fsync.
+  beforeAll(() =>
+    writeFileSync(
+      join(dir, "meeting.wav"),
+      Buffer.concat([Buffer.from(buildWavHeader(0)), BODY]),
+    ),
+  );
 
   it("phục vụ tệp do resolver trả (không dùng origin), MIME audio/wav, Range 206", async () => {
     const h = createMediaHandler(meetingRepo(), resolve);
     const full = await h(new Request("iv-media://source/m1"));
     expect(full.status).toBe(200);
     expect(full.headers.get("Content-Type")).toBe("audio/wav");
+    expect(full.headers.get("Content-Length")).toBe("64");
     const part = await h(
-      new Request("iv-media://source/m1", { headers: { Range: "bytes=0-4" } }),
+      new Request("iv-media://source/m1", {
+        headers: { Range: "bytes=44-48" },
+      }),
     );
     expect(part.status).toBe(206);
+    expect(part.headers.get("Content-Range")).toBe("bytes 44-48/64");
     expect(Buffer.from(await part.arrayBuffer()).toString()).toBe("01234");
+  });
+
+  it("PR B: header dựng theo kích thước hiện tại (phân đoạn đang ghi nghe lại được)", async () => {
+    const h = createMediaHandler(meetingRepo(), resolve);
+    const head = Buffer.from(
+      await (
+        await h(
+          new Request("iv-media://source/m1", {
+            headers: { Range: "bytes=0-43" },
+          }),
+        )
+      ).arrayBuffer(),
+    );
+    expect(head.readUInt32LE(40)).toBe(20);
+    expect(head.readUInt32LE(4)).toBe(56);
   });
 
   it("?seg=n chuyển cho resolver; seg lạ ⇒ 404 không gọi resolver", async () => {

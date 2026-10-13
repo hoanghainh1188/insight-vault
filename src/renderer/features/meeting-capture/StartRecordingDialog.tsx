@@ -14,6 +14,7 @@ import {
 } from "../../shared/i18n/describe-error";
 import { meetingTitleParts } from "./default-title";
 import { useRecording } from "./RecordingProvider";
+import { useModelDownload } from "./useModelDownload";
 
 // 186 — hộp "Ghi cuộc họp" (FR-002..FR-005, C6): tên mặc định, notebook đích, micro (khi > 1), ngôn ngữ, thông điệp riêng
 // tư đúng sự thật, Bắt đầu ghi. Từ chối quyền ⇒ hướng dẫn theo hệ điều hành, KHÔNG tạo nguồn. Lựa chọn lần trước lưu ở
@@ -34,6 +35,7 @@ export function StartRecordingDialog({
   const rec = useRecording();
   const ref = useRef<HTMLDivElement>(null);
   useModalA11y({ active: true, onClose, containerRef: ref });
+  const model = useModelDownload();
 
   const [prep, setPrep] = useState<MeetingPrepareResult | null>(null);
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
@@ -197,9 +199,32 @@ export function StartRecordingDialog({
             <p className="ms-note">{t.t("meeting.start.privacyOnline")}</p>
           )}
           {prep && !prep.modelReady && (
-            <p className="ms-note">
-              {t.t("meeting.start.modelMissing", { size: prep.modelSizeMb })}
-            </p>
+            <div className="ms-model" data-testid="meeting-model-missing">
+              <p className="ms-note">
+                {t.t("meeting.start.modelMissing", { size: prep.modelSizeMb })}
+              </p>
+              <button
+                type="button"
+                className="btn-outline-sm"
+                disabled={model.downloading}
+                onClick={() =>
+                  void model.download().then((ok) => {
+                    if (ok)
+                      setPrep((p) => (p ? { ...p, modelReady: true } : p));
+                  })
+                }
+                data-testid="meeting-download-model"
+              >
+                {model.downloading
+                  ? t.t("meeting.draft.downloading")
+                  : t.t("meeting.draft.download", { size: prep.modelSizeMb })}
+              </button>
+              {model.error && (
+                <p className="form-error" role="alert">
+                  {model.error}
+                </p>
+              )}
+            </div>
           )}
         </div>
 

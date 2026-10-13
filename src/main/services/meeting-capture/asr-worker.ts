@@ -2,11 +2,13 @@ import { open, stat } from "node:fs/promises";
 import type { Segment } from "../ingestion/audio/audio-transcript";
 import {
   parseMainMessage,
+  type DraftTier,
   type MainToWorker,
   type WorkerToMain,
 } from "./asr-protocol";
 import { fakeTranscribe } from "./fake-asr";
-import { pickLanguage } from "./language-detect";
+import { dedupeHallucination } from "./hallucination";
+import { pickLanguage, type DetectedLanguage } from "./language-detect";
 import { SAMPLE_RATE } from "./meeting-constants";
 import { WAV_HEADER_BYTES } from "./wav";
 
@@ -34,7 +36,9 @@ type Pipe = (
 ) => Promise<{ chunks?: AsrChunk[] }>;
 
 let config: Extract<MainToWorker, { type: "init" }> | null = null;
-let pipePromise: Promise<Pipe> | null = null;
+/** Pipeline theo model: model chốt (nháp dùng chung — nạp một lần) và model dự phòng q8 khi máy chậm (ADR spike mục 4). */
+const pipes = new Map<string, Promise<Pipe>>();
+let loading = 0;
 const cancelled = new Set<string>();
 let queue: Promise<void> = Promise.resolve();
 
@@ -62,26 +66,34 @@ async function readPcm(
   return new Int16Array(buf.buffer, buf.byteOffset, buf.length / 2);
 }
 
-function loadPipeline(cfg: NonNullable<typeof config>): Promise<Pipe> {
-  if (!pipePromise) {
+function loadPipeline(
+  cfg: NonNullable<typeof config>,
+  tier: DraftTier = "primary",
+): Promise<Pipe> {
+  const model = tier === "primary" ? cfg.finalModel : cfg.fallbackModel;
+  const existing = pipes.get(model);
+  if (existing) return existing;
+  if (loading++ === 0)
     port.postMessage({ type: "modelDownload", active: true });
-    pipePromise = (async () => {
-      const tf = await import("@huggingface/transformers");
-      tf.env.cacheDir = cfg.cacheDir;
-      return (await tf.pipeline(
-        "automatic-speech-recognition",
-        cfg.finalModel,
-      )) as unknown as Pipe;
-    })()
-      .catch((e: unknown) => {
-        pipePromise = null; // lần sau thử lại (vd. có Internet trở lại)
-        throw e;
-      })
-      .finally(() =>
-        port.postMessage({ type: "modelDownload", active: false }),
-      );
-  }
-  return pipePromise;
+  const p = (async () => {
+    const tf = await import("@huggingface/transformers");
+    tf.env.cacheDir = cfg.cacheDir;
+    return (await tf.pipeline(
+      "automatic-speech-recognition",
+      model,
+      tier === "fallback" ? { dtype: "q8" } : {},
+    )) as unknown as Pipe;
+  })()
+    .catch((e: unknown) => {
+      pipes.delete(model); // lần sau thử lại (vd. có Internet trở lại)
+      throw e;
+    })
+    .finally(() => {
+      if (--loading === 0)
+        port.postMessage({ type: "modelDownload", active: false });
+    });
+  pipes.set(model, p);
+  return p;
 }
 
 const toFloat = (pcm: Int16Array): Float32Array => {
@@ -124,6 +136,155 @@ async function languageLogits(
   return [at("<|vi|>"), at("<|en|>")];
 }
 
+async function detectOn(
+  pipe: Pipe,
+  pcm: Float32Array,
+): Promise<DetectedLanguage | null> {
+  return pickLanguage(...(await languageLogits(pipe, pcm)));
+}
+
+type AsrOut = { text: string; tStart: number; tEnd: number }[];
+
+/** Nhận dạng có timestamp; `language` tường minh (không bao giờ để Whisper tự chọn — spike S2). */
+async function transcribe(
+  pipe: Pipe,
+  pcm: Float32Array,
+  language: "vi" | "en" | null,
+): Promise<AsrOut> {
+  const out = await pipe(pcm, {
+    return_timestamps: true,
+    chunk_length_s: 30,
+    ...(language ? { language, task: "transcribe" } : {}),
+  });
+  return (out.chunks ?? [])
+    .filter((c) => typeof c.text === "string")
+    .map((c) => ({
+      text: c.text,
+      tStart: c.timestamp?.[0] ?? 0,
+      tEnd: c.timestamp?.[1] ?? c.timestamp?.[0] ?? 0,
+    }));
+}
+
+/** Đa ngôn ngữ (ADR spike mục 6): mỗi cửa sổ ≤ 30 s phát hiện rồi nhận dạng với ngôn ngữ đó. */
+async function transcribePerWindow(
+  pipe: Pipe,
+  pcm: Float32Array,
+): Promise<AsrOut> {
+  const win = DETECT_SEC * SAMPLE_RATE;
+  const out: AsrOut = [];
+  for (let start = 0; start < pcm.length; start += win) {
+    const chunk = pcm.subarray(start, Math.min(pcm.length, start + win));
+    const lang = (await detectOn(pipe, chunk))?.language ?? null;
+    const offset = start / SAMPLE_RATE;
+    for (const s of await transcribe(pipe, chunk, lang))
+      out.push({
+        text: s.text,
+        tStart: s.tStart + offset,
+        tEnd: s.tEnd + offset,
+      });
+  }
+  return out;
+}
+
+async function handleDraft(
+  msg: Extract<MainToWorker, { type: "draft" }>,
+): Promise<void> {
+  const fail = (code: "asrFailed" | "modelMissing" | "cancelled"): void =>
+    port.postMessage({ type: "error", reqId: msg.reqId, code });
+  if (cancelled.delete(msg.reqId)) return fail("cancelled");
+  const cfg = config;
+  if (!cfg) return fail("asrFailed");
+  const pcm16 = new Int16Array(msg.pcm);
+  let started = performance.now();
+  if (cfg.fake) {
+    port.postMessage({
+      type: "draftResult",
+      reqId: msg.reqId,
+      segments: dedupeHallucination(fakeTranscribe(pcm16, SAMPLE_RATE)),
+      language: msg.language === "perWindow" ? "vi" : msg.language,
+      ...(msg.language === "perWindow" ? { confidence: 1 } : {}),
+      elapsedMs: performance.now() - started,
+    });
+    return;
+  }
+  let pipe: Pipe;
+  try {
+    pipe = await loadPipeline(cfg, msg.tier);
+  } catch {
+    return fail("modelMissing");
+  }
+  // Review PR B (B2): không tính thời gian nạp/tải model vào RTF (mẫu đầu lớn ⇒ hạ cấp oan).
+  started = performance.now();
+  try {
+    const f32 = toFloat(pcm16);
+    const picked =
+      msg.language === "perWindow" ? await detectOn(pipe, f32) : null;
+    const language =
+      msg.language === "perWindow" ? (picked?.language ?? null) : msg.language;
+    const segments = dedupeHallucination(await transcribe(pipe, f32, language));
+    if (cancelled.delete(msg.reqId)) return;
+    port.postMessage({
+      type: "draftResult",
+      reqId: msg.reqId,
+      segments,
+      language: segments.length > 0 ? language : null,
+      ...(picked ? { confidence: picked.confidence } : {}),
+      elapsedMs: performance.now() - started,
+    });
+  } catch {
+    fail("asrFailed");
+  }
+}
+
+async function handleDetectPcm(
+  msg: Extract<MainToWorker, { type: "detectPcm" }>,
+): Promise<void> {
+  const fail = (code: "asrFailed" | "modelMissing" | "cancelled"): void =>
+    port.postMessage({ type: "error", reqId: msg.reqId, code });
+  if (cancelled.delete(msg.reqId)) return fail("cancelled");
+  const cfg = config;
+  if (!cfg) return fail("asrFailed");
+  if (cfg.fake) {
+    port.postMessage({
+      type: "language",
+      reqId: msg.reqId,
+      language: "vi",
+      confidence: 1,
+    });
+    return;
+  }
+  let pipe: Pipe;
+  try {
+    pipe = await loadPipeline(cfg);
+  } catch {
+    return fail("modelMissing");
+  }
+  try {
+    const picked = await detectOn(pipe, toFloat(new Int16Array(msg.pcm)));
+    if (!picked) return fail("asrFailed");
+    if (cancelled.delete(msg.reqId)) return;
+    port.postMessage({ type: "language", reqId: msg.reqId, ...picked });
+  } catch {
+    fail("asrFailed");
+  }
+}
+
+async function handleLoad(
+  msg: Extract<MainToWorker, { type: "load" }>,
+): Promise<void> {
+  const cfg = config;
+  if (!cfg) {
+    port.postMessage({ type: "error", reqId: msg.reqId, code: "asrFailed" });
+    return;
+  }
+  try {
+    if (!cfg.fake) await loadPipeline(cfg, msg.tier);
+    port.postMessage({ type: "loaded", reqId: msg.reqId });
+  } catch {
+    port.postMessage({ type: "error", reqId: msg.reqId, code: "modelMissing" });
+  }
+}
+
 async function handleDetect(
   msg: Extract<MainToWorker, { type: "detect" }>,
 ): Promise<void> {
@@ -154,7 +315,7 @@ async function handleDetect(
     return fail("modelMissing");
   }
   try {
-    const picked = pickLanguage(...(await languageLogits(pipe, toFloat(pcm))));
+    const picked = await detectOn(pipe, toFloat(pcm));
     if (!picked) return fail("asrFailed");
     if (cancelled.delete(msg.reqId)) return;
     port.postMessage({ type: "language", reqId: msg.reqId, ...picked });
@@ -208,18 +369,12 @@ async function handleFinal(
       return;
     }
     try {
-      const out = await pipe(toFloat(combined), {
-        return_timestamps: true,
-        chunk_length_s: 30,
-        ...(msg.language ? { language: msg.language, task: "transcribe" } : {}),
-      });
-      segments = (out.chunks ?? [])
-        .filter((c) => typeof c.text === "string")
-        .map((c) => ({
-          text: c.text,
-          tStart: c.timestamp?.[0] ?? 0,
-          tEnd: c.timestamp?.[1] ?? c.timestamp?.[0] ?? 0,
-        }));
+      const f32 = toFloat(combined);
+      segments = dedupeHallucination(
+        msg.language === "perWindow"
+          ? await transcribePerWindow(pipe, f32)
+          : await transcribe(pipe, f32, msg.language),
+      );
     } catch {
       port.postMessage({ type: "error", reqId: msg.reqId, code: "asrFailed" });
       return;
@@ -247,7 +402,15 @@ port.on("message", (e) => {
     cancelled.add(msg.reqId);
   } else {
     const run =
-      msg.type === "detect" ? () => handleDetect(msg) : () => handleFinal(msg);
+      msg.type === "detect"
+        ? () => handleDetect(msg)
+        : msg.type === "detectPcm"
+          ? () => handleDetectPcm(msg)
+          : msg.type === "draft"
+            ? () => handleDraft(msg)
+            : msg.type === "load"
+              ? () => handleLoad(msg)
+              : () => handleFinal(msg);
     queue = queue.then(run).catch(() => undefined);
   }
 });

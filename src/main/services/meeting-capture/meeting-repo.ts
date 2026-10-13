@@ -1,5 +1,7 @@
 import type {
   LanguageMode,
+  MeetingMarker,
+  MeetingMarkerKind,
   MeetingPhase,
   PauseGap,
   PauseGapReason,
@@ -67,6 +69,9 @@ export interface MeetingRepo {
   listByPhase(phases: readonly MeetingPhase[]): MeetingSession[];
   replaceSpans(sourceId: string, spans: readonly TimeMapEntry[]): void;
   listSpans(sourceId: string): TimeMapEntry[];
+  /** PR B — đánh dấu (D4). Giá trị đã kiểm ở service. */
+  addMarker(m: MeetingMarker & { sourceId: string }): void;
+  listMarkers(sourceId: string): MeetingMarker[];
 }
 
 interface Row {
@@ -272,6 +277,29 @@ export function createMeetingRepo(
       return rows.map((r) => ({
         charStart: r.char_start,
         charEnd: r.char_end,
+        tStart: r.t_start,
+        tEnd: r.t_end,
+      }));
+    },
+    addMarker(m) {
+      db.prepare(
+        "INSERT INTO meeting_marker (id, source_id, kind, t_start, t_end, created_at) VALUES (?,?,?,?,?,?)",
+      ).run(m.id, m.sourceId, m.kind, m.tStart, m.tEnd, now());
+    },
+    listMarkers(sourceId) {
+      const rows = db
+        .prepare(
+          "SELECT id, kind, t_start, t_end FROM meeting_marker WHERE source_id = ? ORDER BY t_start, created_at",
+        )
+        .all(sourceId) as unknown as {
+        id: string;
+        kind: MeetingMarkerKind;
+        t_start: number;
+        t_end: number;
+      }[];
+      return rows.map((r) => ({
+        id: r.id,
+        kind: r.kind,
         tStart: r.t_start,
         tEnd: r.t_end,
       }));

@@ -1,17 +1,25 @@
 import { useState } from "react";
+import { MEETING_MODEL_SIZE_MB } from "@shared/meeting/constants";
 import { formatDuration } from "@shared/meeting/format-duration";
 import { useT } from "../../shared/i18n/i18n-context";
 import { needsEndConfirm } from "./meeting-ui";
 import { useRecording } from "./RecordingProvider";
+import { DraftTranscript } from "./DraftTranscript";
+import { LanguageControl } from "./LanguageControl";
+import { LevelMeter } from "./LevelMeter";
+import { MarkerMenu } from "./MarkerMenu";
 
 // 186 — chế độ tập trung khi đang ghi (FR-008..FR-010): thanh đầu "● Đang ghi · hh:mm:ss · Lưu trên máy" (trạng thái bằng
-// chữ, đồng hồ nổi bật nhất), vùng nội dung (transcript nháp ở PR B), thanh dưới: Tạm dừng↔Tiếp tục; Kết thúc ghi tách
-// biệt + xác nhận khi phiên ≥ 5 phút. Đồng hồ KHÔNG nằm trong live region (không đọc mỗi giây — FR-049).
+// chữ, đồng hồ nổi bật nhất), vùng nội dung = transcript nháp (PR B), thanh dưới: mức âm, ngôn ngữ, Đánh dấu, Tạm
+// dừng↔Tiếp tục; Kết thúc ghi tách biệt + xác nhận khi phiên ≥ 5 phút. Đồng hồ KHÔNG nằm trong live region (FR-049).
 
 export function RecordingView(): JSX.Element | null {
   const t = useT();
   const rec = useRecording();
   const [confirming, setConfirming] = useState(false);
+  const [range, setRange] = useState<{ tStart: number; tEnd: number } | null>(
+    null,
+  );
   const s = rec.state;
   if (!s) return null;
   const paused = s.phase === "paused";
@@ -57,10 +65,27 @@ export function RecordingView(): JSX.Element | null {
         </p>
       </header>
 
-      <div className="rec-body">
-        <p className="rec-placeholder">
-          {t.t("meeting.recording.transcriptAfterEnd")}
-        </p>
+      <div className="rec-body rec-body-draft">
+        <DraftTranscript
+          state={s}
+          modelSizeMb={MEETING_MODEL_SIZE_MB}
+          onSelectRange={setRange}
+        />
+      </div>
+
+      <div className="rec-tools" data-testid="recording-tools">
+        <LevelMeter active={!paused} />
+        <LanguageControl state={s} />
+        <MarkerMenu
+          sessionId={s.sessionId}
+          sourceId={s.sourceId}
+          durationSec={s.durationSec}
+          range={range}
+          onMarked={() => {
+            setRange(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+        />
       </div>
 
       <footer

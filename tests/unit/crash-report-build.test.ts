@@ -254,3 +254,65 @@ describe("validateIssueInput", () => {
     ).toBeNull();
   });
 });
+
+describe("buildReport — hiệu năng ghi cuộc họp (186 PR B, ADR meeting-asr-spike mục 7)", () => {
+  const perf = (ts: string, meta: Record<string, unknown>) => ({
+    ts,
+    level: "info" as const,
+    event: "meeting.perf",
+    meta,
+  });
+  const PERF = {
+    platform: "win32",
+    arch: "x64",
+    cpu: "Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz",
+    cores: 8,
+    ramGb: 8,
+    draftWindows: 120,
+    draftRtfMean: 0.41,
+    draftRtfP95: 0.73,
+    draftDropped: 3,
+    draftDowngraded: false,
+    draftModel: "primary",
+    title: "Họp bí mật", // khoá ngoài allowlist ⇒ KHÔNG được vào
+  };
+
+  it("có phiên ghi ⇒ mục riêng với 6 dòng gần nhất (≈ 3 phiên perf + finalPerf), chỉ khoá trong allowlist", () => {
+    const text = buildReport({
+      env: ENV,
+      records: [
+        perf("t1", PERF),
+        perf("t2", PERF),
+        perf("t3", PERF),
+        perf("t3b", PERF),
+        perf("t3c", PERF),
+        perf("t4", { ...PERF, draftModel: "fallback", draftDowngraded: true }),
+        {
+          ts: "t5",
+          level: "info",
+          event: "meeting.finalPerf",
+          meta: { rtf: 0.12, audioMin: 42.5 },
+        },
+      ],
+      nativeCrashes: { count: 0, latestAt: null },
+    });
+    expect(text).toContain("### Meeting recording performance");
+    const block = text.slice(text.indexOf("### Meeting recording performance"));
+    expect(block).not.toContain("t1 ");
+    expect(block).toContain("t4 meeting.perf");
+    expect(block).toContain("draftRtfP95=0.73");
+    expect(block).toContain("draftModel=fallback");
+    expect(block).toContain("cpu=Intel_R__Core_TM__i5-8250U_CPU___1.60GHz");
+    expect(block).toContain("t5 meeting.finalPerf rtf=0.12 audioMin=42.5");
+    expect(text).not.toContain("bí mật");
+  });
+
+  it("chưa ghi cuộc họp ⇒ không có mục này", () => {
+    const text = buildReport({
+      env: ENV,
+      records: [],
+      nativeCrashes: { count: 0, latestAt: null },
+    });
+    expect(text).not.toContain("Meeting recording performance");
+  });
+});

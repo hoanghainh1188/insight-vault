@@ -2,6 +2,7 @@
 
 import {
   END_CONFIRM_MIN_SEC as SHARED_END_CONFIRM_MIN_SEC,
+  MEETING_MODEL_SIZE_MB,
   MEETING_SAMPLE_RATE,
 } from "@shared/meeting/constants";
 
@@ -39,7 +40,18 @@ export const FINAL_OVERLAP_SEC = 5;
 export const FINAL_MODEL = "Xenova/whisper-base";
 
 /** Kích thước ước lượng model chốt để hiển thị (MB). */
-export const FINAL_MODEL_SIZE_MB = 150;
+export const FINAL_MODEL_SIZE_MB = MEETING_MODEL_SIZE_MB;
+
+/**
+ * Nháp (PR B, ADR meeting-asr-spike mục 4–5, chốt tạm 2026-10-13): dùng CHUNG model chốt đã nạp (một model, tải một lần);
+ * máy chậm (RTF nháp > 0,5) ⇒ tự chuyển sang model dự phòng q8 này (tải khi cần, chỉ báo riêng tư như mọi lần tải model).
+ */
+export const DRAFT_FALLBACK_MODEL = "Xenova/whisper-tiny";
+/** Lượt 5 s "Đang nhận dạng" bật lúc đầu phiên; tự tắt khi RTF nháp > 0,25. */
+export const DRAFT_PARTIAL_PASS = true;
+/** Cửa sổ nháp (giây) và lượt sớm (giây) — R6. */
+export const DRAFT_WINDOW_SEC = 10;
+export const DRAFT_PARTIAL_SEC = 5;
 
 /** Override độ dài phân đoạn cho soak test — CHỈ khi chưa đóng gói, tối thiểu 5 s. */
 export function segmentSeconds(

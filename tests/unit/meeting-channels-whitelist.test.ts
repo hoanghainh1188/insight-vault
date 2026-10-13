@@ -17,6 +17,36 @@ const PR_A = {
   meetingState: "meeting:state",
 } as const;
 
+const PR_B = {
+  meetingDraft: "meeting:draft",
+  meetingSetLanguage: "meeting:setLanguage",
+  meetingMark: "meeting:mark",
+  meetingListMarkers: "meeting:listMarkers",
+  meetingDownloadModel: "meeting:downloadModel",
+} as const;
+
+describe("meeting:* whitelist PR B", () => {
+  it("đủ kênh PR B + preload có hàm riêng", () => {
+    for (const [key, name] of Object.entries(PR_B)) {
+      expect((CHANNELS as Record<string, string>)[key]).toBe(name);
+      expect(isWhitelisted(name)).toBe(true);
+    }
+    const preload = readFileSync(
+      join(process.cwd(), "src/preload/index.ts"),
+      "utf8",
+    );
+    for (const fn of [
+      "meetingSetLanguage",
+      "meetingMark",
+      "meetingListMarkers",
+      "meetingDownloadModel",
+      "onMeetingDraft",
+    ]) {
+      expect(preload).toContain(`${fn}:`);
+    }
+  });
+});
+
 describe("meeting:* whitelist (186)", () => {
   it("đủ kênh PR A, tên đúng, không trùng", () => {
     for (const [key, name] of Object.entries(PR_A)) {

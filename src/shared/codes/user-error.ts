@@ -41,6 +41,7 @@ export const USER_ERROR_CODES = [
   "meetingNotSupported",
   "meetingNotFound",
   "meetingInvalidInput",
+  "meetingModelDownloadFailed", // 186 PR B: tải model nhận dạng không được (thường do không có Internet)
 ] as const;
 
 export type UserErrorCode = (typeof USER_ERROR_CODES)[number];

@@ -614,6 +614,15 @@ export type LanguageMode = "auto" | "vi" | "en" | "multi";
 
 export type TranscriptQuality = "final" | "draft";
 
+/** 186 PR B — một dòng nháp (cửa sổ 10 s, id ổn định `w<index>`); `pending` = lượt 5 s chưa đủ cửa sổ ("Đang nhận dạng"). */
+export interface MeetingDraftLine {
+  id: string;
+  tStart: number;
+  tEnd: number;
+  text: string;
+  pending: boolean;
+}
+
 export type MeetingMarkerKind = "decision" | "actionItem" | "question";
 
 export interface MeetingMarker {
@@ -691,6 +700,37 @@ export interface MeetingState {
   transcriptLagging: boolean;
   /** PR B. */
   modelReady: boolean;
+  /** PR B — ngôn ngữ nhận dạng (R7, D6). */
+  language: MeetingLanguageState;
+  /** PR B — khoảng tạm dừng (dòng phân cách "Tạm dừng N phút" trong nháp). */
+  pauseGaps: PauseGap[];
+}
+
+/** PR B — trạng thái ngôn ngữ hiển thị ở thanh dưới màn ghi. */
+export interface MeetingLanguageState {
+  mode: LanguageMode;
+  current: "vi" | "en" | null;
+  status: "detecting" | "locked" | "manual" | "multi";
+  suggestion?: "vi" | "en";
+}
+
+/** Push `meeting:draft` (main→renderer, chỉ cửa sổ ghi). `full` = danh sách đầy đủ (gắn lại sau reload) thay vì phần đổi. */
+export interface MeetingDraftEvent {
+  sessionId: string;
+  windows: MeetingDraftLine[];
+  full: boolean;
+}
+
+export type MeetingSetLanguageInput =
+  | { sessionId: string; action: "lock"; lang: "vi" | "en" }
+  | { sessionId: string; action: "acceptSuggestion" }
+  | { sessionId: string; action: "dismissSuggestion" };
+
+export interface MeetingMarkInput {
+  sessionId: string;
+  kind: MeetingMarkerKind;
+  tStart: number;
+  tEnd?: number;
 }
 
 /** Lô PCM renderer→main (kênh send meeting:audio). */

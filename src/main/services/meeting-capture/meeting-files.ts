@@ -1,5 +1,6 @@
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import {
+  appendFile,
   mkdir,
   open,
   readFile,
@@ -23,6 +24,33 @@ import { WAV_HEADER_BYTES, buildWavHeader, repairWavHeader } from "./wav";
 
 const SESSION_ID = /^[0-9a-f-]{8,64}$/i;
 const MERGED = "meeting.wav";
+const DRAFTS = "draft.jsonl";
+/** Trần đọc draft.jsonl (≈ vài chục giờ nháp) và độ dài một dòng văn bản — tệp hỏng/phình không làm treo hoàn tất. */
+const MAX_DRAFT_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_DRAFT_TEXT = 4000;
+
+const isNum = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v);
+
+/** Một dòng draft.jsonl — dữ liệu trên đĩa coi là không tin cậy. */
+function parseDraftLine(raw: string): { id: string; seg: Segment } | null {
+  let v: unknown;
+  try {
+    v = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof v !== "object" || v === null) return null;
+  const o = v as Record<string, unknown>;
+  const { id, text, tStart, tEnd } = o;
+  return typeof id === "string" &&
+    typeof text === "string" &&
+    isNum(tStart) &&
+    isNum(tEnd) &&
+    tEnd >= tStart
+    ? { id, seg: { text: text.slice(0, MAX_DRAFT_TEXT), tStart, tEnd } }
+    : null;
+}
 
 export interface MeetingFilesIo extends MeetingFiles {
   mergedPath(sessionId: string): string;
@@ -171,6 +199,31 @@ export function createMeetingFiles(
         recursive: true,
         force: true,
       });
+    },
+
+    async appendDraft(sessionId, line) {
+      await appendFile(
+        join(sessionDir(sessionId), DRAFTS),
+        `${JSON.stringify(line)}\n`,
+        { mode: 0o600 },
+      );
+    },
+
+    async readDrafts(sessionId) {
+      const path = join(sessionDir(sessionId), DRAFTS);
+      let raw: string;
+      try {
+        if ((await stat(path)).size > MAX_DRAFT_FILE_BYTES) return [];
+        raw = await readFile(path, "utf8");
+      } catch {
+        return [];
+      }
+      const byId = new Map<string, Segment>();
+      for (const l of raw.split("\n")) {
+        const parsed = l.trim() === "" ? null : parseDraftLine(l);
+        if (parsed) byId.set(parsed.id, parsed.seg);
+      }
+      return [...byId.values()].sort((a, b) => a.tStart - b.tStart);
     },
 
     async deleteSession(sessionId) {

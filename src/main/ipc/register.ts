@@ -543,7 +543,21 @@ export function registerIpc({
   safeHandleWithSender(CHANNELS.meetingStop, (sender, input) =>
     meeting.stop(sender.id, input),
   );
-  safeHandle(CHANNELS.meetingStatus, () => meeting.status());
+  safeHandle(CHANNELS.meetingStatus, () => {
+    const st = meeting.status();
+    meeting.resendDrafts(); // renderer gắn lại (reload/điều hướng) ⇒ nhận lại đủ dòng nháp
+    return st;
+  });
+  safeHandleWithSender(CHANNELS.meetingSetLanguage, (sender, input) =>
+    meeting.setLanguage(sender.id, input),
+  );
+  safeHandleWithSender(CHANNELS.meetingMark, (sender, input) =>
+    meeting.mark(sender.id, input),
+  );
+  safeHandle(CHANNELS.meetingListMarkers, (input) =>
+    meeting.listMarkers(input),
+  );
+  safeHandle(CHANNELS.meetingDownloadModel, () => meeting.downloadModel());
   safeHandle(CHANNELS.meetingRename, (input) => {
     assertVaultWritable();
     return meeting.rename(input);

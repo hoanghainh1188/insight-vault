@@ -27,12 +27,15 @@ export interface MicCaptureOptions {
   deviceId?: string;
   fakeTone?: boolean;
   onBatch(pcm: ArrayBuffer, level: { rms: number; peak: number }): void;
+  /** Mức âm lượng mỗi 100 ms (biên độ 0..1) cho meter — PR B. */
+  onLevel?(level: { rms: number; peak: number }): void;
   /** Track kết thúc ngoài ý muốn (rút thiết bị, mất quyền). */
   onEnded(): void;
 }
 
 type WorkletMsg =
   | { type: "batch"; pcm: ArrayBuffer; rms: number; peak: number }
+  | { type: "level"; rms: number; peak: number }
   | { type: "flushed" };
 
 function toMicError(e: unknown): MicError {
@@ -76,6 +79,8 @@ export async function startMicCapture(
   node.port.onmessage = (e: MessageEvent<WorkletMsg>) => {
     if (e.data.type === "batch")
       opts.onBatch(e.data.pcm, { rms: e.data.rms, peak: e.data.peak });
+    else if (e.data.type === "level")
+      opts.onLevel?.({ rms: e.data.rms, peak: e.data.peak });
     else if (e.data.type === "flushed") onFlushed?.();
   };
 

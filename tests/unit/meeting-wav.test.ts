@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   WAV_HEADER_BYTES,
   buildWavHeader,
+  liveWavParts,
   repairWavHeader,
 } from "../../src/main/services/meeting-capture/wav";
 
@@ -65,5 +66,36 @@ describe("repairWavHeader", () => {
     expect(repairWavHeader(0).dataBytes).toBe(0);
     expect(repairWavHeader(20).dataBytes).toBe(0);
     expect(repairWavHeader(44).dataBytes).toBe(0);
+  });
+});
+
+describe("liveWavParts (PR B — phát lại phân đoạn đang ghi)", () => {
+  it("tổng = 44 + dữ liệu chẵn; header dựng lại theo kích thước hiện tại", () => {
+    const p = liveWavParts(44 + 101, 0, 44 + 100 - 1);
+    expect(p.total).toBe(144);
+    expect(view(p.header).getUint32(40, true)).toBe(100);
+    expect(p.headerSlice).toEqual([0, 44]);
+    expect(p.fileSlice).toEqual([44, 143]);
+  });
+
+  it("Range chỉ trong header / chỉ trong dữ liệu / vắt qua", () => {
+    expect(liveWavParts(1044, 4, 7)).toMatchObject({
+      headerSlice: [4, 8],
+      fileSlice: null,
+    });
+    expect(liveWavParts(1044, 100, 199)).toMatchObject({
+      headerSlice: null,
+      fileSlice: [100, 199],
+    });
+    expect(liveWavParts(1044, 40, 50)).toMatchObject({
+      headerSlice: [40, 44],
+      fileSlice: [44, 50],
+    });
+  });
+
+  it("tệp ngắn hơn header ⇒ chỉ có header (dữ liệu rỗng)", () => {
+    const p = liveWavParts(10, 0, 43);
+    expect(p.total).toBe(WAV_HEADER_BYTES);
+    expect(p.fileSlice).toBeNull();
   });
 });
