@@ -8,6 +8,7 @@ import {
   resolveFinalLanguage,
   type DetectedLanguageCode,
 } from "./language-detect";
+import { languageForSegment } from "./language-policy";
 import { AsrError, type AsrFinalClient, type MeetingFiles } from "./meeting-io";
 import { segmentOffsets, type CaptureSegment } from "./segments";
 import { sessionTransition } from "./session-state";
@@ -35,7 +36,11 @@ export interface FinalizerDeps {
   /** Chuỗi I/O dùng chung với service (deleteSession đi cùng chuỗi ⇒ không chạy xen với ghi tệp). */
   enqueueIo(fn: () => Promise<void>): Promise<void>;
   log(event: string, meta?: Record<string, string | number | boolean>): void;
+  now(): number;
 }
+
+/** Ngôn ngữ truyền cho bản chốt của một phân đoạn [startSec, endSec). */
+type LanguagePlan = (startSec: number, endSec: number) => AsrLanguage | "perWindow";
 
 /**
  * Ngôn ngữ cho bản chốt (ADR spike S2): chế độ khoá thắng; auto/multi dùng ngôn ngữ đã lưu của phiên, chưa có thì phát hiện
@@ -45,6 +50,7 @@ async function sessionLanguage(
   d: FinalizerDeps,
   s: MeetingSession,
 ): Promise<AsrLanguage> {
+  // (PR B: chỉ dùng khi phiên KHÔNG có lịch sử đổi ngôn ngữ — xem languagePlan.)
   const known = resolveFinalLanguage(s.languageMode, s.language);
   if (known) return known;
   const first = s.segments.find((seg) => seg.samples > 0);
@@ -68,12 +74,27 @@ async function sessionLanguage(
   return detected;
 }
 
+/**
+ * PR B (R7, ADR spike mục 6): có lịch sử đổi ngôn ngữ khi ghi ⇒ mỗi phân đoạn dùng ngôn ngữ chiếm phần lớn; Đa ngôn ngữ ⇒ worker
+ * phát hiện theo từng cửa sổ 30 s; còn lại như PR A (khoá ⇒ ngôn ngữ đó; auto chưa phát hiện ⇒ phát hiện một lần).
+ */
+async function languagePlan(
+  d: FinalizerDeps,
+  s: MeetingSession,
+): Promise<LanguagePlan> {
+  if (s.languageChanges.length > 0)
+    return (start, end) => languageForSegment(s.languageChanges, start, end);
+  if (s.languageMode === "multi") return () => "perWindow";
+  const lang = await sessionLanguage(d, s);
+  return () => lang;
+}
+
 /** Nhận dạng chốt các phân đoạn có audio; trả kết quả theo thứ tự, hoặc null nếu ASR lỗi / nguồn bị xoá. */
 async function recognizeAll(
   d: FinalizerDeps,
   s: MeetingSession,
   notebookId: string,
-  language: AsrLanguage,
+  plan: LanguagePlan,
 ): Promise<{ results: CaptureSegmentResult[]; failed: boolean } | null> {
   const offsets = segmentOffsets(s.segments, d.sampleRate);
   const offsetOf = new Map(
@@ -91,7 +112,7 @@ async function recognizeAll(
       seg,
       withAudio[k - 1],
       startSec,
-      language,
+      plan(startSec, startSec + seg.samples / d.sampleRate),
     );
     if (abs === "removed") return null;
     if (abs === "failed") return { results, failed: true };
@@ -108,7 +129,7 @@ async function recognizeOne(
   seg: CaptureSegment,
   prev: CaptureSegment | undefined,
   startSec: number,
-  language: AsrLanguage,
+  language: AsrLanguage | "perWindow",
 ): Promise<Segment[] | "failed" | "removed"> {
   const cached = await d.files.readFinal(s.sessionId, seg.index);
   if (cached) return cached;
@@ -134,6 +155,16 @@ async function recognizeOne(
   }
 }
 
+/** Dòng chẩn đoán RTF bản chốt (ADR meeting-asr-spike mục 7) — không nội dung. */
+function logFinalPerf(d: FinalizerDeps, s: MeetingSession, elapsedMs: number): void {
+  const audioSec = s.segments.reduce((t, seg) => t + seg.samples, 0) / d.sampleRate;
+  if (audioSec <= 0) return;
+  d.log("meeting.finalPerf", {
+    rtf: Math.round((elapsedMs / 1000 / audioSec) * 1000) / 1000,
+    audioMin: Math.round(audioSec / 6) / 10,
+  });
+}
+
 export async function finalizeSession(
   d: FinalizerDeps,
   sourceId: string,
@@ -142,17 +173,29 @@ export async function finalizeSession(
   const src = d.sources.getById(sourceId);
   if (!s || !src || d.isRemoved(sourceId) || s.phase !== "finalizing") return;
   try {
-    const language = await sessionLanguage(d, s);
+    const plan = await languagePlan(d, s);
     if (d.isRemoved(sourceId)) return;
-    const rec = await recognizeAll(d, s, src.notebookId, language);
+    const started = d.now();
+    const rec = await recognizeAll(d, s, src.notebookId, plan);
     if (!rec || d.isRemoved(sourceId)) return;
+    if (!rec.failed) logFinalPerf(d, s, d.now() - started);
     await d.enqueueIo(() => d.files.mergeSegments(s.sessionId, s.segments));
     if (d.isRemoved(sourceId)) return;
-    const transcript = rec.failed
-      ? { text: "", spans: [], timeMap: [] }
-      : buildMeetingTranscript(
-          stitchTranscriptSegments(rec.results, FINAL_OVERLAP_SEC),
-        );
+    // PR B: bản chốt lỗi / thiếu model chốt mà có nháp ⇒ dùng nháp (quality "draft", "Chốt lại" ở PR C1).
+    const drafts = rec.failed ? await d.files.readDrafts(s.sessionId) : [];
+    const quality: "final" | "draft" | null = !rec.failed
+      ? "final"
+      : drafts.length > 0
+        ? "draft"
+        : null;
+    const transcript =
+      quality === "final"
+        ? buildMeetingTranscript(
+            stitchTranscriptSegments(rec.results, FINAL_OVERLAP_SEC),
+          )
+        : quality === "draft"
+          ? buildMeetingTranscript(drafts)
+          : { text: "", spans: [], timeMap: [] };
     d.repo.replaceSpans(sourceId, transcript.spans);
     const ok = await d.pipeline.ingestParsed(sourceId, {
       pages: [{ page: null, text: transcript.text }],
@@ -163,18 +206,18 @@ export async function finalizeSession(
     if (!ok || d.isRemoved(sourceId)) return;
     const next = sessionTransition(
       { phase: s.phase, endedByUser: s.endedByUser },
-      rec.failed
-        ? { type: "finalizeFailed" }
-        : { type: "finalized", quality: "final" },
+      quality ? { type: "finalized", quality } : { type: "finalizeFailed" },
     );
     if (next.ok) {
       d.repo.update(sourceId, {
         phase: next.state.phase,
-        transcriptQuality: rec.failed ? null : "final",
+        transcriptQuality: quality,
       });
     }
-    if (rec.failed) return; // S3: chưa có transcript ⇒ không báo "sẵn sàng"; giữ phân đoạn cho "Hoàn tất transcript".
-    await d.enqueueIo(() => d.files.deleteSegments(s.sessionId, s.segments));
+    if (!quality) return; // S3: chưa có transcript ⇒ không báo "sẵn sàng"; giữ phân đoạn cho "Hoàn tất transcript".
+    // Bản nháp: giữ phân đoạn WAV để "Chốt lại" (PR C1) — chỉ bản chốt mới dọn.
+    if (quality === "final")
+      await d.enqueueIo(() => d.files.deleteSegments(s.sessionId, s.segments));
     d.notifyReady(sourceId, src.notebookId, src.title);
   } finally {
     // M2: xoá nguồn trong lúc hoàn tất ⇒ xoá thư mục lần cuối SAU mọi lần ghi của bước này.

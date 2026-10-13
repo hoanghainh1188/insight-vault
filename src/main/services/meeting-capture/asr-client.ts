@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Segment } from "../ingestion/audio/audio-transcript";
 import { parseWorkerMessage, type MainToWorker } from "./asr-protocol";
+import type { DraftAsrClient, DraftResult } from "./draft-engine";
 import type { DetectedLanguage } from "./language-detect";
 import { AsrError, type AsrFinalClient } from "./meeting-service";
 
@@ -20,6 +21,8 @@ export interface AsrClientOptions {
   meetingsRoot: string;
   cacheDir: string;
   finalModel: string;
+  /** Model nháp dự phòng (q8) khi máy chậm — ADR meeting-asr-spike mục 4. */
+  fallbackModel: string;
   fake: boolean;
   fork(workerPath: string, args: string[]): UtilityProcessLike;
   onModelDownload(active: boolean): void;
@@ -33,14 +36,15 @@ const RESTART_WINDOW_MS = 5 * 60_000;
 
 export function createAsrClient(
   opts: AsrClientOptions,
-): AsrFinalClient & { dispose(): void } {
+): AsrFinalClient & DraftAsrClient & { dispose(): void } {
   const now = opts.now ?? Date.now;
   const timeoutMs = opts.requestTimeoutMs ?? 30 * 60_000;
   let child: UtilityProcessLike | null = null;
   let downloading = false;
   const forkTimes: number[] = [];
-  // Mỗi yêu cầu chờ đúng MỘT loại trả lời (final ⇒ result, detect ⇒ language); loại khác cho cùng reqId bị bỏ qua.
-  type Kind = "final" | "detect";
+  // Mỗi yêu cầu chờ đúng MỘT loại trả lời (final ⇒ result, detect ⇒ language, draft ⇒ draftResult); loại khác cho cùng
+  // reqId bị bỏ qua.
+  type Kind = "final" | "detect" | "draft";
   interface Pending {
     kind: Kind;
     resolve: (v: unknown) => void;
@@ -82,6 +86,13 @@ export function createAsrClient(
       if (m.type === "modelDownload") setDownloading(m.active);
       else if (m.type === "result")
         settle(m.reqId, "final")?.resolve(m.segments);
+      else if (m.type === "draftResult")
+        settle(m.reqId, "draft")?.resolve({
+          segments: m.segments,
+          language: m.language,
+          ...(m.confidence !== undefined ? { confidence: m.confidence } : {}),
+          elapsedMs: m.elapsedMs,
+        } satisfies DraftResult);
       else if (m.type === "language")
         settle(m.reqId, "detect")?.resolve({
           language: m.language,
@@ -99,6 +110,7 @@ export function createAsrClient(
       type: "init",
       cacheDir: opts.cacheDir,
       finalModel: opts.finalModel,
+      fallbackModel: opts.fallbackModel,
       fake: opts.fake,
     };
     c.postMessage(init);
@@ -141,6 +153,20 @@ export function createAsrClient(
         type: "detect",
         reqId,
         segmentPath: req.segmentPath,
+      }));
+    },
+    detectPcm(req) {
+      return request<DetectedLanguage>("detect", (reqId) => ({
+        type: "detectPcm",
+        reqId,
+        pcm: req.pcm,
+      }));
+    },
+    draft(req) {
+      return request<DraftResult>("draft", (reqId) => ({
+        type: "draft",
+        reqId,
+        ...req,
       }));
     },
     dispose() {

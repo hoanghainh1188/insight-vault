@@ -5,15 +5,18 @@ import {
 } from "./services/app-shell/permissions";
 import {
   ARM_WINDOW_MS,
+  DRAFT_FALLBACK_MODEL,
   FINAL_MODEL,
   FSYNC_SEC,
   SAMPLE_RATE,
   segmentSeconds,
 } from "./services/meeting-capture/meeting-constants";
 import {
+  AsrError,
   createMeetingService,
   type MeetingService,
 } from "./services/meeting-capture/meeting-service";
+import { UserFacingError } from "@shared/codes/user-error";
 import { createMeetingRepo } from "./services/meeting-capture/meeting-repo";
 import { createMeetingFiles } from "./services/meeting-capture/meeting-files";
 import {
@@ -90,7 +93,7 @@ import { runReindex, needsReindex } from "./services/embedding/reindex-runner";
 import { recommendChatModel } from "./services/ai/model-recommend";
 import { checkOllama } from "./services/ai/ollama-health";
 import type { ReindexStatus } from "@shared/ipc/types";
-import { homedir, release, totalmem } from "node:os";
+import { arch, cpus, homedir, release, totalmem } from "node:os";
 import { applyPendingRestore } from "./services/vault-backup/restore-swap";
 import { createBackupService } from "./services/vault-backup/backup-service";
 import {
@@ -472,6 +475,7 @@ app
       meetingsRoot: meetingFiles.meetingsRoot,
       cacheDir: modelsDir,
       finalModel: FINAL_MODEL,
+      fallbackModel: DRAFT_FALLBACK_MODEL,
       // ASR giả tất định CHỈ cho e2e trên bản chưa đóng gói (R15).
       fake: process.env["IV_ASR_FAKE"] === "1" && !app.isPackaged,
       fork: (path, args) =>
@@ -527,6 +531,27 @@ app
         const wc = webContents.fromId(id);
         if (wc && !wc.isDestroyed()) wc.send(CHANNELS.meetingState, state);
       },
+      pushDraft: (id, ev) => {
+        const wc = webContents.fromId(id);
+        if (wc && !wc.isDestroyed()) wc.send(CHANNELS.meetingDraft, ev);
+      },
+      // Nạp model chốt trong worker (tải lần đầu ⇒ chỉ báo riêng tư "đang tải model" qua onModelDownload). Lệnh phát hiện ngôn
+      // ngữ trên 1 s im lặng là cách rẻ nhất để worker nạp model; kết quả bỏ qua, chỉ "thiếu model" mới là lỗi.
+      downloadModel: async () => {
+        try {
+          await asrClient.detectPcm({ pcm: new ArrayBuffer(SAMPLE_RATE * 2) });
+        } catch (e) {
+          if (e instanceof AsrError && e.code === "modelMissing")
+            throw new UserFacingError("meetingModelDownloadFailed");
+        }
+      },
+      machineInfo: () => ({
+        platform: process.platform,
+        arch: arch(),
+        cpu: (cpus()[0]?.model ?? "unknown").trim().slice(0, 80),
+        cores: cpus().length,
+        ramGb: Math.round(totalmem() / 1024 ** 3),
+      }),
       emitProgress: (sourceId, notebookId, frac) =>
         emitProgress({
           sourceId,

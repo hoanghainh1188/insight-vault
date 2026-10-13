@@ -190,3 +190,21 @@ describe("meeting-repo — transcript_span", () => {
     ]);
   });
 });
+
+describe("meeting-repo — meeting_marker (PR B)", () => {
+  it("addMarker + listMarkers theo tStart", () => {
+    repo.addMarker({ id: "k2", sourceId: "m1", kind: "question", tStart: 30, tEnd: 30 });
+    repo.addMarker({ id: "k1", sourceId: "m1", kind: "decision", tStart: 5, tEnd: 12.5 });
+    expect(repo.listMarkers("m1")).toEqual([
+      { id: "k1", kind: "decision", tStart: 5, tEnd: 12.5 },
+      { id: "k2", kind: "question", tStart: 30, tEnd: 30 },
+    ]);
+    expect(repo.listMarkers("khác")).toEqual([]);
+  });
+
+  it("xoá nguồn ⇒ cascade xoá đánh dấu", () => {
+    repo.addMarker({ id: "k1", sourceId: "m1", kind: "actionItem", tStart: 1, tEnd: 1 });
+    db.prepare("DELETE FROM source WHERE id = 'm1'").run();
+    expect(repo.listMarkers("m1")).toEqual([]);
+  });
+});

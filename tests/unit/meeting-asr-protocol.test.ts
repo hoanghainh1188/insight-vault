@@ -28,9 +28,11 @@ describe("parseMainMessage (worker nhận)", () => {
       type: "init",
       cacheDir: "/data/models",
       finalModel: "Xenova/whisper-base",
+      fallbackModel: "Xenova/whisper-tiny",
       fake: false,
     };
     expect(parseMainMessage(m, ROOT)).toEqual(m);
+    expect(parseMainMessage({ ...m, fallbackModel: "" }, ROOT)).toBeNull();
   });
 
   it("final hợp lệ (có / không phân đoạn trước)", () => {
@@ -214,5 +216,91 @@ describe("phát hiện ngôn ngữ (ADR spike S2)", () => {
     ["thiếu reqId", { type: "language", language: "vi", confidence: 1 }],
   ])("language %s ⇒ null", (_n, m) => {
     expect(parseWorkerMessage(m)).toBeNull();
+  });
+});
+
+describe("nháp khi đang ghi (PR B)", () => {
+  const pcm = (bytes: number): ArrayBuffer => new ArrayBuffer(bytes);
+
+  it("draft hợp lệ: PCM ArrayBuffer chẵn byte, ≤ 30 s; ngôn ngữ vi/en/perWindow; tier", () => {
+    const m = {
+      type: "draft",
+      reqId: "d1",
+      pcm: pcm(320_000),
+      language: "perWindow",
+      tier: "primary",
+    };
+    expect(parseMainMessage(m, ROOT)).toEqual(m);
+    expect(
+      parseMainMessage({ ...m, language: "vi", tier: "fallback" }, ROOT),
+    ).toMatchObject({ language: "vi", tier: "fallback" });
+  });
+
+  it("draft sai ⇒ null (PCM lẻ byte / rỗng / quá 30 s / không phải ArrayBuffer / ngôn ngữ, tier lạ)", () => {
+    const ok = {
+      type: "draft",
+      reqId: "d1",
+      pcm: pcm(32_000),
+      language: "vi",
+      tier: "primary",
+    };
+    for (const bad of [
+      { ...ok, pcm: pcm(31_999) },
+      { ...ok, pcm: pcm(0) },
+      { ...ok, pcm: pcm(30 * 16_000 * 2 + 2) },
+      { ...ok, pcm: new Uint8Array(32_000) },
+      { ...ok, pcm: "AAAA" },
+      { ...ok, language: null },
+      { ...ok, language: "fr" },
+      { ...ok, tier: "huge" },
+      { ...ok, reqId: "" },
+    ]) {
+      expect(parseMainMessage(bad, ROOT)).toBeNull();
+    }
+  });
+
+  it("detectPcm hợp lệ / sai", () => {
+    const m = { type: "detectPcm", reqId: "x", pcm: pcm(960_000) };
+    expect(parseMainMessage(m, ROOT)).toEqual(m);
+    expect(parseMainMessage({ ...m, pcm: pcm(3) }, ROOT)).toBeNull();
+  });
+
+  it("final chấp nhận language = perWindow (chế độ Đa ngôn ngữ)", () => {
+    expect(
+      parseMainMessage(
+        {
+          type: "final",
+          reqId: "f",
+          segmentPath: SEG,
+          overlapSec: 0,
+          language: "perWindow",
+        },
+        ROOT,
+      ),
+    ).toMatchObject({ language: "perWindow" });
+  });
+
+  it("draftResult hợp lệ; ngôn ngữ/độ tin cậy/thời gian sai ⇒ null", () => {
+    const m = {
+      type: "draftResult",
+      reqId: "d1",
+      segments: [{ text: "xin chào", tStart: 0, tEnd: 2 }],
+      language: "vi",
+      confidence: 0.9,
+      elapsedMs: 400,
+    };
+    expect(parseWorkerMessage(m)).toEqual(m);
+    expect(
+      parseWorkerMessage({ ...m, language: null, confidence: undefined }),
+    ).toEqual({ ...m, language: null, confidence: undefined });
+    for (const bad of [
+      { ...m, language: "fr" },
+      { ...m, confidence: 2 },
+      { ...m, elapsedMs: -1 },
+      { ...m, elapsedMs: Number.NaN },
+      { ...m, segments: [{ text: 1, tStart: 0, tEnd: 1 }] },
+    ]) {
+      expect(parseWorkerMessage(bad)).toBeNull();
+    }
   });
 });

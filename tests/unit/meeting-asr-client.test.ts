@@ -40,6 +40,7 @@ function setup(now = { t: 0 }) {
     meetingsRoot: "/data/meetings",
     cacheDir: "/data/models",
     finalModel: "Xenova/whisper-base",
+    fallbackModel: "Xenova/whisper-tiny",
     fake: false,
     fork: () => {
       const c = new FakeChild();
@@ -70,6 +71,7 @@ describe("asr-client", () => {
       type: "init",
       cacheDir: "/data/models",
       finalModel: "Xenova/whisper-base",
+      fallbackModel: "Xenova/whisper-tiny",
       fake: false,
     });
     expect(children[0].sent[1]).toMatchObject({ type: "final", ...REQ });
@@ -185,5 +187,41 @@ describe("asr-client — detectLanguage", () => {
     });
     children[0].emit({ type: "result", reqId: id, segments: [] });
     await expect(p).resolves.toEqual([]);
+  });
+});
+
+describe("asr-client — nháp (PR B)", () => {
+  it("draft gửi PCM + ngôn ngữ + tier; trả kết quả khi worker báo draftResult", async () => {
+    const { client, children } = setup();
+    const pcm = new ArrayBuffer(320_000);
+    const p = client.draft({ pcm, language: "perWindow", tier: "primary" });
+    const c = children[0] as FakeChild;
+    const sent = c.sent.at(-1) as Record<string, unknown>;
+    expect(sent).toMatchObject({ type: "draft", pcm, language: "perWindow", tier: "primary" });
+    c.emit({
+      type: "draftResult",
+      reqId: sent["reqId"],
+      segments: [{ text: "chào", tStart: 0, tEnd: 1 }],
+      language: "vi",
+      confidence: 0.9,
+      elapsedMs: 300,
+    });
+    await expect(p).resolves.toEqual({
+      segments: [{ text: "chào", tStart: 0, tEnd: 1 }],
+      language: "vi",
+      confidence: 0.9,
+      elapsedMs: 300,
+    });
+  });
+
+  it("detectPcm chờ tin language; draftResult cho cùng reqId bị bỏ qua", async () => {
+    const { client, children } = setup();
+    const p = client.detectPcm({ pcm: new ArrayBuffer(64) });
+    const c = children[0] as FakeChild;
+    const sent = c.sent.at(-1) as Record<string, unknown>;
+    expect(sent).toMatchObject({ type: "detectPcm" });
+    c.emit({ type: "draftResult", reqId: sent["reqId"], segments: [], language: null, elapsedMs: 1 });
+    c.emit({ type: "language", reqId: sent["reqId"], language: "en", confidence: 0.75 });
+    await expect(p).resolves.toEqual({ language: "en", confidence: 0.75 });
   });
 });

@@ -17,7 +17,15 @@ import {
 import { createMicGate } from "../../src/main/services/app-shell/permissions";
 import type { CaptureSegment } from "../../src/main/services/meeting-capture/segments";
 import type { Segment } from "../../src/main/services/ingestion/audio/audio-transcript";
-import type { MeetingState, Source } from "@shared/ipc/types";
+import type {
+  MeetingDraftEvent,
+  MeetingState,
+  Source,
+} from "@shared/ipc/types";
+import type {
+  DraftAsrClient,
+  PersistedDraftLine,
+} from "../../src/main/services/meeting-capture/draft-engine";
 
 // 186 — điều phối phiên ghi (research R4, R8, R12; data-model §5). Mọi I/O (tệp, ASR, đĩa, cửa sổ) là fake tiêm vào.
 
@@ -45,6 +53,14 @@ interface Harness {
     language: string | null;
   }[];
   detectCalls: string[];
+  draftCalls: { language: string; tier: string; bytes: number }[];
+  detectPcmCalls: number[];
+  drafts: Map<string, PersistedDraftLine[]>;
+  draftPushes: { id: number; ev: MeetingDraftEvent }[];
+  logs: { event: string; meta?: Record<string, string | number | boolean> }[];
+  downloads: number[];
+  setDraft: (fn: DraftAsrClient["draft"]) => void;
+  setDetectPcm: (fn: DraftAsrClient["detectPcm"]) => void;
   clock: { now: number };
   tick: () => void;
   setAsr: (fn: AsrFinalClient["final"]) => void;
@@ -96,6 +112,21 @@ function harness(
     language: "en",
     confidence: 0.9,
   });
+  const draftCalls: Harness["draftCalls"] = [];
+  const detectPcmCalls: number[] = [];
+  const drafts = new Map<string, PersistedDraftLine[]>();
+  const draftPushes: Harness["draftPushes"] = [];
+  const logs: Harness["logs"] = [];
+  const downloads: number[] = [];
+  let draftImpl: DraftAsrClient["draft"] = async () => ({
+    segments: [{ text: "nháp", tStart: 0, tEnd: 1 }],
+    language: "vi",
+    elapsedMs: 100,
+  });
+  let detectPcmImpl: DraftAsrClient["detectPcm"] = async () => ({
+    language: "vi",
+    confidence: 0.95,
+  });
   let asrImpl: AsrFinalClient["final"] = async (req) => [
     { text: `câu của ${req.segmentPath.split("/").pop()}`, tStart: 1, tEnd: 3 },
   ];
@@ -136,6 +167,15 @@ function harness(
     deleteSession: async (sid) => {
       deletedSessions.push(sid);
     },
+    appendDraft: async (sid, line) => {
+      drafts.set(sid, [...(drafts.get(sid) ?? []), line]);
+    },
+    readDrafts: async (sid) =>
+      (drafts.get(sid) ?? []).map((l) => ({
+        text: l.text,
+        tStart: l.tStart,
+        tEnd: l.tEnd,
+      })),
   };
 
   const deps: MeetingServiceDeps = {
@@ -195,7 +235,31 @@ function harness(
         detectCalls.push(req.segmentPath),
         detectImpl(req)
       ),
+      draft: (req) => (
+        draftCalls.push({
+          language: req.language,
+          tier: req.tier,
+          bytes: req.pcm.byteLength,
+        }),
+        draftImpl(req)
+      ),
+      detectPcm: (req) => (
+        detectPcmCalls.push(req.pcm.byteLength),
+        detectPcmImpl(req)
+      ),
     },
+    pushDraft: (id, ev) => draftPushes.push({ id, ev }),
+    downloadModel: async () => {
+      downloads.push(clock.now);
+    },
+    machineInfo: () => ({
+      platform: "darwin",
+      arch: "arm64",
+      cpu: "Test CPU",
+      cores: 8,
+      ramGb: 16,
+    }),
+    logEvent: (event, meta) => logs.push({ event, ...(meta ? { meta } : {}) }),
     freeBytes: async () => free,
     micGate: gate,
     mediaAccess: {
@@ -237,6 +301,14 @@ function harness(
     notified,
     asrCalls,
     detectCalls,
+    draftCalls,
+    detectPcmCalls,
+    drafts,
+    draftPushes,
+    logs,
+    downloads,
+    setDraft: (fn) => (draftImpl = fn),
+    setDetectPcm: (fn) => (detectPcmImpl = fn),
     clock,
     tick: () => intervalFn?.(),
     setAsr: (fn) => (asrImpl = fn),
@@ -269,12 +341,42 @@ function feed(
   return seq;
 }
 
-async function startSession(h: Harness, title = "Cuộc họp 12/10, 14:30") {
+/** Như feed nhưng lô có lời nói (sóng sin) ⇒ qua VAD, sinh nháp. */
+function feedSpeech(
+  h: Harness,
+  sessionId: string,
+  seconds: number,
+  startSeq = 0,
+): number {
+  const one = new Int16Array(RATE);
+  for (let i = 0; i < RATE; i++)
+    one[i] = Math.round(8000 * Math.sin((2 * Math.PI * 220 * i) / RATE));
+  let seq = startSeq;
+  for (let i = 0; i < seconds; i++) {
+    h.clock.now += 1000;
+    h.svc.acceptAudio(OWNER, {
+      sessionId,
+      seq: seq++,
+      pcm: one.slice().buffer,
+    });
+  }
+  return seq;
+}
+
+const flush = async (): Promise<void> => {
+  for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+};
+
+async function startSession(
+  h: Harness,
+  title = "Cuộc họp 12/10, 14:30",
+  languageMode: "vi" | "en" | "auto" | "multi" = "vi",
+) {
   await h.svc.prepare(OWNER, { notebookId: "nb1" });
   return h.svc.start(OWNER, {
     notebookId: "nb1",
     title,
-    languageMode: "vi",
+    languageMode,
     deviceLabel: "Mic A",
   });
 }
@@ -847,5 +949,276 @@ describe("review PR A — ASR lỗi không báo 'sẵn sàng' (S3)", () => {
     await h.idle();
     expect(h.repo.get(sourceId)?.phase).toBe("incomplete");
     expect(h.notified).toEqual([]);
+  });
+});
+
+describe("PR B — nháp khi đang ghi", () => {
+  it("10 s có lời ⇒ nháp với ngôn ngữ đã khoá, push meeting:draft chỉ tới owner, ghi draft.jsonl", async () => {
+    const { sessionId } = await startSession(h);
+    feedSpeech(h, sessionId, 10);
+    await flush();
+    // Lượt 5 s ("Đang nhận dạng") rồi lượt đủ 10 s cùng id.
+    expect(h.draftCalls).toEqual([
+      { language: "vi", tier: "primary", bytes: 5 * SEC },
+      { language: "vi", tier: "primary", bytes: 10 * SEC },
+    ]);
+    expect(h.draftPushes.map((p) => p.id)).toEqual([OWNER, OWNER]);
+    expect(h.draftPushes.at(-1)).toEqual({
+      id: OWNER,
+      ev: {
+        sessionId,
+        full: false,
+        windows: [
+          { id: "w0", tStart: 0, tEnd: 10, text: "nháp", pending: false },
+        ],
+      },
+    });
+    expect(h.drafts.get(sessionId)).toHaveLength(1);
+  });
+
+  it("im lặng ⇒ không nháp", async () => {
+    const { sessionId } = await startSession(h);
+    feed(h, sessionId, 20);
+    await flush();
+    expect(h.draftCalls).toEqual([]);
+  });
+
+  it("tạm dừng ⇒ phần dở của cửa sổ được nháp ngay", async () => {
+    const { sessionId } = await startSession(h);
+    feedSpeech(h, sessionId, 4);
+    await h.svc.pause(OWNER, { sessionId });
+    await flush();
+    expect(h.draftCalls).toHaveLength(1);
+    expect(h.draftCalls[0]?.bytes).toBe(4 * SEC);
+  });
+
+  it("thiếu model ⇒ vẫn ghi, modelReady=false; tải model ⇒ nháp chạy lại", async () => {
+    h.setDraft(async () => {
+      throw new AsrError("modelMissing");
+    });
+    const { sessionId } = await startSession(h);
+    let seq = feedSpeech(h, sessionId, 10);
+    await flush();
+    expect(h.pushes.at(-1)?.modelReady).toBe(false);
+    seq = feedSpeech(h, sessionId, 10, seq);
+    await flush();
+    const before = h.draftCalls.length; // chỉ lượt đầu (bị thiếu model), sau đó ngừng nháp
+    expect(before).toBe(1);
+    expect(h.writers[0]?.bytes).toBe(20 * SEC);
+    h.setDraft(async () => ({ segments: [], language: null, elapsedMs: 1 }));
+    const st = await h.svc.downloadModel();
+    expect(st).toEqual({ ok: true });
+    expect(h.downloads).toHaveLength(1);
+    expect(h.svc.status()?.modelReady).toBe(true);
+    feedSpeech(h, sessionId, 10, seq);
+    await flush();
+    expect(h.draftCalls.length).toBeGreaterThan(before);
+  });
+
+  it("resendDrafts ⇒ push danh sách đầy đủ (renderer gắn lại sau reload)", async () => {
+    const { sessionId } = await startSession(h);
+    feedSpeech(h, sessionId, 10);
+    await flush();
+    h.svc.resendDrafts();
+    expect(h.draftPushes.at(-1)?.ev).toMatchObject({ full: true, sessionId });
+    expect(h.draftPushes.at(-1)?.ev.windows).toHaveLength(1);
+  });
+});
+
+describe("PR B — ngôn ngữ (R7)", () => {
+  it("chế độ khoá ⇒ trạng thái manual, không phát hiện", async () => {
+    const { sessionId } = await startSession(h, "x", "en");
+    feedSpeech(h, sessionId, 40);
+    await flush();
+    expect(h.detectPcmCalls).toEqual([]);
+    expect(h.svc.status()?.language).toEqual({
+      mode: "en",
+      current: "en",
+      status: "manual",
+    });
+  });
+
+  it("auto ⇒ 'đang nhận dạng', đủ 30 s lời nói ⇒ phát hiện, khoá, lưu phiên", async () => {
+    const { sessionId, sourceId } = await startSession(h, "x", "auto");
+    expect(h.svc.status()?.language).toMatchObject({
+      status: "detecting",
+      current: null,
+    });
+    feedSpeech(h, sessionId, 30);
+    await flush();
+    expect(h.detectPcmCalls).toEqual([30 * SEC]);
+    expect(h.svc.status()?.language).toEqual({
+      mode: "auto",
+      current: "vi",
+      status: "locked",
+    });
+    expect(h.repo.get(sourceId)).toMatchObject({
+      language: "vi",
+      languageChanges: [{ atSec: 0, lang: "vi", source: "auto" }],
+    });
+    expect(h.draftCalls[0]?.language).toBe("perWindow");
+  });
+
+  it("phát hiện ngôn ngữ khác hai lần liên tiếp ⇒ gợi ý; chấp nhận ⇒ đổi từ thời điểm hiện tại", async () => {
+    const { sessionId, sourceId } = await startSession(h, "x", "auto");
+    let seq = feedSpeech(h, sessionId, 30);
+    await flush();
+    h.setDetectPcm(async () => ({ language: "en", confidence: 0.9 }));
+    for (let i = 0; i < 25; i++) {
+      seq = feedSpeech(h, sessionId, 10, seq);
+      await flush();
+    }
+    expect(h.svc.status()?.language.suggestion).toBe("en");
+    const st = await h.svc.setLanguage(OWNER, {
+      sessionId,
+      action: "acceptSuggestion",
+    });
+    expect(st.language).toMatchObject({ current: "en", status: "locked" });
+    expect(st.language.suggestion).toBeUndefined();
+    expect(h.repo.get(sourceId)?.languageChanges).toEqual([
+      { atSec: 0, lang: "vi", source: "auto" },
+      { atSec: 280, lang: "en", source: "auto" },
+    ]);
+  });
+
+  it("setLanguage lock ⇒ manual; đầu vào sai / cửa sổ khác ⇒ lỗi", async () => {
+    const { sessionId, sourceId } = await startSession(h, "x", "auto");
+    feedSpeech(h, sessionId, 5);
+    const st = await h.svc.setLanguage(OWNER, {
+      sessionId,
+      action: "lock",
+      lang: "en",
+    });
+    expect(st.language).toEqual({
+      mode: "en",
+      current: "en",
+      status: "manual",
+    });
+    expect(h.repo.get(sourceId)?.language).toBe("en");
+    await expect(
+      h.svc.setLanguage(OWNER, { sessionId, action: "lock", lang: "fr" }),
+    ).rejects.toThrow("meetingInvalidInput");
+    await expect(
+      h.svc.setLanguage(OWNER, { sessionId, action: "explode" }),
+    ).rejects.toThrow("meetingInvalidInput");
+    await expect(
+      h.svc.setLanguage(99, { sessionId, action: "dismissSuggestion" }),
+    ).rejects.toThrow("meetingNotFound");
+  });
+
+  it("bản chốt dùng ngôn ngữ chiếm phần lớn từng phân đoạn theo lịch sử đổi", async () => {
+    const short = harness({ segmentSeconds: 10 });
+    const { sessionId } = await startSession(short, "x", "vi");
+    const seq = feedSpeech(short, sessionId, 12);
+    await short.svc.setLanguage(OWNER, {
+      sessionId,
+      action: "lock",
+      lang: "en",
+    });
+    feedSpeech(short, sessionId, 18, seq);
+    await short.svc.stop(OWNER, { sessionId });
+    await short.idle();
+    expect(short.asrCalls.map((c) => c.language)).toEqual(["vi", "en", "en"]);
+  });
+
+  it("Đa ngôn ngữ ⇒ bản chốt phát hiện theo từng cửa sổ (perWindow)", async () => {
+    const { sessionId } = await startSession(h, "x", "multi");
+    feedSpeech(h, sessionId, 5);
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.asrCalls.map((c) => c.language)).toEqual(["perWindow"]);
+    expect(h.detectCalls).toEqual([]);
+  });
+});
+
+describe("PR B — đánh dấu", () => {
+  it("mark hợp lệ khi đang ghi / tạm dừng; listMarkers theo nguồn", async () => {
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 20);
+    const a = await h.svc.mark(OWNER, {
+      sessionId,
+      kind: "decision",
+      tStart: 12,
+    });
+    await h.svc.pause(OWNER, { sessionId });
+    const b = await h.svc.mark(OWNER, {
+      sessionId,
+      kind: "actionItem",
+      tStart: 3,
+      tEnd: 8,
+    });
+    expect(await h.svc.listMarkers({ sourceId })).toEqual([
+      { id: b.markerId, kind: "actionItem", tStart: 3, tEnd: 8 },
+      { id: a.markerId, kind: "decision", tStart: 12, tEnd: 12 },
+    ]);
+  });
+
+  it("đầu vào sai ⇒ meetingInvalidInput; không có phiên ⇒ meetingNotFound", async () => {
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 10);
+    for (const bad of [
+      { sessionId, kind: "note", tStart: 1 },
+      { sessionId, kind: "question", tStart: -1 },
+      { sessionId, kind: "question", tStart: 5, tEnd: 4 },
+      { sessionId, kind: "question", tStart: 12 }, // > thời lượng + 1
+      { sessionId, kind: "question", tStart: Number.NaN },
+    ]) {
+      await expect(h.svc.mark(OWNER, bad)).rejects.toThrow(
+        "meetingInvalidInput",
+      );
+    }
+    await h.svc.stop(OWNER, { sessionId });
+    await expect(
+      h.svc.mark(OWNER, { sessionId, kind: "question", tStart: 1 }),
+    ).rejects.toThrow("meetingNotFound");
+    expect(await h.svc.listMarkers({ sourceId })).toEqual([]);
+    await expect(h.svc.listMarkers({ sourceId: "khác" })).rejects.toThrow(
+      "meetingNotFound",
+    );
+  });
+});
+
+describe("PR B — hoàn tất dự phòng bằng nháp", () => {
+  it("ASR chốt lỗi nhưng có nháp ⇒ done + quality draft, lập chỉ mục văn bản nháp", async () => {
+    h.setAsr(async () => {
+      throw new AsrError("modelMissing");
+    });
+    const { sessionId, sourceId } = await startSession(h);
+    feedSpeech(h, sessionId, 20);
+    await flush();
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      transcriptQuality: "draft",
+    });
+    expect(h.ingested[0]?.text).toContain("nháp");
+    expect(h.notified).toEqual([sourceId]);
+  });
+});
+
+describe("PR B — chẩn đoán hiệu năng (ADR mục 7)", () => {
+  it("kết thúc phiên ⇒ một dòng meeting.perf: máy + RTF nháp, không nội dung", async () => {
+    const { sessionId } = await startSession(h);
+    feedSpeech(h, sessionId, 20);
+    await flush();
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    const perf = h.logs.find((l) => l.event === "meeting.perf");
+    expect(perf?.meta).toEqual({
+      platform: "darwin",
+      arch: "arm64",
+      cpu: "Test CPU",
+      cores: 8,
+      ramGb: 16,
+      draftWindows: 2,
+      draftRtfMean: 0.01,
+      draftRtfP95: 0.01,
+      draftDropped: 0,
+      draftDowngraded: false,
+      draftModel: "primary",
+    });
+    const fin = h.logs.find((l) => l.event === "meeting.finalPerf");
+    expect(typeof fin?.meta?.["rtf"]).toBe("number");
   });
 });

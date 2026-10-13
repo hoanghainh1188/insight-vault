@@ -138,3 +138,24 @@ describe("ghép, checkpoint, xoá", () => {
     await expect(f.deleteSession("..")).rejects.toThrow();
   });
 });
+
+describe("draft.jsonl (PR B)", () => {
+  it("appendDraft rồi readDrafts ⇒ segment theo tStart, id trùng lấy bản sau, dòng hỏng bỏ qua", async () => {
+    const f = createMeetingFiles(join(root, "meetings"), { fsyncSec: 1 });
+    await f.ensureSessionDir(SID);
+    await f.appendDraft(SID, { id: "w1", tStart: 10, tEnd: 20, text: "hai", lang: "vi" });
+    await f.appendDraft(SID, { id: "w0", tStart: 0, tEnd: 10, text: "một", lang: "vi" });
+    await f.appendDraft(SID, { id: "w1", tStart: 10, tEnd: 20, text: "hai sửa", lang: "vi" });
+    const p = join(root, "meetings", SID, "draft.jsonl");
+    writeFileSync(p, readFileSync(p, "utf8") + "{hỏng\n" + JSON.stringify({ id: 3 }) + "\n");
+    expect(await f.readDrafts(SID)).toEqual([
+      { text: "một", tStart: 0, tEnd: 10 },
+      { text: "hai sửa", tStart: 10, tEnd: 20 },
+    ]);
+  });
+
+  it("chưa có tệp ⇒ mảng rỗng", async () => {
+    const f = createMeetingFiles(join(root, "meetings"), { fsyncSec: 1 });
+    expect(await f.readDrafts(SID)).toEqual([]);
+  });
+});

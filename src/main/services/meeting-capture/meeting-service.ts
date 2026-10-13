@@ -1,5 +1,7 @@
 import type {
   LanguageMode,
+  MeetingDraftEvent,
+  MeetingMarker,
   MeetingPrepareResult,
   MeetingStartInput,
   MeetingStartResult,
@@ -20,6 +22,13 @@ import {
   NO_AUDIO_TIMEOUT_MS,
   RESUME_GRACE_MS,
 } from "./meeting-constants";
+import type { DraftAsrClient, DraftEngine } from "./draft-engine";
+import { initialLanguageState } from "./language-policy";
+import { languageView, parseMark, parseSetLanguage } from "./meeting-input";
+import {
+  createDraftWiring,
+  type LiveSession,
+} from "./meeting-draft-wiring";
 import type { MeetingRepo, MeetingSession } from "./meeting-repo";
 import { finalizeSession } from "./meeting-finalizer";
 import type {
@@ -60,7 +69,7 @@ export interface MeetingServiceDeps {
   };
   notebookExists(id: string): boolean;
   files: MeetingFiles;
-  asr: AsrFinalClient;
+  asr: AsrFinalClient & DraftAsrClient;
   freeBytes(): Promise<number>;
   micGate: MicGate;
   mediaAccess: { status(): MicStatus; ask(): Promise<boolean> };
@@ -68,6 +77,12 @@ export interface MeetingServiceDeps {
   isModelReady(): Promise<boolean>;
   prefs: { get(key: string): unknown; set(key: string, value: unknown): void };
   push(webContentsId: number, state: MeetingState): void;
+  /** PR B: dòng nháp tới cửa sổ ghi. */
+  pushDraft(webContentsId: number, ev: MeetingDraftEvent): void;
+  /** PR B: tải model nhận dạng (worker nạp model ⇒ chỉ báo riêng tư "đang tải model"). */
+  downloadModel(): Promise<void>;
+  /** PR B: thông tin máy cho dòng chẩn đoán hiệu năng (ADR meeting-asr-spike mục 7) — không định danh người dùng. */
+  machineInfo(): MachineInfo;
   emitProgress(sourceId: string, notebookId: string, frac: number): void;
   notifyReady(sourceId: string, notebookId: string, title: string): void;
   logEvent?(
@@ -84,6 +99,14 @@ export interface MeetingServiceDeps {
   testFakeMic?: boolean;
 }
 
+export interface MachineInfo {
+  platform: string;
+  arch: string;
+  cpu: string;
+  cores: number;
+  ramGb: number;
+}
+
 export interface MeetingService {
   prepare(senderId: number, input: unknown): Promise<MeetingPrepareResult>;
   start(senderId: number, input: unknown): Promise<MeetingStartResult>;
@@ -96,6 +119,12 @@ export interface MeetingService {
   stop(senderId: number, input: unknown): Promise<{ sourceId: string }>;
   status(): MeetingState | null;
   rename(input: unknown): Promise<{ ok: true }>;
+  setLanguage(senderId: number, input: unknown): Promise<MeetingState>;
+  mark(senderId: number, input: unknown): Promise<{ markerId: string }>;
+  listMarkers(input: unknown): Promise<MeetingMarker[]>;
+  downloadModel(): Promise<{ ok: true }>;
+  /** Đẩy lại toàn bộ dòng nháp cho cửa sổ ghi (sau khi renderer gắn lại — meeting:status). */
+  resendDrafts(): void;
   onRendererGone(webContentsId: number): void;
   onSourceRemoved(sourceId: string): Promise<void>;
   isRecordingNotebook(notebookId: string): boolean;
@@ -118,12 +147,9 @@ const UNFINISHED: MeetingSession["phase"][] = [
   "interrupted",
 ];
 
-interface Active {
-  sessionId: string;
-  sourceId: string;
+interface Active extends LiveSession {
   notebookId: string;
   title: string;
-  ownerId: number;
   languageMode: LanguageMode;
   snap: SessionSnapshot;
   ingress: IngressState;
@@ -210,8 +236,9 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       ...(endReason ? { endReason } : {}),
       diskLevel: level === "stop" ? "urgent" : level,
       minutesRemaining: a.minutesRemaining,
-      transcriptLagging: false,
-      modelReady: true,
+      transcriptLagging: a.lagging,
+      modelReady: a.modelReady,
+      language: languageView(a.lang),
     };
   };
 
@@ -276,9 +303,20 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
 
   const deactivate = (): void => {
     stopWatchdog();
+    if (active) logPerf(active);
+    active?.draft.stop();
     active = null;
     deps.micGate.disarm();
   };
+
+  const live = createDraftWiring({
+    deps,
+    isActive: (a) => active === a,
+    pushState: (a) => pushState(a as Active),
+    enqueueIo,
+    log,
+  });
+  const { logPerf, applyLanguage } = live;
 
   const queueFinalize = (sourceId: string): void => {
     finalizeChain = finalizeChain.then(() =>
@@ -295,6 +333,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
           isRemoved: (id) => removed.has(id),
           enqueueIo,
           log,
+          now: deps.now,
         },
         sourceId,
       ).catch((e: unknown) =>
@@ -496,9 +535,19 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
           minutesRemaining: minutes,
           lastDiskCheck: now,
           lastPersist: now,
+          lang: initialLanguageState(languageMode),
+          draft: null as unknown as DraftEngine,
+          lagging: false,
+          modelReady: await deps.isModelReady(),
         };
+        a.draft = live.createDraft(a);
         openSegment(a);
         persist(a);
+        if (a.lang.changes.length > 0)
+          repo.update(a.sourceId, {
+            language: a.lang.locked?.lang ?? null,
+            languageChanges: a.lang.changes,
+          });
         active = a;
         if (typeof deviceLabel === "string")
           deps.prefs.set(PREF_DEVICE, deviceLabel);
@@ -538,6 +587,11 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
         persist(a);
       }
       a.writer.append(v.bytes);
+      a.draft.push(
+        v.bytes.byteOffset % 2 === 0
+          ? new Int16Array(v.bytes.buffer, v.bytes.byteOffset, v.bytes.byteLength >> 1)
+          : new Int16Array(v.bytes.slice().buffer),
+      );
       const last = a.segments.length - 1;
       const samples = (a.segments[last]?.samples ?? 0) + v.bytes.byteLength / 2;
       a.segments = a.segments.map((s, i) =>
@@ -569,6 +623,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       // N3: đặt mốc tạm dừng TRƯỚC await (resume chen vào không bị ghi đè).
       a.pausedAtWall = deps.now();
       a.pauseReason = reason;
+      a.draft.flush();
       await closeSegment(a);
       persist(a);
       pushState(a);
@@ -604,6 +659,52 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     },
 
     status: () => (active ? state(active) : null),
+
+    resendDrafts() {
+      const a = active;
+      if (a)
+        deps.pushDraft(a.ownerId, {
+          sessionId: a.sessionId,
+          windows: a.draft.lines(),
+          full: true,
+        });
+    },
+
+    async setLanguage(senderId, input) {
+      const a = requireOwned(senderId, input);
+      applyLanguage(a, parseSetLanguage(input, durationSec(a)));
+      return state(a);
+    },
+
+    async mark(senderId, input) {
+      const a = requireOwned(senderId, input);
+      if (a.snap.phase !== "recording" && a.snap.phase !== "paused")
+        throw new UserFacingError("meetingNotFound");
+      const m = parseMark(input, durationSec(a));
+      const markerId = deps.uuid();
+      repo.addMarker({ id: markerId, sourceId: a.sourceId, ...m });
+      log("meeting.marked", { kind: m.kind });
+      return { markerId };
+    },
+
+    async listMarkers(input) {
+      const sourceId = isObj(input) ? str(input["sourceId"]) : null;
+      const src = sourceId ? deps.sources.getById(sourceId) : null;
+      if (!src || src.kind !== "meeting")
+        throw new UserFacingError("meetingNotFound");
+      return repo.listMarkers(src.id);
+    },
+
+    async downloadModel() {
+      await deps.downloadModel();
+      const a = active;
+      if (a) {
+        a.modelReady = true;
+        a.draft.resumeModel();
+        pushState(a);
+      }
+      return { ok: true as const };
+    },
 
     async rename(input) {
       if (!isObj(input)) throw new UserFacingError("meetingInvalidInput");

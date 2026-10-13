@@ -5,6 +5,10 @@ import type {
   MeetingStartInput,
   MeetingStartResult,
   MeetingState,
+  MeetingDraftEvent,
+  MeetingMarker,
+  MeetingMarkInput,
+  MeetingSetLanguageInput,
   AddSourceInput,
   AddSourceResult,
   AppInfo,
@@ -333,6 +337,21 @@ const api = {
     title: string;
   }): Promise<{ ok: true }> =>
     ipcRenderer.invoke(CHANNELS.meetingRename, input),
+  meetingSetLanguage: (input: MeetingSetLanguageInput): Promise<MeetingState> =>
+    ipcRenderer.invoke(CHANNELS.meetingSetLanguage, input),
+  meetingMark: (input: MeetingMarkInput): Promise<{ markerId: string }> =>
+    ipcRenderer.invoke(CHANNELS.meetingMark, input),
+  meetingListMarkers: (input: { sourceId: string }): Promise<MeetingMarker[]> =>
+    ipcRenderer.invoke(CHANNELS.meetingListMarkers, input),
+  meetingDownloadModel: (): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.meetingDownloadModel),
+  /** Dòng nháp (push từ main, chỉ tới cửa sổ đang ghi). Trả hàm huỷ đăng ký. */
+  onMeetingDraft: (cb: (e: MeetingDraftEvent) => void): (() => void) => {
+    const listener = (_e: unknown, payload: MeetingDraftEvent): void =>
+      cb(payload);
+    ipcRenderer.on(CHANNELS.meetingDraft, listener);
+    return () => ipcRenderer.removeListener(CHANNELS.meetingDraft, listener);
+  },
   /** Trạng thái phiên ghi (push từ main, chỉ tới cửa sổ đang ghi). Trả hàm huỷ đăng ký. */
   onMeetingState: (cb: (s: MeetingState) => void): (() => void) => {
     const listener = (_e: unknown, payload: MeetingState): void => cb(payload);

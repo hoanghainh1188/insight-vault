@@ -32,6 +32,7 @@ import type {
   CrashNotice,
   SourceRelinkResult,
   SourceReprocessResult,
+  MeetingMarker,
   MeetingPrepareResult,
   MeetingStartResult,
   MeetingState,
@@ -151,6 +152,12 @@ export const CHANNELS = {
   meetingStatus: "meeting:status",
   meetingRename: "meeting:rename",
   meetingState: "meeting:state", // event push main→renderer (KHÔNG vào ChannelResponse)
+  // PR B — nháp gần thời gian thực, ngôn ngữ, đánh dấu, tải model.
+  meetingDraft: "meeting:draft", // event push main→renderer (KHÔNG vào ChannelResponse)
+  meetingSetLanguage: "meeting:setLanguage",
+  meetingMark: "meeting:mark",
+  meetingListMarkers: "meeting:listMarkers",
+  meetingDownloadModel: "meeting:downloadModel",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -249,4 +256,8 @@ export interface ChannelResponse {
   [CHANNELS.meetingStop]: { sourceId: string };
   [CHANNELS.meetingStatus]: MeetingState | null;
   [CHANNELS.meetingRename]: { ok: true };
+  [CHANNELS.meetingSetLanguage]: MeetingState;
+  [CHANNELS.meetingMark]: { markerId: string };
+  [CHANNELS.meetingListMarkers]: MeetingMarker[];
+  [CHANNELS.meetingDownloadModel]: { ok: true };
 }

@@ -700,6 +700,35 @@ export interface MeetingState {
   transcriptLagging: boolean;
   /** PR B. */
   modelReady: boolean;
+  /** PR B — ngôn ngữ nhận dạng (R7, D6). */
+  language: MeetingLanguageState;
+}
+
+/** PR B — trạng thái ngôn ngữ hiển thị ở thanh dưới màn ghi. */
+export interface MeetingLanguageState {
+  mode: LanguageMode;
+  current: "vi" | "en" | null;
+  status: "detecting" | "locked" | "manual" | "multi";
+  suggestion?: "vi" | "en";
+}
+
+/** Push `meeting:draft` (main→renderer, chỉ cửa sổ ghi). `full` = danh sách đầy đủ (gắn lại sau reload) thay vì phần đổi. */
+export interface MeetingDraftEvent {
+  sessionId: string;
+  windows: MeetingDraftLine[];
+  full: boolean;
+}
+
+export type MeetingSetLanguageInput =
+  | { sessionId: string; action: "lock"; lang: "vi" | "en" }
+  | { sessionId: string; action: "acceptSuggestion" }
+  | { sessionId: string; action: "dismissSuggestion" };
+
+export interface MeetingMarkInput {
+  sessionId: string;
+  kind: MeetingMarkerKind;
+  tStart: number;
+  tEnd?: number;
 }
 
 /** Lô PCM renderer→main (kênh send meeting:audio). */
