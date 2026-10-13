@@ -40,7 +40,9 @@ describe("isMaintenanceBusy", () => {
   });
 
   it("nguồn khác đang xử lý / có hàng chờ / reindex ⇒ bận", () => {
-    expect(setup({ processing: ["m1", "pdf"], recording: "m1" }).busy()).toBe(true);
+    expect(setup({ processing: ["m1", "pdf"], recording: "m1" }).busy()).toBe(
+      true,
+    );
     expect(setup({ queued: 1 }).busy()).toBe(true);
     expect(setup({ reindexing: true }).busy()).toBe(true);
   });

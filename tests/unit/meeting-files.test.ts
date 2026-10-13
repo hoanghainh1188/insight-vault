@@ -198,7 +198,9 @@ describe("session.json (PR C1)", () => {
     sourceId: "src-1",
     phase: "recording" as const,
     endedByUser: false,
-    segments: [{ index: 0, file: segmentFileName(0), samples: 16000, closed: false }],
+    segments: [
+      { index: 0, file: segmentFileName(0), samples: 16000, closed: false },
+    ],
     pauseGaps: [],
     language: {
       mode: "vi" as const,
@@ -219,7 +221,9 @@ describe("session.json (PR C1)", () => {
     await f.ensureSessionDir(SID);
     await f.writeCheckpoint(SID, cp);
     expect(await f.readCheckpoint(SID)).toEqual(cp);
-    expect(existsSync(join(root, "meetings", SID, "session.json.tmp"))).toBe(false);
+    expect(existsSync(join(root, "meetings", SID, "session.json.tmp"))).toBe(
+      false,
+    );
   });
 
   it("thiếu / hỏng ⇒ null", async () => {
