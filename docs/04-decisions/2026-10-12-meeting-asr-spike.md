@@ -46,8 +46,10 @@ có thể chạy `npm ci && npm run spike:asr` và dán bảng từ `tests/spike
    chọn — tránh bản nháp tiếng Anh ảo giác. Bản chốt: đã áp dụng ở PR A (#192 — `resolveFinalLanguage()` +
    phát hiện một bước decoder trong `asr-worker`). Bản nháp: PR B. Nạp audio thường (045): #194 (PR #195).
 3. **Model chốt giữ `Xenova/whisper-base`** (A2) — RTF chốt 0,05–0,06 trên Mac.
-4. **Model nháp — CHỐT TẠM `whisper-base` q8 + tự hạ cấp** (người dùng duyệt 2026-10-13, lệch có chủ đích chữ "nhỏ nhất" của A2):
-   một model cho cả nháp và chốt (tải một lần), tiếng Việt tốt hơn `tiny`. Vì chưa có số đo máy yếu, app **tự đo RTF nháp lúc chạy**
+4. **Model nháp — CHỐT TẠM `whisper-base` + tự hạ cấp** (người dùng duyệt 2026-10-13, lệch có chủ đích chữ "nhỏ nhất" của A2):
+   một model cho cả nháp và chốt (tải một lần), tiếng Việt tốt hơn `tiny`. _Làm rõ khi code:_ model chốt (045) nạp dtype mặc định
+   của transformers.js trên Node = fp32; bộ trọng số q8 là tệp khác (thêm ~80 MB). Để giữ đúng "một model, tải một lần", nháp dùng
+   CHUNG pipeline chốt đã nạp (base fp32 — số đo Mac còn nhanh hơn q8: 0,033 vs 0,040); `q8` chỉ dùng cho model dự phòng `tiny`. Vì chưa có số đo máy yếu, app **tự đo RTF nháp lúc chạy**
    (trung bình trượt các cửa sổ có lời): RTF > 0,5 kéo dài ⇒ chuyển nháp sang `whisper-tiny` q8 (tải khi cần, có badge egress) và áp
    chính sách bỏ cửa sổ (R6); không tự nâng lại trong cùng phiên. Chính sách là hàm thuần (`draft-model-policy.ts`), có test.
 5. **Lượt 5 s pending (`DRAFT_PARTIAL_PASS`)**: bật mặc định, **tự tắt** khi RTF nháp đo được > 0,25 (cùng bộ đo mục 4).

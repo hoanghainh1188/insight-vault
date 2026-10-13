@@ -225,10 +225,10 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 > Theo spike S2, `multi` KHÔNG truyền `language: null` (mặc định tiếng Anh) mà phát hiện theo từng cửa sổ — `windowLanguage()` trả
 > `"perWindow"`.
 
-- [ ] T071 [US3] Spike S2: tạo `vitest.spike.config.ts`, `tests/spike/asr-rtf.spike.ts`, script `"spike:asr"` trong `package.json` (dev-only, không vào `test`/CI); đo
+- [X] T071 [US3] Spike S2: tạo `vitest.spike.config.ts`, `tests/spike/asr-rtf.spike.ts`, script `"spike:asr"` trong `package.json` (dev-only, không vào `test`/CI); đo
       RTF `Xenova/whisper-tiny` và `Xenova/whisper-base` (q8, fp32) cửa sổ 10 s và phân đoạn 5 phút trên Mac Apple Silicon + một máy Windows x64 chỉ CPU; thử phát hiện
       ngôn ngữ một bước decoder giới hạn {vi, en} (R2) trên 10 mẫu 30 s; nếu không khả thi thử phương án dự phòng.
-- [ ] T072 [US3] ADR `docs/04-decisions/2026-10-xx-meeting-asr-spike.md` + dòng INDEX: bảng số đo, model nháp chọn theo quy tắc RTF ≤ 0,5, có giữ lượt 5 s pending không,
+- [X] T072 [US3] ADR `docs/04-decisions/2026-10-xx-meeting-asr-spike.md` + dòng INDEX: bảng số đo, model nháp chọn theo quy tắc RTF ≤ 0,5, có giữ lượt 5 s pending không,
       phương pháp phát hiện ngôn ngữ; cập nhật `DRAFT_MODEL`/`DRAFT_PARTIAL_PASS` trong `meeting-constants.ts`. ⛔ Mọi task PR B sau đây chờ task này.
 
 ### Tests trước (FAIL rồi mới code)
@@ -248,12 +248,12 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
       "Quay về hiện tại".
 - [x] T079 [P] [US3] Test TRƯỚC `tests/unit/meeting-level.test.ts` cho `levelState({rmsDbfs, peakDbfs})`: < −50 ⇒ `weak`, peak > −1 ⇒ `clipping`, còn lại `ok`; trễ chuyển
       trạng thái để không nhấp nháy.
-- [ ] T080 [P] [US3] Test TRƯỚC `tests/unit/meeting-service-draft.test.ts`: lịch cửa sổ 10 s (+ lượt 5 s pending nếu bật), VAD bỏ im lặng, push `meeting:draft` chỉ tới
+- [X] T080 [P] [US3] Test TRƯỚC `tests/unit/meeting-service-draft.test.ts`: lịch cửa sổ 10 s (+ lượt 5 s pending nếu bật), VAD bỏ im lặng, push `meeting:draft` chỉ tới
       owner, append `draft.jsonl`, `transcriptLagging`, thiếu model ⇒ ghi tiếp + `modelReady=false`; hoàn tất lỗi/thiếu model chốt mà có nháp ⇒ `done` +
       `quality="draft"`; bản chốt dùng `languageForSegment`.
-- [ ] T081 [P] [US4] Test TRƯỚC trong `tests/unit/meeting-service-draft.test.ts` (mục marker/language): `mark` hợp lệ khi `recording`/`paused` (tạm dừng ⇒ điểm dừng),
+- [X] T081 [P] [US4] Test TRƯỚC trong `tests/unit/meeting-service-draft.test.ts` (mục marker/language): `mark` hợp lệ khi `recording`/`paused` (tạm dừng ⇒ điểm dừng),
       kiểm `tStart ≤ tEnd ≤ duration+1`, kind enum; `setLanguage` lock/accept/dismiss; `listMarkers`.
-- [ ] T082 [P] [US3] Mở rộng `tests/unit/meeting-asr-protocol.test.ts` (tin `draft`, `detectLanguage`, `language`) và `tests/unit/meeting-channels-whitelist.test.ts`
+- [X] T082 [P] [US3] Mở rộng `tests/unit/meeting-asr-protocol.test.ts` (tin `draft`, `detectLanguage`, `language`) và `tests/unit/meeting-channels-whitelist.test.ts`
       (kênh PR B).
 
 ### Implementation
@@ -262,30 +262,41 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 - [x] T084 [P] [US3] `src/main/services/meeting-capture/hallucination.ts`. T074 xanh.
 - [x] T085 [P] [US3] `src/main/services/meeting-capture/draft-queue.ts`. T075 xanh.
 - [x] T086 [P] [US4] `src/main/services/meeting-capture/language-policy.ts`. T076 xanh.
-- [ ] T087 [US3] `asr-protocol.ts` + `asr-worker.ts`: tin `draft` (PCM cửa sổ qua message, model nháp), `detectLanguage` (phương pháp ADR spike), hàng ưu tiên; VAD + khử ảo
+- [X] T087 [US3] `asr-protocol.ts` + `asr-worker.ts`: tin `draft` (PCM cửa sổ qua message, model nháp), `detectLanguage` (phương pháp ADR spike), hàng ưu tiên; VAD + khử ảo
       giác áp ở worker cho cả nháp và chốt. T082 xanh.
-- [ ] T088 [US3] `meeting-service.ts`: bộ đệm cửa sổ 10 s từ lô audio, lập lịch qua `planDraftQueue`, push `meeting:draft`, append `draft.jsonl`, cờ lagging trong
+- [X] T088 [US3] `meeting-service.ts`: bộ đệm cửa sổ 10 s từ lô audio, lập lịch qua `planDraftQueue`, push `meeting:draft`, append `draft.jsonl`, cờ lagging trong
       `MeetingState`, `modelReady`, `downloadModel`; finalize dự phòng nháp (`quality="draft"`), ngôn ngữ theo phân đoạn. T080 xanh.
-- [ ] T089 [US4] `meeting-service.ts` + `meeting-repo.ts`: `mark`, `listMarkers`, `setLanguage` (lock/accept/dismiss), chạy `languagePolicy`, ghi `language_changes_json`.
+- [X] T089 [US4] `meeting-service.ts` + `meeting-repo.ts`: `mark`, `listMarkers`, `setLanguage` (lock/accept/dismiss), chạy `languagePolicy`, ghi `language_changes_json`.
       T081 xanh.
-- [ ] T090 [US3] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:draft` (push), `meeting:setLanguage`, `meeting:mark`, `meeting:listMarkers`,
+- [X] T090 [US3] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:draft` (push), `meeting:setLanguage`, `meeting:mark`, `meeting:listMarkers`,
       `meeting:downloadModel`.
-- [ ] T091 [US3] `media-serve.ts`: `iv-media://source/<id>?seg=n` cho meeting chưa ghép — phân đoạn mở dựng header theo kích thước hiện tại (`buildWavHeader`) và phục vụ
+- [X] T091 [US3] `media-serve.ts`: `iv-media://source/<id>?seg=n` cho meeting chưa ghép — phân đoạn mở dựng header theo kích thước hiện tại (`buildWavHeader`) và phục vụ
       header + dữ liệu đã fsync; `seg` ngoài phạm vi ⇒ 404.
 - [x] T092 [P] [US3] `src/renderer/features/meeting-capture/draft-merge.ts`, `auto-scroll.ts`, `level.ts`. T077, T078, T079 xanh.
-- [ ] T093 [US3] `capture/pcm-worklet.ts` gửi RMS/peak mỗi 100 ms qua `port`; `LevelMeter.tsx` 3 trạng thái có nhãn chữ + `aria-label`.
-- [ ] T094 [US3] `DraftTranscript.tsx` trong `RecordingView`: dòng có timestamp lề trái (`formatDuration`), nhãn "Đang nhận dạng" cho `pending`, key = id (cập nhật tại
+- [X] T093 [US3] `capture/pcm-worklet.ts` gửi RMS/peak mỗi 100 ms qua `port`; `LevelMeter.tsx` 3 trạng thái có nhãn chữ + `aria-label`.
+- [X] T094 [US3] `DraftTranscript.tsx` trong `RecordingView`: dòng có timestamp lề trái (`formatDuration`), nhãn "Đang nhận dạng" cho `pending`, key = id (cập nhật tại
       chỗ), tự cuộn theo `shouldAutoScroll` + nút "Quay về hiện tại", bấm timestamp ⇒ `<audio>` phụ phát `?seg=n` tại `offsetSec` (`locateInSegments` phía renderer trên
       `MeetingState.segments`), dòng phân cách "Tạm dừng N phút"; trạng thái "Đang xử lý bản ghi — audio vẫn được lưu an toàn" khi lagging; "Chưa có model nhận
       dạng — …" khi thiếu model.
-- [ ] T095 [US3] `StartRecordingDialog.tsx`: nút "Tải model (~N MB)" khi `modelReady=false` (`meetingDownloadModel`), trạng thái tải.
-- [ ] T096 [US4] `LanguageControl.tsx` ở thanh dưới: "Đang nhận dạng ngôn ngữ…" ⇒ "<Ngôn ngữ> · Tự động", chọn khoá tay, banner gợi ý "Có vẻ cuộc họp đang dùng English.
+- [X] T095 [US3] `StartRecordingDialog.tsx`: nút "Tải model (~N MB)" khi `modelReady=false` (`meetingDownloadModel`), trạng thái tải.
+- [X] T096 [US4] `LanguageControl.tsx` ở thanh dưới: "Đang nhận dạng ngôn ngữ…" ⇒ "<Ngôn ngữ> · Tự động", chọn khoá tay, banner gợi ý "Có vẻ cuộc họp đang dùng English.
       Chuyển transcript sang English?" (Đồng ý / Không), ghi chú `multi`.
-- [ ] T097 [US4] `MarkerMenu.tsx`: nút Đánh dấu (3 nhãn) dễ tiếp cận; bôi chọn trong `DraftTranscript` ⇒ menu gắn nhãn với khoảng thời gian của các dòng được chọn;
+- [X] T097 [US4] `MarkerMenu.tsx`: nút Đánh dấu (3 nhãn) dễ tiếp cận; bôi chọn trong `DraftTranscript` ⇒ menu gắn nhãn với khoảng thời gian của các dòng được chọn;
       danh sách đánh dấu gọn trong màn ghi.
-- [ ] T098 [US3] i18n vi + en cho UI PR B; `announce` cho: phát hiện ngôn ngữ, gợi ý đổi ngôn ngữ, transcript chậm (một lần mỗi lần bật) — không đọc từng câu.
-- [ ] T099 [US3] `tests/e2e/meeting-draft.spec.ts` theo quickstart dòng PR B; assert **SC-008**: "Tiếng Việt · Tự động" xuất hiện trước 45 s kể từ lời nói đầu
+- [X] T098 [US3] i18n vi + en cho UI PR B; `announce` cho: phát hiện ngôn ngữ, gợi ý đổi ngôn ngữ, transcript chậm (một lần mỗi lần bật) — không đọc từng câu.
+- [X] T099 [US3] `tests/e2e/meeting-draft.spec.ts` theo quickstart dòng PR B; assert **SC-008**: "Tiếng Việt · Tự động" xuất hiện trước 45 s kể từ lời nói đầu
       (fake ASR trả `vi`).
+
+### Bổ sung 2026-10-13 (ADR meeting-asr-spike mục 4–8: số đo Windows + S1 giao người dùng thử)
+
+- [X] T099a [US3] `draft-model-policy.ts` (thuần) + test: RTF nháp trung bình 3 cửa sổ > 0,5 ⇒ nháp chuyển `whisper-tiny` q8 (một lần,
+      không nâng lại; offline ⇒ quay về model chính); > 0,25 ⇒ tắt lượt 5 s. Nháp dùng chung pipeline chốt (base, nạp một lần).
+- [X] T099b [US3] `draft-engine.ts` + `meeting-draft-wiring.ts`: bộ máy nháp tiêm phụ thuộc (cửa sổ, VAD, hàng việc, đo RTF, phát hiện
+      ngôn ngữ trên 30 s lời nói gần nhất qua tin `detectPcm`).
+- [X] T099c [US3] Chẩn đoán trong app: dòng `meeting.perf` (máy + RTF nháp, không nội dung) + `meeting.finalPerf`; mục "Meeting
+      recording performance" trong mẫu báo lỗi opt-in (093, allowlist khoá riêng).
+- [X] T099d [US4] `PopoverMenu` cho đổi ngôn ngữ/đánh dấu (không dùng `<select>` — phím mũi tên trên Windows đổi giá trị ngay).
+- [ ] T099e Đăng checklist S1 + hướng dẫn gửi số đo cho người dùng thử trên #186 và release notes (chờ người dùng đồng ý đăng).
 
 ### Cổng review PR B
 
