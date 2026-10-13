@@ -29,7 +29,7 @@ import {
 } from "./services/meeting-capture/quit-guard";
 import type { MicStatus } from "@shared/ipc/types";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { realpath } from "node:fs/promises";
 import {
   app,
@@ -500,6 +500,10 @@ app
           ? s
           : "unknown";
     let keepAwakeId: number | null = null;
+    // 186 PR C1 (T127): e2e soak — main tự bơm PCM tăng tốc N× (CHỈ bản chưa đóng gói).
+    const audioPumpSpeed = app.isPackaged
+      ? 0
+      : Math.max(0, Number(process.env["IV_E2E_AUDIO_PUMP"]) || 0);
     meetingService = createMeetingService({
       repo: meetingRepo,
       pipeline: ingestion.pipeline,
@@ -610,6 +614,7 @@ app
       sampleRate: SAMPLE_RATE,
       // e2e (R15, spike S1): tín hiệu thử thay micro / giả lập bị từ chối — CHỈ bản chưa đóng gói.
       testFakeMic: process.env["IV_E2E_FAKE_MIC"] === "1" && !app.isPackaged,
+      testAudioPump: audioPumpSpeed > 0,
     });
     const meeting = meetingService;
     quitGuard = createQuitGuard({
@@ -640,6 +645,21 @@ app
       log: logEvent,
     });
     const guard = quitGuard;
+    const pumpFixture = process.env["IV_E2E_AUDIO_FIXTURE"];
+    if (audioPumpSpeed > 0 && pumpFixture) {
+      const pcm = readFileSync(pumpFixture).subarray(44);
+      const CHUNK = SAMPLE_RATE * 2; // 1 s
+      let at = 0;
+      setInterval(() => {
+        if (meeting.status()?.phase !== "recording") return;
+        // 0,1 s thời gian thực ⇒ N × 0,1 s audio, theo lô 1 s, lặp lại fixture.
+        for (let i = 0; i < Math.max(1, audioPumpSpeed / 10); i++) {
+          if (at + CHUNK > pcm.length) at = 0;
+          meeting.pumpTestAudio(new Uint8Array(pcm.subarray(at, at + CHUNK)));
+          at += CHUNK;
+        }
+      }, 100).unref();
+    }
     app.on("before-quit", (e) => guard.intercept(e, () => app.quit()));
     app.on("will-quit", () => {
       meeting.dispose();

@@ -3,7 +3,6 @@ import type {
   MeetingDraftEvent,
   MeetingMarker,
   MeetingPrepareResult,
-  MeetingStartInput,
   MeetingStartResult,
   MeetingState,
   MicStatus,
@@ -19,12 +18,18 @@ import { canStart, diskLevel, minutesRemaining } from "./disk-guard";
 import {
   BYTES_PER_MIN,
   CHECKPOINT_SEC,
-  FINAL_MODEL_SIZE_MB,
   NO_AUDIO_TIMEOUT_MS,
   RESUME_GRACE_MS,
 } from "./meeting-constants";
 import type { DraftAsrClient, DraftEngine } from "./draft-engine";
 import { initialLanguageState } from "./language-policy";
+import {
+  PREF_DEVICE,
+  PREF_LANGUAGE,
+  cleanTitle,
+  parseStartInput,
+  prepareMeeting,
+} from "./meeting-prepare";
 import { checkpointOf } from "./checkpoint";
 import { createMeetingRecovery } from "./meeting-recovery";
 import { languageView, parseMark, parseSetLanguage } from "./meeting-input";
@@ -105,6 +110,8 @@ export interface MeetingServiceDeps {
   sampleRate: number;
   /** e2e (bản chưa đóng gói, IV_E2E_FAKE_MIC): renderer dùng tín hiệu thử thay micro ⇒ coi như đã có quyền. */
   testFakeMic?: boolean;
+  /** e2e soak (bản chưa đóng gói, IV_E2E_AUDIO_PUMP): cho phép pumpTestAudio. */
+  testAudioPump?: boolean;
 }
 
 export interface MachineInfo {
@@ -122,6 +129,8 @@ export interface MeetingService {
     senderId: number,
     msg: { sessionId: unknown; seq: unknown; pcm: unknown },
   ): void;
+  /** CHỈ e2e soak (bản chưa đóng gói, `testAudioPump`): main tự bơm PCM tăng tốc, bỏ qua giới hạn tần suất (T127). */
+  pumpTestAudio(bytes: Uint8Array): void;
   pause(senderId: number, input: unknown): Promise<MeetingState>;
   resume(senderId: number, input: unknown): Promise<MeetingState>;
   stop(senderId: number, input: unknown): Promise<{ sourceId: string }>;
@@ -148,12 +157,8 @@ export interface MeetingService {
   dispose(): void;
 }
 
-const LANGUAGE_MODES: readonly LanguageMode[] = ["auto", "vi", "en", "multi"];
-const TITLE_MAX = 200;
 /** Trần số đánh dấu mỗi phiên (chống renderer spam DB — review bảo mật). */
 const MAX_MARKERS = 5000;
-const PREF_DEVICE = "meeting.lastDeviceLabel";
-const PREF_LANGUAGE = "meeting.lastLanguageMode";
 
 interface Active extends LiveSession {
   notebookId: string;
@@ -177,13 +182,6 @@ interface Active extends LiveSession {
 const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null;
 const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
-
-function cleanTitle(v: unknown): string {
-  const t = typeof v === "string" ? v.trim() : "";
-  if (t === "" || t.length > TITLE_MAX)
-    throw new UserFacingError("meetingInvalidInput");
-  return t;
-}
 
 type EndReason = NonNullable<MeetingState["endReason"]>;
 
@@ -435,6 +433,38 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     }
   };
 
+  /** Ghi PCM đã kiểm vào phân đoạn + bộ máy nháp; xoay phân đoạn / checkpoint / kiểm đĩa theo nhịp. */
+  const ingest = (
+    a: Active,
+    writer: CaptureSegmentWriter,
+    bytes: Uint8Array,
+    now: number,
+  ): void => {
+    writer.append(bytes);
+    a.draft.push(
+      bytes.byteOffset % 2 === 0
+        ? new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 1)
+        : new Int16Array(bytes.slice().buffer),
+    );
+    const last = a.segments.length - 1;
+    const samples = (a.segments[last]?.samples ?? 0) + bytes.byteLength / 2;
+    a.segments = a.segments.map((s, i) => (i === last ? { ...s, samples } : s));
+    if (segmentShouldRotate(samples, segmentSamples)) {
+      void closeSegment(a);
+      openSegment(a);
+      persist(a);
+    } else if (now - a.lastPersist >= CHECKPOINT_SEC * 1000) {
+      persist(a);
+    }
+    if (now - a.lastDiskCheck >= CHECKPOINT_SEC * 1000) {
+      a.lastDiskCheck = now;
+      void checkDisk(a).catch((e: unknown) =>
+        log("meeting.diskCheckError", { name: errName(e) }),
+      );
+    }
+    pushState(a);
+  };
+
   const startWatchdog = (): void => {
     stopWatchdog();
     watchdog = deps.setInterval(() => {
@@ -448,63 +478,12 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
   };
 
   return {
-    async prepare(_senderId, input) {
-      if (!isObj(input) || !str(input["notebookId"]))
-        throw new UserFacingError("meetingInvalidInput");
-      const notebookOk = deps.notebookExists(
-        str(input["notebookId"]) as string,
-      );
-      let micStatus = deps.testFakeMic ? "granted" : deps.mediaAccess.status();
-      if (micStatus === "notDetermined")
-        micStatus = (await deps.mediaAccess.ask()) ? "granted" : "denied";
-      // M1: chỉ mở cổng quyền micro khi thật sự sắp bắt đầu một phiên mới.
-      if (active === null && !starting && notebookOk) deps.micGate.arm();
-      const minutes = minutesRemaining({
-        freeBytes: await deps.freeBytes(),
-        recordedBytes: 0,
-        bytesPerMin: BYTES_PER_MIN,
-      });
-      const lastDevice = deps.prefs.get(PREF_DEVICE);
-      const lastLanguage = deps.prefs.get(PREF_LANGUAGE);
-      return {
-        micStatus,
-        modelReady: await deps.isModelReady(),
-        modelSizeMb: FINAL_MODEL_SIZE_MB,
-        minutesRemaining: minutes,
-        canStart:
-          notebookOk &&
-          micStatus !== "denied" &&
-          micStatus !== "restricted" &&
-          canStart(minutes) &&
-          active === null,
-        onlineActive: deps.isOnlineActive(),
-        recordingActive: active !== null,
-        ...(typeof lastDevice === "string"
-          ? { lastDeviceLabel: lastDevice }
-          : {}),
-        ...(deps.testFakeMic ? { testFakeMic: true as const } : {}),
-        ...(LANGUAGE_MODES.includes(lastLanguage as LanguageMode)
-          ? { lastLanguageMode: lastLanguage as LanguageMode }
-          : {}),
-      };
-    },
+    prepare: (_senderId, input) =>
+      prepareMeeting(deps, active === null && !starting, input),
 
     async start(senderId, input) {
-      if (!isObj(input)) throw new UserFacingError("meetingInvalidInput");
-      const notebookId = str(input["notebookId"]);
-      const languageMode = input[
-        "languageMode"
-      ] as MeetingStartInput["languageMode"];
-      const deviceLabel = input["deviceLabel"];
-      const title = cleanTitle(input["title"]);
-      if (
-        !notebookId ||
-        !LANGUAGE_MODES.includes(languageMode) ||
-        (deviceLabel !== undefined &&
-          (typeof deviceLabel !== "string" || deviceLabel.length > TITLE_MAX))
-      ) {
-        throw new UserFacingError("meetingInvalidInput");
-      }
+      const { notebookId, languageMode, deviceLabel, title } =
+        parseStartInput(input);
       // B4: cờ đồng bộ đặt TRƯỚC await đầu tiên ⇒ hai lệnh start song song không cùng lọt qua.
       if (active || starting)
         throw new UserFacingError("meetingAlreadyRecording");
@@ -611,35 +590,16 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
         });
         persist(a);
       }
-      a.writer.append(v.bytes);
-      a.draft.push(
-        v.bytes.byteOffset % 2 === 0
-          ? new Int16Array(
-              v.bytes.buffer,
-              v.bytes.byteOffset,
-              v.bytes.byteLength >> 1,
-            )
-          : new Int16Array(v.bytes.slice().buffer),
-      );
-      const last = a.segments.length - 1;
-      const samples = (a.segments[last]?.samples ?? 0) + v.bytes.byteLength / 2;
-      a.segments = a.segments.map((s, i) =>
-        i === last ? { ...s, samples } : s,
-      );
-      if (segmentShouldRotate(samples, segmentSamples)) {
-        void closeSegment(a);
-        openSegment(a);
-        persist(a);
-      } else if (now - a.lastPersist >= CHECKPOINT_SEC * 1000) {
-        persist(a);
-      }
-      if (now - a.lastDiskCheck >= CHECKPOINT_SEC * 1000) {
-        a.lastDiskCheck = now;
-        void checkDisk(a).catch((e: unknown) =>
-          log("meeting.diskCheckError", { name: errName(e) }),
-        );
-      }
-      pushState(a);
+      ingest(a, a.writer, v.bytes, now);
+    },
+
+    pumpTestAudio(bytes) {
+      const a = active;
+      if (!deps.testAudioPump || !a?.writer || a.snap.phase !== "recording")
+        return;
+      const now = deps.now();
+      a.lastBatchAt = now;
+      ingest(a, a.writer, bytes, now);
     },
 
     async pause(senderId, input) {
