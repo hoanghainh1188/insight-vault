@@ -3,6 +3,8 @@
 // - Trung bình trượt RTF_WINDOW mẫu > DOWNGRADE_RTF ⇒ nháp chuyển sang model dự phòng (một lần mỗi phiên, không nâng lại).
 // - Trung bình > PARTIAL_OFF_RTF ⇒ tắt lượt 5 s (không bật lại trong phiên).
 // - Model dự phòng không tải/nạp được (offline) ⇒ quay về model chính, không thử hạ cấp nữa (hàng việc tự bỏ cửa sổ — R6).
+// - Model dự phòng CHƯA có trên máy ⇒ không hạ cấp (không bao giờ tự tải giữa cuộc họp — quyết định 2026-10-13); nó chỉ được
+//   tải khi người dùng bấm "Tải model".
 
 export const DOWNGRADE_RTF = 0.5;
 export const PARTIAL_OFF_RTF = 0.25;
@@ -34,7 +36,11 @@ export function initialDraftPerf(partialPass = true): DraftPerf {
   };
 }
 
-export function recordDraftRtf(s: DraftPerf, rtf: number): DraftPerf {
+export function recordDraftRtf(
+  s: DraftPerf,
+  rtf: number,
+  fallbackReady = true,
+): DraftPerf {
   if (!Number.isFinite(rtf) || rtf < 0) return s;
   const all = [...s.all, rtf].slice(-MAX_SAMPLES);
   const recent = [...s.recent, rtf].slice(-RTF_WINDOW);
@@ -42,6 +48,8 @@ export function recordDraftRtf(s: DraftPerf, rtf: number): DraftPerf {
   const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
   const partialPass = s.partialPass && avg <= PARTIAL_OFF_RTF;
   if (s.tier === "primary" && !s.fallbackUnavailable && avg > DOWNGRADE_RTF) {
+    if (!fallbackReady)
+      return { ...s, recent: [], all, partialPass, fallbackUnavailable: true };
     return {
       ...s,
       tier: "fallback",
@@ -73,4 +81,11 @@ export function summarizeRtf(values: readonly number[]): RtfSummary | null {
   const p95 = sorted[Math.ceil(0.95 * sorted.length) - 1] ?? 0;
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   return { count: values.length, mean: round3(mean), p95: round3(p95) };
+}
+
+/** Model dự phòng vừa được tải (người dùng bấm "Tải model") ⇒ cho phép hạ cấp lại nếu chưa từng hạ cấp. */
+export function fallbackNowReady(s: DraftPerf): DraftPerf {
+  return s.downgraded || !s.fallbackUnavailable
+    ? s
+    : { ...s, fallbackUnavailable: false };
 }

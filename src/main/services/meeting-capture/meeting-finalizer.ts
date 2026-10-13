@@ -85,9 +85,15 @@ async function languagePlan(
   d: FinalizerDeps,
   s: MeetingSession,
 ): Promise<LanguagePlan> {
+  const firstChange = Math.min(...s.languageChanges.map((c) => c.atSec));
+  // Review S3: Đa ngôn ngữ rồi khoá tay ⇒ phần TRƯỚC lần khoá vẫn phát hiện theo cửa sổ (không ép ngược về 0 s).
+  if (s.languageMode === "multi")
+    return (start, end) =>
+      (start + end) / 2 < firstChange
+        ? "perWindow"
+        : languageForSegment(s.languageChanges, start, end);
   if (s.languageChanges.length > 0)
     return (start, end) => languageForSegment(s.languageChanges, start, end);
-  if (s.languageMode === "multi") return () => "perWindow";
   const lang = await sessionLanguage(d, s);
   return () => lang;
 }
@@ -189,7 +195,9 @@ export async function finalizeSession(
     if (!rec.failed) logFinalPerf(d, s, d.now() - started);
     await d.enqueueIo(() => d.files.mergeSegments(s.sessionId, s.segments));
     if (d.isRemoved(sourceId)) return;
-    // PR B: bản chốt lỗi / thiếu model chốt mà có nháp ⇒ dùng nháp (quality "draft", "Chốt lại" ở PR C1).
+    // PR B: bản chốt lỗi / thiếu model chốt mà có nháp ⇒ nguồn "Transcript nháp" (quality "draft", "Chốt lại" ở PR C1).
+    // FR-027 (quyết định 2026-10-13): nháp KHÔNG được lập chỉ mục ⇒ không vào hỏi đáp/Studio/trích dẫn; văn bản nháp ở
+    // draft.jsonl để trình xem (PR C2) hiển thị, phân đoạn WAV giữ lại cho "Chốt lại".
     const drafts = rec.failed ? await d.files.readDrafts(s.sessionId) : [];
     const quality: "final" | "draft" | null = !rec.failed
       ? "final"
@@ -201,9 +209,7 @@ export async function finalizeSession(
         ? buildMeetingTranscript(
             stitchTranscriptSegments(rec.results, FINAL_OVERLAP_SEC),
           )
-        : quality === "draft"
-          ? buildMeetingTranscript(drafts)
-          : { text: "", spans: [], timeMap: [] };
+        : { text: "", spans: [], timeMap: [] };
     d.repo.replaceSpans(sourceId, transcript.spans);
     const ok = await d.pipeline.ingestParsed(sourceId, {
       pages: [{ page: null, text: transcript.text }],

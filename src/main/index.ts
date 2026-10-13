@@ -12,7 +12,6 @@ import {
   segmentSeconds,
 } from "./services/meeting-capture/meeting-constants";
 import {
-  AsrError,
   createMeetingService,
   type MeetingService,
 } from "./services/meeting-capture/meeting-service";
@@ -535,16 +534,20 @@ app
         const wc = webContents.fromId(id);
         if (wc && !wc.isDestroyed()) wc.send(CHANNELS.meetingDraft, ev);
       },
-      // Nạp model chốt trong worker (tải lần đầu ⇒ chỉ báo riêng tư "đang tải model" qua onModelDownload). Lệnh phát hiện ngôn
-      // ngữ trên 1 s im lặng là cách rẻ nhất để worker nạp model; kết quả bỏ qua, chỉ "thiếu model" mới là lỗi.
+      // Người dùng bấm "Tải model": worker nạp (tải lần đầu) model chốt + model nháp dự phòng — chỉ báo riêng tư "đang tải
+      // model" qua onModelDownload. Mọi lỗi (thiếu mạng, worker sập, quá giờ) ⇒ báo lỗi, KHÔNG coi là đã có model.
       downloadModel: async () => {
         try {
-          await asrClient.detectPcm({ pcm: new ArrayBuffer(SAMPLE_RATE * 2) });
-        } catch (e) {
-          if (e instanceof AsrError && e.code === "modelMissing")
-            throw new UserFacingError("meetingModelDownloadFailed");
+          await asrClient.load("primary");
+          await asrClient.load("fallback");
+        } catch {
+          throw new UserFacingError("meetingModelDownloadFailed");
         }
       },
+      // Quyết định 2026-10-13: chỉ hạ cấp nháp khi model dự phòng ĐÃ có trên máy — không tự tải giữa cuộc họp.
+      fallbackReady: () =>
+        (process.env["IV_ASR_FAKE"] === "1" && !app.isPackaged) ||
+        existsSync(join(modelsDir, DRAFT_FALLBACK_MODEL)),
       machineInfo: () => ({
         platform: process.platform,
         arch: arch(),

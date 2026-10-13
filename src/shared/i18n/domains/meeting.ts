@@ -79,7 +79,7 @@ export const meetingVi = {
   languageCtl: {
     label: "Ngôn ngữ nhận dạng",
     change: "Đổi ngôn ngữ",
-    detecting: "Đang nhận dạng ngôn ngữ…",
+    detecting: "Đang phát hiện ngôn ngữ…",
     auto: "{language} · Tự động",
     multi: "Đa ngôn ngữ — nhận dạng theo từng đoạn",
     lockTo: "Chuyển sang {language}",

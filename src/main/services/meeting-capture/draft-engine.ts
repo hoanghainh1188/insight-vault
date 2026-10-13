@@ -3,6 +3,7 @@ import type { DraftTier, WindowLanguage } from "./asr-protocol";
 import { planDraftQueue, type AsrJob } from "./draft-queue";
 import {
   fallbackFailed,
+  fallbackNowReady,
   initialDraftPerf,
   recordDraftRtf,
   type DraftPerf,
@@ -30,6 +31,8 @@ export interface DraftAsrClient {
     tier: DraftTier;
   }): Promise<DraftResult>;
   detectPcm(req: { pcm: ArrayBuffer }): Promise<DetectedLanguage>;
+  /** Huỷ mọi việc nháp đang chờ/chạy (phiên bị xoá) — không chặn hàng việc của bản chốt (review S2). */
+  cancelDrafts(): void;
 }
 
 /** Dòng nháp đã xong ghi vào draft.jsonl (dự phòng khi bản chốt lỗi — data-model §3). */
@@ -59,6 +62,8 @@ export interface DraftEngineDeps {
     atSec: number,
   ): void;
   onModelMissing(): void;
+  /** Model dự phòng đã có trên máy (chỉ khi đó mới hạ cấp — không tự tải giữa cuộc họp). */
+  fallbackReady(): boolean;
   persistLine(line: PersistedDraftLine): void;
   log(event: string, meta?: Record<string, string | number | boolean>): void;
 }
@@ -68,8 +73,14 @@ export interface DraftEngine {
   push(pcm: Int16Array): void;
   /** Tạm dừng / kết thúc: phần dở của cửa sổ hiện tại thành một cửa sổ ngắn. */
   flush(): void;
-  /** Sau khi tải model xong: nháp chạy lại. */
+  /** Sau khi tải model xong: nháp chạy lại; model dự phòng vừa có ⇒ cho phép hạ cấp. */
   resumeModel(): void;
+  /**
+   * Kết thúc phiên (review S1): phần dở thành cửa sổ cuối, không nhận PCM mới, bỏ phát hiện ngôn ngữ; các cửa sổ còn lại vẫn
+   * chạy để draft.jsonl đủ cho dự phòng. Resolve khi hàng việc rỗng.
+   */
+  finish(): Promise<void>;
+  /** Huỷ ngay (nguồn bị xoá): bỏ hàng việc, huỷ việc đang chạy ở worker. */
   stop(): void;
   lines(): MeetingDraftLine[];
   perf(): DraftPerf;
@@ -122,6 +133,8 @@ export function createDraftEngine(deps: DraftEngineDeps): DraftEngine {
   let stopped = false;
   let modelMissing = false;
   let detectQueued = false;
+  let ending = false;
+  let onIdle: (() => void) | null = null;
   let perf = initialDraftPerf(deps.partialPass);
   let lineMap = new Map<string, MeetingDraftLine>();
 
@@ -174,11 +187,12 @@ export function createDraftEngine(deps: DraftEngineDeps): DraftEngine {
       .map((s) => s.text.trim())
       .filter((t) => t !== "")
       .join(" ");
-    if (!job.partial) {
+    // Review B2: chỉ cửa sổ ĐỦ độ dài mới là mẫu RTF (cửa sổ ngắn do tạm dừng có chi phí cố định cao ⇒ hạ cấp oan).
+    if (!job.partial && job.tEnd - job.tStart >= deps.windowSec - 0.01) {
       const rtf = r.elapsedMs / 1000 / (job.tEnd - job.tStart);
       const window = [...perf.recent, rtf];
       const wasDowngraded = perf.downgraded;
-      perf = recordDraftRtf(perf, rtf);
+      perf = recordDraftRtf(perf, rtf, deps.fallbackReady());
       if (perf.downgraded && !wasDowngraded) {
         const avg = window.reduce((a, b) => a + b, 0) / window.length;
         deps.log("meeting.draftDowngraded", { rtf: round3(avg) });
@@ -248,7 +262,10 @@ export function createDraftEngine(deps: DraftEngineDeps): DraftEngine {
     setLagging(plan.lagging);
     const [next, ...rest] = plan.ordered as Job[];
     pending = rest;
-    if (!next) return;
+    if (!next) {
+      onIdle?.();
+      return;
+    }
     if (next.kind === "detect") detectQueued = false;
     running = true;
     void runJob(next)
@@ -292,7 +309,12 @@ export function createDraftEngine(deps: DraftEngineDeps): DraftEngine {
         tStart,
         tEnd,
       });
-    if (!stopped && !detectQueued && deps.shouldDetect(speechSecTotal, tEnd)) {
+    if (
+      !stopped &&
+      !ending &&
+      !detectQueued &&
+      deps.shouldDetect(speechSecTotal, tEnd)
+    ) {
       detectQueued = true;
       enqueue({
         kind: "detect",
@@ -329,7 +351,7 @@ export function createDraftEngine(deps: DraftEngineDeps): DraftEngine {
 
   return {
     push(pcm) {
-      if (stopped) return;
+      if (stopped || ending) return;
       let off = 0;
       while (off < pcm.length) {
         const take = Math.min(pcm.length - off, windowSamples - buffered);
@@ -343,12 +365,25 @@ export function createDraftEngine(deps: DraftEngineDeps): DraftEngine {
     flush: () => closeWindow(),
     resumeModel() {
       modelMissing = false;
+      if (deps.fallbackReady()) perf = fallbackNowReady(perf);
+    },
+    finish() {
+      if (stopped) return Promise.resolve();
+      closeWindow();
+      ending = true;
+      pending = pending.filter((j) => j.kind !== "detect");
+      if (!running && pending.length === 0) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        onIdle = resolve;
+      });
     },
     stop() {
       stopped = true;
       pending = [];
       chunks = [];
       buffered = 0;
+      deps.asr.cancelDrafts();
+      onIdle?.();
     },
     lines: () => [...lineMap.values()],
     perf: () => perf,

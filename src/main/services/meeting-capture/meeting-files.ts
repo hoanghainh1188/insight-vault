@@ -25,6 +25,9 @@ import { WAV_HEADER_BYTES, buildWavHeader, repairWavHeader } from "./wav";
 const SESSION_ID = /^[0-9a-f-]{8,64}$/i;
 const MERGED = "meeting.wav";
 const DRAFTS = "draft.jsonl";
+/** Trần đọc draft.jsonl (≈ vài chục giờ nháp) và độ dài một dòng văn bản — tệp hỏng/phình không làm treo hoàn tất. */
+const MAX_DRAFT_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_DRAFT_TEXT = 4000;
 
 const isNum = (v: unknown): v is number =>
   typeof v === "number" && Number.isFinite(v);
@@ -45,7 +48,7 @@ function parseDraftLine(raw: string): { id: string; seg: Segment } | null {
     isNum(tStart) &&
     isNum(tEnd) &&
     tEnd >= tStart
-    ? { id, seg: { text, tStart, tEnd } }
+    ? { id, seg: { text: text.slice(0, MAX_DRAFT_TEXT), tStart, tEnd } }
     : null;
 }
 
@@ -207,9 +210,11 @@ export function createMeetingFiles(
     },
 
     async readDrafts(sessionId) {
+      const path = join(sessionDir(sessionId), DRAFTS);
       let raw: string;
       try {
-        raw = await readFile(join(sessionDir(sessionId), DRAFTS), "utf8");
+        if ((await stat(path)).size > MAX_DRAFT_FILE_BYTES) return [];
+        raw = await readFile(path, "utf8");
       } catch {
         return [];
       }

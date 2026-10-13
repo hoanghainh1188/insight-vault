@@ -304,3 +304,19 @@ describe("nháp khi đang ghi (PR B)", () => {
     }
   });
 });
+
+describe("nạp model theo yêu cầu (PR B review)", () => {
+  it("load hợp lệ / tier lạ ⇒ null; loaded hợp lệ", () => {
+    expect(
+      parseMainMessage({ type: "load", reqId: "l1", tier: "fallback" }, ROOT),
+    ).toEqual({ type: "load", reqId: "l1", tier: "fallback" });
+    expect(
+      parseMainMessage({ type: "load", reqId: "l1", tier: "x" }, ROOT),
+    ).toBeNull();
+    expect(parseWorkerMessage({ type: "loaded", reqId: "l1" })).toEqual({
+      type: "loaded",
+      reqId: "l1",
+    });
+    expect(parseWorkerMessage({ type: "loaded" })).toBeNull();
+  });
+});

@@ -42,11 +42,14 @@ export type MainToWorker =
       language: WindowLanguage;
       tier: DraftTier;
     }
+  /** Nạp (tải lần đầu) model của tier — chỉ khi người dùng bấm "Tải model" (ADR meeting-asr-spike, quyết định 2026-10-13). */
+  | { type: "load"; reqId: string; tier: DraftTier }
   | { type: "cancel"; reqId: string };
 
 export type WorkerToMain =
   | { type: "ready" }
   | { type: "result"; reqId: string; segments: Segment[] }
+  | { type: "loaded"; reqId: string }
   | {
       type: "draftResult";
       reqId: string;
@@ -176,6 +179,12 @@ export function parseMainMessage(
         ? { type: "draft", reqId, pcm, language, tier }
         : null;
     }
+    case "load": {
+      const { reqId, tier } = raw;
+      return isStr(reqId) && (tier === "primary" || tier === "fallback")
+        ? { type: "load", reqId, tier }
+        : null;
+    }
     case "cancel":
       return isStr(raw["reqId"])
         ? { type: "cancel", reqId: raw["reqId"] }
@@ -213,6 +222,10 @@ export function parseWorkerMessage(raw: unknown): WorkerToMain | null {
         ? { type: "result", reqId: raw["reqId"], segments }
         : null;
     }
+    case "loaded":
+      return isStr(raw["reqId"])
+        ? { type: "loaded", reqId: raw["reqId"] }
+        : null;
     case "draftResult": {
       const segments = parseSegments(raw["segments"]);
       const { reqId, language, confidence, elapsedMs } = raw;

@@ -247,7 +247,9 @@ function harness(
         detectPcmCalls.push(req.pcm.byteLength),
         detectPcmImpl(req)
       ),
+      cancelDrafts: () => undefined,
     },
+    fallbackReady: () => true,
     pushDraft: (id, ev) => draftPushes.push({ id, ev }),
     downloadModel: async () => {
       downloads.push(clock.now);
@@ -914,6 +916,9 @@ describe("review PR A — xoá khi đang hoàn tất không để tệp mồ cô
     const { sessionId, sourceId } = await startSession(h);
     feed(h, sessionId, 3);
     await h.svc.stop(OWNER, { sessionId });
+    // PR B: hoàn tất chạy sau khi xả nháp ⇒ chờ tới lúc ASR chốt thật sự đang chạy rồi mới xoá.
+    for (let i = 0; i < 20 && h.asrCalls.length === 0; i++) await flush();
+    expect(h.asrCalls).toHaveLength(1);
     await h.svc.onSourceRemoved(sourceId);
     release();
     await h.idle();
@@ -1121,6 +1126,26 @@ describe("PR B — ngôn ngữ (R7)", () => {
     expect(short.asrCalls.map((c) => c.language)).toEqual(["vi", "en", "en"]);
   });
 
+  it("Đa ngôn ngữ rồi khoá tay ⇒ phần trước lần khoá vẫn perWindow, phần sau theo ngôn ngữ khoá (review S3)", async () => {
+    const short = harness({ segmentSeconds: 10 });
+    const { sessionId } = await startSession(short, "x", "multi");
+    const seq = feedSpeech(short, sessionId, 22);
+    await short.svc.setLanguage(OWNER, {
+      sessionId,
+      action: "lock",
+      lang: "en",
+    });
+    feedSpeech(short, sessionId, 18, seq);
+    await short.svc.stop(OWNER, { sessionId });
+    await short.idle();
+    expect(short.asrCalls.map((c) => c.language)).toEqual([
+      "perWindow",
+      "perWindow",
+      "en",
+      "en",
+    ]);
+  });
+
   it("Đa ngôn ngữ ⇒ bản chốt phát hiện theo từng cửa sổ (perWindow)", async () => {
     const { sessionId } = await startSession(h, "x", "multi");
     feedSpeech(h, sessionId, 5);
@@ -1179,7 +1204,7 @@ describe("PR B — đánh dấu", () => {
 });
 
 describe("PR B — hoàn tất dự phòng bằng nháp", () => {
-  it("ASR chốt lỗi nhưng có nháp ⇒ done + quality draft, lập chỉ mục văn bản nháp", async () => {
+  it("ASR chốt lỗi nhưng có nháp ⇒ done + quality draft, KHÔNG lập chỉ mục nháp (FR-027), giữ phân đoạn", async () => {
     h.setAsr(async () => {
       throw new AsrError("modelMissing");
     });
@@ -1192,7 +1217,9 @@ describe("PR B — hoàn tất dự phòng bằng nháp", () => {
       phase: "done",
       transcriptQuality: "draft",
     });
-    expect(h.ingested[0]?.text).toContain("nháp");
+    expect(h.ingested[0]?.text).toBe("");
+    expect(h.deletedSegments).toEqual([]);
+    expect(h.drafts.get(sessionId)?.length).toBeGreaterThan(0);
     expect(h.notified).toEqual([sourceId]);
   });
 });

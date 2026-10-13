@@ -194,8 +194,8 @@ async function handleDraft(
   if (cancelled.delete(msg.reqId)) return fail("cancelled");
   const cfg = config;
   if (!cfg) return fail("asrFailed");
-  const started = performance.now();
   const pcm16 = new Int16Array(msg.pcm);
+  let started = performance.now();
   if (cfg.fake) {
     port.postMessage({
       type: "draftResult",
@@ -213,6 +213,8 @@ async function handleDraft(
   } catch {
     return fail("modelMissing");
   }
+  // Review PR B (B2): không tính thời gian nạp/tải model vào RTF (mẫu đầu lớn ⇒ hạ cấp oan).
+  started = performance.now();
   try {
     const f32 = toFloat(pcm16);
     const picked =
@@ -264,6 +266,22 @@ async function handleDetectPcm(
     port.postMessage({ type: "language", reqId: msg.reqId, ...picked });
   } catch {
     fail("asrFailed");
+  }
+}
+
+async function handleLoad(
+  msg: Extract<MainToWorker, { type: "load" }>,
+): Promise<void> {
+  const cfg = config;
+  if (!cfg) {
+    port.postMessage({ type: "error", reqId: msg.reqId, code: "asrFailed" });
+    return;
+  }
+  try {
+    if (!cfg.fake) await loadPipeline(cfg, msg.tier);
+    port.postMessage({ type: "loaded", reqId: msg.reqId });
+  } catch {
+    port.postMessage({ type: "error", reqId: msg.reqId, code: "modelMissing" });
   }
 }
 
@@ -390,7 +408,9 @@ port.on("message", (e) => {
           ? () => handleDetectPcm(msg)
           : msg.type === "draft"
             ? () => handleDraft(msg)
-            : () => handleFinal(msg);
+            : msg.type === "load"
+              ? () => handleLoad(msg)
+              : () => handleFinal(msg);
     queue = queue.then(run).catch(() => undefined);
   }
 });

@@ -23,7 +23,7 @@ test("nháp gần thời gian thực: timestamp, ngôn ngữ tự động, mức
   await win.getByTestId("meeting-begin").click();
   await expect(win.getByTestId("recording-view")).toBeVisible();
   await expect(win.getByTestId("recording-language-status")).toHaveText(
-    "Đang nhận dạng ngôn ngữ…",
+    "Đang phát hiện ngôn ngữ…",
   );
 
   // Dòng nháp đầu tiên: có timestamp, nội dung từ ASR giả.

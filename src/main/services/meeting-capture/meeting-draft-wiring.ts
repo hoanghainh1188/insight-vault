@@ -47,7 +47,14 @@ export interface DraftWiring {
   applyLanguage(a: LiveSession, e: LanguageEvent): void;
   /** Dòng chẩn đoán hiệu năng cuối phiên (ADR mục 7): máy + RTF nháp. KHÔNG nội dung/tiêu đề/đường dẫn. */
   logPerf(a: LiveSession): void;
+  /** Review S1: xả nháp còn dở (có trần chờ) rồi dừng hẳn và ghi dòng chẩn đoán — hoàn tất chạy sau bước này. */
+  endDraft(a: LiveSession): Promise<void>;
+  /** Tải model — một lượt tại một thời điểm (bấm lặp không xếp nhiều việc vào worker — review bảo mật). */
+  downloadModel(): Promise<void>;
 }
+
+/** Trần chờ xả nháp khi kết thúc phiên (máy chậm: tối đa 3 cửa sổ tồn). */
+const DRAFT_DRAIN_MAX_MS = 30_000;
 
 export function createDraftWiring(ctx: DraftWiringContext): DraftWiring {
   const { deps, log } = ctx;
@@ -100,6 +107,7 @@ export function createDraftWiring(ctx: DraftWiringContext): DraftWiring {
         if (ctx.isActive(a))
           applyLanguage(a, { type: "detected", lang, confidence, atSec });
       },
+      fallbackReady: () => deps.fallbackReady(),
       onModelMissing: () => {
         if (!ctx.isActive(a)) return;
         a.modelReady = false;
@@ -128,5 +136,26 @@ export function createDraftWiring(ctx: DraftWiringContext): DraftWiring {
     });
   };
 
-  return { createDraft, applyLanguage, logPerf };
+  const endDraft = async (a: LiveSession): Promise<void> => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+      a.draft.finish(),
+      new Promise<void>((r) => {
+        timer = setTimeout(r, DRAFT_DRAIN_MAX_MS);
+      }),
+    ]);
+    clearTimeout(timer);
+    a.draft.stop();
+    logPerf(a);
+  };
+
+  let downloading: Promise<void> | null = null;
+  const downloadModel = (): Promise<void> => {
+    downloading ??= deps.downloadModel().finally(() => {
+      downloading = null;
+    });
+    return downloading;
+  };
+
+  return { createDraft, applyLanguage, logPerf, endDraft, downloadModel };
 }

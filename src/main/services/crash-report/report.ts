@@ -158,7 +158,7 @@ export function buildReport({
     perf.length > 0
       ? [
           "### Meeting recording performance",
-          "Speed of on-device speech recognition on this computer (rtf < 1 = faster than real time). No audio or text.",
+          "Speed of on-device speech recognition on this computer (rtf < 1 = faster than real time), with its CPU model, core count and RAM. No audio, text or titles.",
           "```",
           ...perf,
           "```",

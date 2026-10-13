@@ -52,6 +52,7 @@ function fakeAsr(): DraftAsrClient & { calls: Call[] } {
           reject,
         }),
       ),
+    cancelDrafts: vi.fn(),
   } as DraftAsrClient & { calls: Call[] };
 }
 
@@ -76,6 +77,7 @@ function setup(over: Partial<DraftEngineDeps> = {}) {
     onDetected: (lang, confidence, atSec) =>
       detected.push({ lang, confidence, atSec }),
     onModelMissing: vi.fn(),
+    fallbackReady: () => true,
     persistLine: (l) => persisted.push(l),
     log: vi.fn(),
     ...over,
@@ -262,5 +264,66 @@ describe("createDraftEngine", () => {
     expect(t.engine.lines()).toEqual([
       { id: "w0", tStart: 0, tEnd: 10, text: "một", pending: false },
     ]);
+  });
+});
+
+describe("review PR B", () => {
+  it("B2: cửa sổ ngắn (tạm dừng) không là mẫu RTF", async () => {
+    const t = setup();
+    for (let i = 0; i < 3; i++) {
+      t.engine.push(speech(2));
+      t.engine.flush();
+      t.asr.calls.at(-1)?.resolve(ok("x", 5000)); // RTF 2,5 nhưng cửa sổ 2 s
+      await tick();
+    }
+    expect(t.engine.perf().all).toEqual([]);
+    expect(t.engine.perf().tier).toBe("primary");
+  });
+
+  it("model dự phòng chưa có trên máy ⇒ không hạ cấp; tải xong (resumeModel) ⇒ hạ cấp được", async () => {
+    let ready = false;
+    const t = setup({ fallbackReady: () => ready });
+    t.engine.push(speech(30));
+    for (let i = 0; i < 3; i++) {
+      t.asr.calls[i]?.resolve(ok("x", 7000));
+      await tick();
+    }
+    expect(t.engine.perf()).toMatchObject({
+      tier: "primary",
+      downgraded: false,
+      fallbackUnavailable: true,
+    });
+    ready = true;
+    t.engine.resumeModel();
+    t.engine.push(speech(30));
+    for (let i = 3; i < 6; i++) {
+      t.asr.calls[i]?.resolve(ok("x", 7000));
+      await tick();
+    }
+    expect(t.engine.perf().tier).toBe("fallback");
+  });
+
+  it("S1: finish ⇒ phần dở thành cửa sổ cuối, các cửa sổ còn lại chạy xong và được ghi; không nhận PCM mới", async () => {
+    const t = setup();
+    t.engine.push(speech(14)); // w0 đang chạy, phần dở 4 s
+    const done = t.engine.finish();
+    t.engine.push(speech(10)); // bị bỏ
+    t.asr.calls[0]?.resolve(ok("một"));
+    await tick();
+    expect(t.asr.calls).toHaveLength(2);
+    t.asr.calls[1]?.resolve(ok("cuối"));
+    await done;
+    expect(t.persisted.map((l) => (l as { id: string }).id)).toEqual([
+      "w0",
+      "w1",
+    ]);
+    expect(t.asr.calls).toHaveLength(2);
+  });
+
+  it("S2: stop ⇒ huỷ việc nháp đang chạy ở worker", () => {
+    const t = setup();
+    t.engine.push(speech(10));
+    t.engine.stop();
+    expect(t.asr.cancelDrafts).toHaveBeenCalledTimes(1);
   });
 });

@@ -78,6 +78,8 @@ export interface MeetingServiceDeps {
   pushDraft(webContentsId: number, ev: MeetingDraftEvent): void;
   /** PR B: tải model nhận dạng (worker nạp model ⇒ chỉ báo riêng tư "đang tải model"). */
   downloadModel(): Promise<void>;
+  /** PR B: model nháp dự phòng đã có trên máy (chỉ khi đó mới tự hạ cấp — không tự tải giữa cuộc họp). */
+  fallbackReady(): boolean;
   /** PR B: thông tin máy cho dòng chẩn đoán hiệu năng (ADR meeting-asr-spike mục 7) — không định danh người dùng. */
   machineInfo(): MachineInfo;
   emitProgress(sourceId: string, notebookId: string, frac: number): void;
@@ -134,6 +136,8 @@ export interface MeetingService {
 
 const LANGUAGE_MODES: readonly LanguageMode[] = ["auto", "vi", "en", "multi"];
 const TITLE_MAX = 200;
+/** Trần số đánh dấu mỗi phiên (chống renderer spam DB — review bảo mật). */
+const MAX_MARKERS = 5000;
 const PREF_DEVICE = "meeting.lastDeviceLabel";
 const PREF_LANGUAGE = "meeting.lastLanguageMode";
 const UNFINISHED: MeetingSession["phase"][] = [
@@ -301,8 +305,6 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
 
   const deactivate = (): void => {
     stopWatchdog();
-    if (active) logPerf(active);
-    active?.draft.stop();
     active = null;
     deps.micGate.disarm();
   };
@@ -314,11 +316,12 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     enqueueIo,
     log,
   });
-  const { logPerf, applyLanguage } = live;
+  const { applyLanguage, endDraft } = live;
 
-  const queueFinalize = (sourceId: string): void => {
-    finalizeChain = finalizeChain.then(() =>
-      finalizeSession(
+  const queueFinalize = (sourceId: string, after?: Promise<void>): void => {
+    finalizeChain = finalizeChain.then(async () => {
+      await after?.catch(() => undefined);
+      await finalizeSession(
         {
           repo,
           files,
@@ -336,8 +339,8 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
         sourceId,
       ).catch((e: unknown) =>
         log("meeting.finalizeError", { name: errName(e) }),
-      ),
-    );
+      );
+    });
   };
 
   /**
@@ -351,6 +354,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
   ): Promise<void> => {
     for (const e of events.slice(0, 1)) transition(a, e);
     deactivate();
+    const drained = endDraft(a);
     try {
       await closeSegment(a);
     } finally {
@@ -358,7 +362,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       persist(a);
       repo.update(a.sourceId, { endedAt: deps.now() });
       pushState(a, endReason);
-      queueFinalize(a.sourceId);
+      queueFinalize(a.sourceId, drained);
     }
   };
 
@@ -683,6 +687,8 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       if (a.snap.phase !== "recording" && a.snap.phase !== "paused")
         throw new UserFacingError("meetingNotFound");
       const m = parseMark(input, durationSec(a));
+      if (repo.listMarkers(a.sourceId).length >= MAX_MARKERS)
+        throw new UserFacingError("meetingInvalidInput");
       const markerId = deps.uuid();
       repo.addMarker({ id: markerId, sourceId: a.sourceId, ...m });
       log("meeting.marked", { kind: m.kind });
@@ -698,7 +704,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
     },
 
     async downloadModel() {
-      await deps.downloadModel();
+      await live.downloadModel();
       const a = active;
       if (a) {
         a.modelReady = true;
@@ -734,6 +740,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       if (active?.sourceId === sourceId) {
         const a = active;
         deactivate();
+        a.draft.stop();
         await closeSegment(a);
       }
       if (s) await enqueueIo(() => files.deleteSession(s.sessionId));

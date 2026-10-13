@@ -129,7 +129,7 @@ describe("LanguageControl", () => {
   it("đang nhận dạng ⇒ nhãn; khoá ⇒ '<ngôn ngữ> · Tự động'", async () => {
     await mount(createElement(LanguageControl, { state: STATE }));
     expect(q("recording-language-status")!.textContent).toBe(
-      "Đang nhận dạng ngôn ngữ…",
+      "Đang phát hiện ngôn ngữ…",
     );
     await mount(
       createElement(LanguageControl, {

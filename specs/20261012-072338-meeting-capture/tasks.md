@@ -296,13 +296,16 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 - [X] T099c [US3] Chẩn đoán trong app: dòng `meeting.perf` (máy + RTF nháp, không nội dung) + `meeting.finalPerf`; mục "Meeting
       recording performance" trong mẫu báo lỗi opt-in (093, allowlist khoá riêng).
 - [X] T099d [US4] `PopoverMenu` cho đổi ngôn ngữ/đánh dấu (không dùng `<select>` — phím mũi tên trên Windows đổi giá trị ngay).
+- [X] T099f Sửa theo review (quyết định `docs/04-decisions/2026-10-13-meeting-draft-review.md`): nháp không lập chỉ mục (FR-027);
+      model dự phòng tải kèm "Tải model", trong lúc ghi chỉ hạ cấp nếu đã có; RTF chỉ cửa sổ đủ + không tính thời gian nạp; xả nháp
+      khi kết thúc / huỷ khi xoá; Đa ngôn ngữ rồi khoá tay; tải model single-flight; trần đánh dấu + draft.jsonl.
 - [ ] T099e Đăng checklist S1 + hướng dẫn gửi số đo cho người dùng thử trên #186 và release notes (chờ người dùng đồng ý đăng).
 
 ### Cổng review PR B
 
-- [ ] T100 [US3] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T101 [US3] Gọi **glossary-steward**; append term thiếu.
-- [ ] T102 [US3] Gọi **security-reviewer** (BẮT BUỘC): `meeting:draft` chỉ tới owner, `mark`/`setLanguage` kiểm đầu vào, `?seg=n` (không lộ path, chỉ meeting), tải model
+- [X] T100 [US3] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T101 [US3] Gọi **glossary-steward**; append term thiếu.
+- [X] T102 [US3] Gọi **security-reviewer** (BẮT BUỘC): `meeting:draft` chỉ tới owner, `mark`/`setLanguage` kiểm đầu vào, `?seg=n` (không lộ path, chỉ meeting), tải model
       (egress đúng chỉ báo), worker nhận PCM từ main (kích thước). Mọi Blocking phải sửa.
 - [ ] T103 [US3] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 1, 3 (rút gọn 20 phút) trên Windows CPU; mở PR B.

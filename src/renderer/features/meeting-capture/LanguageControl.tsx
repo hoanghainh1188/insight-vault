@@ -4,7 +4,7 @@ import { announce } from "../../shared/a11y/announcer";
 import { useT } from "../../shared/i18n/i18n-context";
 import { PopoverMenu } from "./PopoverMenu";
 
-// 186 PR B (US4, R7) — ngôn ngữ nhận dạng ở thanh dưới màn ghi: "Đang nhận dạng ngôn ngữ…" ⇒ "<Ngôn ngữ> · Tự động"; chọn
+// 186 PR B (US4, R7) — ngôn ngữ nhận dạng ở thanh dưới màn ghi: "Đang phát hiện ngôn ngữ…" ⇒ "<Ngôn ngữ> · Tự động"; chọn
 // khoá tay; gợi ý đổi ngôn ngữ (Đồng ý / Không). Mọi quyết định ở main (languagePolicy); renderer chỉ gửi hành động.
 
 export function LanguageControl({

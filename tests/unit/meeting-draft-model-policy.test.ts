@@ -6,6 +6,7 @@ import {
   initialDraftPerf,
   recordDraftRtf,
   summarizeRtf,
+  fallbackNowReady,
 } from "../../src/main/services/meeting-capture/draft-model-policy";
 
 // 186 PR B — tự hạ cấp model nháp (ADR meeting-asr-spike mục 4–5, chốt tạm 2026-10-13). THUẦN, không mutate.
@@ -96,5 +97,32 @@ describe("summarizeRtf", () => {
       mean: 0.105,
       p95: 0.19,
     });
+  });
+});
+
+describe("model dự phòng chưa có trên máy (quyết định 2026-10-13)", () => {
+  it("chậm nhưng chưa có model dự phòng ⇒ KHÔNG hạ cấp (không tự tải), đánh dấu không khả dụng", () => {
+    const s = [0.9, 0.9, 0.9].reduce(
+      (acc, r) => recordDraftRtf(acc, r, false),
+      initialDraftPerf(),
+    );
+    expect(s.tier).toBe("primary");
+    expect(s.downgraded).toBe(false);
+    expect(s.fallbackUnavailable).toBe(true);
+    expect(s.partialPass).toBe(false);
+  });
+
+  it("người dùng tải model dự phòng ⇒ hạ cấp được ở lần chậm kế tiếp", () => {
+    const blocked = [0.9, 0.9, 0.9].reduce(
+      (acc, r) => recordDraftRtf(acc, r, false),
+      initialDraftPerf(),
+    );
+    const ready = fallbackNowReady(blocked);
+    expect(ready.fallbackUnavailable).toBe(false);
+    const s = [0.9, 0.9, 0.9].reduce(
+      (acc, r) => recordDraftRtf(acc, r, true),
+      ready,
+    );
+    expect(s.tier).toBe("fallback");
   });
 });

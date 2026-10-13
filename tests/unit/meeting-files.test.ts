@@ -175,6 +175,16 @@ describe("draft.jsonl (PR B)", () => {
     ]);
   });
 
+  it("tệp quá lớn (hỏng/phình) ⇒ bỏ qua, không đọc", async () => {
+    const f = createMeetingFiles(join(root, "meetings"), { fsyncSec: 1 });
+    await f.ensureSessionDir(SID);
+    writeFileSync(
+      join(root, "meetings", SID, "draft.jsonl"),
+      Buffer.alloc(5 * 1024 * 1024 + 1, 0x20),
+    );
+    expect(await f.readDrafts(SID)).toEqual([]);
+  });
+
   it("chưa có tệp ⇒ mảng rỗng", async () => {
     const f = createMeetingFiles(join(root, "meetings"), { fsyncSec: 1 });
     expect(await f.readDrafts(SID)).toEqual([]);

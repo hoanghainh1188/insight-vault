@@ -241,3 +241,40 @@ describe("asr-client — nháp (PR B)", () => {
     await expect(p).resolves.toEqual({ language: "en", confidence: 0.75 });
   });
 });
+
+describe("asr-client — nạp model + huỷ nháp (review PR B)", () => {
+  it("load(tier) chờ loaded; lỗi modelMissing ⇒ AsrError", async () => {
+    const { client, children } = setup();
+    const p = client.load("fallback");
+    const c = children[0] as FakeChild;
+    const sent = c.sent.at(-1) as Record<string, unknown>;
+    expect(sent).toMatchObject({ type: "load", tier: "fallback" });
+    c.emit({ type: "loaded", reqId: sent["reqId"] });
+    await expect(p).resolves.toBeUndefined();
+    const q = client.load("primary");
+    const sent2 = c.sent.at(-1) as Record<string, unknown>;
+    c.emit({ type: "error", reqId: sent2["reqId"], code: "modelMissing" });
+    await expect(q).rejects.toMatchObject({ code: "modelMissing" });
+  });
+
+  it("cancelDrafts huỷ draft/detectPcm đang chờ (gửi cancel), không đụng final", async () => {
+    const { client, children } = setup();
+    const d = client.draft({
+      pcm: new ArrayBuffer(4),
+      language: "vi",
+      tier: "primary",
+    });
+    const f = client.final(REQ);
+    client.cancelDrafts();
+    await expect(d).rejects.toMatchObject({ code: "cancelled" });
+    const c = children[0] as FakeChild;
+    expect(c.sent.some((m) => (m as { type?: string }).type === "cancel")).toBe(
+      true,
+    );
+    const finalReq = c.sent.find(
+      (m) => (m as { type?: string }).type === "final",
+    ) as Record<string, unknown>;
+    c.emit({ type: "result", reqId: finalReq["reqId"], segments: [] });
+    await expect(f).resolves.toEqual([]);
+  });
+});
