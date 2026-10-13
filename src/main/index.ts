@@ -23,6 +23,10 @@ import {
   type UtilityProcessLike,
 } from "./services/meeting-capture/asr-client";
 import { playbackTarget } from "./services/meeting-capture/segments";
+import {
+  createQuitGuard,
+  type QuitGuard,
+} from "./services/meeting-capture/quit-guard";
 import type { MicStatus } from "@shared/ipc/types";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
@@ -35,6 +39,7 @@ import {
   Menu,
   nativeImage,
   Notification,
+  powerSaveBlocker,
   protocol,
   session,
   shell,
@@ -97,7 +102,7 @@ import { applyPendingRestore } from "./services/vault-backup/restore-swap";
 import { createBackupService } from "./services/vault-backup/backup-service";
 import {
   createVaultLock,
-  isVaultBusy,
+  isMaintenanceBusy,
 } from "./services/vault-backup/vault-lock";
 import {
   createVectorMaintenance,
@@ -141,6 +146,8 @@ protocol.registerSchemesAsPrivileged([
 const micGate = createMicGate(Date.now, ARM_WINDOW_MS);
 // 186: tạo trong whenReady (cần DB/pipeline); createWindow dùng cho render-process-gone.
 let meetingService: MeetingService | null = null;
+// 186 PR C1: hỏi xác nhận khi thoát/đóng cửa sổ lúc đang ghi (tạo sau khi có meetingService).
+let quitGuard: QuitGuard | null = null;
 let mainWebContentsId: number | null = null;
 
 function installSecurity(): void {
@@ -219,6 +226,8 @@ function createWindow(): void {
     meetingService?.onRendererGone(wcId),
   );
   win.once("ready-to-show", () => win.show());
+  // 186 PR C1 (FR-038): đóng cửa sổ chính khi đang ghi ⇒ hỏi; đồng ý ⇒ kết thúc phiên rồi mới đóng.
+  win.on("close", (e) => quitGuard?.intercept(e, () => win.close()));
 
   // Local-first: chặn mọi điều hướng ra ngoài + cửa sổ popup ngoài (Constitution I).
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -490,6 +499,7 @@ app
         : s === "granted" || s === "denied" || s === "restricted"
           ? s
           : "unknown";
+    let keepAwakeId: number | null = null;
     meetingService = createMeetingService({
       repo: meetingRepo,
       pipeline: ingestion.pipeline,
@@ -548,6 +558,23 @@ app
       fallbackReady: () =>
         (process.env["IV_ASR_FAKE"] === "1" && !app.isPackaged) ||
         existsSync(join(modelsDir, DRAFT_FALLBACK_MODEL)),
+      removeSource: async (sourceId) => {
+        await ingestion.pipeline.remove(sourceId);
+      },
+      pushRecoverable: (count) => {
+        for (const w of BrowserWindow.getAllWindows()) {
+          if (!w.isDestroyed())
+            w.webContents.send(CHANNELS.meetingRecoverable, { count });
+        }
+      },
+      keepAwake: (on) => {
+        if (on && keepAwakeId === null)
+          keepAwakeId = powerSaveBlocker.start("prevent-app-suspension");
+        else if (!on && keepAwakeId !== null) {
+          powerSaveBlocker.stop(keepAwakeId);
+          keepAwakeId = null;
+        }
+      },
       machineInfo: () => ({
         platform: process.platform,
         arch: arch(),
@@ -585,6 +612,35 @@ app
       testFakeMic: process.env["IV_E2E_FAKE_MIC"] === "1" && !app.isPackaged,
     });
     const meeting = meetingService;
+    quitGuard = createQuitGuard({
+      isRecording: () => meeting.isActive(),
+      ask: async () => {
+        // e2e (chỉ bản chưa đóng gói): trả lời hộp thoát không cần bấm.
+        const seam = process.env["IV_E2E_QUIT_ANSWER"];
+        if (!app.isPackaged && (seam === "confirm" || seam === "cancel"))
+          return seam === "confirm";
+        const t = uiLanguage.translator();
+        const opts = {
+          type: "warning" as const,
+          buttons: [t.t("meeting.quit.cancel"), t.t("meeting.quit.confirm")],
+          defaultId: 0,
+          cancelId: 0,
+          message: t.t("meeting.quit.title"),
+          detail: t.t("meeting.quit.body"),
+        };
+        const parent = BrowserWindow.getAllWindows().find(
+          (w) => !w.isDestroyed(),
+        );
+        const r = parent
+          ? await dialog.showMessageBox(parent, opts)
+          : await dialog.showMessageBox(opts);
+        return r.response === 1;
+      },
+      stopForQuit: () => meeting.stopForQuit(),
+      log: logEvent,
+    });
+    const guard = quitGuard;
+    app.on("before-quit", (e) => guard.intercept(e, () => app.quit()));
     app.on("will-quit", () => {
       meeting.dispose();
       asrClient.dispose();
@@ -758,7 +814,16 @@ app
     const fsOps = createFsOps();
     vectorMaintenance = createVectorMaintenance({
       store: ingestion.vectorStore,
-      isBusy: () => isVaultBusy(vaultLock),
+      // 186 PR C1 (T116, D8): phiên đang ghi không chặn bảo trì vector (ghi audio không đụng LanceDB).
+      isBusy: () =>
+        isMaintenanceBusy(vaultLock, {
+          isReindexing: () => reindex.inProgress,
+          processingSourceIds: () =>
+            ingestion.sourceRepo.listByStatus("processing").map((s) => s.id),
+          queuedCount: () => ingestion.sourceRepo.listByStatus("queued").length,
+          isReprocessing: () => ingestion.pipeline.isReprocessing(),
+          recordingSourceId: () => meetingService?.status()?.sourceId ?? null,
+        }),
       freeBytes: async () => {
         const st = await fsOps.statfs(dataDir.path);
         return st.bavail * st.bsize;
@@ -917,7 +982,8 @@ app
     // - queued/processing (kẹt do đóng/crash giữa chừng) → error retry được (B3).
     // - awaiting_embedding → tự nhúng tiếp khi runtime AI sẵn sàng (US4, FR-009).
     ingestion.pipeline.resumeInterrupted();
-    // 186: phiên ghi dang dở (sập/thoát giữa chừng) — sửa header phân đoạn rồi tự hoàn tất (PR A).
+    // 186: phiên ghi dang dở (sập/thoát giữa chừng) — sửa header phân đoạn; người dùng đã kết thúc ⇒ tự hoàn tất, bị
+    // gián đoạn ⇒ thẻ phục hồi (PR C1).
     void meeting.recoverOnStartup();
     void ingestion.pipeline.resumeAwaiting();
     // 116: một lần bắt kịp sau khởi động (vault cũ chưa từng bảo trì) — trễ, không chặn cửa sổ.

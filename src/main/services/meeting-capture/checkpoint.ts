@@ -212,3 +212,27 @@ export function parseCheckpoint(raw: string): MeetingCheckpoint | null {
     savedAt: v["savedAt"],
   };
 }
+
+/** Dựng checkpoint từ trạng thái phiên đang ghi (đánh dấu nằm trong DB ngay khi tạo ⇒ không chép vào đây). */
+export function checkpointOf(
+  a: Pick<
+    MeetingCheckpoint,
+    "sessionId" | "sourceId" | "segments" | "pauseGaps"
+  > & { lang: LanguageState },
+  snap: Pick<MeetingCheckpoint, "phase" | "endedByUser">,
+  savedAt: number,
+): MeetingCheckpoint {
+  return {
+    version: CHECKPOINT_VERSION,
+    sessionId: a.sessionId,
+    sourceId: a.sourceId,
+    phase: snap.phase,
+    endedByUser: snap.endedByUser,
+    segments: a.segments,
+    pauseGaps: a.pauseGaps,
+    language: a.lang,
+    markers: [],
+    draftOffset: 0,
+    savedAt,
+  };
+}

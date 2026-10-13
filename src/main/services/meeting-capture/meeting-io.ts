@@ -3,6 +3,7 @@ import type { AsrErrorCode, AsrLanguage } from "./asr-protocol";
 import type { CaptureSegment } from "./segments";
 import type { DetectedLanguage } from "./language-detect";
 import type { PersistedDraftLine } from "./draft-engine";
+import type { MeetingCheckpoint } from "./checkpoint";
 
 // 186 — hợp đồng I/O của Ghi cuộc họp (writer phân đoạn, tệp phiên, client ASR) + lỗi ASR. Tách riêng để service và
 // finalizer cùng dùng mà không import vòng.
@@ -57,6 +58,10 @@ export interface MeetingFiles {
   appendDraft(sessionId: string, line: PersistedDraftLine): Promise<void>;
   /** Dòng nháp hợp lệ, id trùng lấy bản sau, xếp theo tStart; thiếu tệp ⇒ []. */
   readDrafts(sessionId: string): Promise<Segment[]>;
+  /** PR C1: checkpoint session.json (tmp→rename + fsync). */
+  writeCheckpoint(sessionId: string, cp: MeetingCheckpoint): Promise<void>;
+  /** Checkpoint hợp lệ hoặc null (thiếu / hỏng — dữ liệu đĩa không tin cậy). */
+  readCheckpoint(sessionId: string): Promise<MeetingCheckpoint | null>;
 }
 
 export interface AsrFinalClient {

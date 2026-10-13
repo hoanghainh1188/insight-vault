@@ -733,6 +733,18 @@ export interface MeetingMarkInput {
   tEnd?: number;
 }
 
+/** PR C1 — phiên bị gián đoạn chờ người dùng chọn cách phục hồi (thẻ phục hồi). */
+export interface RecoverableSession {
+  sessionId: string;
+  sourceId: string;
+  notebookId: string;
+  title: string;
+  durationSec: number;
+  startedAt: number;
+}
+
+export type MeetingRecoverAction = "finalize" | "keepIncomplete" | "discard";
+
 /** Lô PCM renderer→main (kênh send meeting:audio). */
 export interface MeetingAudioBatch {
   sessionId: string;

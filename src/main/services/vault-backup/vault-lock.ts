@@ -72,3 +72,25 @@ export function isVaultBusy(
 ): boolean {
   return lock.getState().busy || lock.isLocked();
 }
+
+/**
+ * 186 PR C1 (T116, D8): bảo trì kho vector KHÔNG bị chặn bởi nguồn cuộc họp đang ghi/tạm dừng (ghi audio không đụng LanceDB);
+ * vẫn bị chặn bởi thao tác sao lưu/khôi phục, khoá, reindex và mọi nguồn khác đang xử lý (kể cả cuộc họp đang hoàn tất).
+ * Sao lưu/khôi phục vẫn dùng `getState()` (cuộc họp đang ghi = processing ⇒ bận).
+ */
+export function isMaintenanceBusy(
+  lock: Pick<VaultLock, "getState" | "isLocked">,
+  deps: {
+    isReindexing: () => boolean;
+    processingSourceIds: () => readonly string[];
+    queuedCount: () => number;
+    isReprocessing: () => boolean;
+    recordingSourceId: () => string | null;
+  },
+): boolean {
+  if (lock.isLocked() || lock.getState().reason === "operation") return true;
+  if (deps.isReindexing() || deps.queuedCount() > 0 || deps.isReprocessing())
+    return true;
+  const rec = deps.recordingSourceId();
+  return deps.processingSourceIds().some((id) => id !== rec);
+}

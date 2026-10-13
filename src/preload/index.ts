@@ -9,6 +9,8 @@ import type {
   MeetingMarker,
   MeetingMarkInput,
   MeetingSetLanguageInput,
+  MeetingRecoverAction,
+  RecoverableSession,
   AddSourceInput,
   AddSourceResult,
   AppInfo,
@@ -345,6 +347,25 @@ const api = {
     ipcRenderer.invoke(CHANNELS.meetingListMarkers, input),
   meetingDownloadModel: (): Promise<{ ok: true }> =>
     ipcRenderer.invoke(CHANNELS.meetingDownloadModel),
+  meetingListRecoverable: (input: {
+    notebookId?: string;
+  }): Promise<RecoverableSession[]> =>
+    ipcRenderer.invoke(CHANNELS.meetingListRecoverable, input),
+  meetingRecover: (input: {
+    sessionId: string;
+    action: MeetingRecoverAction;
+  }): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.meetingRecover, input),
+  meetingFinalizeAgain: (input: { sourceId: string }): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.meetingFinalizeAgain, input),
+  /** Số phiên cần phục hồi (push từ main tới mọi cửa sổ). Trả hàm huỷ đăng ký. */
+  onMeetingRecoverable: (cb: (e: { count: number }) => void): (() => void) => {
+    const listener = (_e: unknown, payload: { count: number }): void =>
+      cb(payload);
+    ipcRenderer.on(CHANNELS.meetingRecoverable, listener);
+    return () =>
+      ipcRenderer.removeListener(CHANNELS.meetingRecoverable, listener);
+  },
   /** Dòng nháp (push từ main, chỉ tới cửa sổ đang ghi). Trả hàm huỷ đăng ký. */
   onMeetingDraft: (cb: (e: MeetingDraftEvent) => void): (() => void) => {
     const listener = (_e: unknown, payload: MeetingDraftEvent): void =>

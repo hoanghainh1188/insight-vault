@@ -60,6 +60,10 @@ interface Harness {
   logs: { event: string; meta?: Record<string, string | number | boolean> }[];
   downloads: number[];
   setDraft: (fn: DraftAsrClient["draft"]) => void;
+  checkpoints: Map<string, unknown>;
+  recoverablePushes: number[];
+  awake: boolean[];
+  removedSources: string[];
   setDetectPcm: (fn: DraftAsrClient["detectPcm"]) => void;
   clock: { now: number };
   tick: () => void;
@@ -118,6 +122,12 @@ function harness(
   const draftPushes: Harness["draftPushes"] = [];
   const logs: Harness["logs"] = [];
   const downloads: number[] = [];
+  const checkpoints = new Map<string, unknown>();
+  const recoverablePushes: number[] = [];
+  const awake: boolean[] = [];
+  const removedSources: string[] = [];
+  // eslint-disable-next-line prefer-const
+  let svcRef: { current: MeetingService | null } = { current: null };
   let draftImpl: DraftAsrClient["draft"] = async () => ({
     segments: [{ text: "nháp", tStart: 0, tEnd: 1 }],
     language: "vi",
@@ -170,6 +180,10 @@ function harness(
     appendDraft: async (sid, line) => {
       drafts.set(sid, [...(drafts.get(sid) ?? []), line]);
     },
+    writeCheckpoint: async (sid, cp) => {
+      checkpoints.set(sid, cp);
+    },
+    readCheckpoint: async (sid) => (checkpoints.get(sid) as never) ?? null,
     readDrafts: async (sid) =>
       (drafts.get(sid) ?? []).map((l) => ({
         text: l.text,
@@ -250,6 +264,14 @@ function harness(
       cancelDrafts: () => undefined,
     },
     fallbackReady: () => true,
+    removeSource: async (id) => {
+      removedSources.push(id);
+      await svcRef.current?.onSourceRemoved(id);
+      sources.delete(id);
+      db.prepare("DELETE FROM source WHERE id = ?").run(id);
+    },
+    pushRecoverable: (n) => recoverablePushes.push(n),
+    keepAwake: (on) => awake.push(on),
     pushDraft: (id, ev) => draftPushes.push({ id, ev }),
     downloadModel: async () => {
       downloads.push(clock.now);
@@ -288,6 +310,7 @@ function harness(
     ...(opts.testFakeMic ? { testFakeMic: true } : {}),
   };
   const svc = createMeetingService(deps);
+  svcRef.current = svc;
   return {
     svc,
     repo,
@@ -310,6 +333,10 @@ function harness(
     logs,
     downloads,
     setDraft: (fn) => (draftImpl = fn),
+    checkpoints,
+    recoverablePushes,
+    awake,
+    removedSources,
     setDetectPcm: (fn) => (detectPcmImpl = fn),
     clock,
     tick: () => intervalFn?.(),
@@ -692,17 +719,19 @@ describe("kết thúc + hoàn tất (ASR chốt từng phân đoạn)", () => {
 });
 
 describe("giám sát & sự cố (PR A: tự kết thúc + hoàn tất)", () => {
-  it("không nhận lô > 5 s khi đang ghi ⇒ đóng phiên, hoàn tất, endedByUser=false", async () => {
+  it("PR C1: không nhận lô > 5 s khi đang ghi ⇒ đóng phiên ⇒ interrupted (thẻ phục hồi), KHÔNG tự hoàn tất", async () => {
     const { sessionId, sourceId } = await startSession(h);
     feed(h, sessionId, 2);
     h.clock.now += 6000;
     h.tick();
     await h.idle();
     expect(h.repo.get(sourceId)).toMatchObject({
-      phase: "done",
+      phase: "interrupted",
       endedByUser: false,
     });
+    expect(h.asrCalls).toEqual([]);
     expect(h.svc.status()).toBeNull();
+    expect(h.recoverablePushes.at(-1)).toBe(1);
   });
 
   it("đang tạm dừng thì không bị coi là mất audio", async () => {
@@ -721,10 +750,10 @@ describe("giám sát & sự cố (PR A: tự kết thúc + hoàn tất)", () => 
     expect(h.svc.status()).not.toBeNull();
     h.svc.onRendererGone(OWNER);
     await h.idle();
-    expect(h.repo.get(sourceId)?.phase).toBe("done");
+    expect(h.repo.get(sourceId)?.phase).toBe("interrupted");
   });
 
-  it("recoverOnStartup: sửa header phân đoạn mở rồi tự hoàn tất mọi phiên dang dở", async () => {
+  it("PR C1 recoverOnStartup: phiên sập khi đang ghi ⇒ sửa header, interrupted + thẻ phục hồi (không tự hoàn tất)", async () => {
     const { sessionId, sourceId } = await startSession(h);
     feed(h, sessionId, 2);
     await h.svc.whenIdle();
@@ -733,9 +762,28 @@ describe("giám sát & sự cố (PR A: tự kết thúc + hoàn tất)", () => 
     await svc2.recoverOnStartup();
     await svc2.whenIdle();
     const s = h.repo.get(sourceId)!;
-    expect(s.phase).toBe("done");
+    expect(s.phase).toBe("interrupted");
     expect(s.endedByUser).toBe(false);
     expect(s.segments.every((x) => x.closed)).toBe(true);
+    expect(h.asrCalls).toEqual([]);
+    expect(h.recoverablePushes.at(-1)).toBe(1);
+  });
+
+  it("PR C1 recoverOnStartup: người dùng đã kết thúc (thoát có xác nhận) ⇒ tự hoàn tất", async () => {
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 2);
+    h.setIngestOk(false); // hoàn tất dừng giữa chừng (app thoát) ⇒ phase giữ finalizing
+    await h.svc.stopForQuit();
+    await h.idle();
+    expect(h.repo.get(sourceId)?.phase).toBe("finalizing");
+    h.setIngestOk(true);
+    const svc2 = h.recreate();
+    await svc2.recoverOnStartup();
+    await svc2.whenIdle();
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      endedByUser: true,
+    });
   });
 });
 
@@ -808,14 +856,14 @@ describe("review PR A — main tự kết thúc phải báo renderer (B1)", () =
     });
   });
 
-  it("không nhận lô > 5 s ⇒ push phase finalizing + endReason noAudio", async () => {
+  it("không nhận lô > 5 s ⇒ push phase interrupted + endReason noAudio", async () => {
     const { sessionId } = await startSession(h);
     feed(h, sessionId, 2);
     h.clock.now += 20_000; // quá cả ân hạn khởi đầu
     h.tick();
     await h.idle();
     expect(h.pushes.at(-1)).toMatchObject({
-      phase: "finalizing",
+      phase: "interrupted",
       endReason: "noAudio",
     });
   });
@@ -827,7 +875,7 @@ describe("review PR A — main tự kết thúc phải báo renderer (B1)", () =
     await h.idle();
     expect(h.svc.status()).toBeNull();
     expect(h.pushes.at(-1)).toMatchObject({
-      phase: "finalizing",
+      phase: "interrupted",
       endReason: "crash",
     });
     expect(h.repo.get(sourceId)?.endedByUser).toBe(false);
@@ -1247,5 +1295,140 @@ describe("PR B — chẩn đoán hiệu năng (ADR mục 7)", () => {
     });
     const fin = h.logs.find((l) => l.event === "meeting.finalPerf");
     expect(typeof fin?.meta?.["rtf"]).toBe("number");
+  });
+});
+
+describe("PR C1 — phục hồi phiên dang dở (US5)", () => {
+  async function interrupted(): Promise<{
+    sessionId: string;
+    sourceId: string;
+  }> {
+    const r = await startSession(h);
+    feedSpeech(h, r.sessionId, 12);
+    await flush();
+    h.svc.onRendererGone(OWNER);
+    await h.idle();
+    return r;
+  }
+
+  it("listRecoverable: phiên gián đoạn theo notebook (không notebookId ⇒ mọi notebook)", async () => {
+    const { sessionId, sourceId } = await interrupted();
+    expect(h.svc.listRecoverable({})).toEqual([
+      {
+        sessionId,
+        sourceId,
+        notebookId: "nb1",
+        title: "Cuộc họp 12/10, 14:30",
+        durationSec: 12,
+        startedAt: expect.any(Number),
+      },
+    ]);
+    expect(h.svc.listRecoverable({ notebookId: "khác" })).toEqual([]);
+  });
+
+  it("recover finalize ⇒ hoàn tất như thường", async () => {
+    const { sessionId, sourceId } = await interrupted();
+    await h.svc.recover({ sessionId, action: "finalize" });
+    await h.idle();
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      transcriptQuality: "final",
+    });
+    expect(h.recoverablePushes.at(-1)).toBe(0);
+  });
+
+  it("recover keepIncomplete ⇒ incomplete, nghe được (ghép audio), 0 chunk", async () => {
+    const { sessionId, sourceId } = await interrupted();
+    await h.svc.recover({ sessionId, action: "keepIncomplete" });
+    await h.idle();
+    expect(h.repo.get(sourceId)?.phase).toBe("incomplete");
+    expect(h.merged).toEqual([sessionId]);
+    expect(h.ingested.at(-1)?.text).toBe("");
+    expect(h.asrCalls).toEqual([]);
+  });
+
+  it("recover discard ⇒ xoá nguồn + thư mục phiên", async () => {
+    const { sessionId, sourceId } = await interrupted();
+    await h.svc.recover({ sessionId, action: "discard" });
+    await h.idle();
+    expect(h.removedSources).toEqual([sourceId]);
+    expect(h.deletedSessions).toContain(sessionId);
+    expect(h.svc.listRecoverable({})).toEqual([]);
+  });
+
+  it("recover: hành động lạ / phiên không gián đoạn ⇒ lỗi", async () => {
+    const { sessionId } = await interrupted();
+    await expect(
+      h.svc.recover({ sessionId, action: "explode" }),
+    ).rejects.toThrow("meetingInvalidInput");
+    await expect(
+      h.svc.recover({ sessionId: "khác", action: "finalize" }),
+    ).rejects.toThrow("meetingNotFound");
+    await h.svc.recover({ sessionId, action: "finalize" });
+    await expect(
+      h.svc.recover({ sessionId, action: "finalize" }),
+    ).rejects.toThrow("meetingNotFound");
+  });
+
+  it("finalizeAgain: nguồn incomplete ⇒ chốt lại thành done; nguồn đã chốt ⇒ lỗi", async () => {
+    h.setAsr(async () => {
+      throw new AsrError("modelMissing");
+    });
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 3);
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.repo.get(sourceId)?.phase).toBe("incomplete");
+    h.setAsr(async () => [{ text: "chốt", tStart: 0, tEnd: 1 }]);
+    await h.svc.finalizeAgain({ sourceId });
+    await h.idle();
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      transcriptQuality: "final",
+    });
+    await expect(h.svc.finalizeAgain({ sourceId })).rejects.toThrow(
+      "meetingInvalidInput",
+    );
+    await expect(h.svc.finalizeAgain({ sourceId: "khác" })).rejects.toThrow(
+      "meetingNotFound",
+    );
+  });
+
+  it("finalizeAgain: nguồn dùng transcript nháp ⇒ 'Chốt lại' thành bản chốt", async () => {
+    h.setAsr(async () => {
+      throw new AsrError("modelMissing");
+    });
+    const { sessionId, sourceId } = await startSession(h);
+    feedSpeech(h, sessionId, 12);
+    await flush();
+    await h.svc.stop(OWNER, { sessionId });
+    await h.idle();
+    expect(h.repo.get(sourceId)?.transcriptQuality).toBe("draft");
+    h.setAsr(async () => [{ text: "chốt", tStart: 0, tEnd: 1 }]);
+    await h.svc.finalizeAgain({ sourceId });
+    await h.idle();
+    expect(h.repo.get(sourceId)?.transcriptQuality).toBe("final");
+    expect(h.ingested.at(-1)?.text).toContain("chốt");
+  });
+
+  it("checkpoint session.json ghi khi lưu trạng thái; recoverOnStartup dùng phân đoạn từ checkpoint nếu DB cũ hơn", async () => {
+    const short = harness({ segmentSeconds: 5 });
+    const { sessionId, sourceId } = await startSession(short);
+    feed(short, sessionId, 7); // xoay sang phân đoạn 1
+    await short.idle();
+    const cp = short.checkpoints.get(sessionId) as { segments: unknown[] };
+    expect(cp.segments).toHaveLength(2);
+    // DB cũ (mất lần lưu cuối) ⇒ checkpoint phủ.
+    short.repo.update(sourceId, { segments: [] });
+    const svc2 = short.recreate();
+    await svc2.recoverOnStartup();
+    expect(short.repo.get(sourceId)?.segments).toHaveLength(2);
+  });
+
+  it("giữ máy không ngủ khi đang ghi, thả khi kết thúc", async () => {
+    const { sessionId } = await startSession(h);
+    expect(h.awake).toEqual([true]);
+    await h.svc.stop(OWNER, { sessionId });
+    expect(h.awake).toEqual([true, false]);
   });
 });

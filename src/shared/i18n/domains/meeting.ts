@@ -112,6 +112,12 @@ export const meetingVi = {
     failed:
       "Chưa lập chỉ mục được cuộc họp. Audio vẫn an toàn — app sẽ thử lại khi mở lại.",
   },
+  quit: {
+    title: "Đang ghi cuộc họp",
+    body: "Thoát bây giờ sẽ kết thúc ghi. Audio đã ghi được giữ nguyên và transcript sẽ được chốt ở lần mở app tiếp theo.",
+    confirm: "Kết thúc ghi và thoát",
+    cancel: "Tiếp tục ghi",
+  },
   phase: {
     recording: "Đang ghi",
     paused: "Đã tạm dừng",
@@ -257,6 +263,12 @@ export const meetingEn: Widen<typeof meetingVi> = {
       "Audio saved — no transcript yet. You can listen to it; the transcript will be created once the speech model is available.",
     failed:
       "The meeting could not be indexed yet. The audio is safe — the app will try again next time it starts.",
+  },
+  quit: {
+    title: "A meeting is being recorded",
+    body: "Quitting now ends the recording. The audio recorded so far is kept and the transcript is finalized next time the app opens.",
+    confirm: "End recording and quit",
+    cancel: "Keep recording",
   },
   phase: {
     recording: "Recording",
