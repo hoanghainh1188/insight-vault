@@ -40,7 +40,10 @@ export interface FinalizerDeps {
 }
 
 /** Ngôn ngữ truyền cho bản chốt của một phân đoạn [startSec, endSec). */
-type LanguagePlan = (startSec: number, endSec: number) => AsrLanguage | "perWindow";
+type LanguagePlan = (
+  startSec: number,
+  endSec: number,
+) => AsrLanguage | "perWindow";
 
 /**
  * Ngôn ngữ cho bản chốt (ADR spike S2): chế độ khoá thắng; auto/multi dùng ngôn ngữ đã lưu của phiên, chưa có thì phát hiện
@@ -156,8 +159,13 @@ async function recognizeOne(
 }
 
 /** Dòng chẩn đoán RTF bản chốt (ADR meeting-asr-spike mục 7) — không nội dung. */
-function logFinalPerf(d: FinalizerDeps, s: MeetingSession, elapsedMs: number): void {
-  const audioSec = s.segments.reduce((t, seg) => t + seg.samples, 0) / d.sampleRate;
+function logFinalPerf(
+  d: FinalizerDeps,
+  s: MeetingSession,
+  elapsedMs: number,
+): void {
+  const audioSec =
+    s.segments.reduce((t, seg) => t + seg.samples, 0) / d.sampleRate;
   if (audioSec <= 0) return;
   d.log("meeting.finalPerf", {
     rtf: Math.round((elapsedMs / 1000 / audioSec) * 1000) / 1000,

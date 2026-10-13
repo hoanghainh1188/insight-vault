@@ -73,7 +73,8 @@ function loadPipeline(
   const model = tier === "primary" ? cfg.finalModel : cfg.fallbackModel;
   const existing = pipes.get(model);
   if (existing) return existing;
-  if (loading++ === 0) port.postMessage({ type: "modelDownload", active: true });
+  if (loading++ === 0)
+    port.postMessage({ type: "modelDownload", active: true });
   const p = (async () => {
     const tf = await import("@huggingface/transformers");
     tf.env.cacheDir = cfg.cacheDir;
@@ -135,7 +136,10 @@ async function languageLogits(
   return [at("<|vi|>"), at("<|en|>")];
 }
 
-async function detectOn(pipe: Pipe, pcm: Float32Array): Promise<DetectedLanguage | null> {
+async function detectOn(
+  pipe: Pipe,
+  pcm: Float32Array,
+): Promise<DetectedLanguage | null> {
   return pickLanguage(...(await languageLogits(pipe, pcm)));
 }
 
@@ -162,7 +166,10 @@ async function transcribe(
 }
 
 /** Đa ngôn ngữ (ADR spike mục 6): mỗi cửa sổ ≤ 30 s phát hiện rồi nhận dạng với ngôn ngữ đó. */
-async function transcribePerWindow(pipe: Pipe, pcm: Float32Array): Promise<AsrOut> {
+async function transcribePerWindow(
+  pipe: Pipe,
+  pcm: Float32Array,
+): Promise<AsrOut> {
   const win = DETECT_SEC * SAMPLE_RATE;
   const out: AsrOut = [];
   for (let start = 0; start < pcm.length; start += win) {
@@ -170,12 +177,18 @@ async function transcribePerWindow(pipe: Pipe, pcm: Float32Array): Promise<AsrOu
     const lang = (await detectOn(pipe, chunk))?.language ?? null;
     const offset = start / SAMPLE_RATE;
     for (const s of await transcribe(pipe, chunk, lang))
-      out.push({ text: s.text, tStart: s.tStart + offset, tEnd: s.tEnd + offset });
+      out.push({
+        text: s.text,
+        tStart: s.tStart + offset,
+        tEnd: s.tEnd + offset,
+      });
   }
   return out;
 }
 
-async function handleDraft(msg: Extract<MainToWorker, { type: "draft" }>): Promise<void> {
+async function handleDraft(
+  msg: Extract<MainToWorker, { type: "draft" }>,
+): Promise<void> {
   const fail = (code: "asrFailed" | "modelMissing" | "cancelled"): void =>
     port.postMessage({ type: "error", reqId: msg.reqId, code });
   if (cancelled.delete(msg.reqId)) return fail("cancelled");
@@ -230,7 +243,12 @@ async function handleDetectPcm(
   const cfg = config;
   if (!cfg) return fail("asrFailed");
   if (cfg.fake) {
-    port.postMessage({ type: "language", reqId: msg.reqId, language: "vi", confidence: 1 });
+    port.postMessage({
+      type: "language",
+      reqId: msg.reqId,
+      language: "vi",
+      confidence: 1,
+    });
     return;
   }
   let pipe: Pipe;

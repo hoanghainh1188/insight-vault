@@ -25,10 +25,7 @@ import {
 import type { DraftAsrClient, DraftEngine } from "./draft-engine";
 import { initialLanguageState } from "./language-policy";
 import { languageView, parseMark, parseSetLanguage } from "./meeting-input";
-import {
-  createDraftWiring,
-  type LiveSession,
-} from "./meeting-draft-wiring";
+import { createDraftWiring, type LiveSession } from "./meeting-draft-wiring";
 import type { MeetingRepo, MeetingSession } from "./meeting-repo";
 import { finalizeSession } from "./meeting-finalizer";
 import type {
@@ -589,7 +586,11 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       a.writer.append(v.bytes);
       a.draft.push(
         v.bytes.byteOffset % 2 === 0
-          ? new Int16Array(v.bytes.buffer, v.bytes.byteOffset, v.bytes.byteLength >> 1)
+          ? new Int16Array(
+              v.bytes.buffer,
+              v.bytes.byteOffset,
+              v.bytes.byteLength >> 1,
+            )
           : new Int16Array(v.bytes.slice().buffer),
       );
       const last = a.segments.length - 1;

@@ -197,7 +197,12 @@ describe("asr-client — nháp (PR B)", () => {
     const p = client.draft({ pcm, language: "perWindow", tier: "primary" });
     const c = children[0] as FakeChild;
     const sent = c.sent.at(-1) as Record<string, unknown>;
-    expect(sent).toMatchObject({ type: "draft", pcm, language: "perWindow", tier: "primary" });
+    expect(sent).toMatchObject({
+      type: "draft",
+      pcm,
+      language: "perWindow",
+      tier: "primary",
+    });
     c.emit({
       type: "draftResult",
       reqId: sent["reqId"],
@@ -220,8 +225,19 @@ describe("asr-client — nháp (PR B)", () => {
     const c = children[0] as FakeChild;
     const sent = c.sent.at(-1) as Record<string, unknown>;
     expect(sent).toMatchObject({ type: "detectPcm" });
-    c.emit({ type: "draftResult", reqId: sent["reqId"], segments: [], language: null, elapsedMs: 1 });
-    c.emit({ type: "language", reqId: sent["reqId"], language: "en", confidence: 0.75 });
+    c.emit({
+      type: "draftResult",
+      reqId: sent["reqId"],
+      segments: [],
+      language: null,
+      elapsedMs: 1,
+    });
+    c.emit({
+      type: "language",
+      reqId: sent["reqId"],
+      language: "en",
+      confidence: 0.75,
+    });
     await expect(p).resolves.toEqual({ language: "en", confidence: 0.75 });
   });
 });
