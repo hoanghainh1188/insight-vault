@@ -20,6 +20,8 @@ export interface MarkerMenuProps {
   durationSec: number;
   range: { tStart: number; tEnd: number } | null;
   onMarked(): void;
+  openRequest?: number;
+  keyshortcuts?: { aria: string; title: string };
 }
 
 export function MarkerMenu({
@@ -28,6 +30,8 @@ export function MarkerMenu({
   durationSec,
   range,
   onMarked,
+  openRequest,
+  keyshortcuts,
 }: MarkerMenuProps): JSX.Element {
   const t = useT();
   const [markers, setMarkers] = useState<readonly MeetingMarker[]>([]);
@@ -67,6 +71,8 @@ export function MarkerMenu({
         }
         menuLabel={t.t("meeting.marker.menu")}
         testId="recording-mark"
+        {...(openRequest !== undefined ? { openRequest } : {})}
+        {...(keyshortcuts ? { keyshortcuts } : {})}
         items={KINDS.map((k) => ({
           key: k,
           label: t.t(`meeting.marker.${k}`),

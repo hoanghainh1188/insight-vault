@@ -10,8 +10,11 @@ export function NotebookCard({
   onOpen,
   onEdit,
   onDelete,
+  recoverable = 0,
 }: {
   notebook: Notebook;
+  /** 186 PR C1 (T120): số bản ghi cuộc họp bị gián đoạn cần phục hồi trong notebook. */
+  recoverable?: number;
   now: number;
   onOpen: () => void;
   onEdit: () => void;
@@ -39,6 +42,14 @@ export function NotebookCard({
               })}
             </span>
           </div>
+          {recoverable > 0 && (
+            <span
+              className="nb-recover-badge"
+              data-testid="notebook-recover-badge"
+            >
+              {t.plural("meeting.recovery.badge", recoverable)}
+            </span>
+          )}
         </div>
       </button>
       <div className="nb-card-actions">

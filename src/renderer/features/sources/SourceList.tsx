@@ -9,6 +9,7 @@ import { useT } from "../../shared/i18n/i18n-context";
 import { IconMic } from "../../shared/icons";
 import { StartRecordingDialog } from "../meeting-capture/StartRecordingDialog";
 import { useRecording } from "../meeting-capture/RecordingProvider";
+import { RecoveryCards } from "../meeting-capture/RecoveryCard";
 
 // Cột "Nguồn" của Workspace (prototype S2): header tổng hợp + nút thêm + tìm toàn văn (073) + danh sách nguồn + modal.
 export function SourceList({
@@ -21,7 +22,7 @@ export function SourceList({
   onOpenHit?: (hit: ContentSearchHit) => void; // 073: mở kết quả tìm + highlight
 }): JSX.Element {
   const t = useT();
-  const { sources, loading, progress, add, remove, retry } =
+  const { sources, loading, progress, add, remove, retry, reload } =
     useSources(notebookId);
   const [showAdd, setShowAdd] = useState(false);
   // 186: Ghi cuộc họp — nút icon cạnh Thêm nguồn (C5); vô hiệu khi đã có phiên ghi (một phiên tại một thời điểm).
@@ -59,6 +60,8 @@ export function SourceList({
           </button>
         </div>
       </header>
+
+      <RecoveryCards notebookId={notebookId} onChanged={reload} />
 
       {onOpenHit && (
         <ContentSearchBox notebookId={notebookId} onOpenHit={onOpenHit} />

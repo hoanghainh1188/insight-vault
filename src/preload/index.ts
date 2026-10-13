@@ -55,6 +55,8 @@ import type {
  * KHÔNG expose `invoke(channel, …)` chung ⇒ renderer không thể gọi tên kênh tuỳ ý.
  */
 const api = {
+  /** 186 PR C1: nền tảng (darwin/win32/linux) — chọn phím Cmd/Ctrl cho phím tắt ghi cuộc họp. Chỉ đọc, không phải kênh IPC. */
+  platform: process.platform as string,
   // app-shell (001)
   getDataDir: (): Promise<DataDirInfo> =>
     ipcRenderer.invoke(CHANNELS.getDataDir),

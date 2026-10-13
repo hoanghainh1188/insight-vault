@@ -112,6 +112,47 @@ export const meetingVi = {
     failed:
       "Chưa lập chỉ mục được cuộc họp. Audio vẫn an toàn — app sẽ thử lại khi mở lại.",
   },
+  quality: {
+    draft: "Transcript nháp",
+  },
+  recovery: {
+    title: "Bản ghi bị gián đoạn",
+    body: "“{title}” · đã ghi {duration}. Audio đã ghi vẫn an toàn.",
+    finalize: "Hoàn tất transcript",
+    keep: "Giữ như nguồn chưa hoàn thiện",
+    discard: "Xoá bản ghi",
+    discardConfirmTitle: "Xoá bản ghi?",
+    discardConfirmBody:
+      "Audio và mọi dữ liệu của “{title}” sẽ bị xoá vĩnh viễn khỏi máy này.",
+    discardConfirmOk: "Xoá vĩnh viễn",
+    badge: {
+      one: "{count} bản ghi cần phục hồi",
+      other: "{count} bản ghi cần phục hồi",
+    },
+    done: "Đã xử lý bản ghi bị gián đoạn.",
+  },
+  sourceBanner: {
+    incomplete:
+      "Chưa có transcript — audio vẫn nghe được. Bấm Hoàn tất transcript khi đã có model nhận dạng.",
+    finalizeIncomplete: "Hoàn tất transcript",
+    draft:
+      "Transcript nháp — chưa dùng để hỏi đáp hay trích dẫn. Chốt lại để có transcript chính xác.",
+    finalizeDraft: "Chốt lại",
+    started: "Đang chốt transcript…",
+  },
+  deviceLost: {
+    title: "Mất microphone — đã tạm dừng ghi",
+    body: "Chọn thiết bị khác để tiếp tục cùng phiên, hoặc Kết thúc ghi.",
+    resumeWith: "Tiếp tục với thiết bị này",
+  },
+  disk: {
+    warn: "Ổ đĩa chỉ còn đủ ghi khoảng {minutes} phút.",
+    urgent:
+      "Ổ đĩa sắp đầy — còn khoảng {minutes} phút. App sẽ tự kết thúc ghi khi hết chỗ.",
+  },
+  shortcut: {
+    hint: "Phím tắt: {keys}",
+  },
   quit: {
     title: "Đang ghi cuộc họp",
     body: "Thoát bây giờ sẽ kết thúc ghi. Audio đã ghi được giữ nguyên và transcript sẽ được chốt ở lần mở app tiếp theo.",
@@ -263,6 +304,47 @@ export const meetingEn: Widen<typeof meetingVi> = {
       "Audio saved — no transcript yet. You can listen to it; the transcript will be created once the speech model is available.",
     failed:
       "The meeting could not be indexed yet. The audio is safe — the app will try again next time it starts.",
+  },
+  quality: {
+    draft: "Draft transcript",
+  },
+  recovery: {
+    title: "Recording interrupted",
+    body: "“{title}” · {duration} recorded. The recorded audio is safe.",
+    finalize: "Finalize transcript",
+    keep: "Keep as incomplete source",
+    discard: "Delete recording",
+    discardConfirmTitle: "Delete recording?",
+    discardConfirmBody:
+      "The audio and all data of “{title}” will be permanently deleted from this computer.",
+    discardConfirmOk: "Delete permanently",
+    badge: {
+      one: "{count} recording needs recovery",
+      other: "{count} recordings need recovery",
+    },
+    done: "The interrupted recording was handled.",
+  },
+  sourceBanner: {
+    incomplete:
+      "No transcript yet — the audio can still be played. Click Finalize transcript once the speech model is available.",
+    finalizeIncomplete: "Finalize transcript",
+    draft:
+      "Draft transcript — not used for answers or citations. Re-finalize to get an accurate transcript.",
+    finalizeDraft: "Re-finalize",
+    started: "Finalizing the transcript…",
+  },
+  deviceLost: {
+    title: "Microphone lost — recording paused",
+    body: "Choose another device to continue the same session, or end the recording.",
+    resumeWith: "Continue with this device",
+  },
+  disk: {
+    warn: "The disk only has room for about {minutes} more minutes.",
+    urgent:
+      "The disk is almost full — about {minutes} minutes left. Recording ends automatically when it runs out.",
+  },
+  shortcut: {
+    hint: "Shortcut: {keys}",
   },
   quit: {
     title: "A meeting is being recorded",

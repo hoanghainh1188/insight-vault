@@ -23,8 +23,10 @@ export async function launchFresh(
  */
 export async function launchFreshAt(
   env?: Record<string, string>,
+  existingUserData?: string,
 ): Promise<{ app: ElectronApplication; userData: string }> {
-  const userData = await mkdtemp(join(tmpdir(), "iv-e2e-"));
+  const userData =
+    existingUserData ?? (await mkdtemp(join(tmpdir(), "iv-e2e-")));
   const app = await electron.launch({
     args: [MAIN, `--user-data-dir=${userData}`],
     // 059: embedding fake tất định trong E2E → không tải model e5 (~120MB), offline, nhanh, ổn định.
@@ -101,13 +103,21 @@ export async function dismissOnboarding(win: Page): Promise<void> {
  * treo chờ quyền micro macOS). `denied` ⇒ giả lập hệ điều hành từ chối quyền micro. Chỉ có hiệu lực ở bản chưa đóng gói.
  */
 export async function launchMeeting(
-  opts: { denied?: boolean; env?: Record<string, string> } = {},
+  opts: {
+    denied?: boolean;
+    env?: Record<string, string>;
+    /** 186 PR C1: mở lại trên cùng userData (phục hồi sau sự cố / sau khi thoát). */
+    userData?: string;
+  } = {},
 ): Promise<{ app: ElectronApplication; userData: string }> {
-  return launchFreshAt({
-    IV_ASR_FAKE: "1",
-    ...(opts.denied ? { IV_E2E_MIC_DENIED: "1" } : { IV_E2E_FAKE_MIC: "1" }),
-    ...(opts.env ?? {}),
-  });
+  return launchFreshAt(
+    {
+      IV_ASR_FAKE: "1",
+      ...(opts.denied ? { IV_E2E_MIC_DENIED: "1" } : { IV_E2E_FAKE_MIC: "1" }),
+      ...(opts.env ?? {}),
+    },
+    opts.userData,
+  );
 }
 
 /** Tạo notebook qua API rồi mở Workspace của nó. Trả id. */

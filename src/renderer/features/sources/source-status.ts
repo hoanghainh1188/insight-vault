@@ -17,9 +17,16 @@ export function statClass(status: SourceStatus): "ready" | "proc" | "err" {
 /** Nhãn hiển thị cho một trạng thái; lỗi có error_label (mã hoặc văn bản Việt cũ) ⇒ dịch nhãn lỗi. */
 export function statusLabel(
   source: Pick<Source, "status" | "errorCode"> &
-    Partial<Pick<Source, "kind" | "meetingPhase">>,
+    Partial<Pick<Source, "kind" | "meetingPhase" | "transcriptQuality">>,
   tr: Translator = VI,
 ): string {
+  // 186 PR C1: bản chốt lỗi ⇒ nguồn dùng transcript nháp (không lập chỉ mục) — nhãn riêng để thấy cần "Chốt lại".
+  if (
+    source.kind === "meeting" &&
+    source.meetingPhase === "done" &&
+    source.transcriptQuality === "draft"
+  )
+    return tr.t("meeting.quality.draft");
   // 186 (A9): nguồn cuộc họp — nhãn theo giai đoạn phiên ghi (status giữ 5 giá trị); "done" dùng nhãn status thường.
   if (
     source.kind === "meeting" &&

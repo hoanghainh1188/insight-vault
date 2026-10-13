@@ -58,6 +58,11 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
+  // 186 PR C1: banner nguồn cuộc họp đọc trạng thái nguồn qua window.api.
+  (window as unknown as { api: unknown }).api = {
+    sourceGet: () => Promise.resolve(null),
+    onSourceProgress: () => () => undefined,
+  };
 });
 afterEach(() => {
   act(() => root.unmount());

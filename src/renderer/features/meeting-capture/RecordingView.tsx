@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MEETING_MODEL_SIZE_MB } from "@shared/meeting/constants";
 import { formatDuration } from "@shared/meeting/format-duration";
 import { useT } from "../../shared/i18n/i18n-context";
@@ -8,6 +8,9 @@ import { DraftTranscript } from "./DraftTranscript";
 import { LanguageControl } from "./LanguageControl";
 import { LevelMeter } from "./LevelMeter";
 import { MarkerMenu } from "./MarkerMenu";
+import { DeviceLostBanner } from "./DeviceLostBanner";
+import { DiskWarning } from "./DiskWarning";
+import { shortcutLabel, type MeetingShortcut } from "./shortcuts";
 
 // 186 — chế độ tập trung khi đang ghi (FR-008..FR-010): thanh đầu "● Đang ghi · hh:mm:ss · Lưu trên máy" (trạng thái bằng
 // chữ, đồng hồ nổi bật nhất), vùng nội dung = transcript nháp (PR B), thanh dưới: mức âm, ngôn ngữ, Đánh dấu, Tạm
@@ -20,6 +23,21 @@ export function RecordingView(): JSX.Element | null {
   const [range, setRange] = useState<{ tStart: number; tEnd: number } | null>(
     null,
   );
+  // T122: Mod+Shift+E chỉ MỞ hộp xác nhận (không kết thúc ngay khi lỡ tay).
+  const seenEnd = useRef(rec.endRequest);
+  useEffect(() => {
+    if (rec.endRequest !== seenEnd.current) {
+      seenEnd.current = rec.endRequest;
+      setConfirming(true);
+    }
+  }, [rec.endRequest]);
+  const keys = (a: MeetingShortcut): { aria: string; title: string } => {
+    const l = shortcutLabel(a, window.api.platform);
+    return {
+      aria: l.aria,
+      title: t.t("meeting.shortcut.hint", { keys: l.display }),
+    };
+  };
   const s = rec.state;
   if (!s) return null;
   const paused = s.phase === "paused";
@@ -65,6 +83,14 @@ export function RecordingView(): JSX.Element | null {
         </p>
       </header>
 
+      {paused && s.pauseReason === "deviceLost" && (
+        <DeviceLostBanner
+          busy={rec.busy}
+          onResume={(deviceId) => void rec.resume(deviceId || undefined)}
+        />
+      )}
+      <DiskWarning level={s.diskLevel} minutes={s.minutesRemaining} />
+
       <div className="rec-body rec-body-draft">
         <DraftTranscript
           state={s}
@@ -81,6 +107,8 @@ export function RecordingView(): JSX.Element | null {
           sourceId={s.sourceId}
           durationSec={s.durationSec}
           range={range}
+          openRequest={rec.markRequest}
+          keyshortcuts={keys("mark")}
           onMarked={() => {
             setRange(null);
             window.getSelection()?.removeAllRanges();
@@ -98,6 +126,8 @@ export function RecordingView(): JSX.Element | null {
           className="btn-primary-sm rec-main"
           disabled={rec.busy}
           onClick={() => void (paused ? rec.resume() : rec.pause())}
+          aria-keyshortcuts={keys("togglePause").aria}
+          title={keys("togglePause").title}
           data-testid={paused ? "recording-resume" : "recording-pause"}
         >
           {paused
@@ -110,6 +140,8 @@ export function RecordingView(): JSX.Element | null {
           className="btn-danger-sm"
           disabled={rec.busy}
           onClick={end}
+          aria-keyshortcuts={keys("end").aria}
+          title={keys("end").title}
           data-testid="recording-end"
         >
           {t.t("meeting.recording.end")}
