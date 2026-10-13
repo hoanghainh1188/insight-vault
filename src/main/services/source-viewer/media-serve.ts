@@ -1,6 +1,7 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { Readable } from "node:stream";
 import type { SourceRepo } from "../ingestion/source-repo";
+import { liveWavParts } from "../meeting-capture/wav";
 import {
   extOf,
   isServableMediaExt,
@@ -44,7 +45,7 @@ export function createMediaHandler(
         seg === null || !resolveMeeting ? null : resolveMeeting(id, seg);
       if (!path || !existsSync(path))
         return new Response(null, { status: 404 });
-      return serveFile(path, "audio/wav", request);
+      return serveMeetingWav(path, request);
     }
     // 049 audio + 051 video + 053 image — chỉ phục vụ nguồn media (đọc file gốc); loại khác → 404.
     if (
@@ -63,6 +64,42 @@ export function createMediaHandler(
 
     return serveFile(path, mimeForAudioExt(extOf(path)), request);
   };
+}
+
+/**
+ * 186 PR B: WAV cuộc họp phục vụ với header dựng theo kích thước hiện tại ⇒ phân đoạn ĐANG ghi (header 0) vẫn nghe lại được
+ * phần đã ghi xuống đĩa (bấm timestamp trong nháp). Tệp đã đóng/ghép: header dựng lại trùng header thật.
+ */
+function serveMeetingWav(path: string, request: Request): Response {
+  const fileSize = statSync(path).size;
+  const size = liveWavParts(fileSize, 0, 0).total;
+  const range = parseRange(request.headers.get("Range"), size);
+  const parts = liveWavParts(
+    fileSize,
+    range?.start ?? 0,
+    range?.end ?? size - 1,
+  );
+  async function* body(): AsyncGenerator<Uint8Array> {
+    if (parts.headerSlice) yield parts.header.slice(...parts.headerSlice);
+    if (parts.fileSlice) {
+      const [start, end] = parts.fileSlice;
+      for await (const chunk of createReadStream(path, { start, end }))
+        yield chunk as Uint8Array;
+    }
+  }
+  const from = range?.start ?? 0;
+  const to = Math.min(range?.end ?? size - 1, parts.total - 1);
+  return new Response(Readable.toWeb(Readable.from(body())) as ReadableStream, {
+    status: range ? 206 : 200,
+    headers: {
+      "Content-Type": "audio/wav",
+      "Accept-Ranges": "bytes",
+      "Content-Length": String(to - from + 1),
+      ...(range
+        ? { "Content-Range": `bytes ${from}-${to}/${parts.total}` }
+        : {}),
+    },
+  });
 }
 
 /** Stream tệp (Range ⇒ 206) — dùng chung cho tệp gốc và audio cuộc họp. */

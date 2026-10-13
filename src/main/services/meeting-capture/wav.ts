@@ -44,3 +44,39 @@ export function repairWavHeader(fileSize: number): {
   const dataBytes = raw - (raw % 2);
   return { dataBytes, header: buildWavHeader(dataBytes) };
 }
+
+export interface LiveWavParts {
+  /** Kích thước tệp WAV ảo (header đúng + dữ liệu chẵn byte). */
+  total: number;
+  header: Uint8Array;
+  /** Lát [from, to) của header cần gửi. */
+  headerSlice: [number, number] | null;
+  /** Byte [from, to] (đóng) đọc từ tệp trên đĩa. */
+  fileSlice: [number, number] | null;
+}
+
+/**
+ * PR B (T091): phân đoạn ĐANG ghi có header độ dài 0 (chỉ sửa khi đóng) ⇒ phục vụ một WAV "ảo": header dựng theo kích
+ * thước hiện tại + dữ liệu đã ghi xuống đĩa. `start..end` (đóng) đã được kẹp trong [0, total-1] bởi parseRange.
+ */
+export function liveWavParts(
+  fileSize: number,
+  start: number,
+  end: number,
+): LiveWavParts {
+  const { dataBytes, header } = repairWavHeader(fileSize);
+  const total = WAV_HEADER_BYTES + dataBytes;
+  const last = Math.min(end, total - 1);
+  return {
+    total,
+    header,
+    headerSlice:
+      start < WAV_HEADER_BYTES
+        ? [start, Math.min(WAV_HEADER_BYTES, last + 1)]
+        : null,
+    fileSlice:
+      last >= WAV_HEADER_BYTES
+        ? [Math.max(start, WAV_HEADER_BYTES), last]
+        : null,
+  };
+}
