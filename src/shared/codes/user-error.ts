@@ -41,6 +41,7 @@ export const USER_ERROR_CODES = [
   "meetingNotSupported",
   "meetingNotFound",
   "meetingInvalidInput",
+  "meetingRecoverFailed", // 186 PR C1: giữ bản ghi chưa hoàn thiện không lập được nguồn — thẻ phục hồi vẫn còn để thử lại
   "meetingModelDownloadFailed", // 186 PR B: tải model nhận dạng không được (thường do không có Internet)
 ] as const;
 

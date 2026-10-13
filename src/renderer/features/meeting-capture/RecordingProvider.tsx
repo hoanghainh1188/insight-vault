@@ -17,7 +17,7 @@ import {
   type MicCapture,
 } from "./capture/mic-capture";
 import { publishLevel } from "./level-bus";
-import { matchShortcut } from "./shortcuts";
+import { matchMeetingShortcut } from "./shortcuts";
 
 // 186 — phiên ghi ở CẤP APP (đặt quanh RouterProvider — analyze P1): đổi notebook/route KHÔNG dừng micro. Giữ thu âm
 // (mic-capture), số thứ tự lô, trạng thái đẩy từ main (meeting:state) và màn hoàn tất của phiên vừa kết thúc.
@@ -362,7 +362,7 @@ export function RecordingProvider({
     if (!live) return;
     const platform = window.api.platform;
     const onKey = (e: KeyboardEvent): void => {
-      const action = matchShortcut(e, platform);
+      const action = matchMeetingShortcut(e, platform);
       if (!action) return;
       e.preventDefault();
       if (action === "togglePause") {

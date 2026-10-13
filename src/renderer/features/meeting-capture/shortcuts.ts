@@ -28,7 +28,7 @@ const LETTER_OF: Readonly<Record<MeetingShortcut, string>> = {
 
 const isMac = (platform: string): boolean => platform === "darwin";
 
-export function matchShortcut(
+export function matchMeetingShortcut(
   e: ShortcutKeyEvent,
   platform: string,
 ): MeetingShortcut | null {

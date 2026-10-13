@@ -6,7 +6,7 @@ import type { MeetingRepo, MeetingSession } from "./meeting-repo";
 import type { MeetingServiceDeps } from "./meeting-service";
 import { classifyOnStartup } from "./recovery";
 import { totalDurationSec } from "./segments";
-import { sessionTransition } from "./session-state";
+import { sessionTransition, type SessionEvent } from "./session-state";
 
 // 186 PR C1 — phiên dang dở (research R12, data-model §5, US5). Không đụng phiên ĐANG ghi (service giữ). Lúc khởi động:
 // người dùng đã kết thúc / đang hoàn tất ⇒ tự hoàn tất tiếp; bị gián đoạn ngoài ý muốn ⇒ `interrupted` + thẻ phục hồi
@@ -44,6 +44,8 @@ const UNFINISHED: MeetingSession["phase"][] = [
   "finalizing",
   "interrupted",
 ];
+/** Trần phân đoạn chấp nhận từ checkpoint (≈ 830 giờ ở phân đoạn 5 phút). */
+const MAX_CHECKPOINT_SEGMENTS = 10_000;
 const RECOVER_ACTIONS = ["finalize", "keepIncomplete", "discard"] as const;
 type RecoverAction = (typeof RECOVER_ACTIONS)[number];
 
@@ -53,15 +55,24 @@ const str = (v: unknown): string | null =>
   typeof v === "string" && v !== "" ? v : null;
 
 /**
- * Checkpoint session.json phủ phần DB chưa kịp lưu (phân đoạn vừa mở, khoảng ngừng mới) — chỉ dùng khi khớp phiên và dài
- * hơn; DB vẫn là nguồn sự thật cho phần đã đóng.
+ * Checkpoint session.json là BẢN SAO DỰ PHÒNG của trạng thái phiên (ghi ngay sau DB mỗi lần lưu): chỉ dùng khi DB thiếu
+ * (vd. DB khôi phục từ bản cũ / hàng bị hỏng) và checkpoint khớp phiên, dài hơn; DB vẫn là nguồn sự thật.
  */
 function withCheckpoint(
   s: MeetingSession,
   cp: MeetingCheckpoint | null,
 ): Pick<MeetingSession, "segments" | "pauseGaps"> {
-  if (!cp || cp.sessionId !== s.sessionId || cp.sourceId !== s.sourceId)
-    return { segments: s.segments, pauseGaps: s.pauseGaps };
+  // Review bảo mật: checkpoint là dữ liệu đĩa không tin cậy — chỉ nhận khi khớp phiên, có trần và chỉ số tăng dần không trùng.
+  const sane =
+    cp !== null &&
+    cp.sessionId === s.sessionId &&
+    cp.sourceId === s.sourceId &&
+    cp.segments.length <= MAX_CHECKPOINT_SEGMENTS &&
+    cp.pauseGaps.length <= MAX_CHECKPOINT_SEGMENTS &&
+    cp.segments.every(
+      (seg, i) => i === 0 || seg.index > (cp.segments[i - 1]?.index ?? -1),
+    );
+  if (!cp || !sane) return { segments: s.segments, pauseGaps: s.pauseGaps };
   return {
     segments: cp.segments.length > s.segments.length ? cp.segments : s.segments,
     pauseGaps:
@@ -85,16 +96,35 @@ export function createMeetingRecovery(d: RecoveryDeps): MeetingRecovery {
     return s;
   };
 
+  /** Review C1 B1: chỉ rời `interrupted` khi nguồn đã sẵn sàng (nghe được) — lỗi ⇒ giữ thẻ phục hồi để thử lại. */
   const keepIncomplete = async (s: MeetingSession): Promise<void> => {
     await d.enqueueIo(() => d.files.mergeSegments(s.sessionId, s.segments));
     // Nguồn nghe được, 0 chunk (FR-034: không tham gia hỏi đáp/Studio).
-    await d.pipeline.ingestParsed(s.sourceId, {
+    const ok = await d.pipeline.ingestParsed(s.sourceId, {
       pages: [{ page: null, text: "" }],
       pageCount: null,
       timeMap: [],
     });
-    repo.update(s.sourceId, { phase: "incomplete", transcriptQuality: null });
+    if (!ok) throw new UserFacingError("meetingRecoverFailed");
+    toPhase(s, { type: "recover", action: "keepIncomplete" });
+    repo.update(s.sourceId, { transcriptQuality: null });
   };
+
+  /** Đổi phase qua máy trạng thái (data-model §5) — không ghi tắt bằng repo.update. */
+  const toPhase = (s: MeetingSession, e: SessionEvent): void => {
+    const r = sessionTransition(
+      { phase: s.phase, endedByUser: s.endedByUser },
+      e,
+    );
+    if (!r.ok) throw new UserFacingError("meetingInvalidInput");
+    repo.update(s.sourceId, {
+      phase: r.state.phase,
+      endedByUser: r.state.endedByUser,
+    });
+  };
+
+  // Review C1 B2: một thao tác phục hồi mỗi phiên tại một thời điểm (hai cửa sổ / bấm lặp không chạy chồng).
+  const inFlight = new Set<string>();
 
   return {
     async recoverOnStartup() {
@@ -152,16 +182,24 @@ export function createMeetingRecovery(d: RecoveryDeps): MeetingRecovery {
       const action = isObj(input) ? input["action"] : null;
       if (!RECOVER_ACTIONS.includes(action as RecoverAction))
         throw new UserFacingError("meetingInvalidInput");
-      d.log("meeting.recover", { action: action as string });
-      if (action === "discard") {
-        await d.removeSource(s.sourceId);
-      } else if (action === "finalize") {
-        repo.update(s.sourceId, { phase: "finalizing" });
-        d.queueFinalize(s.sourceId);
-      } else {
-        await keepIncomplete(s);
+      // Cờ đồng bộ đặt TRƯỚC await đầu tiên ⇒ lệnh thứ hai cho cùng phiên bị từ chối.
+      if (inFlight.has(s.sessionId))
+        throw new UserFacingError("meetingNotFound");
+      inFlight.add(s.sessionId);
+      try {
+        d.log("meeting.recover", { action: action as string });
+        if (action === "discard") {
+          await d.removeSource(s.sourceId);
+        } else if (action === "finalize") {
+          toPhase(s, { type: "recover", action: "finalize" });
+          d.queueFinalize(s.sourceId);
+        } else {
+          await keepIncomplete(s);
+        }
+      } finally {
+        inFlight.delete(s.sessionId);
+        notify();
       }
-      notify();
       return { ok: true as const };
     },
 

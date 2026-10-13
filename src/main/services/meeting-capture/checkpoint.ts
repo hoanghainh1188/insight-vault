@@ -25,7 +25,7 @@ export interface MeetingCheckpoint {
   pauseGaps: PauseGap[];
   language: LanguageState;
   markers: MeetingMarker[];
-  /** Số byte đã ghi của `draft.jsonl` (nháp phục hồi tới đây). */
+  /** Dự trữ cho định dạng (v1 luôn 0 — draft.jsonl tự kiểm từng dòng khi đọc, không cần cắt theo offset). */
   draftOffset: number;
   savedAt: number;
 }
@@ -213,7 +213,10 @@ export function parseCheckpoint(raw: string): MeetingCheckpoint | null {
   };
 }
 
-/** Dựng checkpoint từ trạng thái phiên đang ghi (đánh dấu nằm trong DB ngay khi tạo ⇒ không chép vào đây). */
+/**
+ * Dựng checkpoint từ trạng thái phiên đang ghi. `markers` để trống: đánh dấu ghi thẳng DB ngay khi tạo (bền sẵn) — trường giữ
+ * cho định dạng v1.
+ */
 export function checkpointOf(
   a: Pick<
     MeetingCheckpoint,

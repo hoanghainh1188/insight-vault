@@ -31,7 +31,13 @@ export function createQuitGuard(d: QuitGuardDeps): QuitGuard {
           if (ok) await d.stopForQuit();
           return ok;
         })
-        .catch(() => false)
+        .catch((e: unknown) => {
+          // Kết thúc phiên lỗi ⇒ không thoát (người dùng thử lại); phiên đã có checkpoint nên vẫn phục hồi được.
+          d.log("meeting.quitStopFailed", {
+            name: e instanceof Error ? e.name : "unknown",
+          });
+          return false;
+        })
         .finally(() => {
           asking = null;
         });

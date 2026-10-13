@@ -646,8 +646,17 @@ app
     });
     const guard = quitGuard;
     const pumpFixture = process.env["IV_E2E_AUDIO_FIXTURE"];
-    if (audioPumpSpeed > 0 && pumpFixture) {
-      const pcm = readFileSync(pumpFixture).subarray(44);
+    let pumpPcm: Buffer | null = null;
+    try {
+      pumpPcm =
+        audioPumpSpeed > 0 && pumpFixture
+          ? readFileSync(pumpFixture).subarray(44)
+          : null;
+    } catch {
+      logEvent("meeting.pumpFixtureMissing");
+    }
+    if (pumpPcm && pumpPcm.length >= SAMPLE_RATE * 2) {
+      const pcm = pumpPcm;
       const CHUNK = SAMPLE_RATE * 2; // 1 s
       let at = 0;
       setInterval(() => {

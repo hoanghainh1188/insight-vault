@@ -14,7 +14,7 @@ import {
 // 186 PR C1 (T120, US5) — thẻ phục hồi ở đầu cột Nguồn: mỗi phiên bị gián đoạn của notebook một thẻ với 3 lựa chọn. "Xoá bản
 // ghi" xoá vĩnh viễn ⇒ hỏi xác nhận. Danh sách làm mới khi main đẩy meeting:recoverable.
 
-export function RecoveryCards({
+export function MeetingRecoveryCard({
   notebookId,
   onChanged,
 }: {

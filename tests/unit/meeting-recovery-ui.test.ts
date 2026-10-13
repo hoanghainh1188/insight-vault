@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import type { RecoverableSession, Source } from "@shared/ipc/types";
 import { I18nProvider } from "../../src/renderer/shared/i18n/I18nProvider";
-import { RecoveryCards } from "../../src/renderer/features/meeting-capture/RecoveryCard";
+import { MeetingRecoveryCard } from "../../src/renderer/features/meeting-capture/MeetingRecoveryCard";
 import { MeetingSourceBanner } from "../../src/renderer/features/meeting-capture/MeetingSourceBanner";
 import { DiskWarning } from "../../src/renderer/features/meeting-capture/DiskWarning";
 
@@ -66,10 +66,12 @@ async function mount(el: ReactElement): Promise<void> {
 const q = (id: string): HTMLElement | null =>
   container.querySelector(`[data-testid="${id}"]`);
 
-describe("RecoveryCards", () => {
+describe("MeetingRecoveryCard", () => {
   it("hiện thẻ với tiêu đề + thời lượng; Hoàn tất ⇒ recover finalize, thẻ biến mất", async () => {
     const onChanged = vi.fn();
-    await mount(createElement(RecoveryCards, { notebookId: "nb1", onChanged }));
+    await mount(
+      createElement(MeetingRecoveryCard, { notebookId: "nb1", onChanged }),
+    );
     expect(api["meetingListRecoverable"]).toHaveBeenCalledWith({
       notebookId: "nb1",
     });
@@ -85,7 +87,7 @@ describe("RecoveryCards", () => {
   });
 
   it("Xoá bản ghi cần xác nhận; Huỷ không xoá", async () => {
-    await mount(createElement(RecoveryCards, { notebookId: "nb1" }));
+    await mount(createElement(MeetingRecoveryCard, { notebookId: "nb1" }));
     await act(async () => q("recovery-discard")!.click());
     expect(q("recovery-discard-confirm")).not.toBeNull();
     expect(api["meetingRecover"]).not.toHaveBeenCalled();
@@ -98,7 +100,7 @@ describe("RecoveryCards", () => {
 
   it("không có phiên gián đoạn ⇒ không hiện gì", async () => {
     recoverable = [];
-    await mount(createElement(RecoveryCards, { notebookId: "nb1" }));
+    await mount(createElement(MeetingRecoveryCard, { notebookId: "nb1" }));
     expect(q("recovery-cards")).toBeNull();
   });
 });

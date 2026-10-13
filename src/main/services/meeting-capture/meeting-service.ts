@@ -386,7 +386,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       repo.update(a.sourceId, { endedAt: deps.now() });
       pushState(a, endReason);
       if (a.snap.phase === "finalizing") queueFinalize(a.sourceId, drained);
-      else void drained.then(() => recovery.notify());
+      else void drained.catch(() => undefined).then(() => recovery.notify());
     }
   };
 
@@ -755,6 +755,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
 
     dispose() {
       stopWatchdog();
+      if (active) deps.keepAwake(false);
     },
   };
 }

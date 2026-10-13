@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  matchShortcut,
+  matchMeetingShortcut,
   shortcutLabel,
   type ShortcutKeyEvent,
 } from "../../src/renderer/features/meeting-capture/shortcuts";
@@ -19,58 +19,76 @@ const ev = (over: Partial<ShortcutKeyEvent>): ShortcutKeyEvent => ({
   ...over,
 });
 
-describe("matchShortcut", () => {
+describe("matchMeetingShortcut", () => {
   it("macOS: Cmd+Shift+P|M|E", () => {
-    expect(matchShortcut(ev({ metaKey: true }), "darwin")).toBe("togglePause");
+    expect(matchMeetingShortcut(ev({ metaKey: true }), "darwin")).toBe(
+      "togglePause",
+    );
     expect(
-      matchShortcut(ev({ metaKey: true, key: "M", code: "KeyM" }), "darwin"),
+      matchMeetingShortcut(
+        ev({ metaKey: true, key: "M", code: "KeyM" }),
+        "darwin",
+      ),
     ).toBe("mark");
     expect(
-      matchShortcut(ev({ metaKey: true, key: "E", code: "KeyE" }), "darwin"),
+      matchMeetingShortcut(
+        ev({ metaKey: true, key: "E", code: "KeyE" }),
+        "darwin",
+      ),
     ).toBe("end");
   });
 
   it("Windows: Ctrl+Shift+P|M|E; Cmd không tính trên Windows và ngược lại", () => {
-    expect(matchShortcut(ev({ ctrlKey: true }), "win32")).toBe("togglePause");
-    expect(matchShortcut(ev({ metaKey: true }), "win32")).toBeNull();
-    expect(matchShortcut(ev({ ctrlKey: true }), "darwin")).toBeNull();
+    expect(matchMeetingShortcut(ev({ ctrlKey: true }), "win32")).toBe(
+      "togglePause",
+    );
+    expect(matchMeetingShortcut(ev({ metaKey: true }), "win32")).toBeNull();
+    expect(matchMeetingShortcut(ev({ ctrlKey: true }), "darwin")).toBeNull();
   });
 
   it("thiếu Shift, thêm Alt, hoặc cả Cmd lẫn Ctrl ⇒ không khớp", () => {
     expect(
-      matchShortcut(ev({ metaKey: true, shiftKey: false }), "darwin"),
+      matchMeetingShortcut(ev({ metaKey: true, shiftKey: false }), "darwin"),
     ).toBeNull();
     expect(
-      matchShortcut(ev({ metaKey: true, altKey: true }), "darwin"),
+      matchMeetingShortcut(ev({ metaKey: true, altKey: true }), "darwin"),
     ).toBeNull();
     expect(
-      matchShortcut(ev({ metaKey: true, ctrlKey: true }), "darwin"),
+      matchMeetingShortcut(ev({ metaKey: true, ctrlKey: true }), "darwin"),
     ).toBeNull();
   });
 
   it("phím giữ lặp (repeat) ⇒ bỏ qua", () => {
     expect(
-      matchShortcut(ev({ metaKey: true, repeat: true }), "darwin"),
+      matchMeetingShortcut(ev({ metaKey: true, repeat: true }), "darwin"),
     ).toBeNull();
   });
 
   it("theo vị trí phím (code) — bố cục bàn phím khác vẫn khớp; phím khác ⇒ null", () => {
     expect(
-      matchShortcut(ev({ metaKey: true, key: "π", code: "KeyP" }), "darwin"),
+      matchMeetingShortcut(
+        ev({ metaKey: true, key: "π", code: "KeyP" }),
+        "darwin",
+      ),
     ).toBe("togglePause");
     expect(
-      matchShortcut(ev({ metaKey: true, key: "K", code: "KeyK" }), "darwin"),
+      matchMeetingShortcut(
+        ev({ metaKey: true, key: "K", code: "KeyK" }),
+        "darwin",
+      ),
     ).toBeNull();
   });
 
   it("không có code (môi trường cũ) ⇒ dùng key, không phân biệt hoa thường", () => {
     expect(
-      matchShortcut(ev({ metaKey: true, key: "m", code: "" }), "darwin"),
+      matchMeetingShortcut(ev({ metaKey: true, key: "m", code: "" }), "darwin"),
     ).toBe("mark");
   });
 
   it("Linux dùng Ctrl như Windows", () => {
-    expect(matchShortcut(ev({ ctrlKey: true }), "linux")).toBe("togglePause");
+    expect(matchMeetingShortcut(ev({ ctrlKey: true }), "linux")).toBe(
+      "togglePause",
+    );
   });
 });
 

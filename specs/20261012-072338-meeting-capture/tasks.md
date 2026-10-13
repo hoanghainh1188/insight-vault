@@ -381,12 +381,18 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 > ở main), `meeting-prepare.ts` (tách khỏi service), `isMaintenanceBusy` (vault-lock). T127: (a) SC-001 chạy với `IV_E2E_SOAK=1`
 > (đã chạy tay — 36 phân đoạn, hoàn tất OK); (b) chạy mọi lần; (c) worker chết / (d) app bị giết phủ ở unit + meeting-recovery.spec.
 > T123: nút Ghi vô hiệu khi có phiên + mã lỗi `meetingRecording` đã có từ PR A.
+> Khác plan (review C1 S2): T112 I/O checkpoint nằm trong `meeting-files.ts` (`writeCheckpoint`/`readCheckpoint`, không có
+> `session-store.ts`) — checkpoint là bản sao dự phòng của DB (ghi ngay sau DB); T116 = `isMaintenanceBusy` (vault-lock.ts);
+> T115 seam = `IV_E2E_QUIT_ANSWER`; T118 nghe `ended` có sẵn ở `mic-capture.ts`, `devicechange` ở `DeviceLostBanner.tsx`;
+> T122 hook phím tắt nằm trong `RecordingProvider` (không có `useMeetingShortcuts.ts`); harness test chung ở
+> `tests/unit/helpers/meeting-harness.ts`. Review C1: `recover` có cờ đồng bộ theo phiên + đi qua máy trạng thái;
+> `keepIncomplete` lỗi lập nguồn ⇒ giữ `interrupted` (mã `meetingRecoverFailed`).
 
 ### Cổng review PR C1
 
-- [ ] T128 [US5] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T129 [US5] Gọi **glossary-steward**; append term thiếu.
-- [ ] T130 [US5] Gọi **security-reviewer** (BẮT BUỘC): `meeting:recover` `discard` xoá vĩnh viễn (kiểm sessionId thuộc meeting, prefix đường dẫn), checkpoint parse dữ liệu
+- [X] T128 [US5] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T129 [US5] Gọi **glossary-steward**; append term thiếu.
+- [X] T130 [US5] Gọi **security-reviewer** (BẮT BUỘC): `meeting:recover` `discard` xoá vĩnh viễn (kiểm sessionId thuộc meeting, prefix đường dẫn), checkpoint parse dữ liệu
       không tin cậy, `before-quit`, seam test không lọt vào bản đóng gói, `powerSaveBlocker` được giải phóng. Mọi Blocking phải sửa.
 - [ ] T131 [US5] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 4, 8, 9, 11 trên mac + Windows; mở PR C1.
