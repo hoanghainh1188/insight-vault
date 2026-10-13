@@ -702,6 +702,8 @@ export interface MeetingState {
   modelReady: boolean;
   /** PR B — ngôn ngữ nhận dạng (R7, D6). */
   language: MeetingLanguageState;
+  /** PR B — khoảng tạm dừng (dòng phân cách "Tạm dừng N phút" trong nháp). */
+  pauseGaps: PauseGap[];
 }
 
 /** PR B — trạng thái ngôn ngữ hiển thị ở thanh dưới màn ghi. */

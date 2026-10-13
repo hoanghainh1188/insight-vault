@@ -66,6 +66,7 @@ const live = (over: Partial<MeetingState> = {}): MeetingState => ({
   minutesRemaining: 100,
   transcriptLagging: false,
   language: { mode: "vi", current: "vi", status: "manual" },
+  pauseGaps: [],
   modelReady: true,
   ...over,
 });

@@ -2,6 +2,7 @@
 
 import {
   END_CONFIRM_MIN_SEC as SHARED_END_CONFIRM_MIN_SEC,
+  MEETING_MODEL_SIZE_MB,
   MEETING_SAMPLE_RATE,
 } from "@shared/meeting/constants";
 
@@ -39,7 +40,7 @@ export const FINAL_OVERLAP_SEC = 5;
 export const FINAL_MODEL = "Xenova/whisper-base";
 
 /** Kích thước ước lượng model chốt để hiển thị (MB). */
-export const FINAL_MODEL_SIZE_MB = 150;
+export const FINAL_MODEL_SIZE_MB = MEETING_MODEL_SIZE_MB;
 
 /**
  * Nháp (PR B, ADR meeting-asr-spike mục 4–5, chốt tạm 2026-10-13): dùng CHUNG model chốt đã nạp (một model, tải một lần);

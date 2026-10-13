@@ -236,6 +236,7 @@ export function createMeetingService(deps: MeetingServiceDeps): MeetingService {
       transcriptLagging: a.lagging,
       modelReady: a.modelReady,
       language: languageView(a.lang),
+      pauseGaps: a.pauseGaps,
     };
   };
 

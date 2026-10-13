@@ -6,3 +6,5 @@ export const MEETING_SAMPLE_RATE = 16000;
 export const MEETING_BATCH_SAMPLES = MEETING_SAMPLE_RATE;
 /** Kết thúc ghi hỏi xác nhận khi phiên ≥ N giây (D15). */
 export const END_CONFIRM_MIN_SEC = 300;
+/** Kích thước ước lượng model nhận dạng (MB) để hiển thị khi cần tải. */
+export const MEETING_MODEL_SIZE_MB = 150;

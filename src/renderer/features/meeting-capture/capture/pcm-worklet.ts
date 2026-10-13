@@ -11,12 +11,17 @@ declare class AudioWorkletProcessor {
 }
 
 const BATCH = 16000;
+/** Mức âm lượng cho meter mỗi 100 ms (1 600 mẫu ở 16 kHz) — PR B, FR-024. */
+const LEVEL_EVERY = 1600;
 
 class PcmCaptureProcessor extends AudioWorkletProcessor {
   private buf = new Int16Array(BATCH);
   private n = 0;
   private sumSq = 0;
   private peak = 0;
+  private levelN = 0;
+  private levelSumSq = 0;
+  private levelPeak = 0;
 
   constructor() {
     super();
@@ -55,6 +60,18 @@ class PcmCaptureProcessor extends AudioWorkletProcessor {
       this.sumSq += s * s;
       const a = Math.abs(s);
       if (a > this.peak) this.peak = a;
+      this.levelSumSq += s * s;
+      if (a > this.levelPeak) this.levelPeak = a;
+      if (++this.levelN === LEVEL_EVERY) {
+        this.port.postMessage({
+          type: "level",
+          rms: Math.sqrt(this.levelSumSq / this.levelN),
+          peak: this.levelPeak,
+        });
+        this.levelN = 0;
+        this.levelSumSq = 0;
+        this.levelPeak = 0;
+      }
       this.buf[this.n++] = s < 0 ? s * 0x8000 : s * 0x7fff;
       if (this.n === BATCH) this.emit();
     }

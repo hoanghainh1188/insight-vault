@@ -16,6 +16,7 @@ import {
   startMicCapture,
   type MicCapture,
 } from "./capture/mic-capture";
+import { publishLevel } from "./level-bus";
 
 // 186 — phiên ghi ở CẤP APP (đặt quanh RouterProvider — analyze P1): đổi notebook/route KHÔNG dừng micro. Giữ thu âm
 // (mic-capture), số thứ tự lô, trạng thái đẩy từ main (meeting:state) và màn hoàn tất của phiên vừa kết thúc.
@@ -129,6 +130,7 @@ export function RecordingProvider({
         ...(s.deviceId ? { deviceId: s.deviceId } : {}),
         fakeTone: s.fakeTone,
         onBatch: (pcm) => send(s.sessionId, pcm),
+        onLevel: publishLevel,
         onEnded: () => onDeviceLost(s.sessionId),
       }),
     [onDeviceLost],
@@ -199,6 +201,7 @@ export function RecordingProvider({
             if (sessionId) send(sessionId, pcm);
             else if (pending.length < PENDING_MAX) pending.push(pcm);
           },
+          onLevel: publishLevel,
           onEnded: () => {
             if (sessionId) onDeviceLost(sessionId);
             else endedEarly = true;
