@@ -1,7 +1,8 @@
 # ADR — Spike S2: tốc độ Whisper và phát hiện ngôn ngữ cho Meeting Capture (#186, PR B)
 
 - **Ngày:** 2026-10-12
-- **Trạng thái:** NHÁP — đã có số đo Mac; **chờ số đo Windows x64 chỉ CPU** để chốt model nháp (quy tắc A2 lấy máy yếu nhất).
+- **Trạng thái:** CHỐT TẠM (2026-10-13) — số đo Mac; số đo Windows x64 / máy yếu **giao cho người dùng thử** (mục 7–8), chốt hẳn sau
+  vòng thử nghiệm.
 - **Liên quan:** research R2, clarify A2/D6, tasks T071–T072. Bộ đo: `npm run spike:asr` (`tests/spike/asr-rtf.spike.ts`, dev-only,
   không vào `npm test`/CI; model tải vào `tests/spike/.cache/`, báo cáo ở `tests/spike/reports/` — cả hai gitignore).
 
@@ -33,7 +34,8 @@ Ghi nhận chất lượng (cửa sổ tiếng Việt đầu tiên):
 
 ## Kết quả — Windows x64 chỉ CPU
 
-_Chờ chạy tay:_ `npm ci && npm run spike:asr` trên máy Windows, dán bảng từ `tests/spike/reports/asr-rtf-win32-x64-*.md` vào đây.
+_Không chặn PR B nữa (quyết định 2026-10-13, mục 7):_ thu số đo thật từ người dùng thử qua chẩn đoán trong app. Ai có môi trường dev vẫn
+có thể chạy `npm ci && npm run spike:asr` và dán bảng từ `tests/spike/reports/asr-rtf-win32-x64-*.md` vào đây.
 
 ## Quyết định
 
@@ -44,15 +46,22 @@ _Chờ chạy tay:_ `npm ci && npm run spike:asr` trên máy Windows, dán bản
    chọn — tránh bản nháp tiếng Anh ảo giác. Bản chốt: đã áp dụng ở PR A (#192 — `resolveFinalLanguage()` +
    phát hiện một bước decoder trong `asr-worker`). Bản nháp: PR B. Nạp audio thường (045): #194 (PR #195).
 3. **Model chốt giữ `Xenova/whisper-base`** (A2) — RTF chốt 0,05–0,06 trên Mac.
-4. **Model nháp — CHƯA CHỐT.** Theo quy tắc A2 ("model nhỏ nhất có RTF ≤ 0,5 trên máy yếu nhất") thì là `whisper-tiny` q8 nếu
-   Windows đạt. Nhưng số đo Mac cho thấy `base` q8 nhanh ngang/hơn `tiny` (0,040 vs 0,084, ổn định hơn) và chất lượng tiếng Việt tốt hơn.
-   **Đề xuất:** nếu Windows `base` q8 có RTF nháp ≤ 0,5 ⇒ nháp dùng `base` q8 (một model cho cả nháp và chốt, tải một lần); ngược lại
-   `tiny` q8 + chính sách bỏ cửa sổ (R6). Điều chỉnh này cần người dùng duyệt vì lệch chữ "nhỏ nhất" của A2.
-5. **Lượt 5 s pending (`DRAFT_PARTIAL_PASS`)**: giữ nếu RTF nháp trên Windows ≤ 0,25 (còn dư gấp đôi), bỏ nếu không — chốt cùng mục 4.
+4. **Model nháp — CHỐT TẠM `whisper-base` q8 + tự hạ cấp** (người dùng duyệt 2026-10-13, lệch có chủ đích chữ "nhỏ nhất" của A2):
+   một model cho cả nháp và chốt (tải một lần), tiếng Việt tốt hơn `tiny`. Vì chưa có số đo máy yếu, app **tự đo RTF nháp lúc chạy**
+   (trung bình trượt các cửa sổ có lời): RTF > 0,5 kéo dài ⇒ chuyển nháp sang `whisper-tiny` q8 (tải khi cần, có badge egress) và áp
+   chính sách bỏ cửa sổ (R6); không tự nâng lại trong cùng phiên. Chính sách là hàm thuần (`draft-model-policy.ts`), có test.
+5. **Lượt 5 s pending (`DRAFT_PARTIAL_PASS`)**: bật mặc định, **tự tắt** khi RTF nháp đo được > 0,25 (cùng bộ đo mục 4).
 
 6. **Chế độ Đa ngôn ngữ (`multi`) — sửa R7/D6.** "`language: null`, Whisper tự chọn" KHÔNG dùng được: transformers.js thiếu
    `language` thì mặc định tiếng Anh (đã thấy trên fixture). `multi` ⇒ phát hiện ngôn ngữ trên TỪNG cửa sổ (nháp 10 s; bản chốt
    theo từng cửa sổ 30 s) rồi truyền tường minh — chi phí thêm ≈ 0,1–0,2 s / 30 s trên Mac. Trước khi chế độ Tự động khoá ngôn ngữ,
    nháp cũng phát hiện theo cửa sổ (`windowLanguage()` = `"perWindow"` — hàm thuần của PR B, `meeting-capture/language-policy.ts`).
 
-`DRAFT_MODEL` / `DRAFT_PARTIAL_PASS` trong `meeting-constants.ts` cập nhật khi ADR này chuyển sang "Đã chốt" (T072).
+7. **Số đo máy yếu lấy từ người dùng thử — chẩn đoán trong app** (2026-10-13). Sau mỗi phiên, main ghi vào nhật ký cục bộ (088) một
+   dòng tóm tắt: OS/kiến trúc, mẫu CPU + số nhân, RAM, model/dtype nháp, RTF nháp (TB/p95), RTF chốt, số cửa sổ bị bỏ, có hạ cấp không.
+   KHÔNG nội dung audio/transcript, KHÔNG tiêu đề/đường dẫn (redact sẵn của 088). Mẫu GitHub issue soạn sẵn của báo lỗi opt-in (093)
+   thêm mục "Hiệu năng ghi cuộc họp" từ dòng này — người dùng xem/sửa và tự gửi; app không tự gửi gì (local-first giữ nguyên).
+8. **Spike S1 làm tay giao cho người dùng thử** (2026-10-13): checklist (mic thật mac, tai nghe Bluetooth, bản cài Windows) đăng ở #186
+   và trong release notes bản thử nghiệm; kết quả về qua issue. Chốt hẳn mục 4–5 (bỏ chữ "tạm") khi có đủ số đo Windows x64 chỉ CPU.
+
+`DRAFT_MODEL` / `DRAFT_PARTIAL_PASS` / ngưỡng hạ cấp trong `meeting-constants.ts` theo mục 4–5 (T072).
