@@ -450,7 +450,7 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 - [X] T147 [US7] Gọi **code-reviewer**; xử lý Blocking.
 - [X] T148 [US7] Gọi **glossary-steward**; append term thiếu.
 - [X] T149 [US7] Gọi **security-reviewer** (theo quy trình chung — kênh mới, xuất tệp): agent tự in `SKIPPED` nếu không liên quan.
-- [ ] T150 [US7] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
+- [X] T150 [US7] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 7; mở PR C2.
 
 **Checkpoint**: PR C2 merge — feature hoàn tất.
@@ -462,7 +462,7 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 - [ ] T151 Chạy **checklist tay 120 phút** của `quickstart.md` (bước 1–11) trên bản đóng gói mac arm64 + Windows x64; ghi kết quả vào mô tả release.
 - [ ] T152 [P] PR glossary RIÊNG (steward duyệt, rule 5) nếu cần SỬA dòng cũ: "Nguồn" (thêm `meeting` vào danh sách loại), "player"/"seek" (citation chỉ tua — C1) trong
       `docs/00-glossary.md`.
-- [ ] T153 [P] Cập nhật `README.md` (EN) + `README.vi.md`: mục Ghi cuộc họp (local, 120+ phút, phục hồi, phím tắt), ghi chú quyền micro macOS bản chưa ký.
+- [X] T153 [P] Cập nhật `README.md` (EN) + `README.vi.md`: mục Ghi cuộc họp (local, 120+ phút, phục hồi, phím tắt), ghi chú quyền micro macOS bản chưa ký.
 - [ ] T154 Bump version + release notes song ngữ (một lần cho cả 4 PR); cập nhật memory dự án (roadmap).
 
 ---
