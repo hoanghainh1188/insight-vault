@@ -18,6 +18,8 @@ EVAL_MODE=current npm run eval:retrieval  # chỉ đo cấu hình đang dùng + 
 | `EVAL_MODE`          | `sweep`                    | `sweep` quét lưới · `current` đo cấu hình hiện hành (kiểm hồi quy)                                          |
 | `EVAL_CONFIG`        | —                          | JSON một `RelevanceConfig` để đo riêng (ghi đè `EVAL_MODE`)                                                 |
 | `EVAL_WITH_LLM`      | `0`                        | `1` = thêm phần end-to-end qua Ollama cục bộ (tham khảo, không xét ĐẠT)                                     |
+| `EVAL_LLM_SAMPLE`    | (mặc định)                 | `unanswerable` = phần LLM chạy trên MỌI câu không đáp án vi + en (dev + hold-out), báo từng câu (205)       |
+| `EVAL_LLM_REPEATS`   | `1`                        | số lần chạy lặp mỗi câu (tầng trả lời không tất định)                                                       |
 | `EVAL_LLM_MODEL`     | model chat đầu tiên        | model Ollama cho phần LLM                                                                                   |
 | `EVAL_CACHE_DIR`     | `tests/eval/.cache/models` | nơi tải mô hình e5 (~120MB, lần đầu cần Internet)                                                           |
 | `EVAL_RERANK`        | —                          | 109: danh sách model bộ chấm độ liên quan (phẩy) ⇒ quét 96 cấu hình/model trên đúng `retrieve()` của app    |

@@ -10,6 +10,7 @@ import type {
 } from "./metrics";
 import type { LlmResult } from "./harness";
 import type { LlmSummary } from "./llm-metrics";
+import type { RefusalSummary } from "./llm-sample";
 import type { RerankModelReport } from "./rerank-run";
 import type { RerankCause, RerankDiagnosis } from "./rerank-diagnose";
 import type { RerankConfig } from "../../../src/main/services/rag/rerank-filter";
@@ -234,6 +235,9 @@ export function renderMarkdown(r: EvalReport): string {
               `- model \`${r.llm.model}\`: ${pct(r.llm.notFoundRate)} câu hold-out có đáp án bị trả "không tìm thấy" (n=${r.llm.n})`,
               "",
               ...llmSummaryTable(r.llm.summary),
+              ...(r.llm.refusals
+                ? refusalsMd(r.llm.refusals, r.llm.repeats)
+                : []),
             ]
           : [`- bỏ qua: ${r.llm.skipped}`]),
         "",
@@ -286,6 +290,29 @@ function llmSummaryTable(sum: LlmSummary): string[] {
     row("vi"),
     row("en"),
   ];
+}
+
+/** 205: câu không đáp án qua nhiều lần chạy — số lần từ chối đúng + câu trả lời lọt (đọc tay xem có bịa không). */
+function refusalsMd(rows: RefusalSummary[], repeats: number): string[] {
+  const out = [
+    "",
+    `### Câu không đáp án qua tầng trả lời (${repeats} lần/câu)`,
+    "",
+    "| Câu | Từ chối đúng | Lọt |",
+    "|---|---|---|",
+    ...rows.map(
+      (x) =>
+        `| ${x.questionId} | ${x.refused}/${x.runs} | ${x.leaked.length} |`,
+    ),
+  ];
+  for (const x of rows.filter((y) => y.leaked.length > 0)) {
+    out.push("", `**${x.questionId}** — câu trả lời lọt:`);
+    for (const l of x.leaked) {
+      const a = l.answer.replace(/\s+/g, " ").slice(0, 300);
+      out.push(`- (${l.citationCount} [n]) ${a}`);
+    }
+  }
+  return out;
 }
 
 export function describeRerank(c: RerankConfig): string {
