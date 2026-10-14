@@ -57,6 +57,8 @@ import Store from "electron-store";
 import { CHANNELS } from "@shared/ipc/channels";
 import type { SourceProgressEvent } from "@shared/ipc/types";
 import { ensureDataDir } from "./services/app-shell/data-dir";
+import { buildAboutPanelOptions } from "./services/app-shell/about-panel";
+import { loadLibraries } from "./services/app-shell/about-licenses";
 import { registerIpc } from "./ipc/register";
 import { openDatabase } from "./db/database";
 import { runMigrations } from "./db/migrations";
@@ -124,9 +126,15 @@ import { createTranslator } from "@shared/i18n";
 import { createReranker, type Reranker } from "./services/rerank/rerank-model";
 import { appMenuTemplate } from "./services/ui-language/app-menu";
 import {
+  RERANK_MODEL,
   RERANK_MODEL_REVISION,
+  RERANK_MODEL_VERSION,
   rerankModelFile,
 } from "./services/rerank/model-version";
+import {
+  EMBEDDING_MODEL,
+  EMBEDDING_MODEL_VERSION,
+} from "./services/embedding/model-version";
 import { RELEVANCE_CALIBRATION } from "./services/rag/relevance-calibration";
 
 /** 123: locale OS ưu tiên đầu tiên; an toàn cả trước app.whenReady (getLocale có thể rỗng). */
@@ -1006,7 +1014,41 @@ app
     });
 
     // 145: menu ứng dụng theo ngôn ngữ giao diện — dựng lúc khởi động và dựng lại ngay khi đổi ngôn ngữ.
+    // 213: nội dung hộp "Giới thiệu" MẶC ĐỊNH của hệ điều hành theo ngôn ngữ giao diện (dựng lại cùng menu). Thư viện đọc một lần.
+    const aboutLibraries = loadLibraries(app.getAppPath());
+    const applyAboutPanel = (): void => {
+      app.setAboutPanelOptions(
+        buildAboutPanelOptions({
+          t: uiLanguage.translator(),
+          version: app.getVersion(),
+          arch: process.arch,
+          packaged: app.isPackaged,
+          runtime: {
+            electron: process.versions.electron ?? "",
+            chromium: process.versions.chrome ?? "",
+            node: process.versions.node ?? "",
+          },
+          models: [
+            {
+              role: "embedding",
+              name: EMBEDDING_MODEL,
+              version: EMBEDDING_MODEL_VERSION,
+            },
+            {
+              role: "reranker",
+              name: RERANK_MODEL,
+              version: RERANK_MODEL_VERSION,
+            },
+            { role: "asrFinal", name: FINAL_MODEL, version: "fp32" },
+            { role: "asrFallback", name: DRAFT_FALLBACK_MODEL, version: "q8" },
+          ],
+          libraries: aboutLibraries,
+          iconPath: resolveIconPath() ?? undefined,
+        }),
+      );
+    };
     const applyAppMenu = (): void => {
+      applyAboutPanel();
       Menu.setApplicationMenu(
         Menu.buildFromTemplate(
           appMenuTemplate(uiLanguage.translator(), {

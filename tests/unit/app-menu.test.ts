@@ -50,8 +50,8 @@ describe("appMenuTemplate", () => {
       isPackaged: true,
       appName: "InsightVault",
     }).map((i) => i.label);
-    expect(enTop).toEqual(["File", "Edit", "View", "Window"]);
-    expect(viTop).toEqual(["Tệp", "Sửa", "Xem", "Cửa sổ"]);
+    expect(enTop).toEqual(["File", "Edit", "View", "Window", "Help"]);
+    expect(viTop).toEqual(["Tệp", "Sửa", "Xem", "Cửa sổ", "Trợ giúp"]);
   });
 
   it("giữ role chuẩn để phím tắt hệ điều hành hoạt động", () => {
@@ -80,7 +80,7 @@ describe("appMenuTemplate", () => {
     }
   });
 
-  it("macOS có menu ứng dụng (About/Hide/Quit) mang tên app; Windows không", () => {
+  it("macOS có menu ứng dụng (About/Hide/Quit) mang tên app; Windows có Giới thiệu trong menu Trợ giúp", () => {
     const mac = appMenuTemplate(en, {
       platform: "darwin",
       isPackaged: true,
@@ -95,7 +95,9 @@ describe("appMenuTemplate", () => {
       isPackaged: true,
       appName: "InsightVault",
     });
-    expect(roles(win)).not.toContain("about");
+    // 213: Windows chưa có mục Giới thiệu nào — thêm vào Trợ giúp (role chuẩn ⇒ hộp mặc định của hệ điều hành).
+    expect(win.at(-1)?.label).toBe("Help");
+    expect(roles([win.at(-1)!])).toEqual(["about"]);
     expect(roles(win)).toContain("quit");
   });
 

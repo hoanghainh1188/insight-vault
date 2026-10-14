@@ -13,6 +13,7 @@ import { dialogsVi } from "./domains/dialogs";
 import { a11yVi } from "./domains/a11y";
 import { menuVi } from "./domains/menu";
 import { meetingVi } from "./domains/meeting";
+import { aboutVi } from "./domains/about";
 
 // 123 — tệp dịch NGÔN NGỮ NGUỒN (tiếng Việt), ghép từ các domain ở ./domains (mỗi domain một tệp để nhiều người
 // sửa song song). Kiểu `Messages` suy từ đây; en.ts phải đủ khoá + cùng placeholder (tsc + i18n-catalog.test.ts).
@@ -33,4 +34,5 @@ export const vi = {
   a11y: a11yVi,
   menu: menuVi,
   meeting: meetingVi,
+  about: aboutVi,
 } as const;

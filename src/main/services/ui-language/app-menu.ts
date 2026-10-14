@@ -81,5 +81,12 @@ export function appMenuTemplate(
         ]
       : [{ role: "minimize", label: m("menu.minimize") }],
   };
-  return mac ? [appMenu, file, edit, view, window] : [file, edit, view, window];
+  // 213: Windows không có menu ứng dụng ⇒ Giới thiệu (role chuẩn ⇒ hộp mặc định của hệ điều hành) nằm ở menu Trợ giúp.
+  const help: MenuItemConstructorOptions = {
+    label: m("menu.help"),
+    submenu: [{ role: "about", label: m("menu.about") }],
+  };
+  return mac
+    ? [appMenu, file, edit, view, window]
+    : [file, edit, view, window, help];
 }
