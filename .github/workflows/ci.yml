@@ -27,8 +27,8 @@ jobs:
       - name: Unit test + coverage (≥ 80% business logic — Constitution IV)
         run: npm test
 
-      - name: "Build (electron-vite: main/preload/renderer)"
-        run: npm run build
+      # Không build ở đây: `npm run build` chạy lại lint, và job e2e đã tự `electron-vite build` → lỗi build
+      # vẫn bị chặn. Đóng gói (electron-builder) chỉ chạy ở release.yml khi đẩy tag v*.
 
   # E2E (Playwright _electron) cần display → xvfb trên Linux. Suite tất định: IV_EMBED_FAKE=1 (không tải
   # model) + UNREACHABLE_OLLAMA (không cần Ollama thật) → chỉ kiểm bề mặt IPC + đường "chưa sẵn sàng".
