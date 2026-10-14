@@ -66,6 +66,13 @@ highlighted.
    - macOS: right-click the app → **Open**, or run `xattr -dr com.apple.quarantine /Applications/InsightVault.app`.
    - Windows: SmartScreen → **More info → Run anyway**.
 
+## Known limitations
+
+- **Questions close to a document's topic but not answered by it** (for example asking about elevators in a document about a railway line): the relevance checker can still pass a related passage. The answer step usually replies "Not found in the sources" anyway (216 of 216 in our measurements with one local chat model), but smaller models may do worse. Details: [#187](https://github.com/hoanghainh1188/insight-vault/issues/187).
+- **Answers inside complex PDF tables or side boxes** can be missed when the PDF text comes out merged (for example Wikipedia infoboxes). Better extraction alone does not fix it with the current relevance checker ([#206](https://github.com/hoanghainh1188/insight-vault/issues/206)).
+- **Meeting recording is experimental**: not yet tested with many microphones, Bluetooth headsets and Windows machines ([#186](https://github.com/hoanghainh1188/insight-vault/issues/186)).
+- **Unsigned builds, no auto-update**: macOS and Windows warn on first launch (see Install); new versions are installed manually from Releases.
+
 ## Development
 
 ```bash

@@ -58,6 +58,13 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
    - macOS: chuột phải vào app → **Open**, hoặc `xattr -dr com.apple.quarantine /Applications/InsightVault.app`.
    - Windows: SmartScreen → **More info → Run anyway**.
 
+## Giới hạn đã biết
+
+- **Câu hỏi cùng chủ đề nhưng tài liệu không trả lời** (ví dụ hỏi về thang máy trong tài liệu về một tuyến đường sắt): bộ chấm độ liên quan vẫn có thể cho qua một đoạn gần chủ đề. Bước trả lời thường vẫn đáp "Không tìm thấy trong nguồn" (216/216 lần trong phép đo với một model chat cục bộ), nhưng model nhỏ hơn có thể kém hơn. Chi tiết: [#187](https://github.com/hoanghainh1188/insight-vault/issues/187).
+- **Đáp án nằm trong bảng hoặc hộp thông tin phức tạp của PDF** có thể bị bỏ sót khi văn bản trích ra bị trộn (ví dụ hộp thông tin Wikipedia). Trích tốt hơn một mình chưa đủ với bộ chấm hiện tại ([#206](https://github.com/hoanghainh1188/insight-vault/issues/206)).
+- **Ghi cuộc họp còn thử nghiệm**: chưa thử trên nhiều micro, tai nghe Bluetooth và máy Windows ([#186](https://github.com/hoanghainh1188/insight-vault/issues/186)).
+- **Bản chưa ký số, không tự cập nhật**: macOS và Windows cảnh báo ở lần mở đầu (xem Cài đặt); bản mới cài thủ công từ Releases.
+
 ## Phát triển
 
 ```bash
