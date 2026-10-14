@@ -61,6 +61,17 @@ beforeEach(() => {
   // 186 PR C1: banner nguồn cuộc họp đọc trạng thái nguồn qua window.api.
   (window as unknown as { api: unknown }).api = {
     sourceGet: () => Promise.resolve(null),
+    meetingGetTranscript: () =>
+      Promise.resolve({
+        spans: [],
+        markers: [],
+        pauseGaps: [],
+        language: null,
+        quality: null,
+        durationSec: 0,
+        startedAt: 0,
+        endedAt: null,
+      }),
     onSourceProgress: () => () => undefined,
   };
 });

@@ -4,7 +4,9 @@ Mỗi lần /speckit-clarify giải quyết 1 ambiguity, ghi lại tại đây t
 docs/04-decisions/<YYYY-MM-DD>-<slug>.md
 
 ## Template
+
 # <Tiêu đề ngắn>
+
 - Ngày: YYYY-MM-DD
 - Feature liên quan: <ten-feature>
 - Câu hỏi gốc: <trích từ Ambiguities của intake>

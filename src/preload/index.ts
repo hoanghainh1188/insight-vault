@@ -10,6 +10,8 @@ import type {
   MeetingMarkInput,
   MeetingSetLanguageInput,
   MeetingRecoverAction,
+  MeetingTranscript,
+  MeetingMarkerKind,
   RecoverableSession,
   AddSourceInput,
   AddSourceResult,
@@ -360,6 +362,22 @@ const api = {
     ipcRenderer.invoke(CHANNELS.meetingRecover, input),
   meetingFinalizeAgain: (input: { sourceId: string }): Promise<{ ok: true }> =>
     ipcRenderer.invoke(CHANNELS.meetingFinalizeAgain, input),
+  meetingGetTranscript: (input: {
+    sourceId: string;
+  }): Promise<MeetingTranscript> =>
+    ipcRenderer.invoke(CHANNELS.meetingGetTranscript, input),
+  meetingUpdateMarker: (input: {
+    markerId: string;
+    kind: MeetingMarkerKind;
+  }): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.meetingUpdateMarker, input),
+  meetingDeleteMarker: (input: { markerId: string }): Promise<{ ok: true }> =>
+    ipcRenderer.invoke(CHANNELS.meetingDeleteMarker, input),
+  /** Main dựng nội dung từ sourceId rồi mở hộp thoại lưu (renderer không gửi nội dung). */
+  meetingExportMarkdown: (input: {
+    sourceId: string;
+  }): Promise<StudioExportResult> =>
+    ipcRenderer.invoke(CHANNELS.meetingExportMarkdown, input),
   /** Số phiên cần phục hồi (push từ main tới mọi cửa sổ). Trả hàm huỷ đăng ký. */
   onMeetingRecoverable: (cb: (e: { count: number }) => void): (() => void) => {
     const listener = (_e: unknown, payload: { count: number }): void =>

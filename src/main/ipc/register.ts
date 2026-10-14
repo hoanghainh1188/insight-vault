@@ -1,4 +1,5 @@
 import type { MeetingService } from "../services/meeting-capture/meeting-service";
+import type { MeetingViewerApi } from "../services/meeting-capture/meeting-viewer";
 import { UserFacingError } from "@shared/codes/user-error";
 import { app, ipcMain, BrowserWindow, clipboard, shell } from "electron";
 import { CHANNELS, isWhitelisted } from "@shared/ipc/channels";
@@ -107,6 +108,7 @@ interface RegisterDeps {
   uiLanguage: UiLanguageService;
   // 186 — Ghi cuộc họp.
   meeting: MeetingService;
+  meetingViewer: MeetingViewerApi;
 }
 
 /** Số báo lỗi renderer tối đa ghi mỗi phiên (chặn vòng lặp lỗi làm phình nhật ký) — 088. */
@@ -142,6 +144,7 @@ export function registerIpc({
   reprocessSource,
   uiLanguage,
   meeting,
+  meetingViewer,
 }: RegisterDeps): void {
   const safeHandle = (
     channel: string,
@@ -558,6 +561,21 @@ export function registerIpc({
     meeting.listMarkers(input),
   );
   safeHandle(CHANNELS.meetingDownloadModel, () => meeting.downloadModel());
+  // PR C2 — trình xem cuộc họp. Xuất Markdown dựng ở main (renderer chỉ gửi sourceId).
+  safeHandle(CHANNELS.meetingGetTranscript, (input) =>
+    meetingViewer.getTranscript(input),
+  );
+  safeHandle(CHANNELS.meetingUpdateMarker, (input) => {
+    assertVaultWritable();
+    return meetingViewer.updateMarker(input);
+  });
+  safeHandle(CHANNELS.meetingDeleteMarker, (input) => {
+    assertVaultWritable();
+    return meetingViewer.deleteMarker(input);
+  });
+  safeHandle(CHANNELS.meetingExportMarkdown, (input) =>
+    meetingViewer.exportMarkdown(input),
+  );
   safeHandle(CHANNELS.meetingListRecoverable, (input) =>
     meeting.listRecoverable(input),
   );

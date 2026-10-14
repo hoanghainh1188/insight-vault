@@ -72,6 +72,10 @@ export interface MeetingRepo {
   /** PR B — đánh dấu (D4). Giá trị đã kiểm ở service. */
   addMarker(m: MeetingMarker & { sourceId: string }): void;
   listMarkers(sourceId: string): MeetingMarker[];
+  /** PR C2 — nguồn sở hữu đánh dấu (null nếu không có). */
+  getMarkerSource(markerId: string): string | null;
+  updateMarker(markerId: string, kind: MeetingMarkerKind): void;
+  deleteMarker(markerId: string): void;
 }
 
 interface Row {
@@ -285,6 +289,21 @@ export function createMeetingRepo(
       db.prepare(
         "INSERT INTO meeting_marker (id, source_id, kind, t_start, t_end, created_at) VALUES (?,?,?,?,?,?)",
       ).run(m.id, m.sourceId, m.kind, m.tStart, m.tEnd, now());
+    },
+    getMarkerSource(markerId) {
+      const r = db
+        .prepare("SELECT source_id FROM meeting_marker WHERE id = ?")
+        .get(markerId) as { source_id: string } | undefined;
+      return r?.source_id ?? null;
+    },
+    updateMarker(markerId, kind) {
+      db.prepare("UPDATE meeting_marker SET kind = ? WHERE id = ?").run(
+        kind,
+        markerId,
+      );
+    },
+    deleteMarker(markerId) {
+      db.prepare("DELETE FROM meeting_marker WHERE id = ?").run(markerId);
     },
     listMarkers(sourceId) {
       const rows = db

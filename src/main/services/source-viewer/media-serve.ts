@@ -35,10 +35,38 @@ export function createMediaHandler(
   sourceRepo: SourceRepo,
   resolveMeeting?: MeetingPlaybackResolver,
 ): (request: Request) => Promise<Response> {
+  const inner = mediaHandler(sourceRepo, resolveMeeting);
+  return async (request) => harden(await inner(request));
+}
+
+/**
+ * 186 PR C2 (review bảo mật): iv-media nay là scheme `standard` (origin thật) ⇒ mọi phản hồi cấm đoán kiểu nội dung và chạy như
+ * tài liệu bị sandbox — lỡ bị điều hướng tới URL media cũng không chạy được script/HTML trong origin đó.
+ */
+function harden(r: Response): Response {
+  r.headers.set("X-Content-Type-Options", "nosniff");
+  r.headers.set("Content-Security-Policy", "default-src 'none'; sandbox");
+  return r;
+}
+
+/** Id nguồn trong đường dẫn; mã hoá % hỏng ⇒ null (404), không ném. */
+function sourceIdOf(url: URL): string | null {
+  try {
+    return decodeURIComponent(url.pathname.replace(/^\/+/, "")) || null;
+  } catch {
+    return null;
+  }
+}
+
+function mediaHandler(
+  sourceRepo: SourceRepo,
+  resolveMeeting?: MeetingPlaybackResolver,
+): (request: Request) => Promise<Response> {
   return async (request) => {
     const url = new URL(request.url);
-    const id = decodeURIComponent(url.pathname.replace(/^\/+/, ""));
-    const source = id ? sourceRepo.getById(id) : null;
+    const id = sourceIdOf(url);
+    if (!id) return new Response(null, { status: 404 });
+    const source = sourceRepo.getById(id);
     if (source?.kind === "meeting") {
       const seg = parseSeg(url);
       const path =

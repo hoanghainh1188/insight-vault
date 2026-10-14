@@ -35,6 +35,7 @@ import type {
   MeetingMarker,
   MeetingPrepareResult,
   RecoverableSession,
+  MeetingTranscript,
   MeetingStartResult,
   MeetingState,
 } from "./types";
@@ -164,6 +165,11 @@ export const CHANNELS = {
   meetingRecover: "meeting:recover",
   meetingFinalizeAgain: "meeting:finalizeAgain",
   meetingRecoverable: "meeting:recoverable", // event push main→renderer (KHÔNG vào ChannelResponse)
+  // PR C2 — trình xem cuộc họp.
+  meetingGetTranscript: "meeting:getTranscript",
+  meetingUpdateMarker: "meeting:updateMarker",
+  meetingDeleteMarker: "meeting:deleteMarker",
+  meetingExportMarkdown: "meeting:exportMarkdown",
 } as const;
 
 export type ChannelName = (typeof CHANNELS)[keyof typeof CHANNELS];
@@ -269,4 +275,8 @@ export interface ChannelResponse {
   [CHANNELS.meetingListRecoverable]: RecoverableSession[];
   [CHANNELS.meetingRecover]: { ok: true };
   [CHANNELS.meetingFinalizeAgain]: { ok: true };
+  [CHANNELS.meetingGetTranscript]: MeetingTranscript;
+  [CHANNELS.meetingUpdateMarker]: { ok: true };
+  [CHANNELS.meetingDeleteMarker]: { ok: true };
+  [CHANNELS.meetingExportMarkdown]: StudioExportResult;
 }

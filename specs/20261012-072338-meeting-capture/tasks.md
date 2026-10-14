@@ -410,36 +410,46 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 
 ### Tests trước (FAIL rồi mới code)
 
-- [ ] T132 [P] [US7] Test TRƯỚC `tests/unit/meeting-span-at-time.test.ts` cho `spanAtTime(spans, t)` (tìm nhị phân, giữa hai span, trước span đầu, sau span cuối).
-- [ ] T133 [P] [US7] Test TRƯỚC `tests/unit/meeting-transcript-search.test.ts` cho `searchTranscript(text, query)` (fold dấu như FTS 073 — dùng lại hàm fold sẵn có;
+> Ghi chú 2026-10-12: hàm thuần T132–T134 → T136–T137 làm trước trên branch `186-pr-c2` (xếp chồng trên `186-pr-c1`); i18n
+> `meeting.marker.*`, `meeting.export.*` đã thêm (vi + en).
+
+- [x] T132 [P] [US7] Test TRƯỚC `tests/unit/meeting-span-at-time.test.ts` cho `spanAtTime(spans, t)` (tìm nhị phân, giữa hai span, trước span đầu, sau span cuối).
+- [x] T133 [P] [US7] Test TRƯỚC `tests/unit/meeting-transcript-search.test.ts` cho `searchTranscript(text, query)` (fold dấu như FTS 073 — dùng lại hàm fold sẵn có;
       nhiều kết quả, query rỗng, ký tự đặc biệt).
-- [ ] T134 [P] [US7] Test TRƯỚC `tests/unit/meeting-markdown.test.ts` cho `buildMeetingMarkdown(meta, text, spans, markers, gaps, tr)` + `markerExcerpt`: tiêu đề, ngày,
+- [x] T134 [P] [US7] Test TRƯỚC `tests/unit/meeting-markdown.test.ts` cho `buildMeetingMarkdown(meta, text, spans, markers, gaps, tr)` + `markerExcerpt`: tiêu đề, ngày,
       thời lượng, ngôn ngữ, danh sách đánh dấu, `[hh:mm:ss]` mỗi đoạn, dòng tạm dừng, escape Markdown trong tiêu đề, vi + en.
-- [ ] T135 [P] [US7] Test TRƯỚC `tests/unit/meeting-service-viewer.test.ts`: `getTranscript` (chỉ `kind="meeting"`), `updateMarker`/`deleteMarker` (markerId thuộc meeting),
+- [X] T135 [P] [US7] Test TRƯỚC `tests/unit/meeting-service-viewer.test.ts`: `getTranscript` (chỉ `kind="meeting"`), `updateMarker`/`deleteMarker` (markerId thuộc meeting),
       `exportMarkdown` dựng nội dung ở main; mở rộng `meeting-channels-whitelist.test.ts`.
 
 ### Implementation
 
-- [ ] T136 [P] [US7] `src/renderer/features/meeting-capture/viewer/span-at-time.ts` + `transcript-search.ts`. T132, T133 xanh.
-- [ ] T137 [P] [US7] `src/main/services/meeting-capture/meeting-markdown.ts`. T134 xanh.
-- [ ] T138 [US7] `meeting-service.ts` + `meeting-repo.ts`: `getTranscript`, `updateMarker`, `deleteMarker`, `exportMarkdown` (tái dùng `exportMarkdown` của
+- [x] T136 [P] [US7] `src/shared/meeting/span-at-time.ts` (chuyển sang shared: main dùng cho `markerExcerpt`) + `viewer/transcript-search.ts` (fold chuyển sang `src/shared/text/fold.ts`, `fts-fold.ts` re-export). T132, T133 xanh.
+- [x] T137 [P] [US7] `src/main/services/meeting-capture/meeting-markdown.ts`. T134 xanh.
+- [X] T138 [US7] `meeting-service.ts` + `meeting-repo.ts`: `getTranscript`, `updateMarker`, `deleteMarker`, `exportMarkdown` (tái dùng `exportMarkdown` của
       `src/main/services/studio/export.ts` + `sanitizeName` của `studio/export-name.ts`). T135 xanh.
-- [ ] T139 [US7] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:getTranscript`, `meeting:updateMarker`, `meeting:deleteMarker`, `meeting:exportMarkdown`.
-- [ ] T140 [US7] `viewer/MeetingViewer.tsx` + `viewer/TranscriptPane.tsx`: player cố định ở đầu, transcript chia theo span, `aria-current` + tô câu đang phát
+- [X] T139 [US7] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:getTranscript`, `meeting:updateMarker`, `meeting:deleteMarker`, `meeting:exportMarkdown`.
+- [X] T140 [US7] `viewer/MeetingViewer.tsx` + `viewer/TranscriptPane.tsx`: player cố định ở đầu, transcript chia theo span, `aria-current` + tô câu đang phát
       (`timeupdate` + `spanAtTime`), cuộn theo khi người dùng không tự cuộn, bấm câu ⇒ tua và giữ nguyên trạng thái phát/dừng hiện tại,
       dòng phân cách tạm dừng, citation `[n]` tô đoạn trích như cũ.
-- [ ] T141 [US7] `viewer/TranscriptSearch.tsx`: ô tìm, tô kết quả, đếm "k/N", trước/sau, phím Enter/Shift+Enter.
-- [ ] T142 [US7] `viewer/MarkerList.tsx`: nhãn + mốc + trích đoạn, bấm ⇒ tua, đổi nhãn, xoá (xác nhận).
-- [ ] T143 [US7] Thanh công cụ viewer: Sao chép transcript có timestamp (clipboard qua cơ chế sẵn có), Xuất Markdown (`meetingExportMarkdown`, toast như Studio).
-- [ ] T144 [US7] `SourceViewer.tsx`: `kind="meeting"` ⇒ `MeetingViewer` (giữ nút Hoàn tất transcript/Chốt lại của PR C1).
-- [ ] T145 [US7] i18n vi + en; nhãn trình đọc màn hình cho câu đang phát (không đọc liên tục), kết quả tìm ("k trên N").
-- [ ] T146 [US7] `tests/e2e/meeting-viewer.spec.ts` theo quickstart dòng PR C2.
+- [X] T141 [US7] `viewer/TranscriptSearch.tsx`: ô tìm, tô kết quả, đếm "k/N", trước/sau, phím Enter/Shift+Enter.
+- [X] T142 [US7] `viewer/MarkerList.tsx`: nhãn + mốc + trích đoạn, bấm ⇒ tua, đổi nhãn, xoá (xác nhận).
+- [X] T143 [US7] Thanh công cụ viewer: Sao chép transcript có timestamp (clipboard qua cơ chế sẵn có), Xuất Markdown (`meetingExportMarkdown`, toast như Studio).
+- [X] T144 [US7] `SourceViewer.tsx`: `kind="meeting"` ⇒ `MeetingViewer` (giữ nút Hoàn tất transcript/Chốt lại của PR C1).
+- [X] T145 [US7] i18n vi + en; nhãn trình đọc màn hình cho câu đang phát (không đọc liên tục), kết quả tìm ("k trên N").
+- [X] T146 [US7] `tests/e2e/meeting-viewer.spec.ts` theo quickstart dòng PR C2.
+
+> Ghi chú 2026-10-14 (code PR C2): main = `meeting-viewer.ts` (getTranscript kèm trích đoạn đánh dấu, updateMarker/deleteMarker kiểm
+> đánh dấu thuộc nguồn cuộc họp, exportMarkdown dựng ở main) — tạo trong index.ts, không qua meeting-service. Renderer =
+> `viewer/MeetingViewer.tsx` + `TranscriptSearch.tsx` + `MarkerList.tsx` + `viewer-text.ts` (thuần); player vẫn do SourceViewer giữ.
+> Phát hiện khi e2e: phát/tua qua `iv-media` lỗi "data source error" sau ~0,4 s (mọi audio/video/cuộc họp) — sửa bằng quyền scheme
+> `standard` + `secure` (index.ts) — ADR `2026-10-14-iv-media-standard-scheme.md`. T138 thực tế nằm ở `meeting-viewer.ts` (không qua
+> meeting-service); T140 không có `TranscriptPane.tsx` — danh sách câu là `SpanRow` (memo) trong `MeetingViewer.tsx`.
 
 ### Cổng review PR C2
 
-- [ ] T147 [US7] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T148 [US7] Gọi **glossary-steward**; append term thiếu.
-- [ ] T149 [US7] Gọi **security-reviewer** (theo quy trình chung — kênh mới, xuất tệp): agent tự in `SKIPPED` nếu không liên quan.
+- [X] T147 [US7] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T148 [US7] Gọi **glossary-steward**; append term thiếu.
+- [X] T149 [US7] Gọi **security-reviewer** (theo quy trình chung — kênh mới, xuất tệp): agent tự in `SKIPPED` nếu không liên quan.
 - [ ] T150 [US7] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 7; mở PR C2.
 

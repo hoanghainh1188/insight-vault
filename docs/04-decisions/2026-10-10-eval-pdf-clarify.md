@@ -50,4 +50,3 @@
   dev của cấu hình đã ghi 90,9% (v3) → 85,7% (v4); `gateVerdict` cho cấu hình đó vẫn **ĐẠT** (hold-out 100%, Wilson vi gộp 0,769 ≥
   0,75). Mở **issue riêng #187** cho giới hạn này; không đổi cấu hình trong #177.
 - ⇒ FR-010 / SC-004 sửa: "không tụt" đo trên cấu hình như app đang chạy (108 + 109). T023 ghi số liệu v4 (chỉ số liệu).
-

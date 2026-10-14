@@ -31,9 +31,9 @@ export const VI_LITERAL_ALLOWLIST: ReadonlyArray<{
       "Regex ký tự riêng tiếng Việt để nhận diện ngôn ngữ câu hỏi (không phải chuỗi giao diện).",
   },
   {
-    file: "src/main/services/ingestion/fts-fold.ts",
+    file: "src/shared/text/fold.ts",
     reason:
-      "Regex đ/Đ ⇒ d/D khi gấp dấu cho tìm toàn văn FTS5 (055) — xử lý dữ liệu, không phải chuỗi giao diện.",
+      "Regex đ/Đ ⇒ d/D khi gấp dấu cho tìm toàn văn FTS5 (055) và tìm trong transcript cuộc họp (186) — xử lý dữ liệu, không phải chuỗi giao diện.",
   },
   {
     file: "src/main/services/meeting-capture/fake-asr.ts",

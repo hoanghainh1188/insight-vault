@@ -12,11 +12,11 @@
 
 **Badge 3 trạng thái, cập nhật tức thì:**
 
-| mode | Nhãn | Khi nào |
-|---|---|---|
-| `local` | Chạy cục bộ · dữ liệu không rời máy | không provider online, không egress |
-| `online` | AI online đang bật · chỉ gửi khi bạn hỏi | provider online active, KHÔNG có request đang chạy |
-| `sending` | Đang gửi dữ liệu ra ngoài… | đang có egress thật (ưu tiên cao nhất) |
+| mode      | Nhãn                                     | Khi nào                                            |
+| --------- | ---------------------------------------- | -------------------------------------------------- |
+| `local`   | Chạy cục bộ · dữ liệu không rời máy      | không provider online, không egress                |
+| `online`  | AI online đang bật · chỉ gửi khi bạn hỏi | provider online active, KHÔNG có request đang chạy |
+| `sending` | Đang gửi dữ liệu ra ngoài…               | đang có egress thật (ưu tiên cao nhất)             |
 
 - _Loại bỏ:_ giữ 2 trạng thái (không phân biệt "đã bật" với "đang gửi").
 
@@ -33,8 +33,8 @@
 ## Bổ sung sau review (2026-10-07)
 
 - **Nhãn `sending` nói rõ đang làm gì** (cùng 1 trạng thái/hình thức như người dùng đã chốt, chỉ chính xác hơn câu
-  chung "Đang gửi dữ liệu ra ngoài…"): *Đang gửi dữ liệu tới AI online…* / *Đang tải trang web…* / *Đang tải mô hình
-  (cần Internet lần đầu)…* (ưu tiên ai > url > model). Lý do: tải mô hình KHÔNG gửi dữ liệu người dùng đi.
+  chung "Đang gửi dữ liệu ra ngoài…"): _Đang gửi dữ liệu tới AI online…_ / _Đang tải trang web…_ / _Đang tải mô hình
+  (cần Internet lần đầu)…_ (ưu tiên ai > url > model). Lý do: tải mô hình KHÔNG gửi dữ liệu người dùng đi.
 - **Ollama không phải egress** (`OLLAMA_HOST` chỉ loopback): `streamLines`/`callJson` có cờ `egress:false` cho Ollama
   — trước đó chat cục bộ làm badge báo "đang gửi" (sai sự thật).
 - Lần nạp mô hình đầu mỗi phiên vẫn bật `sending/model` kể cả khi mô hình đã có trong cache — chấp nhận BÁO THỪA

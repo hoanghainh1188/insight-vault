@@ -17,6 +17,10 @@ import {
 } from "./services/meeting-capture/meeting-service";
 import { UserFacingError } from "@shared/codes/user-error";
 import { createMeetingRepo } from "./services/meeting-capture/meeting-repo";
+import { createMeetingViewerApi } from "./services/meeting-capture/meeting-viewer";
+import { getSourceContent } from "./services/source-viewer/source-content";
+import { exportMarkdown } from "./services/studio/export";
+import { formatDateTime } from "@shared/i18n/format";
 import { createMeetingFiles } from "./services/meeting-capture/meeting-files";
 import {
   createAsrClient,
@@ -136,8 +140,18 @@ function systemLocale(): string | undefined {
 
 // 049: đăng ký scheme iv-media:// là privileged (stream + fetch API) TRƯỚC khi app ready — cho <audio> phát
 // file audio gốc qua main (renderer sandbox không đọc FS). Handler đăng ký ở whenReady (cần sourceRepo).
+// 186 PR C2: `standard` + `secure` — thiếu hai quyền này, Chromium phát media qua iv-media được vài trăm ms rồi báo
+// "PIPELINE_ERROR_READ: data source error" ở yêu cầu Range kế tiếp (phát/tua audio-video-cuộc họp). stream: <audio>/<video>.
 protocol.registerSchemesAsPrivileged([
-  { scheme: "iv-media", privileges: { stream: true, supportFetchAPI: true } },
+  {
+    scheme: "iv-media",
+    privileges: {
+      standard: true,
+      secure: true,
+      stream: true,
+      supportFetchAPI: true,
+    },
+  },
 ]);
 
 // Hardening cấp session (Constitution I & III): mặc định TỪ CHỐI mọi permission; chặn mở device (USB/HID/serial).
@@ -924,6 +938,23 @@ app
       log: logEvent,
     });
 
+    // 186 PR C2: trình xem cuộc họp — văn bản từ chunk đã lưu (như source:getContent), xuất Markdown qua hộp thoại lưu.
+    const meetingViewer = createMeetingViewerApi({
+      repo: meetingRepo,
+      sources: ingestion.sourceRepo,
+      getText: (id) => getSourceContent(ingestion.sourceRepo, id)?.text ?? null,
+      translator: () => uiLanguage.translator(),
+      formatDate: (ms) => formatDateTime(ms, uiLanguage.get().effective),
+      saveMarkdown: (content, name) =>
+        exportMarkdown(
+          BrowserWindow.getFocusedWindow(),
+          content,
+          name,
+          uiLanguage.translator(),
+        ),
+      log: logEvent,
+    });
+
     registerIpc({
       store,
       uiLanguage,
@@ -971,6 +1002,7 @@ app
         hashFile: hashFileStreaming,
       }),
       meeting,
+      meetingViewer,
     });
 
     // 145: menu ứng dụng theo ngôn ngữ giao diện — dựng lúc khởi động và dựng lại ngay khi đổi ngôn ngữ.
