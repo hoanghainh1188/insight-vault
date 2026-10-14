@@ -418,25 +418,31 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
       nhiều kết quả, query rỗng, ký tự đặc biệt).
 - [x] T134 [P] [US7] Test TRƯỚC `tests/unit/meeting-markdown.test.ts` cho `buildMeetingMarkdown(meta, text, spans, markers, gaps, tr)` + `markerExcerpt`: tiêu đề, ngày,
       thời lượng, ngôn ngữ, danh sách đánh dấu, `[hh:mm:ss]` mỗi đoạn, dòng tạm dừng, escape Markdown trong tiêu đề, vi + en.
-- [ ] T135 [P] [US7] Test TRƯỚC `tests/unit/meeting-service-viewer.test.ts`: `getTranscript` (chỉ `kind="meeting"`), `updateMarker`/`deleteMarker` (markerId thuộc meeting),
+- [X] T135 [P] [US7] Test TRƯỚC `tests/unit/meeting-service-viewer.test.ts`: `getTranscript` (chỉ `kind="meeting"`), `updateMarker`/`deleteMarker` (markerId thuộc meeting),
       `exportMarkdown` dựng nội dung ở main; mở rộng `meeting-channels-whitelist.test.ts`.
 
 ### Implementation
 
 - [x] T136 [P] [US7] `src/shared/meeting/span-at-time.ts` (chuyển sang shared: main dùng cho `markerExcerpt`) + `viewer/transcript-search.ts` (fold chuyển sang `src/shared/text/fold.ts`, `fts-fold.ts` re-export). T132, T133 xanh.
 - [x] T137 [P] [US7] `src/main/services/meeting-capture/meeting-markdown.ts`. T134 xanh.
-- [ ] T138 [US7] `meeting-service.ts` + `meeting-repo.ts`: `getTranscript`, `updateMarker`, `deleteMarker`, `exportMarkdown` (tái dùng `exportMarkdown` của
+- [X] T138 [US7] `meeting-service.ts` + `meeting-repo.ts`: `getTranscript`, `updateMarker`, `deleteMarker`, `exportMarkdown` (tái dùng `exportMarkdown` của
       `src/main/services/studio/export.ts` + `sanitizeName` của `studio/export-name.ts`). T135 xanh.
-- [ ] T139 [US7] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:getTranscript`, `meeting:updateMarker`, `meeting:deleteMarker`, `meeting:exportMarkdown`.
-- [ ] T140 [US7] `viewer/MeetingViewer.tsx` + `viewer/TranscriptPane.tsx`: player cố định ở đầu, transcript chia theo span, `aria-current` + tô câu đang phát
+- [X] T139 [US7] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:getTranscript`, `meeting:updateMarker`, `meeting:deleteMarker`, `meeting:exportMarkdown`.
+- [X] T140 [US7] `viewer/MeetingViewer.tsx` + `viewer/TranscriptPane.tsx`: player cố định ở đầu, transcript chia theo span, `aria-current` + tô câu đang phát
       (`timeupdate` + `spanAtTime`), cuộn theo khi người dùng không tự cuộn, bấm câu ⇒ tua và giữ nguyên trạng thái phát/dừng hiện tại,
       dòng phân cách tạm dừng, citation `[n]` tô đoạn trích như cũ.
-- [ ] T141 [US7] `viewer/TranscriptSearch.tsx`: ô tìm, tô kết quả, đếm "k/N", trước/sau, phím Enter/Shift+Enter.
-- [ ] T142 [US7] `viewer/MarkerList.tsx`: nhãn + mốc + trích đoạn, bấm ⇒ tua, đổi nhãn, xoá (xác nhận).
-- [ ] T143 [US7] Thanh công cụ viewer: Sao chép transcript có timestamp (clipboard qua cơ chế sẵn có), Xuất Markdown (`meetingExportMarkdown`, toast như Studio).
-- [ ] T144 [US7] `SourceViewer.tsx`: `kind="meeting"` ⇒ `MeetingViewer` (giữ nút Hoàn tất transcript/Chốt lại của PR C1).
-- [ ] T145 [US7] i18n vi + en; nhãn trình đọc màn hình cho câu đang phát (không đọc liên tục), kết quả tìm ("k trên N").
-- [ ] T146 [US7] `tests/e2e/meeting-viewer.spec.ts` theo quickstart dòng PR C2.
+- [X] T141 [US7] `viewer/TranscriptSearch.tsx`: ô tìm, tô kết quả, đếm "k/N", trước/sau, phím Enter/Shift+Enter.
+- [X] T142 [US7] `viewer/MarkerList.tsx`: nhãn + mốc + trích đoạn, bấm ⇒ tua, đổi nhãn, xoá (xác nhận).
+- [X] T143 [US7] Thanh công cụ viewer: Sao chép transcript có timestamp (clipboard qua cơ chế sẵn có), Xuất Markdown (`meetingExportMarkdown`, toast như Studio).
+- [X] T144 [US7] `SourceViewer.tsx`: `kind="meeting"` ⇒ `MeetingViewer` (giữ nút Hoàn tất transcript/Chốt lại của PR C1).
+- [X] T145 [US7] i18n vi + en; nhãn trình đọc màn hình cho câu đang phát (không đọc liên tục), kết quả tìm ("k trên N").
+- [X] T146 [US7] `tests/e2e/meeting-viewer.spec.ts` theo quickstart dòng PR C2.
+
+> Ghi chú 2026-10-14 (code PR C2): main = `meeting-viewer.ts` (getTranscript kèm trích đoạn đánh dấu, updateMarker/deleteMarker kiểm
+> đánh dấu thuộc nguồn cuộc họp, exportMarkdown dựng ở main) — tạo trong index.ts, không qua meeting-service. Renderer =
+> `viewer/MeetingViewer.tsx` + `TranscriptSearch.tsx` + `MarkerList.tsx` + `viewer-text.ts` (thuần); player vẫn do SourceViewer giữ.
+> Phát hiện khi e2e: phát/tua qua `iv-media` lỗi "data source error" sau ~0,4 s (mọi audio/video/cuộc họp) — sửa bằng quyền scheme
+> `standard` + `secure` (index.ts).
 
 ### Cổng review PR C2
 

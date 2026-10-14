@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { MeetingSourceBanner } from "../meeting-capture/MeetingSourceBanner";
+import { MeetingViewer } from "../meeting-capture/viewer/MeetingViewer";
 import { useRelink } from "../sources/useRelink";
 import { useT } from "../../shared/i18n/i18n-context";
 import { buildViewerBlocks, type ViewerBlock } from "./highlight";
@@ -306,7 +307,24 @@ export function SourceViewer({
             )}
           </div>
         )}
-        {!loading && !missing && content && (
+        {/* 186 PR C2: nguồn cuộc họp ⇒ trình xem theo câu (player ở trên do viewer này giữ). */}
+        {!loading && !missing && content?.kind === "meeting" && target && (
+          <MeetingViewer
+            key={target.sourceId}
+            sourceId={target.sourceId}
+            text={content.text}
+            audio={audioRef}
+            highlight={
+              citation && !stale
+                ? {
+                    charStart: citation.locator.charStart,
+                    charEnd: citation.locator.charEnd,
+                  }
+                : null
+            }
+          />
+        )}
+        {!loading && !missing && content && content.kind !== "meeting" && (
           <div className="vtext">
             {blocks.length === 0 && (
               <span className="viewer-msg">{t.t("viewer.empty")}</span>

@@ -733,6 +733,19 @@ export interface MeetingMarkInput {
   tEnd?: number;
 }
 
+/** PR C2 — dữ liệu trình xem cuộc họp (văn bản lấy từ source:getContent). */
+export interface MeetingTranscript {
+  spans: { charStart: number; charEnd: number; tStart: number; tEnd: number }[];
+  /** Đánh dấu kèm trích đoạn (câu chứa mốc / các câu trong khoảng). */
+  markers: (MeetingMarker & { excerpt: string })[];
+  pauseGaps: PauseGap[];
+  language: "vi" | "en" | null;
+  quality: TranscriptQuality | null;
+  durationSec: number;
+  startedAt: number;
+  endedAt: number | null;
+}
+
 /** PR C1 — phiên bị gián đoạn chờ người dùng chọn cách phục hồi (thẻ phục hồi). */
 export interface RecoverableSession {
   sessionId: string;

@@ -32,6 +32,27 @@ const PR_C1 = {
   meetingRecoverable: "meeting:recoverable",
 } as const;
 
+const PR_C2 = {
+  meetingGetTranscript: "meeting:getTranscript",
+  meetingUpdateMarker: "meeting:updateMarker",
+  meetingDeleteMarker: "meeting:deleteMarker",
+  meetingExportMarkdown: "meeting:exportMarkdown",
+} as const;
+
+describe("meeting:* whitelist PR C2", () => {
+  it("đủ kênh PR C2 + preload có hàm riêng", () => {
+    const preload = readFileSync(
+      join(process.cwd(), "src/preload/index.ts"),
+      "utf8",
+    );
+    for (const [key, name] of Object.entries(PR_C2)) {
+      expect((CHANNELS as Record<string, string>)[key]).toBe(name);
+      expect(isWhitelisted(name)).toBe(true);
+      expect(preload).toContain(`${key}:`);
+    }
+  });
+});
+
 describe("meeting:* whitelist PR C1", () => {
   it("đủ kênh PR C1 + preload có hàm riêng", () => {
     for (const [key, name] of Object.entries(PR_C1)) {
