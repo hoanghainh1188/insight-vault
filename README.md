@@ -30,10 +30,14 @@ highlighted.
 - **Relevance checker** — a small local model checks whether the retrieved passages actually answer the question, so
   questions your sources don't cover get "Not found in the sources" right away instead of a guess (downloaded once,
   ~120 MB; Q&A works as before until it's ready).
-- **Record meeting** *(experimental)* — record from your microphone straight into a notebook (pause, resume,
-  end); when you finish, the recording is transcribed locally and becomes a source you can search, ask about and use in
-  Studio, with citations that jump to the exact moment in the audio. The live transcript while recording is not there
-  yet, and the Windows build has not been tested with a real microphone.
+- **Record meeting** _(experimental)_ — record from your microphone straight into a notebook. While recording you see
+  a **draft transcript** with timestamps (click one to hear it again), an input level meter, automatic language
+  detection with a switch to Vietnamese / English, and **markers** (Decision, Action item, Question). When you end, the
+  recording is transcribed again locally and becomes a source you can search, ask about and use in Studio, with citations
+  that jump to the exact moment in the audio. The **meeting viewer** highlights the sentence being played, lets you click
+  a sentence to seek, search the transcript, review markers, copy, or export Markdown. Recordings interrupted by a crash
+  get a recovery card; quitting while recording asks first; shortcuts ⌘/Ctrl+Shift+P (pause), M (mark), E (end). Not
+  yet tested with a real microphone on Windows — please report problems.
 - **Source viewer** — opens the cited passage highlighted; audio/video jump to the cited timestamp; images
   show the recognised text region.
 - **Studio** — 8 notebook-wide outputs: summary, key points, FAQ, outline, study guide, briefing, timeline and
