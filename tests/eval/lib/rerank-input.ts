@@ -1,6 +1,7 @@
-// 187 PR 2: trình bày lại đoạn bảng CHỈ cho chuỗi gửi bộ chấm độ liên quan (cross-encoder) — hàm THUẦN, tất định.
-// chunk / locator / chip [n] / văn bản hiển thị KHÔNG đổi (Constitution II). Contract: specs/20261012-120856-reranker-near-topic/
-// contracts/rerank-input.md.
+// 187 PR 2 (T019/T021): trình bày lại đoạn bảng CHỈ cho chuỗi gửi bộ chấm độ liên quan (cross-encoder) — hàm THUẦN, tất định.
+// Contract: specs/20261012-120856-reranker-near-topic/contracts/rerank-input.md. Đã đo, KHÔNG áp dụng vào app (không cứu được q-162)
+// ⇒ nằm trong công cụ đo, không ở src/main (ADR docs/04-decisions/2026-10-14-reranker-near-topic.md). Áp dụng sau này ⇒ chuyển về
+// src/main/services/rag/ và nối vào retrieve() (chunk / locator / chip [n] giữ nguyên).
 
 const isTableLine = (l: string): boolean => l.trimStart().startsWith("|");
 const isSeparator = (l: string): boolean => /^\s*\|[\s:|-]*-[\s:|-]*$/.test(l);

@@ -36,7 +36,6 @@ export default defineConfig({
         "src/main/services/rag/fusion.ts",
         "src/main/services/rag/rewrite.ts",
         "src/main/services/rag/retrieval.ts",
-        "src/main/services/rag/rerank-input.ts",
         // 108: phần THUẦN của công cụ đo truy xuất (harness/report là I/O — không tính).
         "tests/eval/lib/dataset.ts",
         "tests/eval/lib/metrics.ts",
@@ -44,6 +43,7 @@ export default defineConfig({
         "tests/eval/lib/rerank-grid.ts",
         "tests/eval/lib/rerank-diagnose.ts",
         "tests/eval/lib/rerank-compare.ts",
+        "tests/eval/lib/rerank-input.ts",
         // 177: PDF fixture của bộ đánh giá (thuần, tất định).
         "tests/eval/lib/pdf-fixture.ts",
         // report.ts giữ NGOÀI coverage như 108 (writeReport + phần render lớn là I/O / định dạng); phần mới renderPdfSection có

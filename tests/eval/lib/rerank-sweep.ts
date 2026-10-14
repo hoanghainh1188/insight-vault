@@ -9,7 +9,7 @@ import {
   type RerankGridSpec,
   type SweepResult,
 } from "./rerank-grid";
-import { rerankInput } from "../../../src/main/services/rag/rerank-input";
+import { rerankInput } from "./rerank-input";
 
 // 187 PR 2 (T017, T021): quét lưới mở rộng (ứng viên × maxTokens × minScore × Δ) trên ĐÚNG retrieve() của app. Mỗi (ứng viên, maxTokens)
 // dùng MỘT scorer riêng: lượt ấm đo độ trễ thật (không cache) rồi các cấu hình minScore × Δ chỉ lọc lại trên điểm đã chấm.
@@ -49,6 +49,7 @@ export async function runRerankSweep(args: {
   revision?: string;
   spec: RerankGridSpec;
   tableGuardIds: readonly string[];
+  mustRejectIds: readonly string[];
   keyQuestionIds: readonly string[];
   log: (msg: string) => void;
 }): Promise<SweepRun> {
@@ -149,6 +150,10 @@ export async function runRerankSweep(args: {
             return o
               ? [{ questionId: id, rejected: o.rejected, hitRank: o.hitRank }]
               : [];
+          }),
+          mustReject: args.mustRejectIds.flatMap((id) => {
+            const o = outcomes.find((x) => x.questionId === id);
+            return o ? [{ questionId: id, rejected: o.rejected }] : [];
           }),
           latency,
         });

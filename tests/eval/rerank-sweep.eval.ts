@@ -46,6 +46,8 @@ const MODEL = process.env.EVAL_SWEEP_MODEL ?? RERANK_MODEL;
 // Model lớn quét lâu hơn timeout mặc định 30 phút của vitest.eval.config.ts (lượt bge-reranker-base đầu tiên bị cắt ở mốc đó).
 const SWEEP_TIMEOUT_MS = 3 * 60 * 60 * 1000;
 const TABLE_GUARDS = ["q-162", "q-170", "q-171"] as const;
+/** FR-003: câu không đáp án sát chủ đề PDF phải bị từ chối (ngoài tỉ lệ ≥ 90%). */
+const MUST_REJECT = ["q-176", "q-179"] as const;
 const KEY_IDS = [
   ...TABLE_GUARDS,
   "q-176",
@@ -100,6 +102,11 @@ describe.skipIf(process.env.EVAL_RERANK_SWEEP !== "1")(
         const presentations = (process.env.EVAL_SWEEP_PRESENT ?? "plain,table")
           .split(",")
           .map((s) => s.trim()) as Presentation[];
+        if (MODEL === RERANK_MODEL && !presentations.includes("plain")) {
+          throw new Error(
+            "model hiện hành cần presentation=plain để có mốc v5 (EVAL_SWEEP_PRESENT)",
+          );
+        }
         const outDir = resolve(
           process.env.EVAL_SWEEP_OUT ??
             resolve(
@@ -130,6 +137,7 @@ describe.skipIf(process.env.EVAL_RERANK_SWEEP !== "1")(
               fileOverride: process.env.EVAL_RERANK_FILE,
               spec,
               tableGuardIds: TABLE_GUARDS,
+              mustRejectIds: MUST_REJECT,
               keyQuestionIds: KEY_IDS,
               log,
             });
@@ -181,7 +189,11 @@ describe.skipIf(process.env.EVAL_RERANK_SWEEP !== "1")(
           const summary: Record<string, unknown> = {};
           for (const presentation of presentations) {
             const run = runs[presentation];
-            const rules = { tableGuardIds: TABLE_GUARDS, enFloor };
+            const rules = {
+              tableGuardIds: TABLE_GUARDS,
+              mustRejectIds: MUST_REJECT,
+              enFloor,
+            };
             const funnel = rerankFunnel(run.results, rules, LATENCY_BUDGET);
             const { eligible } = eligibleRerankConfigs(
               run.results,
@@ -207,7 +219,7 @@ describe.skipIf(process.env.EVAL_RERANK_SWEEP !== "1")(
               "| --- | --- |",
               ...funnel.map((f) => `| ${f.stage} | ${f.remaining} |`),
               "",
-              `### Chọn trên dev (chỉ trong cấu hình đủ điều kiện): ${choice.chosen ? `${choice.level} — ${choice.reason}` : `KHÔNG CHỌN ĐƯỢC — ${choice.reason}`}`,
+              `### Chọn trên dev (chỉ trong cấu hình đủ điều kiện): ${choice.chosen ? `${choice.level} — ${choice.reason}` : `KHÔNG CHỌN ĐƯỢC — ${eligible.length === 0 ? "không cấu hình nào đủ điều kiện (xem phễu)" : choice.reason}`}`,
               "",
             );
             let focus: SweepResult | undefined = choice.chosen

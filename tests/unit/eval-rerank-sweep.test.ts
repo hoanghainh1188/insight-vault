@@ -61,8 +61,13 @@ describe("buildRerankGrid — dạng mở rộng", () => {
 describe("eligibleRerankConfigs", () => {
   const rules: EligibilityRules = {
     tableGuardIds: ["q-162", "q-170", "q-171"],
+    mustRejectIds: ["q-176", "q-179"],
     enFloor: { recallAt6: 0.7273, correctRejection: 0.8333 },
   };
+  const okReject = [
+    { questionId: "q-176", rejected: true },
+    { questionId: "q-179", rejected: true },
+  ];
   const budget: LatencyBudget = { p50Ms: 400, p95Ms: 800 };
   const okGuards = [
     { questionId: "q-162", rejected: false, hitRank: 3 },
@@ -85,6 +90,7 @@ describe("eligibleRerankConfigs", () => {
     en: m(0.8333, 0.7273),
     viRejected: { successes: 9, n: 10 },
     guards: okGuards,
+    mustReject: okReject,
     latency: { p50Ms: 340, p95Ms: 438 },
     ...over,
   });
@@ -118,6 +124,21 @@ describe("eligibleRerankConfigs", () => {
       });
       expect(eligibleRerankConfigs([bad], rules, budget).eligible).toEqual([]);
     }
+  });
+
+  it("loại khi câu bắt buộc từ chối của FR-003 (q-176 / q-179) lọt hoặc thiếu", () => {
+    const leak = mk({
+      mustReject: [okReject[0], { questionId: "q-179", rejected: false }],
+    });
+    const r = eligibleRerankConfigs([leak], rules, budget);
+    expect(r.eligible).toEqual([]);
+    expect(r.excluded[0].reasons.join(" ")).toContain("q-179");
+    const missing = mk({ mustReject: okReject.slice(0, 1) });
+    expect(
+      eligibleRerankConfigs([missing], rules, budget).excluded[0].reasons.join(
+        " ",
+      ),
+    ).toContain("q-179");
   });
 
   it("loại khi thiếu câu bộ kiểm (không kiểm chứng được)", () => {
@@ -245,6 +266,7 @@ const budget: LatencyBudget = { p50Ms: 400, p95Ms: 800 };
 describe("rerankFunnel", () => {
   const rules: EligibilityRules = {
     tableGuardIds: ["q-162"],
+    mustRejectIds: ["q-179"],
     enFloor: { recallAt6: 0.7, correctRejection: 0.8 },
   };
   const point = (minScore: number): SweepResult["point"] => ({
@@ -264,6 +286,7 @@ describe("rerankFunnel", () => {
     guardOk: boolean,
     enOk: boolean,
     latOk: boolean,
+    q179Rejected = true,
   ): SweepResult => ({
     point: point(minScore),
     dev: m(devCr, devR6),
@@ -273,13 +296,15 @@ describe("rerankFunnel", () => {
     guards: [
       { questionId: "q-162", rejected: !guardOk, hitRank: guardOk ? 1 : null },
     ],
+    mustReject: [{ questionId: "q-179", rejected: q179Rejected }],
     latency: latOk ? { p50Ms: 1, p95Ms: 1 } : { p50Ms: 999, p95Ms: 999 },
   });
 
   it("đếm số cấu hình còn lại sau từng điều kiện nối tiếp", () => {
     const f = rerankFunnel(
       [
-        mk(0.1, 0.5, 0.95, true, true, true), // rớt FR-003
+        mk(0.1, 0.5, 0.95, true, true, true), // rớt từ chối đúng dev
+        mk(0.15, 0.95, 0.9, true, true, true, false), // CR dev đủ nhưng q-179 lọt
         mk(0.2, 0.95, 0.5, true, true, true), // rớt Recall@6 dev
         mk(0.3, 0.95, 0.9, false, true, true), // rớt bộ kiểm bảng
         mk(0.4, 0.95, 0.9, true, false, true), // rớt tiếng Anh
@@ -289,8 +314,9 @@ describe("rerankFunnel", () => {
       rules,
       budget,
     );
-    expect(f.map((s) => s.remaining)).toEqual([6, 5, 4, 3, 2, 1]);
+    expect(f.map((s) => s.remaining)).toEqual([7, 6, 5, 4, 3, 2, 1]);
     expect(f[0].stage).toMatch(/tổng/i);
+    expect(f[2].stage).toContain("q-179");
     expect(f.at(-1)!.stage).toMatch(/độ trễ/i);
   });
 

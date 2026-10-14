@@ -101,12 +101,16 @@ export interface SweepResult {
   viRejected: { successes: number; n: number };
   /** kết quả các câu bộ kiểm bảng (chỉ để LOẠI cấu hình, không để xếp hạng) */
   guards: { questionId: string; rejected: boolean; hitRank: number | null }[];
+  /** câu không đáp án mà FR-003 bắt buộc phải bị từ chối (q-176, q-179) */
+  mustReject: { questionId: string; rejected: boolean }[];
   /** p50 / p95 một lượt chấm (ms) đo cho (maxCandidates, maxTokens) của điểm này; null = chưa đo */
   latency: { p50Ms: number; p95Ms: number } | null;
 }
 
 export interface EligibilityRules {
   tableGuardIds: readonly string[];
+  /** FR-003: ngoài tỉ lệ từ chối đúng dev ≥ 90%, các câu này phải bị từ chối */
+  mustRejectIds: readonly string[];
   /** sàn tiếng Anh: số liệu cấu hình hiện hành trên bộ v5 (clarify #4) */
   enFloor: { recallAt6: number; correctRejection: number };
 }
@@ -122,8 +126,62 @@ export const LATENCY_BUDGET: LatencyBudget = { p50Ms: 400, p95Ms: 800 };
 /** Hạng tối đa của đoạn đúng ở câu bộ kiểm bảng (FR-004: trong top 6). */
 const GUARD_MAX_RANK = 6;
 
+/** Lý do vi phạm danh sách câu bắt buộc từ chối (lọt hoặc không có kết quả để kiểm). */
+function mustRejectReasons(r: SweepResult, rules: EligibilityRules): string[] {
+  return rules.mustRejectIds.flatMap((id) => {
+    const o = r.mustReject.find((x) => x.questionId === id);
+    if (!o) return [`thiếu câu bắt buộc từ chối ${id}`];
+    return o.rejected ? [] : [`${id} lọt (FR-003 yêu cầu từ chối)`];
+  });
+}
+
+/** Lý do hỏng bộ kiểm hồi quy đáp án-trong-bảng (thiếu, bị từ chối, hoặc đoạn đúng ngoài top 6). */
+function guardReasons(r: SweepResult, rules: EligibilityRules): string[] {
+  return rules.tableGuardIds.flatMap((id) => {
+    const g = r.guards.find((x) => x.questionId === id);
+    if (!g) return [`thiếu câu bộ kiểm bảng ${id}`];
+    if (g.rejected) return [`${id} bị từ chối`];
+    if (g.hitRank === null || g.hitRank > GUARD_MAX_RANK) {
+      return [
+        `${id} đoạn đúng ngoài top ${GUARD_MAX_RANK} (hạng ${g.hitRank ?? "không trúng"})`,
+      ];
+    }
+    return [];
+  });
+}
+
+/** Lý do dưới sàn tiếng Anh. */
+function enReasons(r: SweepResult, rules: EligibilityRules): string[] {
+  const out: string[] = [];
+  if (r.en.recallAt6 < rules.enFloor.recallAt6 - EPS) {
+    out.push(
+      `English Recall@6 ${pct(r.en.recallAt6)} < sàn ${pct(rules.enFloor.recallAt6)}`,
+    );
+  }
+  if (r.en.correctRejection < rules.enFloor.correctRejection - EPS) {
+    out.push(
+      `English từ chối đúng ${pct(r.en.correctRejection)} < sàn ${pct(rules.enFloor.correctRejection)}`,
+    );
+  }
+  return out;
+}
+
+/** Lý do vượt ngân sách độ trễ (hoặc chưa đo). */
+function latencyReasons(r: SweepResult, budget: LatencyBudget): string[] {
+  if (!r.latency) return ["chưa đo độ trễ"];
+  const out: string[] = [];
+  if (r.latency.p50Ms > budget.p50Ms) {
+    out.push(`độ trễ p50 ${r.latency.p50Ms}ms > ${budget.p50Ms}ms`);
+  }
+  if (r.latency.p95Ms > budget.p95Ms) {
+    out.push(`độ trễ p95 ${r.latency.p95Ms}ms > ${budget.p95Ms}ms`);
+  }
+  return out;
+}
+
 /**
- * Loại cấu hình làm hỏng bộ kiểm bảng (bị từ chối hoặc hitRank > 6 / null), tiếng Anh dưới sàn, hoặc vượt ngân sách độ trễ.
+ * Loại cấu hình để lọt câu bắt buộc từ chối (FR-003), làm hỏng bộ kiểm bảng (bị từ chối hoặc hitRank > 6 / null), tiếng Anh dưới
+ * sàn, hoặc vượt ngân sách độ trễ.
  * Bộ kiểm bảng chỉ dùng để LOẠI — việc xếp hạng / chọn vẫn chỉ trên dev (clarify #1). Không mutate; giữ thứ tự đầu vào.
  */
 export function eligibleRerankConfigs(
@@ -137,36 +195,12 @@ export function eligibleRerankConfigs(
   const eligible: SweepResult[] = [];
   const excluded: { result: SweepResult; reasons: string[] }[] = [];
   for (const r of results) {
-    const reasons: string[] = [];
-    for (const id of rules.tableGuardIds) {
-      const g = r.guards.find((x) => x.questionId === id);
-      if (!g) reasons.push(`thiếu câu bộ kiểm bảng ${id}`);
-      else if (g.rejected) reasons.push(`${id} bị từ chối`);
-      else if (g.hitRank === null || g.hitRank > GUARD_MAX_RANK) {
-        reasons.push(
-          `${id} đoạn đúng ngoài top ${GUARD_MAX_RANK} (hạng ${g.hitRank ?? "không trúng"})`,
-        );
-      }
-    }
-    if (r.en.recallAt6 < rules.enFloor.recallAt6 - EPS) {
-      reasons.push(
-        `English Recall@6 ${pct(r.en.recallAt6)} < sàn ${pct(rules.enFloor.recallAt6)}`,
-      );
-    }
-    if (r.en.correctRejection < rules.enFloor.correctRejection - EPS) {
-      reasons.push(
-        `English từ chối đúng ${pct(r.en.correctRejection)} < sàn ${pct(rules.enFloor.correctRejection)}`,
-      );
-    }
-    if (!r.latency) reasons.push("chưa đo độ trễ");
-    else {
-      if (r.latency.p50Ms > budget.p50Ms) {
-        reasons.push(`độ trễ p50 ${r.latency.p50Ms}ms > ${budget.p50Ms}ms`);
-      }
-      if (r.latency.p95Ms > budget.p95Ms) {
-        reasons.push(`độ trễ p95 ${r.latency.p95Ms}ms > ${budget.p95Ms}ms`);
-      }
-    }
+    const reasons = [
+      ...mustRejectReasons(r, rules),
+      ...guardReasons(r, rules),
+      ...enReasons(r, rules),
+      ...latencyReasons(r, budget),
+    ];
     if (reasons.length === 0) eligible.push(r);
     else excluded.push({ result: r, reasons });
   }
@@ -273,8 +307,8 @@ export interface FunnelStage {
 }
 
 /**
- * Phễu loại dần (để báo cáo vì sao không cấu hình nào đạt): tổng → từ chối đúng dev ≥ 90% (FR-003) → Recall@6 dev ≥ 85% →
- * bộ kiểm bảng → sàn tiếng Anh → ngân sách độ trễ. Mỗi mức chỉ đếm cấu hình đã qua mọi mức trước.
+ * Phễu loại dần (để báo cáo vì sao không cấu hình nào đạt): tổng → từ chối đúng dev ≥ 90% → câu bắt buộc từ chối (cùng là FR-003) →
+ * Recall@6 dev ≥ 85% → bộ kiểm bảng → sàn tiếng Anh → ngân sách độ trễ. Mỗi mức chỉ đếm cấu hình đã qua mọi mức trước.
  */
 export function rerankFunnel(
   results: readonly SweepResult[],
@@ -290,19 +324,19 @@ export function rerankFunnel(
   stages.push({ stage: "Tổng cấu hình", remaining: cur.length });
   step(
     `Từ chối đúng dev ≥ ${pct(TARGET_REJECTION)}`,
-    (r) => r.dev.correctRejection >= TARGET_REJECTION - EPS,
+    (r) => r.dev.correctRejection >= TARGET_REJECTION, // cùng phép so với chooseRerankConfig
+  );
+  step(
+    `${rules.mustRejectIds.join(", ")} bị từ chối`,
+    (r) => mustRejectReasons(r, rules).length === 0,
   );
   step(
     `Recall@6 dev ≥ ${pct(TARGET_RECALL)}`,
-    (r) => r.dev.recallAt6 >= TARGET_RECALL - EPS,
+    (r) => r.dev.recallAt6 >= TARGET_RECALL,
   );
-  const only = (reasonPart: RegExp) => (r: SweepResult) =>
-    !eligibleRerankConfigs([r], rules, budget).excluded.some((e) =>
-      e.reasons.some((x) => reasonPart.test(x)),
-    );
-  step("Bộ kiểm bảng", only(/^q-|bộ kiểm bảng/));
-  step("Sàn tiếng Anh", only(/^English/));
-  step("Ngân sách độ trễ", only(/độ trễ|chưa đo/));
+  step("Bộ kiểm bảng", (r) => guardReasons(r, rules).length === 0);
+  step("Sàn tiếng Anh", (r) => enReasons(r, rules).length === 0);
+  step("Ngân sách độ trễ", (r) => latencyReasons(r, budget).length === 0);
   return stages;
 }
 

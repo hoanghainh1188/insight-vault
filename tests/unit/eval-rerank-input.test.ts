@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rerankInput } from "../../src/main/services/rag/rerank-input";
+import { rerankInput } from "../../tests/eval/lib/rerank-input";
 
 // 187 PR 2 (T019, contracts/rerank-input.md): trình bày đoạn bảng cho bộ chấm — chỉ chuỗi gửi bộ chấm, không đổi chunk.
 

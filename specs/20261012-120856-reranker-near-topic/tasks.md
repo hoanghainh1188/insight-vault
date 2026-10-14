@@ -71,22 +71,29 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
 
 ---
 
+> **Ghi chú thực thi PR 2 (2026-10-14, ADR `docs/04-decisions/2026-10-14-reranker-near-topic.md`):** không giải pháp nào đạt ⇒ đi
+> nhánh T022 → T023 → T025. T017 hiện thực ở tệp mới `tests/eval/lib/rerank-sweep.ts` + `tests/eval/rerank-sweep.eval.ts` (không sửa
+> `rerank-run.ts` / `retrieval.eval.ts`). T019–T021 làm theo điều kiện của clarify (đoạn bảng bị chấm thấp), không theo `cutOff`;
+> `rerankInput` ở `tests/eval/lib/rerank-input.ts` (test `tests/unit/eval-rerank-input.test.ts`), T020 phần nối vào `retrieve()` KHÔNG làm
+> vì không cứu được q-162. T022 / T023 đánh dấu xong = đã đo và kết luận KHÔNG ĐẠT (T023: `Xenova/bge-reranker-base`, chủ dự án cho nới trần
+> tải chỉ để đo). T025: issue tiếp #205, #206, #207.
+
 ## Phase 3: User Story 1 — Câu sát chủ đề bị từ chối (P1, PR 2) 🎯
 
 **Goal**: từ chối đúng tiếng Việt trên dev v5 ≥ 90%, gồm q-176, q-179.
 
 **Independent Test**: lượt quét trên v5 ⇒ cấu hình chọn có từ chối đúng dev ≥ 90%, q-176 / q-179 `rejected`.
 
-- [ ] T015 [P] [US1] Viết test TRƯỚC trong `tests/unit/eval-rerank-grid.test.ts`: `buildRerankGrid({ maxCandidates: [8,12,16], maxTokens:
+- [X] T015 [P] [US1] Viết test TRƯỚC trong `tests/unit/eval-rerank-grid.test.ts`: `buildRerankGrid({ maxCandidates: [8,12,16], maxTokens:
     [256,384,512], minScores, deltas })` sinh đủ tổ hợp, tất định, cấu hình hợp lệ (`validateRerankConfig`); `eligibleRerankConfigs(results,
     { tableGuardIds, enFloor }, latency })` loại cấu hình: làm một câu bộ kiểm bảng bị từ chối HOẶC có `hitRank > 6`
       (FR-004 — trong top 6), tiếng Anh dưới sàn (`enFloor` = số liệu tiếng Anh
       đo ở T012 — cấu hình hiện hành trên v5; nếu khác 72,7% / 83,3% thì báo lại), p50 > 400 / p95 > 800 ms. Chạy ⇒ FAIL.
-- [ ] T016 [US1] Hiện thực trong `tests/eval/lib/rerank-grid.ts` (lưới mở rộng + `eligibleRerankConfigs`); giữ `buildRerankGrid()` cũ tương
+- [X] T016 [US1] Hiện thực trong `tests/eval/lib/rerank-grid.ts` (lưới mở rộng + `eligibleRerankConfigs`); giữ `buildRerankGrid()` cũ tương
       thích. T015 xanh.
-- [ ] T017 [US1] Sửa `tests/eval/lib/rerank-run.ts` + `tests/eval/retrieval.eval.ts`: quét theo `maxTokens` (mỗi giá trị một scorer / một lượt
+- [X] T017 [US1] Sửa `tests/eval/lib/rerank-run.ts` + `tests/eval/retrieval.eval.ts`: quét theo `maxTokens` (mỗi giá trị một scorer / một lượt
       ấm, đo p50/p95 riêng), lọc `eligibleRerankConfigs` TRƯỚC `chooseRerankConfig` (dev), rồi `gateVerdict` (hold-out); báo cáo lý do loại.
-- [ ] T018 [US1] Chạy quét trên v5 (đã duyệt): ghi cấu hình chọn / lý do không chọn được; so từng câu với mốc v5 hiện hành (T012).
+- [X] T018 [US1] Chạy quét trên v5 (đã duyệt): ghi cấu hình chọn / lý do không chọn được; so từng câu với mốc v5 hiện hành (T012).
 
 ---
 
@@ -97,27 +104,27 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
 **Điều kiện**: chỉ làm T019–T021 nếu chẩn đoán (T009 / T012) cho thấy `cutOff` là nguyên nhân chính của câu bảng bị từ chối VÀ T018 không cứu
 được bằng `maxTokens` lớn hơn trong ngân sách. Ngược lại: đánh dấu "không cần" kèm số liệu.
 
-- [ ] T019 [P] [US2] Viết test TRƯỚC `tests/unit/rerank-input.test.ts` cho `rerankInput(chunkText, query, budgetChars)`
+- [X] T019 [P] [US2] Viết test TRƯỚC `tests/unit/rerank-input.test.ts` cho `rerankInput(chunkText, query, budgetChars)`
       (`src/main/services/rag/rerank-input.ts`, contracts/rerank-input.md): đoạn không bảng ⇒ nguyên văn; đoạn bảng ⇒ giữ tiêu đề + phân cách, ưu
       tiên dòng trùng từ với câu hỏi (NFC, bỏ dấu câu), rồi các dòng còn lại theo thứ tự, ≤ `budgetChars`; tất định; không mutate. Chạy ⇒ FAIL.
 - [ ] T020 [US2] Hiện thực `src/main/services/rag/rerank-input.ts`; `src/main/services/rag/retrieval.ts` dùng `rerankInput` cho `passages[].text`
       gửi `deps.rerank` (chunk / locator / `ScoredChunk` không đổi); test `tests/unit/retrieval-rerank.test.ts` thêm ca: chuỗi gửi bộ chấm là bản
       trình bày, kết quả trả về vẫn là chunk gốc; fail-open giữ nguyên. Thêm `src/main/services/rag/rerank-input.ts` vào `coverage.include` của `vitest.config.ts`.
-- [ ] T021 [US2] Quét lại (T018) với `rerankInput`; so bộ kiểm bảng + câu v5.
+- [X] T021 [US2] Quét lại (T018) với `rerankInput`; so bộ kiểm bảng + câu v5.
 
 ---
 
 ## Phase 5: User Story 3 — Không tụt, cổng ĐẠT, bản ghi + ADR (P2, PR 2)
 
-- [ ] T022 [US3] Với cấu hình / giải pháp chọn: so TỪNG câu với mốc (v5 hiện hành) theo đường app — không câu hiện có nào tụt (R@6, MRR, từ chối
+- [X] T022 [US3] Với cấu hình / giải pháp chọn: so TỪNG câu với mốc (v5 hiện hành) theo đường app — không câu hiện có nào tụt (R@6, MRR, từ chối
       đúng — vi dev / vi hold-out / en); `gateVerdict` ĐẠT; tiếng Anh ≥ 72,7% / 83,3%; p50 ≤ 400, p95 ≤ 800 ms. **Không đạt ⇒ bước 2 (T023); bước 2
       không đạt ⇒ T025 (giới hạn).**
-- [ ] T023 [US3] (Chỉ khi T022 không đạt) Bước 2 — model khác: **hỏi chủ dự án trước khi tra / tải model (thao tác mạng)**; tiêu chí: cho phép thương
+- [X] T023 [US3] (Chỉ khi T022 không đạt) Bước 2 — model khác: **hỏi chủ dự án trước khi tra / tải model (thao tác mạng)**; tiêu chí: cho phép thương
       mại, ONNX int8 chạy bằng `@huggingface/transformers`, đa ngôn ngữ, tải ≤ 150 MB, RAM +≤ 200 MB; ghim revision; đo cùng lưới + T022.
 - [ ] T024 [US3] Đạt ⇒ cập nhật `src/main/services/rag/relevance-calibration.ts` (cấu hình + số liệu + `maxTokens`; `RERANK_MODEL_VERSION` /
       `src/main/services/rerank/model-version.ts` nếu đổi model); test canh giữ xanh; ADR thực thi `docs/04-decisions/2026-10-1x-reranker-near-topic.md`
       (bảng trước / sau so mốc v4 và v5) + `INDEX.md`; đóng #187.
-- [ ] T025 [US3] Không đạt ⇒ giữ cấu hình; ADR "giới hạn đã biết" kèm số liệu + chẩn đoán; giữ #187 mở; mở issue mới (hướng tiếp: thêm dữ liệu / model
+- [X] T025 [US3] Không đạt ⇒ giữ cấu hình; ADR "giới hạn đã biết" kèm số liệu + chẩn đoán; giữ #187 mở; mở issue mới (hướng tiếp: thêm dữ liệu / model
       lớn hơn) — hỏi chủ dự án trước khi tạo issue.
 
 ---
@@ -126,8 +133,8 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
 
 - [X] T026 Cổng review PR 1: gọi song song code-reviewer, glossary-steward, security-reviewer; sửa Blocking (test trước).
 - [X] T027 Test gate PR 1: `npm run lint && npm run test && npm run build && npx playwright test`; mở PR 1 (Part of #187); chờ duyệt v5.
-- [ ] T028 Cổng review PR 2 (security-reviewer BẮT BUỘC nếu đổi `src/main` hoặc model); sửa Blocking.
-- [ ] T029 Test gate PR 2 + eval xác nhận (quickstart PR 2); mở PR 2 (Closes #187 nếu đạt, Part of #187 nếu không).
+- [X] T028 Cổng review PR 2 (security-reviewer BẮT BUỘC nếu đổi `src/main` hoặc model); sửa Blocking.
+- [X] T029 Test gate PR 2 + eval xác nhận (quickstart PR 2); mở PR 2 (Closes #187 nếu đạt, Part of #187 nếu không).
 
 ---
 
