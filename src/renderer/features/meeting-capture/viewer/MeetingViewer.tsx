@@ -1,4 +1,12 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { MeetingTranscript, PauseGap } from "@shared/ipc/types";
 import { formatDuration } from "@shared/meeting/format-duration";
 import { spanAtTime } from "@shared/meeting/span-at-time";
@@ -13,10 +21,14 @@ import { TranscriptSearch } from "./TranscriptSearch";
 import { searchTranscript } from "./transcript-search";
 import {
   gapsBefore,
+  matchesBySpan,
   plainTranscript,
   spanOfMatch,
   splitSpan,
+  trailingGaps,
+  type Span,
 } from "./viewer-text";
+import type { TextMatch } from "./transcript-search";
 
 // 186 PR C2 (US7, T140–T143) — trình xem cuộc họp trong cột xem nguồn: transcript theo câu (bấm ⇒ tua, giữ trạng thái phát/dừng),
 // câu đang phát `aria-current` + tô (theo `timeupdate` của player cố định ở đầu — player do SourceViewer giữ), tự cuộn theo khi
@@ -57,8 +69,17 @@ export function MeetingViewer({
   };
   useEffect(load, [sourceId]);
 
-  const spans = data?.spans ?? [];
+  const spans = useMemo(() => data?.spans ?? [], [data]);
+  const gaps = useMemo(() => data?.pauseGaps ?? [], [data]);
   const matches = useMemo(() => searchTranscript(text, query), [text, query]);
+  // Review C2 (hiệu năng 2 giờ): tính sẵn theo câu ⇒ mỗi dòng chỉ nhận phần của nó, dòng không đổi không render lại.
+  const bySpan = useMemo(() => matchesBySpan(spans, matches), [spans, matches]);
+  const gapRows = useMemo(
+    () => spans.map((_, i) => gapsBefore(spans, gaps, i)),
+    [spans, gaps],
+  );
+  const spansRef = useRef(spans);
+  spansRef.current = spans;
 
   // Câu đang phát theo thời gian player.
   useEffect(() => {
@@ -98,11 +119,22 @@ export function MeetingViewer({
     if (i >= 0) spanEls.current.get(i)?.scrollIntoView({ block: "center" });
   }, [current, matches]);
 
-  const seek = (sec: number): void => {
-    const el = audio.current;
-    if (el) el.currentTime = sec; // giữ nguyên đang phát / đang dừng
-    // Media chưa tải xong thì không có sự kiện `seeked` ⇒ cập nhật câu đang phát ngay.
-    setActive(spanAtTime(spans, sec));
+  const seek = useCallback(
+    (sec: number): void => {
+      const el = audio.current;
+      if (el) el.currentTime = sec; // giữ nguyên đang phát / đang dừng
+      // Media chưa tải xong thì không có sự kiện `seeked` ⇒ cập nhật câu đang phát ngay.
+      setActive(spanAtTime(spansRef.current, sec));
+    },
+    [audio],
+  );
+  const registerEl = useCallback((i: number, el: HTMLElement | null) => {
+    if (el) spanEls.current.set(i, el);
+    else spanEls.current.delete(i);
+  }, []);
+  // Review C2: mọi cách người dùng tự di chuyển (lăn, chạm, kéo thanh cuộn, phím, Tab vào câu) ⇒ tạm ngừng tự cuộn.
+  const holdFollow = (): void => {
+    lastUserScroll.current = Date.now();
   };
 
   const gapLabel = (g: PauseGap): string =>
@@ -111,17 +143,25 @@ export function MeetingViewer({
     })} —`;
 
   const copy = async (): Promise<void> => {
-    await window.api.clipboardWrite(
-      plainTranscript(text, spans, data?.pauseGaps ?? [], gapLabel),
-    );
-    announce(t.t("meeting.viewer.copied"));
+    try {
+      await window.api.clipboardWrite(
+        plainTranscript(text, spans, gaps, gapLabel),
+      );
+      announce(t.t("meeting.viewer.copied"));
+    } catch (e) {
+      setError(describeIpcError(toParsedError(e), t));
+    }
   };
 
   const exportMd = async (): Promise<void> => {
     try {
       const r = await window.api.meetingExportMarkdown({ sourceId });
       if (r.saved && r.path)
-        announce(t.t("meeting.viewer.exported", { path: r.path }));
+        announce(
+          t.t("meeting.viewer.exported", {
+            path: r.path.split(/[\\/]/).pop() ?? r.path,
+          }),
+        );
     } catch (e) {
       setError(describeIpcError(toParsedError(e), t));
     }
@@ -181,69 +221,121 @@ export function MeetingViewer({
         <ol
           className="mview-list"
           aria-label={t.t("meeting.viewer.transcript")}
-          onWheel={() => (lastUserScroll.current = Date.now())}
-          onTouchMove={() => (lastUserScroll.current = Date.now())}
+          onWheel={holdFollow}
+          onTouchMove={holdFollow}
+          onPointerDown={holdFollow}
+          onKeyDown={holdFollow}
+          onFocus={holdFollow}
           data-testid="meeting-transcript"
         >
-          {spans.map((s, i) => {
-            const hl =
-              highlight !== null &&
-              s.charStart < highlight.charEnd &&
-              s.charEnd > highlight.charStart;
-            return (
-              <Fragment key={s.charStart}>
-                {gapsBefore(spans, data.pauseGaps, i).map((g) => (
-                  <li
-                    key={`g${g.atSec}`}
-                    className="mview-gap"
-                    aria-hidden="true"
-                  >
-                    {gapLabel(g)}
-                  </li>
-                ))}
-                <li
-                  ref={(el) => {
-                    if (el) spanEls.current.set(i, el);
-                    else spanEls.current.delete(i);
-                  }}
-                  className={[
-                    "mview-span",
-                    i === active ? "playing" : "",
-                    hl ? "hl" : "",
-                  ].join(" ")}
-                  aria-current={i === active ? "true" : undefined}
-                  data-testid="meeting-span"
-                >
-                  <button
-                    type="button"
-                    className="mview-time"
-                    aria-label={t.t("meeting.viewer.seekTo", {
-                      time: formatDuration(s.tStart),
-                    })}
-                    onClick={() => seek(s.tStart)}
-                  >
-                    {formatDuration(s.tStart)}
-                  </button>
-                  <span className="mview-text" onClick={() => seek(s.tStart)}>
-                    {splitSpan(text, s, matches).map((p, k) =>
-                      p.match === null ? (
-                        <Fragment key={k}>{p.text}</Fragment>
-                      ) : (
-                        <mark
-                          key={k}
-                          className={p.match === current ? "current" : ""}
-                        >
-                          {p.text}
-                        </mark>
-                      ),
-                    )}
-                  </span>
-                </li>
-              </Fragment>
-            );
-          })}
+          {spans.map((s, i) => (
+            <Fragment key={s.charStart}>
+              {gapRows[i]?.map((g) => (
+                <GapRow key={`g${g.atSec}`} label={gapLabel(g)} />
+              ))}
+              <SpanRow
+                index={i}
+                span={s}
+                text={text}
+                playing={i === active}
+                hl={
+                  highlight !== null &&
+                  s.charStart < highlight.charEnd &&
+                  s.charEnd > highlight.charStart
+                }
+                matches={bySpan[i] ?? NO_MATCHES}
+                current={
+                  bySpan[i]?.some((m) => m.index === current) ? current : -1
+                }
+                seekLabel={t.t("meeting.viewer.seekTo", {
+                  time: formatDuration(s.tStart),
+                })}
+                onSeek={seek}
+                register={registerEl}
+              />
+            </Fragment>
+          ))}
+          {trailingGaps(spans, gaps).map((g) => (
+            <GapRow key={`g${g.atSec}`} label={gapLabel(g)} />
+          ))}
         </ol>
       )}
     </div>
   );
 }
+
+const NO_MATCHES: readonly (TextMatch & { index: number })[] = [];
+
+/** Dòng phân cách tạm dừng — đọc được bằng trình đọc màn hình (review C2). */
+function GapRow({ label }: { label: string }): JSX.Element {
+  return (
+    <li className="mview-gap" role="separator" aria-label={label}>
+      {label}
+    </li>
+  );
+}
+
+interface SpanRowProps {
+  index: number;
+  span: Span;
+  text: string;
+  playing: boolean;
+  hl: boolean;
+  matches: readonly (TextMatch & { index: number })[];
+  current: number;
+  seekLabel: string;
+  onSeek(sec: number): void;
+  register(i: number, el: HTMLElement | null): void;
+}
+
+/** Một câu transcript — memo: chỉ render lại khi chính nó đổi (đang phát, tô, kết quả tìm). */
+const SpanRow = memo(function SpanRow({
+  index,
+  span,
+  text,
+  playing,
+  hl,
+  matches,
+  current,
+  seekLabel,
+  onSeek,
+  register,
+}: SpanRowProps): JSX.Element {
+  return (
+    <li
+      ref={(el) => register(index, el)}
+      className={["mview-span", playing ? "playing" : "", hl ? "hl" : ""].join(
+        " ",
+      )}
+      aria-current={playing ? "true" : undefined}
+      data-testid="meeting-span"
+    >
+      <button
+        type="button"
+        className="mview-time"
+        aria-label={seekLabel}
+        onClick={() => onSeek(span.tStart)}
+      >
+        {formatDuration(span.tStart)}
+      </button>
+      <span
+        className="mview-text"
+        onClick={() => {
+          // Đang bôi đen để sao chép ⇒ không tua (review C2).
+          if (window.getSelection()?.isCollapsed === false) return;
+          onSeek(span.tStart);
+        }}
+      >
+        {splitSpan(text, span, matches).map((p, k) =>
+          p.match === null ? (
+            <Fragment key={k}>{p.text}</Fragment>
+          ) : (
+            <mark key={k} className={p.match === current ? "current" : ""}>
+              {p.text}
+            </mark>
+          ),
+        )}
+      </span>
+    </li>
+  );
+});

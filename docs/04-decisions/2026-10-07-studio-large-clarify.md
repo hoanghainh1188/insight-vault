@@ -7,6 +7,7 @@
   (**ĐÃ BÁC** map-reduce citation mức NGUỒN), `2026-07-15-studio-balanced-context.md` (chia đều theo nguồn).
 
 ## Bối cảnh
+
 - `STUDIO_CONTEXT_BUDGET = 16000` ký tự cố định; vượt ⇒ cắt cụt (`truncated`).
 - App KHÔNG truyền `num_ctx` cho Ollama ⇒ Ollama dùng cửa sổ mặc định (nhỏ hơn 16.000 ký tự tiếng Việt) và có thể
   cắt đầu prompt âm thầm — mất cả system prompt/đoạn đầu.
@@ -15,6 +16,7 @@
 ## Quyết định (người dùng chốt): ngân sách theo model + map-reduce GIỮ [n]
 
 **1. Ngân sách theo cửa sổ ngữ cảnh của model.**
+
 - Ollama: đọc `context_length` của model đang chọn (`/api/show`), dùng `num_ctx = min(context_length, TRẦN)`
   và TRUYỀN TƯỜNG MINH `options.num_ctx` cho mọi lượt Studio. Trần giữ RAM hợp lý cho máy cá nhân.
 - Online: cửa sổ theo bảng đã biết của provider (lớn), có trần ký tự để giới hạn chi phí/độ trễ trên key người dùng.
@@ -22,6 +24,7 @@
   tiếng Việt. Không đọc được cửa sổ ⇒ lùi về 16.000 (hành vi cũ).
 
 **2. Vẫn vượt ⇒ map-reduce với [n] TOÀN CỤC (giữ citation tới ĐÚNG ĐOẠN).**
+
 - Đánh số [1..N] cho MỌI đoạn của notebook (theo nguồn → thứ tự đọc) — một bảng n→đoạn dùng chung.
 - Map: chia thành các lô vừa ngân sách; mỗi lô → ghi chú ý chính, mỗi ý kèm [n] của đoạn (số toàn cục). Hậu kiểm
   ghi chú theo BẢNG CỦA LÔ (gỡ [n] không thuộc lô).

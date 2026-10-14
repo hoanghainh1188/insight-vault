@@ -218,3 +218,17 @@ describe("createMediaHandler — nguồn cuộc họp (186)", () => {
     expect((await h(new Request("iv-media://source/m1"))).status).toBe(404);
   });
 });
+
+describe("createMediaHandler — hardening (186 PR C2, review bảo mật)", () => {
+  it("mọi phản hồi có nosniff + CSP sandbox; mã hoá % hỏng ⇒ 404 không ném", async () => {
+    const h = createMediaHandler(makeRepo());
+    const ok = await h(req("aud"));
+    expect(ok.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(ok.headers.get("Content-Security-Policy")).toBe(
+      "default-src 'none'; sandbox",
+    );
+    const bad = await h(new Request("iv-media://source/%E0%A4%A"));
+    expect(bad.status).toBe(404);
+    expect(bad.headers.get("X-Content-Type-Options")).toBe("nosniff");
+  });
+});

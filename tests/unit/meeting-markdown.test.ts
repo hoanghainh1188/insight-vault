@@ -161,3 +161,23 @@ describe("buildMeetingMarkdown", () => {
     expect(md).toContain("## Transcript\n\n_Chưa có transcript._\n");
   });
 });
+
+describe("review bảo mật C2 — escape nội dung transcript khi xuất", () => {
+  it("HTML / liên kết trong lời nói bị escape (không thành thẻ hay link khi mở .md)", async () => {
+    const { buildMeetingMarkdown } =
+      await import("../../src/main/services/meeting-capture/meeting-markdown");
+    const { createTranslator } = await import("../../src/shared/i18n");
+    const text = "Gõ <script>x</script> rồi [bấm](javascript:x).";
+    const md = buildMeetingMarkdown(
+      { title: "T", dateLabel: "d", durationSec: 1, language: null },
+      text,
+      [{ charStart: 0, charEnd: text.length, tStart: 0, tEnd: 1 }],
+      [],
+      [],
+      createTranslator("vi"),
+    );
+    expect(md).toContain("\\<script\\>");
+    expect(md).toContain("\\[bấm\\]");
+    expect(md).not.toContain("<script>");
+  });
+});

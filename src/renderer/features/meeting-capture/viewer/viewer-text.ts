@@ -22,11 +22,12 @@ export interface Piece {
 export function splitSpan(
   text: string,
   span: Span,
-  matches: readonly TextMatch[],
+  matches: readonly (TextMatch & { index?: number })[],
 ): Piece[] {
   const out: Piece[] = [];
   let at = span.charStart;
-  matches.forEach((m, i) => {
+  matches.forEach((m, k) => {
+    const i = m.index ?? k;
     const from = Math.max(m.start, span.charStart);
     const to = Math.min(m.end, span.charEnd);
     if (to <= from) return;
@@ -59,6 +60,33 @@ export function gapsBefore(
   return gaps.filter((g) => g.atSec <= t && g.atSec > prev);
 }
 
+/** Kết quả tìm theo câu (giữ chỉ số toàn cục) — mỗi câu chỉ duyệt phần của nó khi dựng (transcript dài). */
+export function matchesBySpan(
+  spans: readonly Span[],
+  matches: readonly TextMatch[],
+): (TextMatch & { index: number })[][] {
+  const out: (TextMatch & { index: number })[][] = spans.map(() => []);
+  let s = 0;
+  matches.forEach((m, index) => {
+    while (s < spans.length && (spans[s]?.charEnd ?? 0) <= m.start) s++;
+    for (let k = s; k < spans.length; k++) {
+      const sp = spans[k] as Span;
+      if (sp.charStart >= m.end) break;
+      out[k]?.push({ ...m, index });
+    }
+  });
+  return out;
+}
+
+/** Khoảng ngừng sau câu cuối (hiển thị cuối danh sách). */
+export function trailingGaps(
+  spans: readonly Span[],
+  gaps: readonly PauseGap[],
+): PauseGap[] {
+  const last = spans.at(-1)?.tStart ?? Number.NEGATIVE_INFINITY;
+  return gaps.filter((g) => g.atSec > last);
+}
+
 /** "[hh:mm:ss] câu" mỗi dòng, dòng tạm dừng chèn đúng chỗ — để sao chép transcript. */
 export function plainTranscript(
   text: string,
@@ -72,7 +100,6 @@ export function plainTranscript(
     const line = text.slice(s.charStart, s.charEnd).replace(/\s+/g, " ").trim();
     if (line !== "") lines.push(`[${formatDuration(s.tStart)}] ${line}`);
   });
-  const last = spans.at(-1)?.tStart ?? -Infinity;
-  for (const g of gaps) if (g.atSec > last) lines.push(gapLabel(g));
+  for (const g of trailingGaps(spans, gaps)) lines.push(gapLabel(g));
   return lines.join("\n");
 }

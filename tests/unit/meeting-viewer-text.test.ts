@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  matchesBySpan,
+  trailingGaps,
   gapsBefore,
   plainTranscript,
   spanOfMatch,
@@ -60,5 +62,22 @@ describe("plainTranscript", () => {
         "— deviceLost —",
       ].join("\n"),
     );
+  });
+});
+
+describe("matchesBySpan / trailingGaps", () => {
+  it("chia kết quả theo câu, giữ chỉ số toàn cục; kết quả vắt hai câu thuộc cả hai", () => {
+    const r = matchesBySpan(SPANS, [
+      { start: 5, end: 8 },
+      { start: 13, end: 18 },
+      { start: 29, end: 32 },
+    ]);
+    expect(r[0]?.map((m) => m.index)).toEqual([0, 1]);
+    expect(r[1]?.map((m) => m.index)).toEqual([1, 2]);
+  });
+  it("khoảng ngừng sau câu cuối", () => {
+    const g = { atSec: 99, wallSeconds: 1, reason: "user" as const };
+    expect(trailingGaps(SPANS, [g])).toEqual([g]);
+    expect(trailingGaps(SPANS, [{ ...g, atSec: 10 }])).toEqual([]);
   });
 });

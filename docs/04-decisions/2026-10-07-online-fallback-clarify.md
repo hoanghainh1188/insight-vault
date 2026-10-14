@@ -10,6 +10,7 @@
 
 **1. Nút một chạm, KHÔNG tự chuyển.** Khi lượt hỏi/tạo Studio lỗi do provider online (`OnlineProviderError`:
 auth / rate-limit / timeout / network / server / unknown), UI hiện lỗi rõ (như 031) KÈM 2 nút:
+
 - **"Trả lời bằng AI cục bộ"** (Studio: "Tạo bằng AI cục bộ") — chạy lại ĐÚNG lượt đó bằng Ollama.
 - **"Thử lại"** — chạy lại bằng provider đang bật.
 

@@ -29,6 +29,13 @@ export function TranscriptSearch({
         aria-label={t.t("meeting.viewer.searchLabel")}
         onChange={(e) => onQuery(e.target.value)}
         onKeyDown={(e) => {
+          // Esc xoá ô tìm thay vì đóng cả trình xem (SourceViewer nghe Esc ở window) — review C2.
+          if (e.key === "Escape" && query !== "") {
+            e.stopPropagation();
+            e.nativeEvent.stopPropagation();
+            onQuery("");
+            return;
+          }
           if (e.key === "Enter") {
             e.preventDefault();
             onMove(e.shiftKey ? -1 : 1);
@@ -37,21 +44,20 @@ export function TranscriptSearch({
         data-testid="meeting-search"
       />
       {query.trim() !== "" && (
-        <span
-          className="mview-count"
-          aria-live="polite"
-          aria-label={
-            has
-              ? t.t("meeting.viewer.resultA11y", { k: current + 1, n: count })
-              : t.t("meeting.viewer.noResult")
-          }
-          data-testid="meeting-search-count"
-        >
+        <span className="mview-count" data-testid="meeting-search-count">
           {has
             ? t.t("meeting.viewer.resultCount", { k: current + 1, n: count })
             : t.t("meeting.viewer.noResult")}
         </span>
       )}
+      {/* Trình đọc màn hình: "Kết quả k trên N" (role=status, chỉ chữ — review C2). */}
+      <span className="sr-only" role="status">
+        {query.trim() === ""
+          ? ""
+          : has
+            ? t.t("meeting.viewer.resultA11y", { k: current + 1, n: count })
+            : t.t("meeting.viewer.noResult")}
+      </span>
       <button
         type="button"
         className="btn-icon-sm"

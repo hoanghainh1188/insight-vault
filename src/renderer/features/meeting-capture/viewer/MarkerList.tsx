@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MeetingMarker, MeetingMarkerKind } from "@shared/ipc/types";
 import { formatDuration } from "@shared/meeting/format-duration";
 import { useT } from "../../../shared/i18n/i18n-context";
+import {
+  describeIpcError,
+  toParsedError,
+} from "../../../shared/i18n/describe-error";
 import { PopoverMenu } from "../PopoverMenu";
 
 // 186 PR C2 (T142) — danh sách đánh dấu trong trình xem: nhãn + mốc + trích đoạn; bấm ⇒ tua; đổi nhãn (menu — chỉ khi chọn
@@ -24,7 +28,20 @@ export function MarkerList({
 }): JSX.Element | null {
   const t = useT();
   const [confirm, setConfirm] = useState<MeetingMarker | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (confirm) cancelRef.current?.focus();
+  }, [confirm]);
   if (markers.length === 0) return null;
+
+  // Review C2: lỗi đổi nhãn / xoá không được nuốt im lặng.
+  const run = (p: Promise<unknown>): void => {
+    setError(null);
+    p.then(onChanged, (e: unknown) =>
+      setError(describeIpcError(toParsedError(e), t)),
+    );
+  };
 
   const kindLabel = (k: MeetingMarkerKind): string =>
     t.t(`meeting.marker.${k}`);
@@ -62,9 +79,9 @@ export function MarkerList({
                 label: kindLabel(k),
                 testId: `meeting-marker-kind-${k}`,
                 onSelect: () =>
-                  void window.api
-                    .meetingUpdateMarker({ markerId: m.id, kind: k })
-                    .then(onChanged, () => undefined),
+                  run(
+                    window.api.meetingUpdateMarker({ markerId: m.id, kind: k }),
+                  ),
               }))}
             />
             <button
@@ -79,6 +96,11 @@ export function MarkerList({
           </li>
         ))}
       </ul>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
       {confirm && (
         <div
           className="nb-overlay"
@@ -86,6 +108,14 @@ export function MarkerList({
           aria-modal="true"
           aria-labelledby="marker-del-title"
           data-testid="meeting-marker-delete-confirm"
+          onKeyDown={(e) => {
+            // Esc đóng hộp xác nhận, không đóng cả trình xem (review C2).
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              e.nativeEvent.stopPropagation();
+              setConfirm(null);
+            }
+          }}
         >
           <div className="nb-modal">
             <h3 id="marker-del-title">
@@ -99,6 +129,7 @@ export function MarkerList({
             </p>
             <div className="nb-modal-actions">
               <button
+                ref={cancelRef}
                 type="button"
                 className="btn-sm"
                 onClick={() => setConfirm(null)}
@@ -111,9 +142,7 @@ export function MarkerList({
                 onClick={() => {
                   const id = confirm.id;
                   setConfirm(null);
-                  void window.api
-                    .meetingDeleteMarker({ markerId: id })
-                    .then(onChanged, () => undefined);
+                  run(window.api.meetingDeleteMarker({ markerId: id }));
                 }}
                 data-testid="meeting-marker-delete-ok"
               >

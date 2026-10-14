@@ -442,13 +442,14 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 > đánh dấu thuộc nguồn cuộc họp, exportMarkdown dựng ở main) — tạo trong index.ts, không qua meeting-service. Renderer =
 > `viewer/MeetingViewer.tsx` + `TranscriptSearch.tsx` + `MarkerList.tsx` + `viewer-text.ts` (thuần); player vẫn do SourceViewer giữ.
 > Phát hiện khi e2e: phát/tua qua `iv-media` lỗi "data source error" sau ~0,4 s (mọi audio/video/cuộc họp) — sửa bằng quyền scheme
-> `standard` + `secure` (index.ts).
+> `standard` + `secure` (index.ts) — ADR `2026-10-14-iv-media-standard-scheme.md`. T138 thực tế nằm ở `meeting-viewer.ts` (không qua
+> meeting-service); T140 không có `TranscriptPane.tsx` — danh sách câu là `SpanRow` (memo) trong `MeetingViewer.tsx`.
 
 ### Cổng review PR C2
 
-- [ ] T147 [US7] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T148 [US7] Gọi **glossary-steward**; append term thiếu.
-- [ ] T149 [US7] Gọi **security-reviewer** (theo quy trình chung — kênh mới, xuất tệp): agent tự in `SKIPPED` nếu không liên quan.
+- [X] T147 [US7] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T148 [US7] Gọi **glossary-steward**; append term thiếu.
+- [X] T149 [US7] Gọi **security-reviewer** (theo quy trình chung — kênh mới, xuất tệp): agent tự in `SKIPPED` nếu không liên quan.
 - [ ] T150 [US7] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 7; mở PR C2.
 

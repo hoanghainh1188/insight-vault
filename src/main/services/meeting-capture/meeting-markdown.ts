@@ -71,7 +71,10 @@ function transcriptBlocks(
   for (const s of [...spans].sort((a, b) => a.tStart - b.tStart)) {
     while (pending.length > 0 && (pending[0]?.atSec ?? 0) <= s.tStart)
       blocks.push(gapLine(pending.shift() as PauseGap, tr));
-    const line = clean(text.slice(s.charStart, s.charEnd));
+    // Review bảo mật C2: lời nói chép ra có thể chứa <html>, [link](javascript:…) ⇒ escape như tiêu đề trước khi vào .md.
+    const line = escapeMarkdownInline(
+      clean(text.slice(s.charStart, s.charEnd)),
+    );
     if (line !== "") blocks.push(`${stamp(s.tStart)} ${line}`);
   }
   for (const g of pending) blocks.push(gapLine(g, tr));
@@ -100,7 +103,7 @@ export function buildMeetingMarkdown(
   if (markers.length > 0) {
     lines.push(`## ${tr.t("meeting.export.markers")}`, "");
     for (const m of [...markers].sort((a, b) => a.tStart - b.tStart)) {
-      const excerpt = markerExcerpt(text, spans, m);
+      const excerpt = escapeMarkdownInline(markerExcerpt(text, spans, m));
       lines.push(
         `- ${stamp(m.tStart)} **${tr.t(`meeting.marker.${m.kind}`)}**${excerpt ? ` — ${excerpt}` : ""}`,
       );

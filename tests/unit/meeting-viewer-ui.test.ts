@@ -176,4 +176,40 @@ describe("MeetingViewer", () => {
       sourceId: "m1",
     });
   });
+
+  it("review C2: Esc trong ô tìm chỉ xoá ô tìm, không lan tới window (không đóng trình xem)", async () => {
+    await mount();
+    const onWindowKey = vi.fn();
+    window.addEventListener("keydown", onWindowKey);
+    const input = q("meeting-search") as HTMLInputElement;
+    act(() => {
+      const set = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!;
+      set.call(input, "ngan");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    act(() => {
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    });
+    window.removeEventListener("keydown", onWindowKey);
+    expect(input.value).toBe("");
+    expect(onWindowKey).not.toHaveBeenCalled();
+  });
+
+  it("review C2: đổi nhãn lỗi ⇒ báo lỗi (không nuốt); khoảng ngừng đọc được (separator)", async () => {
+    api["meetingUpdateMarker"] = vi.fn(() =>
+      Promise.reject(new Error("meetingNotFound")),
+    );
+    await mount();
+    expect(
+      container.querySelector('.mview-gap[role="separator"]'),
+    ).not.toBeNull();
+    await act(async () => q("meeting-marker-kind")!.click());
+    await act(async () => q("meeting-marker-kind-question")!.click());
+    expect(container.querySelector('[role="alert"]')).not.toBeNull();
+  });
 });
