@@ -71,11 +71,17 @@ export async function loadScorer(
   fileOverride?: string,
   /** 109 (cổng #14): cắt mỗi cặp ở số token này (mặc định 512) */
   maxLength = 512,
+  /** 187: ghim commit Hugging Face cho model thí nghiệm (model đã hiệu chuẩn luôn dùng RERANK_MODEL_REVISION) */
+  revision?: string,
 ): Promise<RerankScorer> {
   // Model đã hiệu chuẩn ⇒ ĐÚNG commit app dùng (review bảo mật 109); model khác (thí nghiệm) ⇒ main.
   const hub = {
     cache_dir: cacheDir,
-    ...(model === RERANK_MODEL ? { revision: RERANK_MODEL_REVISION } : {}),
+    ...(model === RERANK_MODEL
+      ? { revision: RERANK_MODEL_REVISION }
+      : revision
+        ? { revision }
+        : {}),
   };
   const modelFile = fileFor(model, fileOverride);
   const rss0 = process.memoryUsage().rss;
