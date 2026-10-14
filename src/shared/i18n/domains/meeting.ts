@@ -183,11 +183,6 @@ export const meetingVi = {
     lagging: "Transcript nháp đang chậm — audio vẫn được lưu.",
     marked: "Đã đánh dấu {kind}.",
   },
-  marker: {
-    decision: "Quyết định",
-    actionItem: "Việc cần làm",
-    question: "Câu hỏi",
-  },
   export: {
     date: "Ngày",
     duration: "Thời lượng",
@@ -393,11 +388,6 @@ export const meetingEn: Widen<typeof meetingVi> = {
     languageSuggest: "The meeting seems to be in {language}.",
     lagging: "The draft transcript is behind — the audio is still saved.",
     marked: "Marked {kind}.",
-  },
-  marker: {
-    decision: "Decision",
-    actionItem: "Action item",
-    question: "Question",
   },
   export: {
     date: "Date",
