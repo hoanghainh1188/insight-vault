@@ -193,7 +193,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 
 ### ADR + glossary
 
-- [ ] T065 [US1] Hoàn thiện ADR thực thi `docs/04-decisions/2026-10-12-meeting-capture.md` (research R16 mục 1: thay 049 #3, ngoại lệ 049 #2, diễn giải Constitution III (không phải ngoại lệ),
+- [x] T065 [US1] Hoàn thiện ADR thực thi `docs/04-decisions/2026-10-12-meeting-capture.md` (research R16 mục 1: thay 049 #3, ngoại lệ 049 #2, diễn giải Constitution III (không phải ngoại lệ),
       chính sách quyền, utilityProcess ASR, kết quả S1) + thêm dòng `docs/04-decisions/INDEX.md` bằng script.
 - [x] T066 [US1] Append thuật ngữ mới phát sinh khi code (nếu có, vd `meeting:audio`, cổng quyền `armedUntil`) vào `docs/00-glossary.md` bằng script — chỉ THÊM dòng.
 
@@ -299,7 +299,7 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 - [X] T099f Sửa theo review (quyết định `docs/04-decisions/2026-10-13-meeting-draft-review.md`): nháp không lập chỉ mục (FR-027);
       model dự phòng tải kèm "Tải model", trong lúc ghi chỉ hạ cấp nếu đã có; RTF chỉ cửa sổ đủ + không tính thời gian nạp; xả nháp
       khi kết thúc / huỷ khi xoá; Đa ngôn ngữ rồi khoá tay; tải model single-flight; trần đánh dấu + draft.jsonl.
-- [ ] T099e Đăng checklist S1 + hướng dẫn gửi số đo cho người dùng thử trên #186 và release notes (chờ người dùng đồng ý đăng).
+- [x] T099e Đăng checklist S1 + hướng dẫn gửi số đo cho người dùng thử trên #186 và release notes (chờ người dùng đồng ý đăng).
 
 ### Cổng review PR B
 
@@ -307,7 +307,7 @@ hoàn tất; "Tiếng Việt · Tự động" trong 30 s đầu.
 - [X] T101 [US3] Gọi **glossary-steward**; append term thiếu.
 - [X] T102 [US3] Gọi **security-reviewer** (BẮT BUỘC): `meeting:draft` chỉ tới owner, `mark`/`setLanguage` kiểm đầu vào, `?seg=n` (không lộ path, chỉ meeting), tải model
       (egress đúng chỉ báo), worker nhận PCM từ main (kích thước). Mọi Blocking phải sửa.
-- [ ] T103 [US3] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
+- [x] T103 [US3] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 1, 3 (rút gọn 20 phút) trên Windows CPU; mở PR B.
 
 **Checkpoint**: PR B merge — transcript gần thời gian thực, ngôn ngữ, đánh dấu.
@@ -394,7 +394,7 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 - [X] T129 [US5] Gọi **glossary-steward**; append term thiếu.
 - [X] T130 [US5] Gọi **security-reviewer** (BẮT BUỘC): `meeting:recover` `discard` xoá vĩnh viễn (kiểm sessionId thuộc meeting, prefix đường dẫn), checkpoint parse dữ liệu
       không tin cậy, `before-quit`, seam test không lọt vào bản đóng gói, `powerSaveBlocker` được giải phóng. Mọi Blocking phải sửa.
-- [ ] T131 [US5] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
+- [x] T131 [US5] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 4, 8, 9, 11 trên mac + Windows; mở PR C1.
 
 **Checkpoint**: PR C1 merge — độ bền đầy đủ cho cuộc họp dài.
@@ -463,7 +463,7 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 - [ ] T152 [P] PR glossary RIÊNG (steward duyệt, rule 5) nếu cần SỬA dòng cũ: "Nguồn" (thêm `meeting` vào danh sách loại), "player"/"seek" (citation chỉ tua — C1) trong
       `docs/00-glossary.md`.
 - [X] T153 [P] Cập nhật `README.md` (EN) + `README.vi.md`: mục Ghi cuộc họp (local, 120+ phút, phục hồi, phím tắt), ghi chú quyền micro macOS bản chưa ký.
-- [ ] T154 Bump version + release notes song ngữ (một lần cho cả 4 PR); cập nhật memory dự án (roadmap).
+- [x] T154 Bump version + release notes song ngữ (một lần cho cả 4 PR); cập nhật memory dự án (roadmap).
 
 ---
 

@@ -107,7 +107,7 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
 - [X] T019 [P] [US2] Viết test TRƯỚC `tests/unit/rerank-input.test.ts` cho `rerankInput(chunkText, query, budgetChars)`
       (`src/main/services/rag/rerank-input.ts`, contracts/rerank-input.md): đoạn không bảng ⇒ nguyên văn; đoạn bảng ⇒ giữ tiêu đề + phân cách, ưu
       tiên dòng trùng từ với câu hỏi (NFC, bỏ dấu câu), rồi các dòng còn lại theo thứ tự, ≤ `budgetChars`; tất định; không mutate. Chạy ⇒ FAIL.
-- [ ] T020 [US2] Hiện thực `src/main/services/rag/rerank-input.ts`; `src/main/services/rag/retrieval.ts` dùng `rerankInput` cho `passages[].text`
+- [~] T020 [US2] Hiện thực `src/main/services/rag/rerank-input.ts`; `src/main/services/rag/retrieval.ts` dùng `rerankInput` cho `passages[].text` — KHÔNG ÁP DỤNG: không cấu hình nào đạt (ADR 2026-10-14-reranker-near-topic)
       gửi `deps.rerank` (chunk / locator / `ScoredChunk` không đổi); test `tests/unit/retrieval-rerank.test.ts` thêm ca: chuỗi gửi bộ chấm là bản
       trình bày, kết quả trả về vẫn là chunk gốc; fail-open giữ nguyên. Thêm `src/main/services/rag/rerank-input.ts` vào `coverage.include` của `vitest.config.ts`.
 - [X] T021 [US2] Quét lại (T018) với `rerankInput`; so bộ kiểm bảng + câu v5.
@@ -121,7 +121,7 @@ duyệt v5** (`reviewed`) — PR 2 không bắt đầu trước khi v5 được 
       không đạt ⇒ T025 (giới hạn).**
 - [X] T023 [US3] (Chỉ khi T022 không đạt) Bước 2 — model khác: **hỏi chủ dự án trước khi tra / tải model (thao tác mạng)**; tiêu chí: cho phép thương
       mại, ONNX int8 chạy bằng `@huggingface/transformers`, đa ngôn ngữ, tải ≤ 150 MB, RAM +≤ 200 MB; ghim revision; đo cùng lưới + T022.
-- [ ] T024 [US3] Đạt ⇒ cập nhật `src/main/services/rag/relevance-calibration.ts` (cấu hình + số liệu + `maxTokens`; `RERANK_MODEL_VERSION` /
+- [~] T024 [US3] Đạt ⇒ cập nhật `src/main/services/rag/relevance-calibration.ts` (cấu hình + số liệu + `maxTokens`; `RERANK_MODEL_VERSION` / — KHÔNG ÁP DỤNG: không cấu hình nào đạt (ADR 2026-10-14-reranker-near-topic)
       `src/main/services/rerank/model-version.ts` nếu đổi model); test canh giữ xanh; ADR thực thi `docs/04-decisions/2026-10-1x-reranker-near-topic.md`
       (bảng trước / sau so mốc v4 và v5) + `INDEX.md`; đóng #187.
 - [X] T025 [US3] Không đạt ⇒ giữ cấu hình; ADR "giới hạn đã biết" kèm số liệu + chẩn đoán; giữ #187 mở; mở issue mới (hướng tiếp: thêm dữ liệu / model
