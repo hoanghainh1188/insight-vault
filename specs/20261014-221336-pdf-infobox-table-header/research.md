@@ -56,3 +56,23 @@ Khảo sát bằng cách chạy `parsePdf` + `buildLines` trên `tests/eval/corp
 
 - **Quyết định**: chỉ đổi chuỗi quote khớp văn bản mới cho câu bị ảnh hưởng; liệt kê trong PR để chủ dự án duyệt; không đổi câu hỏi / loại / tách dev–hold-out. Kiểm bằng `eval:retrieval` + so từng câu trước / sau.
 - **Lý do**: quote là chứng cứ khớp văn bản trích; trích đổi thì quote đổi theo là hệ quả, không phải chỉnh số liệu.
+
+## Kết quả cổng khả thi (D0, 2026-10-14) — KHÔNG ĐẠT
+
+Chấm bằng bộ chấm hiện hành (`mmarco-mMiniLMv2`, 256 token, `minScore` 0,6; model có sẵn trong cache eval, không tải gì) văn bản viết tay cho đoạn đáp án. Điểm ∈ [0,1]:
+
+| Câu   | Văn bản chấm                                                      | Điểm      |
+| ----- | ----------------------------------------------------------------- | --------- |
+| q-162 | hiện tại (tiêu đề trộn + hàng)                                    | 0,133     |
+| q-162 | LÝ TƯỞNG: tiêu đề sạch + 4 hàng                                   | **0,300** |
+| q-162 | LÝ TƯỞNG: tiêu đề sạch + đúng hàng Láng                           | **0,465** |
+| q-162 | một câu văn thường "Ga Láng (T2A 04, Lang) nằm ở phường Đống Đa." | 0,988     |
+| q-185 | hiện tại                                                          | 0,177     |
+| q-185 | LÝ TƯỞNG: hộp sạch 5 hàng                                         | **0,007** |
+| q-185 | chỉ hàng `\| Điện khí hóa \| Ray thứ ba 750V DC \|`               | 0,064     |
+| q-185 | hàng + hàng khổ                                                   | 0,034     |
+| q-185 | câu văn thường "Điện khí hóa: Ray thứ ba 750V DC."                | 0,108     |
+
+Kết luận: ngay cả khi trích HOÀN HẢO, không đoạn nào của q-162 / q-185 vượt 0,6 (trừ khi viết lại thành câu văn thường, nằm ngoài phạm vi trích). q-185 thậm chí tệ hơn khi hộp sạch (0,007), và vẫn 0,108 khi là câu văn — bộ chấm không nối "điện khí hóa" với "ray thứ ba 750V DC" (giới hạn ngữ nghĩa của model, không phải lỗi bố cục). q-162 cải thiện (0,13 → 0,30–0,47) nhưng chưa tới ngưỡng, và FR-003 của #187 cấm hạ `minScore`.
+
+Hệ quả theo T003: DỪNG; không viết mã trích.
