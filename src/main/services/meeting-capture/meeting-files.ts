@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import type { Segment } from "../ingestion/audio/audio-transcript";
 import { parseWorkerMessage } from "./asr-protocol";
+import { parseCheckpoint, serializeCheckpoint } from "./checkpoint";
 import { createCaptureSegmentWriter } from "./capture-writer";
 import type { MeetingFiles } from "./meeting-service";
 import { segmentFileName, type CaptureSegment } from "./segments";
@@ -25,6 +26,9 @@ import { WAV_HEADER_BYTES, buildWavHeader, repairWavHeader } from "./wav";
 const SESSION_ID = /^[0-9a-f-]{8,64}$/i;
 const MERGED = "meeting.wav";
 const DRAFTS = "draft.jsonl";
+const CHECKPOINT = "session.json";
+/** session.json lớn bất thường (hỏng) ⇒ bỏ qua. */
+const MAX_CHECKPOINT_BYTES = 2 * 1024 * 1024;
 /** Trần đọc draft.jsonl (≈ vài chục giờ nháp) và độ dài một dòng văn bản — tệp hỏng/phình không làm treo hoàn tất. */
 const MAX_DRAFT_FILE_BYTES = 5 * 1024 * 1024;
 const MAX_DRAFT_TEXT = 4000;
@@ -224,6 +228,29 @@ export function createMeetingFiles(
         if (parsed) byId.set(parsed.id, parsed.seg);
       }
       return [...byId.values()].sort((a, b) => a.tStart - b.tStart);
+    },
+
+    async writeCheckpoint(sessionId, cp) {
+      const path = join(sessionDir(sessionId), CHECKPOINT);
+      const tmp = `${path}.tmp`;
+      const fh = await open(tmp, "w", 0o600);
+      try {
+        await fh.writeFile(serializeCheckpoint(cp));
+        await fh.sync();
+      } finally {
+        await fh.close();
+      }
+      await rename(tmp, path);
+    },
+
+    async readCheckpoint(sessionId) {
+      const path = join(sessionDir(sessionId), CHECKPOINT);
+      try {
+        if ((await stat(path)).size > MAX_CHECKPOINT_BYTES) return null;
+        return parseCheckpoint(await readFile(path, "utf8"));
+      } catch {
+        return null;
+      }
     },
 
     async deleteSession(sessionId) {

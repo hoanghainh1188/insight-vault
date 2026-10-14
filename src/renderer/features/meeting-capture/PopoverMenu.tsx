@@ -17,6 +17,10 @@ export interface PopoverMenuProps {
   menuLabel: string;
   items: readonly PopoverMenuItem[];
   testId?: string;
+  /** Tăng giá trị ⇒ mở menu (phím tắt Mod+Shift+M). */
+  openRequest?: number;
+  /** aria-keyshortcuts + tooltip của nút. */
+  keyshortcuts?: { aria: string; title: string };
 }
 
 export function PopoverMenu({
@@ -24,8 +28,13 @@ export function PopoverMenu({
   menuLabel,
   items,
   testId,
+  openRequest,
+  keyshortcuts,
 }: PopoverMenuProps): JSX.Element {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (openRequest) setOpen(true);
+  }, [openRequest]);
   const first = useRef<HTMLButtonElement | null>(null);
   const toggle = useRef<HTMLButtonElement | null>(null);
   useEffect(() => {
@@ -45,6 +54,12 @@ export function PopoverMenu({
         className="btn-sm"
         aria-haspopup="menu"
         aria-expanded={open}
+        {...(keyshortcuts
+          ? {
+              "aria-keyshortcuts": keyshortcuts.aria,
+              title: keyshortcuts.title,
+            }
+          : {})}
         onClick={() => setOpen((v) => !v)}
         data-testid={testId}
       >

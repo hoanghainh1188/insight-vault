@@ -65,6 +65,8 @@ export const coreVi = {
     meetingNotSupported: "Thao tác này không áp dụng cho nguồn cuộc họp.",
     meetingNotFound: "Phiên ghi không còn tồn tại.",
     meetingInvalidInput: "Thông tin phiên ghi không hợp lệ.",
+    meetingRecoverFailed:
+      "Chưa xử lý được bản ghi bị gián đoạn. Audio vẫn an toàn — hãy thử lại.",
     meetingModelDownloadFailed:
       "Không tải được model nhận dạng. Kiểm tra kết nối Internet rồi thử lại — bản ghi vẫn được lưu.",
   },
@@ -153,6 +155,8 @@ export const coreEn: Widen<typeof coreVi> = {
     meetingNotSupported: "This action does not apply to meeting sources.",
     meetingNotFound: "The recording session no longer exists.",
     meetingInvalidInput: "Invalid recording session details.",
+    meetingRecoverFailed:
+      "The interrupted recording couldn't be processed yet. The audio is safe — please try again.",
     meetingModelDownloadFailed:
       "Couldn't download the speech recognition model. Check your Internet connection and try again — the recording is still saved.",
   },

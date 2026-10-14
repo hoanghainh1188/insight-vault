@@ -558,6 +558,17 @@ export function registerIpc({
     meeting.listMarkers(input),
   );
   safeHandle(CHANNELS.meetingDownloadModel, () => meeting.downloadModel());
+  safeHandle(CHANNELS.meetingListRecoverable, (input) =>
+    meeting.listRecoverable(input),
+  );
+  safeHandle(CHANNELS.meetingRecover, (input) => {
+    assertVaultWritable();
+    return meeting.recover(input);
+  });
+  safeHandle(CHANNELS.meetingFinalizeAgain, (input) => {
+    assertVaultWritable();
+    return meeting.finalizeAgain(input);
+  });
   safeHandle(CHANNELS.meetingRename, (input) => {
     assertVaultWritable();
     return meeting.rename(input);

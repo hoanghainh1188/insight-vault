@@ -1,387 +1,19 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { openDatabase } from "../../src/main/db/database";
-import { runMigrations } from "../../src/main/db/migrations";
-import {
-  createMeetingRepo,
-  type MeetingRepo,
-} from "../../src/main/services/meeting-capture/meeting-repo";
-import {
-  createMeetingService,
-  type MeetingService,
-  type MeetingFiles,
-  type CaptureSegmentWriter,
-  type AsrFinalClient,
-  type MeetingServiceDeps,
-  AsrError,
-} from "../../src/main/services/meeting-capture/meeting-service";
-import { createMicGate } from "../../src/main/services/app-shell/permissions";
+import { AsrError } from "../../src/main/services/meeting-capture/meeting-service";
 import type { CaptureSegment } from "../../src/main/services/meeting-capture/segments";
-import type { Segment } from "../../src/main/services/ingestion/audio/audio-transcript";
-import type {
-  MeetingDraftEvent,
-  MeetingState,
-  Source,
-} from "@shared/ipc/types";
-import type {
-  DraftAsrClient,
-  PersistedDraftLine,
-} from "../../src/main/services/meeting-capture/draft-engine";
+import {
+  OWNER,
+  RATE,
+  SEC,
+  feed,
+  feedSpeech,
+  flush,
+  harness,
+  startSession,
+  type Harness,
+} from "./helpers/meeting-harness";
 
 // 186 — điều phối phiên ghi (research R4, R8, R12; data-model §5). Mọi I/O (tệp, ASR, đĩa, cửa sổ) là fake tiêm vào.
-
-const RATE = 16000;
-const SEC = RATE * 2; // byte / giây
-const OWNER = 7;
-
-interface Harness {
-  svc: MeetingService;
-  repo: MeetingRepo;
-  sources: Map<string, Source>;
-  writers: { index: number; bytes: number; closed: boolean }[];
-  files: Map<string, Map<number, Segment[]>>; // sessionId → index → final
-  merged: string[];
-  deletedSegments: string[];
-  deletedSessions: string[];
-  pushes: MeetingState[];
-  progress: number[];
-  ingested: { sourceId: string; text: string; timeMap: unknown }[];
-  notified: string[];
-  asrCalls: {
-    segmentPath: string;
-    prevSegmentPath?: string;
-    overlapSec: number;
-    language: string | null;
-  }[];
-  detectCalls: string[];
-  draftCalls: { language: string; tier: string; bytes: number }[];
-  detectPcmCalls: number[];
-  drafts: Map<string, PersistedDraftLine[]>;
-  draftPushes: { id: number; ev: MeetingDraftEvent }[];
-  logs: { event: string; meta?: Record<string, string | number | boolean> }[];
-  downloads: number[];
-  setDraft: (fn: DraftAsrClient["draft"]) => void;
-  setDetectPcm: (fn: DraftAsrClient["detectPcm"]) => void;
-  clock: { now: number };
-  tick: () => void;
-  setAsr: (fn: AsrFinalClient["final"]) => void;
-  setDetect: (fn: AsrFinalClient["detectLanguage"]) => void;
-  setFree: (bytes: number) => void;
-  /** Kết quả trả về của ingestParsed (mặc định true). */
-  setIngestOk: (ok: boolean) => void;
-  /** Giả lập lỗi I/O của writer đang mở. */
-  failWriter: () => void;
-  gate: ReturnType<typeof createMicGate>;
-  idle: () => Promise<void>;
-  recreate: () => MeetingService;
-}
-
-function harness(
-  opts: {
-    segmentSeconds?: number;
-    micStatus?: "granted" | "denied";
-    testFakeMic?: boolean;
-  } = {},
-): Harness {
-  const db = openDatabase(":memory:");
-  runMigrations(db);
-  db.prepare(
-    "INSERT INTO notebook (id, name, color, created_at, updated_at) VALUES ('nb1','N','#4F46E5',1,1)",
-  ).run();
-  const clock = { now: 1_000_000 };
-  const repo = createMeetingRepo(db, { now: () => clock.now });
-  const sources = new Map<string, Source>();
-  const writers: Harness["writers"] = [];
-  const finals = new Map<string, Map<number, Segment[]>>();
-  const merged: string[] = [];
-  const deletedSegments: string[] = [];
-  const deletedSessions: string[] = [];
-  const pushes: MeetingState[] = [];
-  const progress: number[] = [];
-  const ingested: Harness["ingested"] = [];
-  const notified: string[] = [];
-  const asrCalls: Harness["asrCalls"] = [];
-  let free = 50 * 1024 * 1024 * 1024;
-  let ingestOk = true;
-  let writerError: ((e: unknown) => void) | null = null;
-  const gate = createMicGate(() => clock.now, 15_000);
-  let idSeq = 0;
-  let intervalFn: (() => void) | null = null;
-  // Mặc định ASR trả một câu cho mỗi phân đoạn, thời gian tương đối đầu phân đoạn.
-  const detectCalls: string[] = [];
-  let detectImpl: AsrFinalClient["detectLanguage"] = async () => ({
-    language: "en",
-    confidence: 0.9,
-  });
-  const draftCalls: Harness["draftCalls"] = [];
-  const detectPcmCalls: number[] = [];
-  const drafts = new Map<string, PersistedDraftLine[]>();
-  const draftPushes: Harness["draftPushes"] = [];
-  const logs: Harness["logs"] = [];
-  const downloads: number[] = [];
-  let draftImpl: DraftAsrClient["draft"] = async () => ({
-    segments: [{ text: "nháp", tStart: 0, tEnd: 1 }],
-    language: "vi",
-    elapsedMs: 100,
-  });
-  let detectPcmImpl: DraftAsrClient["detectPcm"] = async () => ({
-    language: "vi",
-    confidence: 0.95,
-  });
-  let asrImpl: AsrFinalClient["final"] = async (req) => [
-    { text: `câu của ${req.segmentPath.split("/").pop()}`, tStart: 1, tEnd: 3 },
-  ];
-
-  const files: MeetingFiles = {
-    meetingsRoot: "/data/meetings",
-    segmentPath: (sid, i) =>
-      `/data/meetings/${sid}/seg-${String(i).padStart(4, "0")}.wav`,
-    ensureSessionDir: async () => undefined,
-    openWriter: (_sid, index, onError): CaptureSegmentWriter => {
-      const w = { index, bytes: 0, closed: false };
-      writers.push(w);
-      writerError = onError;
-      return {
-        append: (b) => {
-          w.bytes += b.byteLength;
-        },
-        samples: () => w.bytes / 2,
-        close: async () => {
-          w.closed = true;
-          return w.bytes / 2;
-        },
-      };
-    },
-    repairSegments: async (_sid, segs) =>
-      segs.map((s) => ({ ...s, samples: s.samples + RATE, closed: true })),
-    readFinal: async (sid, i) => finals.get(sid)?.get(i) ?? null,
-    writeFinal: async (sid, i, segs) => {
-      if (!finals.has(sid)) finals.set(sid, new Map());
-      finals.get(sid)!.set(i, [...segs]);
-    },
-    mergeSegments: async (sid) => {
-      merged.push(sid);
-    },
-    deleteSegments: async (sid) => {
-      deletedSegments.push(sid);
-    },
-    deleteSession: async (sid) => {
-      deletedSessions.push(sid);
-    },
-    appendDraft: async (sid, line) => {
-      drafts.set(sid, [...(drafts.get(sid) ?? []), line]);
-    },
-    readDrafts: async (sid) =>
-      (drafts.get(sid) ?? []).map((l) => ({
-        text: l.text,
-        tStart: l.tStart,
-        tEnd: l.tEnd,
-      })),
-  };
-
-  const deps: MeetingServiceDeps = {
-    repo,
-    pipeline: {
-      createMeetingSource: ({ notebookId, title, sessionId }) => {
-        const s: Source = {
-          id: `src-${++idSeq}`,
-          notebookId,
-          kind: "meeting",
-          title,
-          status: "processing",
-          errorCode: null,
-          pageCount: null,
-          createdAt: 1,
-          updatedAt: 1,
-          extractionVersion: 1,
-        };
-        sources.set(s.id, s);
-        db.prepare(
-          `INSERT INTO source (id, notebook_id, kind, title, origin, status, content_hash, created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?)`,
-        ).run(
-          s.id,
-          notebookId,
-          "meeting",
-          title,
-          `meeting:${sessionId}`,
-          "processing",
-          `h-${sessionId}`,
-          1,
-          1,
-        );
-        return s;
-      },
-      ingestParsed: async (sourceId, parsed) => {
-        ingested.push({
-          sourceId,
-          text: parsed.pages.map((p) => p.text).join(""),
-          timeMap: parsed.timeMap,
-        });
-        return ingestOk;
-      },
-    },
-    sources: {
-      getById: (id) => sources.get(id) ?? null,
-      setTitle: (id, title) => {
-        const s = sources.get(id);
-        if (s) sources.set(id, { ...s, title });
-      },
-    },
-    notebookExists: (id) => id === "nb1",
-    files,
-    asr: {
-      final: (req) => (asrCalls.push(req), asrImpl(req)),
-      detectLanguage: (req) => (
-        detectCalls.push(req.segmentPath),
-        detectImpl(req)
-      ),
-      draft: (req) => (
-        draftCalls.push({
-          language: req.language,
-          tier: req.tier,
-          bytes: req.pcm.byteLength,
-        }),
-        draftImpl(req)
-      ),
-      detectPcm: (req) => (
-        detectPcmCalls.push(req.pcm.byteLength),
-        detectPcmImpl(req)
-      ),
-      cancelDrafts: () => undefined,
-    },
-    fallbackReady: () => true,
-    pushDraft: (id, ev) => draftPushes.push({ id, ev }),
-    downloadModel: async () => {
-      downloads.push(clock.now);
-    },
-    machineInfo: () => ({
-      platform: "darwin",
-      arch: "arm64",
-      cpu: "Test CPU",
-      cores: 8,
-      ramGb: 16,
-    }),
-    logEvent: (event, meta) => logs.push({ event, ...(meta ? { meta } : {}) }),
-    freeBytes: async () => free,
-    micGate: gate,
-    mediaAccess: {
-      status: () => opts.micStatus ?? "granted",
-      ask: async () => (opts.micStatus ?? "granted") === "granted",
-    },
-    isOnlineActive: () => false,
-    isModelReady: async () => true,
-    prefs: { get: () => undefined, set: () => undefined },
-    push: (_id, st) => pushes.push(st),
-    emitProgress: (_src, _nb, frac) => progress.push(frac),
-    notifyReady: (sourceId) => notified.push(sourceId),
-    now: () => clock.now,
-    uuid: () => `sess-${++idSeq}`,
-    setInterval: (fn) => {
-      intervalFn = fn;
-      return 1 as unknown as ReturnType<typeof setInterval>;
-    },
-    clearInterval: () => {
-      intervalFn = null;
-    },
-    segmentSeconds: opts.segmentSeconds ?? 300,
-    sampleRate: RATE,
-    ...(opts.testFakeMic ? { testFakeMic: true } : {}),
-  };
-  const svc = createMeetingService(deps);
-  return {
-    svc,
-    repo,
-    sources,
-    writers,
-    files: finals,
-    merged,
-    deletedSegments,
-    deletedSessions,
-    pushes,
-    progress,
-    ingested,
-    notified,
-    asrCalls,
-    detectCalls,
-    draftCalls,
-    detectPcmCalls,
-    drafts,
-    draftPushes,
-    logs,
-    downloads,
-    setDraft: (fn) => (draftImpl = fn),
-    setDetectPcm: (fn) => (detectPcmImpl = fn),
-    clock,
-    tick: () => intervalFn?.(),
-    setAsr: (fn) => (asrImpl = fn),
-    setDetect: (fn) => (detectImpl = fn),
-    setFree: (b) => (free = b),
-    setIngestOk: (ok) => (ingestOk = ok),
-    failWriter: () => writerError?.(new Error("EIO")),
-    gate,
-    idle: () => svc.whenIdle(),
-    recreate: () => createMeetingService(deps),
-  };
-}
-
-/** Gửi `seconds` lô 1 s liên tiếp, mỗi lô cách 1000 ms. */
-function feed(
-  h: Harness,
-  sessionId: string,
-  seconds: number,
-  startSeq = 0,
-): number {
-  let seq = startSeq;
-  for (let i = 0; i < seconds; i++) {
-    h.clock.now += 1000;
-    h.svc.acceptAudio(OWNER, {
-      sessionId,
-      seq: seq++,
-      pcm: new ArrayBuffer(SEC),
-    });
-  }
-  return seq;
-}
-
-/** Như feed nhưng lô có lời nói (sóng sin) ⇒ qua VAD, sinh nháp. */
-function feedSpeech(
-  h: Harness,
-  sessionId: string,
-  seconds: number,
-  startSeq = 0,
-): number {
-  const one = new Int16Array(RATE);
-  for (let i = 0; i < RATE; i++)
-    one[i] = Math.round(8000 * Math.sin((2 * Math.PI * 220 * i) / RATE));
-  let seq = startSeq;
-  for (let i = 0; i < seconds; i++) {
-    h.clock.now += 1000;
-    h.svc.acceptAudio(OWNER, {
-      sessionId,
-      seq: seq++,
-      pcm: one.slice().buffer,
-    });
-  }
-  return seq;
-}
-
-const flush = async (): Promise<void> => {
-  for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
-};
-
-async function startSession(
-  h: Harness,
-  title = "Cuộc họp 12/10, 14:30",
-  languageMode: "vi" | "en" | "auto" | "multi" = "vi",
-) {
-  await h.svc.prepare(OWNER, { notebookId: "nb1" });
-  return h.svc.start(OWNER, {
-    notebookId: "nb1",
-    title,
-    languageMode,
-    deviceLabel: "Mic A",
-  });
-}
 
 let h: Harness;
 beforeEach(() => {
@@ -692,17 +324,19 @@ describe("kết thúc + hoàn tất (ASR chốt từng phân đoạn)", () => {
 });
 
 describe("giám sát & sự cố (PR A: tự kết thúc + hoàn tất)", () => {
-  it("không nhận lô > 5 s khi đang ghi ⇒ đóng phiên, hoàn tất, endedByUser=false", async () => {
+  it("PR C1: không nhận lô > 5 s khi đang ghi ⇒ đóng phiên ⇒ interrupted (thẻ phục hồi), KHÔNG tự hoàn tất", async () => {
     const { sessionId, sourceId } = await startSession(h);
     feed(h, sessionId, 2);
     h.clock.now += 6000;
     h.tick();
     await h.idle();
     expect(h.repo.get(sourceId)).toMatchObject({
-      phase: "done",
+      phase: "interrupted",
       endedByUser: false,
     });
+    expect(h.asrCalls).toEqual([]);
     expect(h.svc.status()).toBeNull();
+    expect(h.recoverablePushes.at(-1)).toBe(1);
   });
 
   it("đang tạm dừng thì không bị coi là mất audio", async () => {
@@ -721,10 +355,10 @@ describe("giám sát & sự cố (PR A: tự kết thúc + hoàn tất)", () => 
     expect(h.svc.status()).not.toBeNull();
     h.svc.onRendererGone(OWNER);
     await h.idle();
-    expect(h.repo.get(sourceId)?.phase).toBe("done");
+    expect(h.repo.get(sourceId)?.phase).toBe("interrupted");
   });
 
-  it("recoverOnStartup: sửa header phân đoạn mở rồi tự hoàn tất mọi phiên dang dở", async () => {
+  it("PR C1 recoverOnStartup: phiên sập khi đang ghi ⇒ sửa header, interrupted + thẻ phục hồi (không tự hoàn tất)", async () => {
     const { sessionId, sourceId } = await startSession(h);
     feed(h, sessionId, 2);
     await h.svc.whenIdle();
@@ -733,9 +367,28 @@ describe("giám sát & sự cố (PR A: tự kết thúc + hoàn tất)", () => 
     await svc2.recoverOnStartup();
     await svc2.whenIdle();
     const s = h.repo.get(sourceId)!;
-    expect(s.phase).toBe("done");
+    expect(s.phase).toBe("interrupted");
     expect(s.endedByUser).toBe(false);
     expect(s.segments.every((x) => x.closed)).toBe(true);
+    expect(h.asrCalls).toEqual([]);
+    expect(h.recoverablePushes.at(-1)).toBe(1);
+  });
+
+  it("PR C1 recoverOnStartup: người dùng đã kết thúc (thoát có xác nhận) ⇒ tự hoàn tất", async () => {
+    const { sessionId, sourceId } = await startSession(h);
+    feed(h, sessionId, 2);
+    h.setIngestOk(false); // hoàn tất dừng giữa chừng (app thoát) ⇒ phase giữ finalizing
+    await h.svc.stopForQuit();
+    await h.idle();
+    expect(h.repo.get(sourceId)?.phase).toBe("finalizing");
+    h.setIngestOk(true);
+    const svc2 = h.recreate();
+    await svc2.recoverOnStartup();
+    await svc2.whenIdle();
+    expect(h.repo.get(sourceId)).toMatchObject({
+      phase: "done",
+      endedByUser: true,
+    });
   });
 });
 
@@ -808,14 +461,14 @@ describe("review PR A — main tự kết thúc phải báo renderer (B1)", () =
     });
   });
 
-  it("không nhận lô > 5 s ⇒ push phase finalizing + endReason noAudio", async () => {
+  it("không nhận lô > 5 s ⇒ push phase interrupted + endReason noAudio", async () => {
     const { sessionId } = await startSession(h);
     feed(h, sessionId, 2);
     h.clock.now += 20_000; // quá cả ân hạn khởi đầu
     h.tick();
     await h.idle();
     expect(h.pushes.at(-1)).toMatchObject({
-      phase: "finalizing",
+      phase: "interrupted",
       endReason: "noAudio",
     });
   });
@@ -827,7 +480,7 @@ describe("review PR A — main tự kết thúc phải báo renderer (B1)", () =
     await h.idle();
     expect(h.svc.status()).toBeNull();
     expect(h.pushes.at(-1)).toMatchObject({
-      phase: "finalizing",
+      phase: "interrupted",
       endReason: "crash",
     });
     expect(h.repo.get(sourceId)?.endedByUser).toBe(false);

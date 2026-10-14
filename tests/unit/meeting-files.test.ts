@@ -190,3 +190,47 @@ describe("draft.jsonl (PR B)", () => {
     expect(await f.readDrafts(SID)).toEqual([]);
   });
 });
+
+describe("session.json (PR C1)", () => {
+  const cp = {
+    version: 1 as const,
+    sessionId: SID,
+    sourceId: "src-1",
+    phase: "recording" as const,
+    endedByUser: false,
+    segments: [
+      { index: 0, file: segmentFileName(0), samples: 16000, closed: false },
+    ],
+    pauseGaps: [],
+    language: {
+      mode: "vi" as const,
+      locked: { lang: "vi" as const, source: "user" as const },
+      candidate: null,
+      suggestion: null,
+      dismissed: null,
+      changes: [{ atSec: 0, lang: "vi" as const, source: "user" as const }],
+      nextCheckSec: 0,
+    },
+    markers: [],
+    draftOffset: 0,
+    savedAt: 5,
+  };
+
+  it("ghi rồi đọc khứ hồi; không để lại tệp tạm", async () => {
+    const f = createMeetingFiles(join(root, "meetings"), { fsyncSec: 1 });
+    await f.ensureSessionDir(SID);
+    await f.writeCheckpoint(SID, cp);
+    expect(await f.readCheckpoint(SID)).toEqual(cp);
+    expect(existsSync(join(root, "meetings", SID, "session.json.tmp"))).toBe(
+      false,
+    );
+  });
+
+  it("thiếu / hỏng ⇒ null", async () => {
+    const f = createMeetingFiles(join(root, "meetings"), { fsyncSec: 1 });
+    await f.ensureSessionDir(SID);
+    expect(await f.readCheckpoint(SID)).toBeNull();
+    writeFileSync(join(root, "meetings", SID, "session.json"), "{hỏng");
+    expect(await f.readCheckpoint(SID)).toBeNull();
+  });
+});

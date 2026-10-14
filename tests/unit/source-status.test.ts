@@ -50,3 +50,25 @@ describe("source-status", () => {
     );
   });
 });
+
+describe("186 PR C1 — nhãn nguồn cuộc họp", () => {
+  it("done + transcript nháp ⇒ 'Transcript nháp'; chưa hoàn thiện ⇒ nhãn giai đoạn", () => {
+    expect(
+      statusLabel({
+        status: "ready",
+        errorCode: null,
+        kind: "meeting",
+        meetingPhase: "done",
+        transcriptQuality: "draft",
+      }),
+    ).toBe("Transcript nháp");
+    expect(
+      statusLabel({
+        status: "ready",
+        errorCode: null,
+        kind: "meeting",
+        meetingPhase: "incomplete",
+      }),
+    ).toBe("Chưa hoàn thiện");
+  });
+});

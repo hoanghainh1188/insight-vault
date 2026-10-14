@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { MeetingSourceBanner } from "../meeting-capture/MeetingSourceBanner";
 import { useRelink } from "../sources/useRelink";
 import { useT } from "../../shared/i18n/i18n-context";
 import { buildViewerBlocks, type ViewerBlock } from "./highlight";
@@ -224,6 +225,9 @@ export function SourceViewer({
           <p className="viewer-msg" data-testid="viewer-missing">
             {t.t("viewer.missing")}
           </p>
+        )}
+        {!loading && content?.kind === "meeting" && target && (
+          <MeetingSourceBanner sourceId={target.sourceId} />
         )}
         {!loading && !missing && content && isMedia && target && (
           <div className="vaudio" data-testid="viewer-audio-player">

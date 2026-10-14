@@ -475,3 +475,107 @@
   align-items: flex-start;
   gap: 6px;
 }
+
+/* PR C1 — phục hồi, banner nguồn cuộc họp, mất thiết bị, cảnh báo đĩa. */
+.recovery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.recovery-card {
+  padding: 12px 14px;
+  border: 1px solid var(--warn-line);
+  border-left: 3px solid var(--warn-strong);
+  border-radius: var(--radius-sm);
+  background: var(--warn-bg);
+}
+.recovery-card h3 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warn-ink);
+}
+.recovery-card p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.meeting-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--line);
+  background: var(--surface-2);
+  font-size: 13px;
+}
+.meeting-banner.draft {
+  border-left-color: var(--warn-strong);
+  background: var(--warn-bg);
+}
+.meeting-banner p {
+  margin: 0;
+  flex: 1 1 240px;
+}
+.device-lost {
+  margin: 12px 20px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--danger-line);
+  background: var(--danger-bg);
+  font-size: 13px;
+}
+.device-lost p {
+  margin: 0 0 6px;
+}
+.device-lost-title {
+  font-weight: 600;
+}
+.device-lost-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.device-lost-row select {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  max-width: 100%;
+}
+.disk-warn {
+  margin: 12px 20px 0;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font-size: 13px;
+}
+.disk-warn.urgent {
+  background: var(--danger-bg);
+  color: var(--ink);
+  border: 1px solid var(--danger-line);
+  font-weight: 600;
+}
+.nb-recover-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font-size: 12px;
+  font-weight: 500;
+}

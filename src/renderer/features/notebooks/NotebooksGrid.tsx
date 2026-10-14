@@ -4,6 +4,7 @@ import type { Notebook } from "@shared/ipc/types";
 import type { ParsedIpcError } from "@shared/online-error-tag";
 import { useNotebooks } from "./useNotebooks";
 import { NotebookCard } from "./NotebookCard";
+import { useRecoverableCounts } from "../meeting-capture/useRecoverableCounts";
 import { NotebookModal } from "./NotebookModal";
 import { DeleteConfirm } from "./DeleteConfirm";
 import { IconSearch, IconPlus } from "../../shared/icons";
@@ -20,6 +21,7 @@ type ModalState =
 // 123: lỗi xoá lưu ParsedIpcError (không lưu chuỗi đã dịch), dịch lúc render.
 export function NotebooksGrid(): JSX.Element {
   const t = useT();
+  const recoverable = useRecoverableCounts();
   const { notebooks, create, rename, setColor, remove } = useNotebooks();
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState<ModalState>(null);
@@ -106,6 +108,7 @@ export function NotebooksGrid(): JSX.Element {
               onOpen={() => navigate(`/workspace/${n.id}`)}
               onEdit={() => setModal({ kind: "edit", notebook: n })}
               onDelete={() => setPendingDelete(n)}
+              recoverable={recoverable.get(n.id) ?? 0}
             />
           ))}
           <button

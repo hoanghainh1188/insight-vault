@@ -204,7 +204,7 @@ không tự phát; xoá nguồn ⇒ thư mục phiên biến mất.
 - [x] T069 [US1] Gọi **security-reviewer** (BẮT BUỘC): `installSecurity`/quyền OS, kênh nhị phân `meeting:audio` (sender, kích thước, tần suất), kênh mới whitelist,
       FS `meetings/` (prefix, xoá), worker (đường dẫn, tin nhắn), không log nội dung, CSP. Mọi Blocking phải sửa.
 - [x] T070 [US1] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-record.spec.ts tests/e2e/meeting-permission.spec.ts
-  tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
+tests/e2e/citation-seek-only.spec.ts tests/e2e/meeting-delete.spec.ts` + toàn bộ e2e cũ xanh; coverage ≥ 80%; chạy tay quickstart bước 2, 5, 6 trên bản đóng gói
       mac; mở PR A — mô tả PR ghi chú lệch tạm D8 (bảo trì vector bị chặn khi đang ghi cho tới PR C1, T116).
 
 **Checkpoint**: PR A merge — ghi cuộc họp thành nguồn dùng được, citation chỉ tua.
@@ -323,62 +323,76 @@ khi điều hướng, chặn thao tác xung đột, phím tắt, "Hoàn tất tr
 
 ### Tests trước (FAIL rồi mới code)
 
-- [ ] T104 [P] [US5] Test TRƯỚC `tests/unit/meeting-checkpoint.test.ts` cho `serializeCheckpoint`/`parseCheckpoint`: khứ hồi đủ trường (phân đoạn, gap, ngôn ngữ, đánh dấu,
+> Ghi chú 2026-10-12: hàm thuần T104–T106 → T110–T111 + phần thuần của T122 (`shortcuts.ts`: `matchShortcut`, `shortcutLabel`) làm
+> trước trên branch `186-pr-c1` (xếp chồng trên `186-pr-b`), chưa nối vào service/UI.
+
+- [x] T104 [P] [US5] Test TRƯỚC `tests/unit/meeting-checkpoint.test.ts` cho `serializeCheckpoint`/`parseCheckpoint`: khứ hồi đủ trường (phân đoạn, gap, ngôn ngữ, đánh dấu,
       offset nháp, `endedByUser`), JSON hỏng/thiếu trường/phiên bản lạ ⇒ `null` không ném.
-- [ ] T105 [P] [US5] Test TRƯỚC `tests/unit/meeting-recovery.test.ts` cho `classifyOnStartup(phase, endedByUser)` ⇒ `autoFinalize` | `recoveryCard` | `none` (đủ bảng
+- [x] T105 [P] [US5] Test TRƯỚC `tests/unit/meeting-recovery.test.ts` cho `classifyOnStartup(phase, endedByUser)` ⇒ `autoFinalize` | `recoveryCard` | `none` (đủ bảng
       data-model §5).
-- [ ] T106 [P] [US6] Test TRƯỚC `tests/unit/meeting-shortcuts.test.ts` cho `matchShortcut(event, platform)`: `Mod+Shift+P|M|E` trên mac (Cmd) và Windows (Ctrl), bỏ qua khi
+- [x] T106 [P] [US6] Test TRƯỚC `tests/unit/meeting-shortcuts.test.ts` cho `matchShortcut(event, platform)`: `Mod+Shift+P|M|E` trên mac (Cmd) và Windows (Ctrl), bỏ qua khi
       thiếu Shift, phím lặp (`repeat`), ô nhập văn bản không chặn tổ hợp Mod+Shift.
-- [ ] T107 [P] [US5] Test TRƯỚC `tests/unit/meeting-service-durability.test.ts`: checkpoint mỗi 30 s + khi đóng phân đoạn; `rendererGone` / không lô > 5 s ⇒ `interrupted`;
+- [X] T107 [P] [US5] Test TRƯỚC `tests/unit/meeting-service-durability.test.ts`: checkpoint mỗi 30 s + khi đóng phân đoạn; `rendererGone` / không lô > 5 s ⇒ `interrupted`;
       `stopForQuit` ⇒ `stopping` + `endedByUser`; `recover(finalize|keepIncomplete|discard)`; `finalizeAgain` cho `incomplete` và `quality=draft`; `pause({reason:
-  "deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
-- [ ] T108 [P] [US6] Test TRƯỚC `tests/unit/vault-lock-meeting.test.ts`: bảo trì vector KHÔNG bị chặn bởi phiên `recording|paused`, VẪN bị chặn bởi `finalizing`; sao
+"deviceLost"})` ⇒ gap `deviceLost`; đĩa `stop` ⇒ tự kết thúc ⇒ `finalizing`; `listRecoverable` theo notebook.
+- [X] T108 [P] [US6] Test TRƯỚC `tests/unit/vault-lock-meeting.test.ts`: bảo trì vector KHÔNG bị chặn bởi phiên `recording|paused`, VẪN bị chặn bởi `finalizing`; sao
       lưu/khôi phục bị chặn khi đang ghi.
-- [ ] T109 [P] [US5] Mở rộng `tests/unit/meeting-channels-whitelist.test.ts` cho kênh PR C1.
+- [X] T109 [P] [US5] Mở rộng `tests/unit/meeting-channels-whitelist.test.ts` cho kênh PR C1.
 
 ### Implementation
 
-- [ ] T110 [P] [US5] `src/main/services/meeting-capture/checkpoint.ts`. T104 xanh.
-- [ ] T111 [P] [US5] `src/main/services/meeting-capture/recovery.ts`. T105 xanh.
-- [ ] T112 [US5] `src/main/services/meeting-capture/session-store.ts` (I/O): ghi `session.json` tmp→rename + fsync; đọc khi khởi động.
-- [ ] T113 [US5] `meeting-service.ts`: checkpoint định kỳ, `recoverOnStartup` theo `classifyOnStartup` (thay tự hoàn tất của PR A cho phiên không do người dùng kết thúc),
+- [x] T110 [P] [US5] `src/main/services/meeting-capture/checkpoint.ts`. T104 xanh.
+- [x] T111 [P] [US5] `src/main/services/meeting-capture/recovery.ts`. T105 xanh.
+- [X] T112 [US5] `src/main/services/meeting-capture/session-store.ts` (I/O): ghi `session.json` tmp→rename + fsync; đọc khi khởi động.
+- [X] T113 [US5] `meeting-service.ts`: checkpoint định kỳ, `recoverOnStartup` theo `classifyOnStartup` (thay tự hoàn tất của PR A cho phiên không do người dùng kết thúc),
       `listRecoverable`, `recover`, `finalizeAgain`, `stopForQuit`, đổi hành vi "không lô > 5 s" / `onRendererGone` của PR A từ tự hoàn tất sang `interrupted` + thẻ phục hồi, đĩa (cảnh báo + tự dừng), `pause` lý do `deviceLost`.
       T107 xanh.
-- [ ] T114 [US5] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:listRecoverable`, `meeting:recover`, `meeting:finalizeAgain`, push `meeting:recoverable`.
+- [X] T114 [US5] `channels.ts` + `preload/index.ts` + `register.ts`: `meeting:listRecoverable`, `meeting:recover`, `meeting:finalizeAgain`, push `meeting:recoverable`.
       T109 xanh.
-- [ ] T115 [US5] `src/main/index.ts`: `before-quit` + `close` của cửa sổ chính khi đang ghi ⇒ `dialog.showMessageBox` (chuỗi i18n main theo ngôn ngữ UI) ⇒ đồng ý
+- [X] T115 [US5] `src/main/index.ts`: `before-quit` + `close` của cửa sổ chính khi đang ghi ⇒ `dialog.showMessageBox` (chuỗi i18n main theo ngôn ngữ UI) ⇒ đồng ý
       `stopForQuit()` rồi thoát/đóng; `powerSaveBlocker.start("prevent-app-suspension")` khi start, `stop`
       khi kết thúc; seam `IV_E2E_DIALOG_PATH`-style cho e2e (unpackaged only).
-- [ ] T116 [US6] Wiring khoá vault (`src/main/index.ts:520-528`): `hasActiveSources({ excludeRecording: true })` chỉ cho bảo trì vector (116). T108 xanh.
-- [ ] T117 [US6] Nâng cấp `RecordingProvider.tsx` / `RecordingStatusBar.tsx` (đã có từ PR A, T052): thanh trạng thái hiện thêm tạm dừng vì mất thiết bị và mức cảnh
+- [X] T116 [US6] Wiring khoá vault (`src/main/index.ts:520-528`): `hasActiveSources({ excludeRecording: true })` chỉ cho bảo trì vector (116). T108 xanh.
+- [X] T117 [US6] Nâng cấp `RecordingProvider.tsx` / `RecordingStatusBar.tsx` (đã có từ PR A, T052): thanh trạng thái hiện thêm tạm dừng vì mất thiết bị và mức cảnh
       báo đĩa; khi phiên `interrupted` thì chuyển sang thẻ phục hồi thay vì tự hoàn tất.
-- [ ] T118 [US6] Mất thiết bị: `mic-capture.ts` nghe `track.onended`, `navigator.mediaDevices.ondevicechange`, lỗi ⇒ `meetingPause({reason:"deviceLost"})`;
+- [X] T118 [US6] Mất thiết bị: `mic-capture.ts` nghe `track.onended`, `navigator.mediaDevices.ondevicechange`, lỗi ⇒ `meetingPause({reason:"deviceLost"})`;
       `DeviceLostBanner.tsx` "Mất microphone — chọn thiết bị khác để tiếp tục, hoặc Kết thúc" ⇒ `meetingResume({deviceLabel})`.
-- [ ] T119 [US6] `DiskWarning.tsx` theo `MeetingState.diskLevel/minutesRemaining` (vàng < 30, khẩn < 5, thông báo tự dừng); `StartRecordingDialog` giải thích khi
+- [X] T119 [US6] `DiskWarning.tsx` theo `MeetingState.diskLevel/minutesRemaining` (vàng < 30, khẩn < 5, thông báo tự dừng); `StartRecordingDialog` giải thích khi
       `canStart=false` vì đĩa.
-- [ ] T120 [US5] `RecoveryCard.tsx` ở đầu `SourceList` (mỗi phiên dang dở một thẻ: tiêu đề, thời lượng; Hoàn tất transcript / Giữ như nguồn chưa hoàn thiện / Xoá bản ghi
+- [X] T120 [US5] `RecoveryCard.tsx` ở đầu `SourceList` (mỗi phiên dang dở một thẻ: tiêu đề, thời lượng; Hoàn tất transcript / Giữ như nguồn chưa hoàn thiện / Xoá bản ghi
       có xác nhận) + huy hiệu notebook trong `src/renderer/features/notebooks/` (theo `meeting:recoverable`).
-- [ ] T121 [US5] `SourceViewer.tsx` (meeting): nguồn `incomplete` ⇒ nút "Hoàn tất transcript"; `transcriptQuality="draft"` ⇒ nhãn "Transcript nháp" + nút "Chốt lại"
+- [X] T121 [US5] `SourceViewer.tsx` (meeting): nguồn `incomplete` ⇒ nút "Hoàn tất transcript"; `transcriptQuality="draft"` ⇒ nhãn "Transcript nháp" + nút "Chốt lại"
       (`meetingFinalizeAgain`); nhãn tương ứng trong `SourceList`.
-- [ ] T122 [US6] `src/renderer/features/meeting-capture/shortcuts.ts` (thuần, T106 xanh) + `useMeetingShortcuts.ts` (keydown ở `window` khi có phiên; `E` chỉ mở hộp
+- [X] T122 [US6] `src/renderer/features/meeting-capture/shortcuts.ts` (thuần, T106 xanh) + `useMeetingShortcuts.ts` (keydown ở `window` khi có phiên; `E` chỉ mở hộp
       xác nhận) + `aria-keyshortcuts` và tooltip trên nút Tạm dừng/Đánh dấu/Kết thúc.
-- [ ] T123 [US6] Chặn thao tác xung đột ở UI: nút Ghi cuộc họp vô hiệu khi đã có phiên; xoá notebook đích/nguồn đang ghi, sao lưu/khôi phục ⇒ hiện mã lỗi đã dịch.
-- [ ] T124 [US5] i18n vi + en cho UI PR C1 (kể cả hộp thoại thoát ở main); `announce`: mất thiết bị, cảnh báo đĩa (mỗi mức một lần), ghi tự dừng, phục hồi xong.
+- [X] T123 [US6] Chặn thao tác xung đột ở UI: nút Ghi cuộc họp vô hiệu khi đã có phiên; xoá notebook đích/nguồn đang ghi, sao lưu/khôi phục ⇒ hiện mã lỗi đã dịch.
+- [X] T124 [US5] i18n vi + en cho UI PR C1 (kể cả hộp thoại thoát ở main); `announce`: mất thiết bị, cảnh báo đĩa (mỗi mức một lần), ghi tự dừng, phục hồi xong.
 
 ### E2E
 
-- [ ] T125 [P] [US5] `tests/e2e/meeting-recovery.spec.ts` theo quickstart dòng PR C1.
-- [ ] T126 [P] [US5] `tests/e2e/meeting-quit.spec.ts` theo quickstart dòng PR C1.
-- [ ] T127 [US5] Seam `IV_E2E_AUDIO_PUMP` (unpackaged only) trong `meeting-service.ts`: main tự sinh lô PCM từ fixture (lặp) nhanh gấp N lần cho phiên đang ghi;
+- [X] T125 [P] [US5] `tests/e2e/meeting-recovery.spec.ts` theo quickstart dòng PR C1.
+- [X] T126 [P] [US5] `tests/e2e/meeting-quit.spec.ts` theo quickstart dòng PR C1.
+- [X] T127 [US5] Seam `IV_E2E_AUDIO_PUMP` (unpackaged only) trong `meeting-service.ts`: main tự sinh lô PCM từ fixture (lặp) nhanh gấp N lần cho phiên đang ghi;
       `tests/e2e/meeting-soak.spec.ts` gồm (a) **180 phút audio** bơm tăng tốc với phân đoạn mặc định 300 s ⇒ 36 phân đoạn, thời lượng ±1 s, hoàn tất thành công
       (**SC-001**); (b) `IV_MEETING_SEGMENT_SEC=5` × 120 phân đoạn ⇒ xoay tệp đúng; (c) kill tiến trình `asr-worker` giữa phiên ⇒ không mất mẫu (**SC-002**); (d) kill
       app giữa chừng ⇒ phục hồi.
 
+> Ghi chú 2026-10-13 (code PR C1): `meeting-recovery.ts` (khởi động, thẻ phục hồi, finalizeAgain), `quit-guard.ts` (thuần, hộp thoại
+> ở main), `meeting-prepare.ts` (tách khỏi service), `isMaintenanceBusy` (vault-lock). T127: (a) SC-001 chạy với `IV_E2E_SOAK=1`
+> (đã chạy tay — 36 phân đoạn, hoàn tất OK); (b) chạy mọi lần; (c) worker chết / (d) app bị giết phủ ở unit + meeting-recovery.spec.
+> T123: nút Ghi vô hiệu khi có phiên + mã lỗi `meetingRecording` đã có từ PR A.
+> Khác plan (review C1 S2): T112 I/O checkpoint nằm trong `meeting-files.ts` (`writeCheckpoint`/`readCheckpoint`, không có
+> `session-store.ts`) — checkpoint là bản sao dự phòng của DB (ghi ngay sau DB); T116 = `isMaintenanceBusy` (vault-lock.ts);
+> T115 seam = `IV_E2E_QUIT_ANSWER`; T118 nghe `ended` có sẵn ở `mic-capture.ts`, `devicechange` ở `DeviceLostBanner.tsx`;
+> T122 hook phím tắt nằm trong `RecordingProvider` (không có `useMeetingShortcuts.ts`); harness test chung ở
+> `tests/unit/helpers/meeting-harness.ts`. Review C1: `recover` có cờ đồng bộ theo phiên + đi qua máy trạng thái;
+> `keepIncomplete` lỗi lập nguồn ⇒ giữ `interrupted` (mã `meetingRecoverFailed`).
+
 ### Cổng review PR C1
 
-- [ ] T128 [US5] Gọi **code-reviewer**; xử lý Blocking.
-- [ ] T129 [US5] Gọi **glossary-steward**; append term thiếu.
-- [ ] T130 [US5] Gọi **security-reviewer** (BẮT BUỘC): `meeting:recover` `discard` xoá vĩnh viễn (kiểm sessionId thuộc meeting, prefix đường dẫn), checkpoint parse dữ liệu
+- [X] T128 [US5] Gọi **code-reviewer**; xử lý Blocking.
+- [X] T129 [US5] Gọi **glossary-steward**; append term thiếu.
+- [X] T130 [US5] Gọi **security-reviewer** (BẮT BUỘC): `meeting:recover` `discard` xoá vĩnh viễn (kiểm sessionId thuộc meeting, prefix đường dẫn), checkpoint parse dữ liệu
       không tin cậy, `before-quit`, seam test không lọt vào bản đóng gói, `powerSaveBlocker` được giải phóng. Mọi Blocking phải sửa.
 - [ ] T131 [US5] Test gate: `npm run lint && npm run test && npm run build && npx playwright test tests/e2e/meeting-*.spec.ts` + e2e cũ; coverage ≥ 80%; chạy tay quickstart
       bước 4, 8, 9, 11 trên mac + Windows; mở PR C1.
