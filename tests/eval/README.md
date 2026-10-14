@@ -89,6 +89,26 @@ người dùng rồi chia sẻ report.json.
 EVAL_DETAILS=1 EVAL_MODE=current npm run eval:retrieval
 ```
 
+### Quét lưới bộ chấm mở rộng (187 PR 2)
+
+`rerank-sweep.eval.ts` (bỏ qua nếu thiếu `EVAL_RERANK_SWEEP=1`) quét ứng viên {8, 12, 16} × maxTokens {256, 384, 512} × minScore ×
+relativeDelta trên ĐÚNG `retrieve()` của app. Mỗi (ứng viên, maxTokens) dùng một scorer riêng: lượt ấm đo p50 / p95 thật rồi các cấu hình
+khác chỉ lọc lại trên điểm đã chấm. Loại cấu hình (`eligibleRerankConfigs`) để lọt q-176 / q-179, làm hỏng bộ kiểm bảng (q-162 / q-170 /
+q-171 bị từ chối hoặc hạng > 6), dưới sàn tiếng Anh (số đo của cấu hình hiện hành) hoặc vượt p50 400 / p95 800 ms; chọn trên dev
+(`chooseRerankConfig`), cổng hold-out (`gateVerdict`), so từng câu với cấu hình hiện hành (`compareOutcomes`). report.md có phễu loại dần,
+Pareto dev, cấu hình được chọn hoặc gần đạt nhất, điểm các câu quan tâm. `table` = trình bày đoạn bảng bằng `lib/rerank-input.ts` chỉ ở chuỗi
+gửi bộ chấm. Một lượt khoảng 15–30 phút (model hiện hành); model lớn hơn lâu hơn — test có timeout riêng 3 giờ.
+
+```bash
+EVAL_RERANK_SWEEP=1 npm run eval:retrieval -- tests/eval/rerank-sweep.eval.ts
+# model thí nghiệm (ghim commit), so với report.json của lượt quét model hiện hành:
+EVAL_RERANK_SWEEP=1 EVAL_SWEEP_MODEL=<repo> EVAL_SWEEP_REVISION=<commit> EVAL_RERANK_FILE=<tệp onnx> \
+  EVAL_SWEEP_BASE_REPORT=<report.json> EVAL_SWEEP_PRESENT=plain npm run eval:retrieval -- tests/eval/rerank-sweep.eval.ts
+```
+
+Biến khác: `EVAL_SWEEP_PRESENT` (`plain,table`), `EVAL_SWEEP_SPEC` (JSON một phần của lưới, vd `{"minScores":[0.01,0.1]}`),
+`EVAL_SWEEP_OUT` (thư mục ghi). Kết quả + quyết định: `docs/04-decisions/2026-10-14-reranker-near-topic.md`.
+
 ## Khi đổi mô hình embedding hoặc cách chia đoạn
 
 `tests/unit/relevance-calibration.test.ts` sẽ fail khi `EMBEDDING_MODEL_VERSION` khác phiên bản trong

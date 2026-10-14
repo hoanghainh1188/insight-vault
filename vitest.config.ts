@@ -42,6 +42,8 @@ export default defineConfig({
         "tests/eval/lib/grid.ts",
         "tests/eval/lib/rerank-grid.ts",
         "tests/eval/lib/rerank-diagnose.ts",
+        "tests/eval/lib/rerank-compare.ts",
+        "tests/eval/lib/rerank-input.ts",
         // 177: PDF fixture của bộ đánh giá (thuần, tất định).
         "tests/eval/lib/pdf-fixture.ts",
         // report.ts giữ NGOÀI coverage như 108 (writeReport + phần render lớn là I/O / định dạng); phần mới renderPdfSection có

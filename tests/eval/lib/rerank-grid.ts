@@ -20,8 +20,51 @@ const MIN_SCORES = [
 ];
 const RELATIVE_DELTAS: readonly (number | null)[] = [null, 0.2, 0.4, 0.6];
 
-/** 12 minScore × 4 relativeDelta × 2 reorder = 96 cấu hình; `maxCandidates` cố định cho cả lưới (cổng #14). */
-export function buildRerankGrid(maxCandidates = 20): RerankConfig[] {
+/** Điểm lưới: cấu hình bộ chấm + số token cắt mỗi cặp (maxTokens thuộc scorer, không thuộc RerankConfig). */
+export interface RerankGridPoint {
+  config: RerankConfig;
+  maxTokens: number;
+}
+
+/** 187 PR 2: lưới mở rộng — ứng viên × maxTokens × minScore × relativeDelta (reorder luôn false = hành vi app hiện hành). */
+export interface RerankGridSpec {
+  maxCandidates: readonly number[];
+  maxTokens: readonly number[];
+  minScores: readonly number[];
+  deltas: readonly (number | null)[];
+}
+
+/**
+ * Dạng cũ (109): một số `maxCandidates` ⇒ 12 minScore × 4 relativeDelta × 2 reorder = 96 cấu hình (cổng #14).
+ * Dạng mới (187): `RerankGridSpec` ⇒ mọi tổ hợp, theo thứ tự tất định (ứng viên, maxTokens, minScore, Δ).
+ */
+export function buildRerankGrid(maxCandidates?: number): RerankConfig[];
+export function buildRerankGrid(spec: RerankGridSpec): RerankGridPoint[];
+export function buildRerankGrid(
+  arg: number | RerankGridSpec = 20,
+): RerankConfig[] | RerankGridPoint[] {
+  if (typeof arg !== "number") {
+    const out: RerankGridPoint[] = [];
+    for (const maxCandidates of arg.maxCandidates) {
+      for (const maxTokens of arg.maxTokens) {
+        for (const minScore of arg.minScores) {
+          for (const relativeDelta of arg.deltas) {
+            out.push({
+              maxTokens,
+              config: {
+                minScore,
+                relativeDelta,
+                reorder: false,
+                timeoutMs: RERANK_TIMEOUT_MS,
+                maxCandidates,
+              },
+            });
+          }
+        }
+      }
+    }
+    return out;
+  }
   const out: RerankConfig[] = [];
   for (const minScore of MIN_SCORES) {
     for (const relativeDelta of RELATIVE_DELTAS) {
@@ -31,7 +74,7 @@ export function buildRerankGrid(maxCandidates = 20): RerankConfig[] {
           relativeDelta,
           reorder,
           timeoutMs: RERANK_TIMEOUT_MS,
-          maxCandidates,
+          maxCandidates: arg,
         });
       }
     }
@@ -39,28 +82,153 @@ export function buildRerankGrid(maxCandidates = 20): RerankConfig[] {
   return out;
 }
 
-export interface RerankCandidate {
-  config: RerankConfig;
+/** Lưới quét của 187 PR 2 (clarify #1, tasks T015): minScore mở rộng lên 0,98 vì câu lọt có điểm tới 0,997. */
+export const SWEEP_SPEC: RerankGridSpec = {
+  maxCandidates: [8, 12, 16],
+  maxTokens: [256, 384, 512],
+  minScores: [
+    0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.98,
+  ],
+  deltas: [null, 0.2, 0.4, 0.6],
+};
+
+/** Kết quả đo một điểm lưới — đầu vào của `eligibleRerankConfigs`. */
+export interface SweepResult {
+  point: RerankGridPoint;
+  dev: EvalMetrics;
+  holdout: EvalMetrics;
+  en: EvalMetrics;
+  viRejected: { successes: number; n: number };
+  /** kết quả các câu bộ kiểm bảng (chỉ để LOẠI cấu hình, không để xếp hạng) */
+  guards: { questionId: string; rejected: boolean; hitRank: number | null }[];
+  /** câu không đáp án mà FR-003 bắt buộc phải bị từ chối (q-176, q-179) */
+  mustReject: { questionId: string; rejected: boolean }[];
+  /** p50 / p95 một lượt chấm (ms) đo cho (maxCandidates, maxTokens) của điểm này; null = chưa đo */
+  latency: { p50Ms: number; p95Ms: number } | null;
+}
+
+export interface EligibilityRules {
+  tableGuardIds: readonly string[];
+  /** FR-003: ngoài tỉ lệ từ chối đúng dev ≥ 90%, các câu này phải bị từ chối */
+  mustRejectIds: readonly string[];
+  /** sàn tiếng Anh: số liệu cấu hình hiện hành trên bộ v5 (clarify #4) */
+  enFloor: { recallAt6: number; correctRejection: number };
+}
+
+export interface LatencyBudget {
+  p50Ms: number;
+  p95Ms: number;
+}
+
+/** Ngân sách độ trễ của 109 (clarify #3): p50 ≤ 400 ms, p95 ≤ 800 ms (macOS arm64 tham chiếu). */
+export const LATENCY_BUDGET: LatencyBudget = { p50Ms: 400, p95Ms: 800 };
+
+/** Hạng tối đa của đoạn đúng ở câu bộ kiểm bảng (FR-004: trong top 6). */
+const GUARD_MAX_RANK = 6;
+
+/** Lý do vi phạm danh sách câu bắt buộc từ chối (lọt hoặc không có kết quả để kiểm). */
+function mustRejectReasons(r: SweepResult, rules: EligibilityRules): string[] {
+  return rules.mustRejectIds.flatMap((id) => {
+    const o = r.mustReject.find((x) => x.questionId === id);
+    if (!o) return [`thiếu câu bắt buộc từ chối ${id}`];
+    return o.rejected ? [] : [`${id} lọt (FR-003 yêu cầu từ chối)`];
+  });
+}
+
+/** Lý do hỏng bộ kiểm hồi quy đáp án-trong-bảng (thiếu, bị từ chối, hoặc đoạn đúng ngoài top 6). */
+function guardReasons(r: SweepResult, rules: EligibilityRules): string[] {
+  return rules.tableGuardIds.flatMap((id) => {
+    const g = r.guards.find((x) => x.questionId === id);
+    if (!g) return [`thiếu câu bộ kiểm bảng ${id}`];
+    if (g.rejected) return [`${id} bị từ chối`];
+    if (g.hitRank === null || g.hitRank > GUARD_MAX_RANK) {
+      return [
+        `${id} đoạn đúng ngoài top ${GUARD_MAX_RANK} (hạng ${g.hitRank ?? "không trúng"})`,
+      ];
+    }
+    return [];
+  });
+}
+
+/** Lý do dưới sàn tiếng Anh. */
+function enReasons(r: SweepResult, rules: EligibilityRules): string[] {
+  const out: string[] = [];
+  if (r.en.recallAt6 < rules.enFloor.recallAt6 - EPS) {
+    out.push(
+      `English Recall@6 ${pct(r.en.recallAt6)} < sàn ${pct(rules.enFloor.recallAt6)}`,
+    );
+  }
+  if (r.en.correctRejection < rules.enFloor.correctRejection - EPS) {
+    out.push(
+      `English từ chối đúng ${pct(r.en.correctRejection)} < sàn ${pct(rules.enFloor.correctRejection)}`,
+    );
+  }
+  return out;
+}
+
+/** Lý do vượt ngân sách độ trễ (hoặc chưa đo). */
+function latencyReasons(r: SweepResult, budget: LatencyBudget): string[] {
+  if (!r.latency) return ["chưa đo độ trễ"];
+  const out: string[] = [];
+  if (r.latency.p50Ms > budget.p50Ms) {
+    out.push(`độ trễ p50 ${r.latency.p50Ms}ms > ${budget.p50Ms}ms`);
+  }
+  if (r.latency.p95Ms > budget.p95Ms) {
+    out.push(`độ trễ p95 ${r.latency.p95Ms}ms > ${budget.p95Ms}ms`);
+  }
+  return out;
+}
+
+/**
+ * Loại cấu hình để lọt câu bắt buộc từ chối (FR-003), làm hỏng bộ kiểm bảng (bị từ chối hoặc hitRank > 6 / null), tiếng Anh dưới
+ * sàn, hoặc vượt ngân sách độ trễ.
+ * Bộ kiểm bảng chỉ dùng để LOẠI — việc xếp hạng / chọn vẫn chỉ trên dev (clarify #1). Không mutate; giữ thứ tự đầu vào.
+ */
+export function eligibleRerankConfigs(
+  results: readonly SweepResult[],
+  rules: EligibilityRules,
+  budget: LatencyBudget,
+): {
+  eligible: SweepResult[];
+  excluded: { result: SweepResult; reasons: string[] }[];
+} {
+  const eligible: SweepResult[] = [];
+  const excluded: { result: SweepResult; reasons: string[] }[] = [];
+  for (const r of results) {
+    const reasons = [
+      ...mustRejectReasons(r, rules),
+      ...guardReasons(r, rules),
+      ...enReasons(r, rules),
+      ...latencyReasons(r, budget),
+    ];
+    if (reasons.length === 0) eligible.push(r);
+    else excluded.push({ result: r, reasons });
+  }
+  return { eligible, excluded };
+}
+
+export interface RerankCandidate<C extends RerankConfig = RerankConfig> {
+  config: C;
   dev: EvalMetrics;
 }
 
-export interface RerankChoice {
-  chosen: RerankConfig | null;
+export interface RerankChoice<C extends RerankConfig = RerankConfig> {
+  chosen: C | null;
   /** pass = đạt 85%; floor = chỉ đạt sàn 75%; none = không chọn được */
   level: "pass" | "floor" | "none";
   reason: string;
   /** đường đánh đổi (CR, R@6) trên dev — để báo cáo khi không đạt */
-  pareto: RerankCandidate[];
+  pareto: RerankCandidate<C>[];
 }
 
 const pct = (x: number) => `${Number((x * 100).toFixed(1))}%`;
 const key = (c: RerankConfig) => JSON.stringify(c);
 
 /** Các ứng viên không bị trội theo (từ chối đúng, Recall@6) trên dev; sắp CR giảm dần. */
-export function paretoFront(
-  cands: readonly RerankCandidate[],
-): RerankCandidate[] {
-  const dominated = (a: RerankCandidate) =>
+export function paretoFront<C extends RerankConfig>(
+  cands: readonly RerankCandidate<C>[],
+): RerankCandidate<C>[] {
+  const dominated = (a: RerankCandidate<C>) =>
     cands.some(
       (b) =>
         b !== a &&
@@ -83,7 +251,10 @@ export function paretoFront(
 const complexity = (c: RerankConfig) =>
   (c.relativeDelta === null ? 0 : 1) + (c.reorder ? 1 : 0);
 
-const better = (a: RerankCandidate, b: RerankCandidate) =>
+const better = <C extends RerankConfig>(
+  a: RerankCandidate<C>,
+  b: RerankCandidate<C>,
+) =>
   b.dev.recallAt6 - a.dev.recallAt6 ||
   b.dev.correctRejection - a.dev.correctRejection ||
   a.config.minScore - b.config.minScore ||
@@ -94,9 +265,9 @@ const better = (a: RerankCandidate, b: RerankCandidate) =>
  * Chọn trên dev (R7): cấu hình có từ chối đúng ≥ 90% và Recall@6 ≥ 85% → max R@6 → max CR → minScore nhỏ nhất;
  * không có ⇒ (CR ≥ 90%) Recall@6 cao nhất nếu ≥ sàn 75%; còn lại ⇒ null + Pareto. Tất định.
  */
-export function chooseRerankConfig(
-  cands: readonly RerankCandidate[],
-): RerankChoice {
+export function chooseRerankConfig<C extends RerankConfig>(
+  cands: readonly RerankCandidate<C>[],
+): RerankChoice<C> {
   const pareto = paretoFront(cands);
   const eligible = cands.filter(
     (c) => c.dev.correctRejection >= TARGET_REJECTION,
@@ -128,6 +299,45 @@ export function chooseRerankConfig(
       : `không cấu hình nào giữ được từ chối đúng ≥ ${pct(TARGET_REJECTION)} trên dev`,
     pareto,
   };
+}
+
+export interface FunnelStage {
+  stage: string;
+  remaining: number;
+}
+
+/**
+ * Phễu loại dần (để báo cáo vì sao không cấu hình nào đạt): tổng → từ chối đúng dev ≥ 90% → câu bắt buộc từ chối (cùng là FR-003) →
+ * Recall@6 dev ≥ 85% → bộ kiểm bảng → sàn tiếng Anh → ngân sách độ trễ. Mỗi mức chỉ đếm cấu hình đã qua mọi mức trước.
+ */
+export function rerankFunnel(
+  results: readonly SweepResult[],
+  rules: EligibilityRules,
+  budget: LatencyBudget,
+): FunnelStage[] {
+  const stages: FunnelStage[] = [];
+  let cur = [...results];
+  const step = (stage: string, keep: (r: SweepResult) => boolean) => {
+    cur = cur.filter(keep);
+    stages.push({ stage, remaining: cur.length });
+  };
+  stages.push({ stage: "Tổng cấu hình", remaining: cur.length });
+  step(
+    `Từ chối đúng dev ≥ ${pct(TARGET_REJECTION)}`,
+    (r) => r.dev.correctRejection >= TARGET_REJECTION, // cùng phép so với chooseRerankConfig
+  );
+  step(
+    `${rules.mustRejectIds.join(", ")} bị từ chối`,
+    (r) => mustRejectReasons(r, rules).length === 0,
+  );
+  step(
+    `Recall@6 dev ≥ ${pct(TARGET_RECALL)}`,
+    (r) => r.dev.recallAt6 >= TARGET_RECALL,
+  );
+  step("Bộ kiểm bảng", (r) => guardReasons(r, rules).length === 0);
+  step("Sàn tiếng Anh", (r) => enReasons(r, rules).length === 0);
+  step("Ngân sách độ trễ", (r) => latencyReasons(r, budget).length === 0);
+  return stages;
 }
 
 export interface GateInput {
