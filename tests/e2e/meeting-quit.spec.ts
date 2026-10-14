@@ -60,10 +60,16 @@ test("thoát khi đang ghi + Đồng ý ⇒ kết thúc rồi thoát; mở lại
 
   const second = await launchMeeting({ userData: first.userData });
   const win2 = await readyWindow(second.app);
-  await win2.evaluate((nb) => {
-    window.location.hash = `#/workspace/${nb}`;
-  }, nbId);
-  await win2.getByTestId("workspace").waitFor({ state: "visible" });
+  // Chờ app khởi động xong (router đã điều hướng lần đầu) rồi mới mở notebook — đặt hash quá sớm bị ghi đè (CI xvfb chậm).
+  await win2.getByTestId("app-name").waitFor();
+  await expect(async () => {
+    await win2.evaluate((nb) => {
+      window.location.hash = `#/workspace/${nb}`;
+    }, nbId);
+    await win2
+      .getByTestId("workspace")
+      .waitFor({ state: "visible", timeout: 5_000 });
+  }).toPass({ timeout: 45_000 });
   await expect(win2.getByTestId("recovery-card")).toHaveCount(0);
   await expect
     .poll(

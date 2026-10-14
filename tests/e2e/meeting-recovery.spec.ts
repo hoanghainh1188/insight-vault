@@ -25,6 +25,7 @@ test("app bị giết khi đang ghi ⇒ thẻ phục hồi; giữ chưa hoàn th
 
   const second = await launchMeeting({ userData: first.userData });
   const win2 = await readyWindow(second.app);
+  await win2.getByTestId("app-name").waitFor();
   await win2.evaluate(() => {
     window.location.hash = "#/notebooks";
   });
