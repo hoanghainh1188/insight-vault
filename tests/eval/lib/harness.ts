@@ -1,4 +1,11 @@
 import { summarizeLlmRuns, type LlmRun, type LlmSummary } from "./llm-metrics";
+import {
+  selectLlmSample,
+  summarizeRefusals,
+  type LlmSampleMode,
+  type RefusalRun,
+  type RefusalSummary,
+} from "./llm-sample";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -376,7 +383,16 @@ export async function evaluateConfig(
 }
 
 export type LlmResult =
-  | { notFoundRate: number; n: number; model: string; summary: LlmSummary }
+  | {
+      notFoundRate: number;
+      n: number;
+      model: string;
+      summary: LlmSummary;
+      /** 205: từng câu không đáp án qua `repeats` lần chạy (chỉ có khi mẫu `unanswerable`) */
+      refusals?: RefusalSummary[];
+      sample: LlmSampleMode;
+      repeats: number;
+    }
   | { skipped: string };
 
 /**
@@ -390,7 +406,11 @@ export async function runWithLlm(
   modelName?: string,
   /** 109: bộ chấm độ liên quan đã hiệu chuẩn (retrieve() của rag-service dùng cấu hình mặc định = bản ghi) */
   rerank?: NonNullable<RetrievalDeps["rerank"]>,
+  /** 205: `unanswerable` = mọi câu không đáp án vi + en; `repeats` = số lần chạy lặp mỗi câu (tầng trả lời không tất định) */
+  opts: { sample?: LlmSampleMode; repeats?: number } = {},
 ): Promise<LlmResult> {
+  const mode = opts.sample ?? "default";
+  const repeats = Math.max(1, opts.repeats ?? 1);
   const client = createOllamaClient();
   if (!(await client.ping())) {
     return { skipped: "Ollama không chạy ở máy này — bỏ phần LLM" };
@@ -410,24 +430,31 @@ export async function runWithLlm(
   });
   // 123 (SC-006): câu tiếng Việt hold-out (có + không đáp án) và MỌI câu English ⇒ đo [n] hợp lệ, từ chối đúng,
   // trả nhầm "không tìm thấy", ngôn ngữ câu trả lời khớp câu hỏi. Giữ chỉ số cũ (vi hold-out có đáp án).
-  const sample = questions.filter(
-    (q) => (q.lang === "vi" && q.split === "holdout") || q.lang === "en",
-  );
+  const sample = selectLlmSample(questions, mode);
   const runs: LlmRun[] = [];
+  const refusalRuns: RefusalRun[] = [];
   for (const q of sample) {
-    const res = await svc.ask({
-      notebookId: index.notebookId,
-      question: q.text,
-      mode: "grounded",
-      history: [],
-    });
-    runs.push({
-      lang: q.lang,
-      type: q.type,
-      notFound: res.notFound,
-      citationCount: res.citations.length,
-      answer: res.answer,
-    });
+    for (let i = 0; i < repeats; i += 1) {
+      const res = await svc.ask({
+        notebookId: index.notebookId,
+        question: q.text,
+        mode: "grounded",
+        history: [],
+      });
+      runs.push({
+        lang: q.lang,
+        type: q.type,
+        notFound: res.notFound,
+        citationCount: res.citations.length,
+        answer: res.answer,
+      });
+      refusalRuns.push({
+        questionId: q.id,
+        notFound: res.notFound,
+        citationCount: res.citations.length,
+        answer: res.answer,
+      });
+    }
   }
   const viAns = runs.filter((r) => r.lang === "vi" && r.type === "answerable");
   return {
@@ -438,5 +465,10 @@ export async function runWithLlm(
     n: viAns.length,
     model,
     summary: summarizeLlmRuns(runs),
+    sample: mode,
+    repeats,
+    ...(mode === "unanswerable"
+      ? { refusals: summarizeRefusals(refusalRuns) }
+      : {}),
   };
 }

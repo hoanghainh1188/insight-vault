@@ -33,6 +33,7 @@ import { PDF_EXTRACTION_VERSION } from "../../src/shared/ipc/types";
 import { docFormat } from "./lib/dataset";
 import { runRerankModel } from "./lib/rerank-run";
 import { loadScorer } from "./lib/rerank";
+import { parseLlmSampleMode } from "./lib/llm-sample";
 import { diagnoseRerank } from "./lib/rerank-diagnose";
 import {
   describeConfig,
@@ -230,6 +231,10 @@ describe("eval:retrieval", () => {
               candidateCfg ?? RELEVANCE_CALIBRATION.config,
               process.env.EVAL_LLM_MODEL,
               llmRerank?.score,
+              {
+                sample: parseLlmSampleMode(process.env.EVAL_LLM_SAMPLE),
+                repeats: Number(process.env.EVAL_LLM_REPEATS ?? 1),
+              },
             )
           : undefined;
       llmRerank?.dispose();
