@@ -44,8 +44,10 @@ cd "ffmpeg-${FFMPEG_VERSION}"
 # Kiểm chốt: cấu hình KHÔNG được bật gpl/nonfree.
 if grep -qE '^#define CONFIG_(GPL|NONFREE) 1' config.h; then echo "Cấu hình lọt GPL/nonfree — dừng." >&2; exit 1; fi
 
-make -j"$JOBS" ffmpeg >/dev/null
-BIN=ffmpeg; [ -f ffmpeg.exe ] && BIN=ffmpeg.exe
+# Windows (MSYS2/MinGW): mục tiêu make và tệp ra có đuôi .exe.
+EXE=""; case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) EXE=".exe" ;; esac
+make -j"$JOBS" "ffmpeg$EXE" >/dev/null
+BIN="ffmpeg$EXE"
 cp "$BIN" "$OUT/$BIN"
 strip "$OUT/$BIN" 2>/dev/null || true
 {
