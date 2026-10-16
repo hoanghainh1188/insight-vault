@@ -11,7 +11,7 @@ import {
 
 /** Đích CỐ ĐỊNH (renderer không chọn được). */
 export const ISSUE_URL_BASE =
-  "https://github.com/hoanghainh1188/insight-vault/issues/new";
+  "https://github.com/hoanghainh1188/quillhold/issues/new";
 /** GitHub từ chối URL quá dài (~8 KB); chừa biên an toàn. */
 export const MAX_URL_LENGTH = 7500;
 /** Giới hạn nội dung người dùng có thể gửi qua IPC (dùng chung với ô nhập ở renderer). */

@@ -50,7 +50,7 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
 
 ## Cài đặt
 
-1. Tải bản cài mới nhất ở [Releases](https://github.com/hoanghainh1188/insight-vault/releases/latest):
+1. Tải bản cài mới nhất ở [Releases](https://github.com/hoanghainh1188/quillhold/releases/latest):
    `Quillhold-<version>-arm64.dmg` (macOS, Apple Silicon) hoặc `Quillhold-<version>-Setup.exe` (Windows x64).
 2. Cài [Ollama](https://ollama.com) và tải một mô hình chat, ví dụ `ollama pull qwen2.5:7b` (app gợi ý mô hình
    hợp với RAM). Nhúng, bộ chấm độ liên quan, bóc băng và OCR chạy ngay trong app — mô hình của chúng tải một lần khi dùng lần đầu.
@@ -60,9 +60,9 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
 
 ## Giới hạn đã biết
 
-- **Câu hỏi cùng chủ đề nhưng tài liệu không trả lời** (ví dụ hỏi về thang máy trong tài liệu về một tuyến đường sắt): bộ chấm độ liên quan vẫn có thể cho qua một đoạn gần chủ đề. Bước trả lời thường vẫn đáp "Không tìm thấy trong nguồn" (216/216 lần trong phép đo với một model chat cục bộ), nhưng model nhỏ hơn có thể kém hơn. Chi tiết: [#187](https://github.com/hoanghainh1188/insight-vault/issues/187).
-- **Đáp án nằm trong bảng hoặc hộp thông tin phức tạp của PDF** có thể bị bỏ sót khi văn bản trích ra bị trộn (ví dụ hộp thông tin Wikipedia). Trích tốt hơn một mình chưa đủ với bộ chấm hiện tại ([#206](https://github.com/hoanghainh1188/insight-vault/issues/206)).
-- **Ghi cuộc họp còn thử nghiệm**: chưa thử trên nhiều micro, tai nghe Bluetooth và máy Windows ([#186](https://github.com/hoanghainh1188/insight-vault/issues/186)).
+- **Câu hỏi cùng chủ đề nhưng tài liệu không trả lời** (ví dụ hỏi về thang máy trong tài liệu về một tuyến đường sắt): bộ chấm độ liên quan vẫn có thể cho qua một đoạn gần chủ đề. Bước trả lời thường vẫn đáp "Không tìm thấy trong nguồn" (216/216 lần trong phép đo với một model chat cục bộ), nhưng model nhỏ hơn có thể kém hơn. Chi tiết: [#187](https://github.com/hoanghainh1188/quillhold/issues/187).
+- **Đáp án nằm trong bảng hoặc hộp thông tin phức tạp của PDF** có thể bị bỏ sót khi văn bản trích ra bị trộn (ví dụ hộp thông tin Wikipedia). Trích tốt hơn một mình chưa đủ với bộ chấm hiện tại ([#206](https://github.com/hoanghainh1188/quillhold/issues/206)).
+- **Ghi cuộc họp còn thử nghiệm**: chưa thử trên nhiều micro, tai nghe Bluetooth và máy Windows ([#186](https://github.com/hoanghainh1188/quillhold/issues/186)).
 - **Bản chưa ký số, không tự cập nhật**: macOS và Windows cảnh báo ở lần mở đầu (xem Cài đặt); bản mới cài thủ công từ Releases.
 
 ## Phát triển
