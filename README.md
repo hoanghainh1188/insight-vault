@@ -132,5 +132,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 MIT — see [`LICENSE`](LICENSE).
 
-**Third-party:** ffmpeg is bundled via `ffmpeg-static` (used to extract audio from video) and is licensed
-under the **GPL**; its licence is shipped with the app (`node_modules/ffmpeg-static/ffmpeg.LICENSE`).
+**Third-party:** the full list of bundled libraries, models and their licences is in
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) (regenerate with `npm run licenses`; also shipped with the app).
+Audio is extracted from video with a minimal **LGPL** build of FFmpeg 7.1.1 (`--disable-gpl --disable-nonfree`),
+built from source by [`scripts/build-ffmpeg-lgpl.sh`](scripts/build-ffmpeg-lgpl.sh) (`npm run ffmpeg:build`) — run it
+once before `npm run dev` / `dist` if you need video support. No GPL/nonfree code is distributed.
