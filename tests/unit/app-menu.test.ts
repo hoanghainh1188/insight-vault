@@ -26,12 +26,12 @@ describe("appMenuTemplate", () => {
       const tv = appMenuTemplate(vi, {
         platform,
         isPackaged: true,
-        appName: "InsightVault",
+        appName: "Quillhold",
       });
       const te = appMenuTemplate(en, {
         platform,
         isPackaged: true,
-        appName: "InsightVault",
+        appName: "Quillhold",
       });
       expect(
         labels(tv).every((l) => typeof l === "string" && l.length > 0),
@@ -43,12 +43,12 @@ describe("appMenuTemplate", () => {
     const viTop = appMenuTemplate(vi, {
       platform: "win32",
       isPackaged: true,
-      appName: "InsightVault",
+      appName: "Quillhold",
     }).map((i) => i.label);
     const enTop = appMenuTemplate(en, {
       platform: "win32",
       isPackaged: true,
-      appName: "InsightVault",
+      appName: "Quillhold",
     }).map((i) => i.label);
     expect(enTop).toEqual(["File", "Edit", "View", "Window", "Help"]);
     expect(viTop).toEqual(["Tệp", "Sửa", "Xem", "Cửa sổ", "Trợ giúp"]);
@@ -59,7 +59,7 @@ describe("appMenuTemplate", () => {
       appMenuTemplate(en, {
         platform: "darwin",
         isPackaged: true,
-        appName: "InsightVault",
+        appName: "Quillhold",
       }),
     );
     for (const role of [
@@ -84,16 +84,16 @@ describe("appMenuTemplate", () => {
     const mac = appMenuTemplate(en, {
       platform: "darwin",
       isPackaged: true,
-      appName: "InsightVault",
+      appName: "Quillhold",
     });
-    expect(mac[0].label).toBe("InsightVault");
+    expect(mac[0].label).toBe("Quillhold");
     expect(roles([mac[0]])).toEqual(
       expect.arrayContaining(["about", "hide", "quit"]),
     );
     const win = appMenuTemplate(en, {
       platform: "win32",
       isPackaged: true,
-      appName: "InsightVault",
+      appName: "Quillhold",
     });
     // 213: Windows chưa có mục Giới thiệu nào — thêm vào Trợ giúp (role chuẩn ⇒ hộp mặc định của hệ điều hành).
     expect(win.at(-1)?.label).toBe("Help");
@@ -106,7 +106,7 @@ describe("appMenuTemplate", () => {
       appMenuTemplate(en, {
         platform: "darwin",
         isPackaged: true,
-        appName: "InsightVault",
+        appName: "Quillhold",
       }),
     );
     expect(prod).not.toContain("toggleDevTools");
@@ -115,7 +115,7 @@ describe("appMenuTemplate", () => {
       appMenuTemplate(en, {
         platform: "darwin",
         isPackaged: false,
-        appName: "InsightVault",
+        appName: "Quillhold",
       }),
     );
     expect(dev).toContain("toggleDevTools");
@@ -123,7 +123,7 @@ describe("appMenuTemplate", () => {
       appMenuTemplate(en, {
         platform: "darwin",
         isPackaged: true,
-        appName: "InsightVault",
+        appName: "Quillhold",
       }),
     );
     expect(all.some((i) => typeof i.click === "function")).toBe(false);

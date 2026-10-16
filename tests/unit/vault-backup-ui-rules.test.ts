@@ -29,7 +29,7 @@ describe("vault-backup messages", () => {
       "Sai mật khẩu hoặc file sao lưu bị hỏng.",
     );
     expect(errorMessage("notBackup")).toBe(
-      "Không phải file sao lưu InsightVault.",
+      "Không phải file sao lưu Quillhold.",
     );
     for (const c of [
       "busy",

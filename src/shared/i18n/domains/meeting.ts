@@ -34,9 +34,9 @@ export const meetingVi = {
   },
   permission: {
     deniedMac:
-      "InsightVault chưa được phép dùng microphone. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Microphone, bật InsightVault rồi thử lại.",
+      "Quillhold chưa được phép dùng microphone. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Microphone, bật Quillhold rồi thử lại.",
     deniedWin:
-      "InsightVault chưa được phép dùng microphone. Mở Settings → Privacy & security → Microphone, cho phép ứng dụng dùng microphone rồi thử lại.",
+      "Quillhold chưa được phép dùng microphone. Mở Settings → Privacy & security → Microphone, cho phép ứng dụng dùng microphone rồi thử lại.",
   },
   recording: {
     recording: "Đang ghi",
@@ -262,9 +262,9 @@ export const meetingEn: Widen<typeof meetingVi> = {
   },
   permission: {
     deniedMac:
-      "InsightVault is not allowed to use the microphone. Open System Settings → Privacy & Security → Microphone, turn on InsightVault, then try again.",
+      "Quillhold is not allowed to use the microphone. Open System Settings → Privacy & Security → Microphone, turn on Quillhold, then try again.",
     deniedWin:
-      "InsightVault is not allowed to use the microphone. Open Settings → Privacy & security → Microphone, allow apps to use the microphone, then try again.",
+      "Quillhold is not allowed to use the microphone. Open Settings → Privacy & security → Microphone, allow apps to use the microphone, then try again.",
   },
   recording: {
     recording: "Recording",

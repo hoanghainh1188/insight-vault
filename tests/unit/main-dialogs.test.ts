@@ -13,10 +13,10 @@ describe("dialog texts", () => {
     expect(backupDialogTexts(trVi)).toEqual({
       saveTitle: "Sao lưu vault",
       openTitle: "Khôi phục vault",
-      filters: [{ name: "Bản sao lưu InsightVault", extensions: ["ivbackup"] }],
+      filters: [{ name: "Bản sao lưu Quillhold", extensions: ["ivbackup"] }],
     });
     expect(backupDialogTexts(trEn).saveTitle).toBe("Back up vault");
-    expect(backupDialogTexts(trEn).filters[0].name).toBe("InsightVault backup");
+    expect(backupDialogTexts(trEn).filters[0].name).toBe("Quillhold backup");
   });
 
   it("chọn lại tệp gốc giữ đuôi tệp truyền vào", () => {

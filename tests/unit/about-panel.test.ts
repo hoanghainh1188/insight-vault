@@ -27,13 +27,13 @@ const base = {
     { name: "react", version: "18.3.1", license: "MIT" },
     { name: "mystery", version: "0.0.1", license: null },
   ],
-  iconPath: "/Applications/InsightVault.app/Contents/Resources/icon.png",
+  iconPath: "/Applications/Quillhold.app/Contents/Resources/icon.png",
 };
 
 describe("buildAboutPanelOptions", () => {
   it("trường chuẩn: tên, phiên bản, kiến trúc (version), bản quyền, icon", () => {
     const o = buildAboutPanelOptions({ ...base, t: createTranslator("vi") });
-    expect(o.applicationName).toBe("InsightVault");
+    expect(o.applicationName).toBe("Quillhold");
     expect(o.applicationVersion).toBe("0.2.22");
     expect(o.version).toBe("arm64");
     expect(o.copyright).toBe("© 2026 hoanghainh1188");

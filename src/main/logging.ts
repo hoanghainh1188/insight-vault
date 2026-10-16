@@ -78,13 +78,13 @@ function emit(
   try {
     const redacted = redact(meta);
     const safe = HOME.length > 1 ? maskHome(redacted, HOME) : redacted;
-    if (level === "error") console.error(`[InsightVault] ${event}`, safe);
-    else console.log(`[InsightVault] ${event}`, safe);
+    if (level === "error") console.error(`[Quillhold] ${event}`, safe);
+    else console.log(`[Quillhold] ${event}`, safe);
     sink?.write(
       formatLogLine({ ts: new Date().toISOString(), level, event, meta: safe }),
     );
   } catch (e) {
-    console.error("[InsightVault] log.emitFailed", {
+    console.error("[Quillhold] log.emitFailed", {
       errorType: e instanceof Error ? e.constructor.name : typeof e,
     });
   }

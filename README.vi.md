@@ -1,9 +1,9 @@
-# InsightVault — Trợ lý tri thức cục bộ (local-first)
+# Quillhold — Trợ lý tri thức cục bộ (local-first)
 
 [English](README.md) · **Tiếng Việt**
 
-InsightVault là **ứng dụng desktop (macOS + Windows)** để hỏi đáp tài liệu của chính bạn bằng AI — kiểu
-NotebookLM nhưng **chạy hoàn toàn trên máy**. Nạp tài liệu vào notebook; InsightVault phân tích và lập chỉ mục
+Quillhold là **ứng dụng desktop (macOS + Windows)** để hỏi đáp tài liệu của chính bạn bằng AI — kiểu
+NotebookLM nhưng **chạy hoàn toàn trên máy**. Nạp tài liệu vào notebook; Quillhold phân tích và lập chỉ mục
 ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM cục bộ. Mọi câu trả lời kèm **trích dẫn kiểm chứng
 được**: bấm chip `[n]` là nguồn mở ra đúng trang, đoạn hoặc mốc thời gian, có tô sáng.
 
@@ -51,11 +51,11 @@ ngay trên máy, rồi trả lời câu hỏi và viết tóm tắt bằng LLM c
 ## Cài đặt
 
 1. Tải bản cài mới nhất ở [Releases](https://github.com/hoanghainh1188/insight-vault/releases/latest):
-   `InsightVault-<version>-arm64.dmg` (macOS, Apple Silicon) hoặc `InsightVault-<version>-Setup.exe` (Windows x64).
+   `Quillhold-<version>-arm64.dmg` (macOS, Apple Silicon) hoặc `Quillhold-<version>-Setup.exe` (Windows x64).
 2. Cài [Ollama](https://ollama.com) và tải một mô hình chat, ví dụ `ollama pull qwen2.5:7b` (app gợi ý mô hình
    hợp với RAM). Nhúng, bộ chấm độ liên quan, bóc băng và OCR chạy ngay trong app — mô hình của chúng tải một lần khi dùng lần đầu.
 3. Bản cài **chưa ký số**:
-   - macOS: chuột phải vào app → **Open**, hoặc `xattr -dr com.apple.quarantine /Applications/InsightVault.app`.
+   - macOS: chuột phải vào app → **Open**, hoặc `xattr -dr com.apple.quarantine /Applications/Quillhold.app`.
    - Windows: SmartScreen → **More info → Run anyway**.
 
 ## Giới hạn đã biết

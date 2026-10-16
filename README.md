@@ -1,9 +1,9 @@
-# InsightVault — a local-first knowledge assistant
+# Quillhold — a local-first knowledge assistant
 
 **English** · [Tiếng Việt](README.vi.md)
 
-InsightVault is a **desktop app (macOS + Windows)** for asking questions about your own documents with AI —
-like NotebookLM, but **running entirely on your machine**. Add documents to a notebook; InsightVault parses
+Quillhold is a **desktop app (macOS + Windows)** for asking questions about your own documents with AI —
+like NotebookLM, but **running entirely on your machine**. Add documents to a notebook; Quillhold parses
 and indexes them locally, then answers questions and writes summaries with a local LLM. Every answer carries
 **verifiable citations**: click a `[n]` chip and the source opens at the exact page, passage or timestamp,
 highlighted.
@@ -58,12 +58,12 @@ highlighted.
 ## Install
 
 1. Download the latest installer from [Releases](https://github.com/hoanghainh1188/insight-vault/releases/latest):
-   `InsightVault-<version>-arm64.dmg` (macOS, Apple Silicon) or `InsightVault-<version>-Setup.exe` (Windows x64).
+   `Quillhold-<version>-arm64.dmg` (macOS, Apple Silicon) or `Quillhold-<version>-Setup.exe` (Windows x64).
 2. Install [Ollama](https://ollama.com) and pull a chat model, for example `ollama pull qwen2.5:7b`
    (the app suggests models that fit your RAM). Embeddings, the relevance checker, transcription and OCR run inside the app —
    their models are downloaded once on first use.
 3. The builds are **not code-signed yet**:
-   - macOS: right-click the app → **Open**, or run `xattr -dr com.apple.quarantine /Applications/InsightVault.app`.
+   - macOS: right-click the app → **Open**, or run `xattr -dr com.apple.quarantine /Applications/Quillhold.app`.
    - Windows: SmartScreen → **More info → Run anyway**.
 
 ## Known limitations

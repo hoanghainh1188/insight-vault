@@ -57,6 +57,7 @@ import Store from "electron-store";
 import { CHANNELS } from "@shared/ipc/channels";
 import type { SourceProgressEvent } from "@shared/ipc/types";
 import { ensureDataDir } from "./services/app-shell/data-dir";
+import { resolveLegacyUserDataPath } from "./services/app-shell/user-data-path";
 import { buildAboutPanelOptions } from "./services/app-shell/about-panel";
 import { loadLibraries } from "./services/app-shell/about-licenses";
 import { registerIpc } from "./ipc/register";
@@ -309,6 +310,16 @@ process.on("unhandledRejection", handleFatalStartup);
 // Single-instance lock (#70): 2 tiến trình cùng ghi SQLite/LanceDB + cùng chạy reindex nền lúc khởi động
 // → hỏng dữ liệu/race migration. Instance thứ 2 KHÔNG lấy được lock → thoát ngay và focus cửa sổ đang có
 // (không chạy init). Guard trong whenReady chặn init kể cả khi handler kịp chạy trước lúc quit hoàn tất.
+// Đổi tên InsightVault → Quillhold: bản cài thật đã có dữ liệu ở thư mục userData cũ → ghim lại để không "mất" dữ liệu.
+// PHẢI chạy trước requestSingleInstanceLock/getPath("userData") (khoá + log + DB đều nằm trong userData).
+const legacyUserData = resolveLegacyUserDataPath({
+  isPackaged: app.isPackaged,
+  hasUserDataSwitch: app.commandLine.hasSwitch("user-data-dir"),
+  appData: app.getPath("appData"),
+  exists: existsSync,
+});
+if (legacyUserData) app.setPath("userData", legacyUserData);
+
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
   app.quit();
@@ -335,11 +346,11 @@ if (gotSingleInstanceLock) {
         dir: logsDir,
         fs: createNodeLogFs(),
         onError: (errorType) =>
-          console.error("[InsightVault] logfile.disabled", { errorType }),
+          console.error("[Quillhold] logfile.disabled", { errorType }),
       }),
     );
   } catch (e) {
-    console.error("[InsightVault] logfile.init.error", {
+    console.error("[Quillhold] logfile.init.error", {
       errorType: e instanceof Error ? e.constructor.name : typeof e,
     });
   }
@@ -510,7 +521,7 @@ app
       fake: process.env["IV_ASR_FAKE"] === "1" && !app.isPackaged,
       fork: (path, args) =>
         utilityProcess.fork(path, args, {
-          serviceName: "InsightVault ASR",
+          serviceName: "Quillhold ASR",
           stdio: "ignore",
         }) as unknown as UtilityProcessLike,
       onModelDownload: (active) => setEgressActive(active, "model"),

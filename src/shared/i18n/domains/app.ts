@@ -24,7 +24,7 @@ export const appVi = {
     },
   },
   onboarding: {
-    title: "Chào mừng đến InsightVault",
+    title: "Chào mừng đến Quillhold",
     bodyBefore: "Trợ lý tri thức ",
     bodyStrong: "chạy cục bộ",
     bodyAfter:
@@ -93,7 +93,7 @@ export const appEn: Widen<typeof appVi> = {
     },
   },
   onboarding: {
-    title: "Welcome to InsightVault",
+    title: "Welcome to Quillhold",
     bodyBefore: "A knowledge assistant that ",
     bodyStrong: "runs locally",
     bodyAfter:
