@@ -102,6 +102,7 @@ Xem [CONTRIBUTING.md](CONTRIBUTING.md).
 
 MIT — xem [`LICENSE`](LICENSE).
 
-**Bên thứ ba:** ffmpeg đóng gói kèm qua `ffmpeg-static` (tách audio khỏi video), giấy phép **GPL**; giấy phép đi kèm
-bản cài (`node_modules/ffmpeg-static/ffmpeg.LICENSE`). Nếu sau này làm tầng trả phí độc quyền, cân nhắc build ffmpeg
-LGPL — xem [`docs/04-decisions/2026-07-13-video-clarify.md`](docs/04-decisions/2026-07-13-video-clarify.md).
+**Bên thứ ba:** danh sách đầy đủ thư viện, mô hình và giấy phép nằm ở [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)
+(sinh lại bằng `npm run licenses`; cũng được đóng gói kèm app). Tách audio khỏi video dùng bản **LGPL** tối giản của
+FFmpeg 7.1.1 (`--disable-gpl --disable-nonfree`), dựng từ mã nguồn bởi [`scripts/build-ffmpeg-lgpl.sh`](scripts/build-ffmpeg-lgpl.sh)
+(`npm run ffmpeg:build`) — chạy một lần trước `npm run dev` / `dist` nếu cần hỗ trợ video. Không phân phối mã GPL/nonfree..

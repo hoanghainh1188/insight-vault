@@ -30,3 +30,4 @@ tests/eval/reports/
 # 186 spike S2 (dev-only): cache model Whisper + mẫu sinh bằng `say` + báo cáo
 tests/spike/.cache/
 tests/spike/reports/
+build/ffmpeg/

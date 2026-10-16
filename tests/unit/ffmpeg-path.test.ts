@@ -1,25 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { resolveFfmpegPathFrom } from "../../src/main/services/ingestion/video/ffmpeg-path";
+import {
+  ffmpegBinaryName,
+  resolveFfmpegPathFrom,
+} from "../../src/main/services/ingestion/video/ffmpeg-path";
 
 describe("resolveFfmpegPathFrom (051)", () => {
-  it("dev (không đóng gói) → giữ nguyên path", () => {
+  const base = {
+    resourcesPath: "/App/Contents/Resources",
+    projectRoot: "/proj",
+  };
+
+  it("dev (không đóng gói) → build/ffmpeg trong repo", () => {
     expect(
-      resolveFfmpegPathFrom("/proj/node_modules/ffmpeg-static/ffmpeg", false),
-    ).toBe("/proj/node_modules/ffmpeg-static/ffmpeg");
+      resolveFfmpegPathFrom({ ...base, isPackaged: false, platform: "darwin" }),
+    ).toBe("/proj/build/ffmpeg/ffmpeg");
   });
 
-  it("đóng gói → thay app.asar → app.asar.unpacked", () => {
+  it("đóng gói → <Resources>/ffmpeg/", () => {
     expect(
-      resolveFfmpegPathFrom(
-        "/App/Contents/Resources/app.asar/node_modules/ffmpeg-static/ffmpeg",
-        true,
-      ),
-    ).toBe(
-      "/App/Contents/Resources/app.asar.unpacked/node_modules/ffmpeg-static/ffmpeg",
-    );
+      resolveFfmpegPathFrom({ ...base, isPackaged: true, platform: "darwin" }),
+    ).toBe("/App/Contents/Resources/ffmpeg/ffmpeg");
   });
 
-  it("path null (nền tảng không hỗ trợ) → ném", () => {
-    expect(() => resolveFfmpegPathFrom(null, false)).toThrow();
+  it("Windows → thêm .exe", () => {
+    expect(ffmpegBinaryName("win32")).toBe("ffmpeg.exe");
+    expect(ffmpegBinaryName("linux")).toBe("ffmpeg");
   });
 });

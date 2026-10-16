@@ -16,6 +16,14 @@ directories:
 extraResources:
   - from: build/icon.png
     to: icon.png
+  # Phân phối: kèm giấy phép của app + thông báo bên thứ ba (MIT/BSD/Apache/LGPL/GPL yêu cầu giữ nguyên văn bản).
+  # FFmpeg LGPL tối giản (scripts/build-ffmpeg-lgpl.sh) — chạy riêng bằng spawn, kèm giấy phép + cấu hình dựng.
+  - from: build/ffmpeg
+    to: ffmpeg
+  - from: LICENSE
+    to: LICENSE.txt
+  - from: THIRD-PARTY-NOTICES.md
+    to: THIRD-PARTY-NOTICES.md
 
 # electron-vite xuất ra out/; production deps trong node_modules tự được gộp theo `dependencies`.
 files:
@@ -33,15 +41,16 @@ files:
   # tesseract.js 7 (adapter Node) thực tế nạp bản KHÔNG-LSTM — giữ cả hai để nâng cấp sửa lỗi đó không làm hỏng OCR.
   # Test canh giữ: tests/unit/slim-tesseract.test.ts.
   - "!node_modules/tesseract.js-core/*.wasm.js"
+  # Giấy phép: decoder AAC/WMA của @audio/decode là GPL, app KHÔNG dùng (chỉ wav/mp3/flac/ogg; nạp lazy theo đuôi) ⇒ LOẠI
+  # khỏi bản cài để không phân phối mã GPL. Test canh giữ: tests/unit/license-exclusions.test.ts.
+  - "!node_modules/@audio/decode-aac/**"
+  - "!node_modules/@audio/decode-wma/**"
 
 # Binary native phải nằm NGOÀI asar để load được lúc chạy.
 asarUnpack:
   - "**/*.node"
   - node_modules/@lancedb/**
   - node_modules/keytar/**
-  # 051: binary ffmpeg (tách audio khỏi video) phải ngoài asar mới chạy được (spawn). Mỗi runner CI
-  # (mac/win) tự cài ffmpeg-static cho nền tảng của nó → artifact có đúng binary.
-  - node_modules/ffmpeg-static/**
   # 053: WASM core + worker của tesseract.js (OCR ảnh) phải ngoài asar mới load được.
   - node_modules/tesseract.js/**
   - node_modules/tesseract.js-core/**
