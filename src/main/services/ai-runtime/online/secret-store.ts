@@ -2,7 +2,7 @@ import type { OnlineProviderId } from "@shared/ipc/types";
 
 // Kho bí mật cho API key provider online (031, Constitution III). Bọc keytar (OS keychain / Credential
 // Manager) qua interface inject được → unit-test bằng fake, không cần keychain thật. KHÔNG log key.
-// service cố định "InsightVault", account = provider id.
+// service cố định "InsightVault" (tên cũ của app — GIỮ NGUYÊN để API key đã lưu vẫn đọc được sau đổi tên), account = provider id.
 
 export const SECRET_SERVICE = "InsightVault";
 

@@ -26,7 +26,7 @@ export function AppHeader(): JSX.Element {
   return (
     <header className="app-header">
       <span className="app-name" data-testid="app-name">
-        {info?.name ?? "InsightVault"}
+        {info?.name ?? "Quillhold"}
       </span>
       <span className="app-tagline">{t.t("app.header.tagline")}</span>
       <PrivacyBadge />

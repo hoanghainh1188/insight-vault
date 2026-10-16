@@ -190,7 +190,7 @@ export function RestoreDialog({
                 )}
               </dd>
               <dt>{t.t("backup.restore.version")}</dt>
-              <dd>InsightVault {phase.summary.appVersion}</dd>
+              <dd>Quillhold {phase.summary.appVersion}</dd>
               <dt>{t.t("backup.restore.encryption")}</dt>
               <dd>
                 {phase.summary.encrypted

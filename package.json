@@ -1,7 +1,7 @@
 {
-  "name": "insight-vault",
+  "name": "quillhold",
   "version": "0.2.23",
-  "description": "InsightVault — trợ lý tri thức cục bộ (local-first) trên desktop",
+  "description": "Quillhold — trợ lý tri thức cục bộ (local-first) trên desktop",
   "author": "hoanghainh1188",
   "license": "MIT",
   "main": "./out/main/index.js",

@@ -5,9 +5,9 @@ import {
 } from "../../src/main/services/app-shell/app-info";
 
 describe("app-info", () => {
-  it("tên app là InsightVault", () => {
+  it("tên app là Quillhold", () => {
     expect(buildAppInfo("1.2.3").name).toBe(APP_NAME);
-    expect(APP_NAME).toBe("InsightVault");
+    expect(APP_NAME).toBe("Quillhold");
   });
 
   it("version truyền qua nguyên vẹn", () => {

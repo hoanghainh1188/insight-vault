@@ -4,7 +4,7 @@ import type { LibraryEntry } from "./about-licenses";
 // 213: nội dung hộp "Giới thiệu" MẶC ĐỊNH của hệ điều hành (app.setAboutPanelOptions) — hàm thuần dựng tuỳ chọn theo ngôn ngữ giao
 // diện. Chỉ tên/phiên bản/giấy phép công khai: KHÔNG đường dẫn người dùng, tên tài liệu hay khoá. `iconPath` là icon đi kèm app.
 
-export const APP_NAME = "InsightVault";
+export const APP_NAME = "Quillhold";
 export const APP_LICENSE = "MIT";
 export const APP_AUTHOR = "hoanghainh1188";
 export const APP_COPYRIGHT = "© 2026 hoanghainh1188";
